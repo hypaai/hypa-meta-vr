@@ -1,0 +1,14 @@
+{
+  "name": "HypaLens.Runtime",
+  "rootNamespace": "HypaLens",
+  "references": [ "HypaCore.Runtime" ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

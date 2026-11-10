@@ -1,0 +1,16 @@
+{
+  "name": "HypaLens.Quest",
+  "rootNamespace": "HypaLens.Quest",
+  "references": [ "HypaLens.Runtime", "Meta.XR.MRUtilityKit" ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [ "HYPA_MRUK" ],
+  "versionDefines": [
+    { "name": "com.meta.xr.mrutilitykit", "expression": "0.0.0", "define": "HYPA_MRUK" }
+  ],
+  "noEngineReferences": false
+}
