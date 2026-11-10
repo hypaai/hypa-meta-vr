@@ -1,0 +1,14 @@
+{
+  "name": "HypaCore.Editor",
+  "rootNamespace": "HypaCore.EditorTools",
+  "references": [ "HypaCore.Runtime", "HypaCore.Samples" ],
+  "includePlatforms": [ "Editor" ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
