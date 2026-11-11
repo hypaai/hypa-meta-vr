@@ -33,14 +33,17 @@ Each folder has its own assembly definitions. **Lens never references Stories an
 
 The key is never in the repo, the scenes, `StreamingAssets`, `Resources` or the APK.
 
-- **Editor:** **Hypa > Create API Key File** makes `hypa.local.json` at the project root (git-ignored). Fill in `apiKey`.
-  Or set the environment variable `HYPA_API_KEY`.
+- **Editor (recommended):** `cp .env.example .env` at the project root and set `HYPA_API_KEY`. `.env` is git-ignored;
+  only `.env.example` (no key) is committed.
+- **Alternatives:** the environment variable `HYPA_API_KEY`, or **Hypa > Create API Key File** (`hypa.local.json`, git-ignored).
+  Lookup order: environment variables, then `.env`, then `hypa.local.json`.
 - **Quest (local builds):** push the same file to the app's data folder:
-  `adb push hypa.local.json /sdcard/Android/data/<bundle id>/files/hypa.local.json`
+  `adb push .env /sdcard/Android/data/<bundle id>/files/.env`
 - **Judges' build:** set `baseUrl` to the private proxy (built in `hypa-v2`, not here); no key in the app.
 
-```json
-{ "apiKey": "", "baseUrl": "https://api.hypaintelligence.com" }
+```dotenv
+HYPA_API_KEY=
+HYPA_BASE_URL=https://api.hypaintelligence.com
 ```
 
 Free tools (`list_languages`, `check_language_pair`) work without a key. Translation, speech and the dictionary need one.

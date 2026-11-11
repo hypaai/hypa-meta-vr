@@ -1,7 +1,7 @@
 {
   "name": "HypaLens.Quest",
   "rootNamespace": "HypaLens.Quest",
-  "references": [ "HypaLens.Runtime", "Meta.XR.MRUtilityKit" ],
+  "references": [ "HypaLens.Runtime", "meta.xr.mrutilitykit" ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

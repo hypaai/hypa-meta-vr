@@ -59,7 +59,10 @@ namespace HypaCore
     public static class HypaInput
     {
         public static Func<IPinchInput> DeviceFactory;
-        /// <summary>In the editor use the mouse unless false (set false to try hands in the Meta XR Simulator).</summary>
+        /// <summary>
+        /// In the editor, use the mouse while no XR device is running. When the Meta XR Simulator (or Link) is active,
+        /// hands are used automatically. Set false to force hands in the editor.
+        /// </summary>
         public static bool MouseInEditor = true;
 
         static IPinchInput _current;
@@ -67,9 +70,11 @@ namespace HypaCore
         {
             get
             {
-                if (_current != null) return _current;
-                if ((Application.isEditor && MouseInEditor) || DeviceFactory == null) return _current = new MouseInput();
-                return _current = DeviceFactory();
+                bool wantMouse = DeviceFactory == null
+                                 || (Application.isEditor && MouseInEditor && !UnityEngine.XR.XRSettings.isDeviceActive);
+                // Re-check each call: the XR session can start after the first frame.
+                if (_current != null && (_current is MouseInput) == wantMouse) return _current;
+                return _current = wantMouse ? new MouseInput() : DeviceFactory();
             }
         }
         public static void Reset() => _current = null;

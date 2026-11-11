@@ -17,6 +17,7 @@
 # Secrets and signing: never commit
 .env
 .env.*
+!.env.example
 *.keystore
 *.jks
 *.p12
@@ -25,3 +26,27 @@
 *.obb
 hypa.local.json
 **/StreamingAssets/*key*
+
+# Local / generated files that should never be committed
+/.claude/
+**/TempAssembly.dll
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
+# Meta Immersive Debugger dev agent: holds a local access token and your LAN IP
+/[Aa]ssets/Resources/DevAgentSettings.asset
+/[Aa]ssets/Resources/DevAgentSettings.asset.meta
+# Unity AI Assistant per-user settings
+/ProjectSettings/Packages/com.unity.ai.assistant/
+# Crash dumps and editor/OS junk
+mono_crash.*
+*.ips
+sysinfo.txt
+crashlytics-buildid.txt
+/[Rr]ecordings/
+.vscode/
+*.pdb.meta
+*.mdb.meta
+*.pidb.meta
+# Empty folder Unity recreates; its lone .meta would warn on fresh clones
+/[Aa]ssets/StreamingAssets.meta
+/[Aa]ssets/StreamingAssets/

@@ -12,6 +12,12 @@ namespace HypaLens.Tests
 {
     public class LensTests
     {
+        // The helpers below block on tasks. Under Unity's main-thread SynchronizationContext the awaits inside the
+        // controller would try to resume on this (blocked) thread and deadlock, so run each test without it.
+        SynchronizationContext _unityContext;
+        [SetUp] public void DropUnityContext() { _unityContext = SynchronizationContext.Current; SynchronizationContext.SetSynchronizationContext(null); }
+        [TearDown] public void RestoreUnityContext() => SynchronizationContext.SetSynchronizationContext(_unityContext);
+
         static LensController Make(IHypaLensApi api = null, Func<bool> online = null, bool blank = false)
             => new LensController(new SimFrameSource { ReturnBlankFrame = blank }, new SimRecognizer(), api ?? new SimHypaApi { LatencyMs = 0 }, online)
                { SourceLanguage = "English", TargetLanguage = "Yoruba" };
