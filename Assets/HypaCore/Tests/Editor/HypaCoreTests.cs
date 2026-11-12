@@ -150,6 +150,14 @@ namespace HypaCore.Tests
 
         [Test] public void Wav_RejectsNonWav() => Assert.IsFalse(WavDecoder.TryDecode(new byte[100], out _, out _, out _));
 
+        [Test] public void WavEncoder_RoundTrips16BitMono_AndClamps()
+        {
+            var wav = WavEncoder.Encode16(new[] { 0f, 0.5f, -1f, 2f }, 4, 1, 16000);
+            Assert.IsTrue(WavDecoder.TryDecode(wav, out var s, out var ch, out var rate));
+            Assert.AreEqual(1, ch); Assert.AreEqual(16000, rate); Assert.AreEqual(4, s.Length);
+            Assert.AreEqual(0.5f, s[1], 1e-3); Assert.AreEqual(-1f, s[2], 1e-4); Assert.AreEqual(1f, s[3], 1e-3);
+        }
+
         static byte[] MakeWav(short[] pcm, int rate)
         {
             using (var ms = new MemoryStream())

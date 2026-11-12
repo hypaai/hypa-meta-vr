@@ -21,14 +21,19 @@ Derived only from **public** calls to Hypa's API (no private source). Re-check w
 | `translate_and_speak` | `text`, `targetLang`, `sourceLang?`, `voice?`, `format?` | `translatedText`, `mime`, `audioUrl?`... (speaks the translation only) | paid |
 | `look_up_term` | `word` (1..120), `language?` (omit = English) | `result` (open object), `provider?`, `model?` | paid |
 
-Other tools listed: `translate_document`, `speech_to_text`, `process_voice_message`, `extract_text_from_image`, `translate_image`, `list_voices`, `list_models`, `word_of_the_day` and general-purpose tools.
+| `speech_to_text` | `audio` (base64, or a URL with `audioType: "url"`), `audioType?`, `sourceLang?` (label; omit = auto), `model?` | `transcript`, `provider?`, `model?` | paid |
+
+The `speech_to_text` row is from `tools/list` (2026-11-13); it has not been called with a key yet. Stories sends 16 kHz mono 16-bit WAV.
+
+Other tools listed: `translate_document`, `process_voice_message`, `extract_text_from_image`, `translate_image`, `list_voices`, `list_models`, `word_of_the_day` and general-purpose tools.
 
 ## Not yet verified (needs a keyed call)
 
 - Paid tool responses end to end (translation quality, `mime` per voice, whether Quest decodes both WAV and MPEG).
 - Auto-detect quality on one-word inputs. `translate_message` returns `language: null` when it can't tell; the Lens then asks the user to pick a source.
 - REST `/v2/developer/{mt,tts,asr,chat,dictionary,ocr}` request/response field names (header `x-api-key`). `HypaRestClient` marks its typed methods unverified.
-- Which languages support ASR (`list_languages` doesn't say). Stories needs this.
+- Which languages support ASR (`list_languages` doesn't say). Stories offers English, French and Spanish.
+- A chat / Q&A tool: none on MCP (tools/list, 2026-11-13). Stories answers come from a stub until the REST `chat` endpoint is confirmed.
 - Error bodies: 401 bad key, 400 `INSUFFICIENT_BALANCE`, 429, 503 (keyless allowance). Mapped in `HypaException.FromHttp`; confirm the exact shapes.
 
 ## Rules that follow from it
