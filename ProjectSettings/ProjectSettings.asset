@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
-  productName: hypa-meta-vr
+  companyName: Hypa AI
+  productName: Hypa Lens
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.12156863, g: 0.12156863, b: 0.1254902, a: 1}
@@ -171,13 +171,14 @@ PlayerSettings:
   androidMaxAspectRatio: 2.4
   androidMinAspectRatio: 1
   applicationIdentifier:
-    Standalone: com.DefaultCompany.hypa-meta-vr
+    Android: ai.hypa.lens
+    Standalone: ai.hypa.lens
   buildNumber:
     Standalone: 0
     VisionOS: 0
     iPhone: 0
     tvOS: 0
-  overrideDefaultApplicationIdentifier: 0
+  overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
   AndroidMinSdkVersion: 32
   AndroidTargetSdkVersion: 34
@@ -635,11 +636,12 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   webProgressiveAssetLoading: 0
   scriptingDefineSymbols:
-    Android: OVR_DISABLE_HAND_PINCH_BUTTON_MAPPING;SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY
-    Standalone: OVR_DISABLE_HAND_PINCH_BUTTON_MAPPING;SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY
+    Android: OVR_DISABLE_HAND_PINCH_BUTTON_MAPPING
+    Standalone: OVR_DISABLE_HAND_PINCH_BUTTON_MAPPING
   additionalCompilerArguments: {}
   platformArchitecture: {}
-  scriptingBackend: {}
+  scriptingBackend:
+    Android: 1
   il2cppCompilerConfiguration: {}
   il2cppCodeGeneration: {}
   il2cppLTOMode: {}

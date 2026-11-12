@@ -20,6 +20,14 @@ namespace HypaLens
         public static Func<LensPlatform> Factory;
     }
 
+    /// <summary>Used when the Quest camera code isn't in the build (Meta SDK missing): a clear message, not a crash.</summary>
+    sealed class UnavailableFrameSource : IFrameSource
+    {
+        public Task<CapturedFrame> CaptureAsync(CancellationToken ct)
+            => throw new LensException(LensErrorKind.CameraUnavailable,
+                "The passthrough camera needs the Meta XR SDK and MR Utility Kit. In the editor, turn on Use Simulated Camera.");
+    }
+
     /// <summary>Used where ML Kit can't run (the editor with the simulated camera off): a clear message, not a crash.</summary>
     sealed class UnavailableRecognizer : ITextRecognizer
     {

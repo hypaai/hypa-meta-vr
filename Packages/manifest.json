@@ -1,8 +1,6 @@
 {
   "dependencies": {
     "com.meta.xr.sdk.all": "209.0.0",
-    "com.unity.ai.assistant": "2.21.0-pre.2",
-    "com.unity.ai.inference": "2.6.1",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.test-framework": "1.8.0",
     "com.unity.xr.management": "4.7.0",

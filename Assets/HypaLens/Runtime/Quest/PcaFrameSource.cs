@@ -24,7 +24,7 @@ namespace HypaLens.Quest
                 throw new LensException(LensErrorKind.CameraUnavailable,
                     "This headset doesn't support passthrough camera access (needs Quest 3 or 3S on Horizon OS v74 or newer).");
 
-            await DeviceFrameSource.EnsurePermission(); // explains-then-asks: first capture comes after onboarding
+            await EnsurePermission(); // explains-then-asks: first capture comes after onboarding
 
             var pca = GetCameraAccess();
             if (!pca.enabled) pca.enabled = true;
@@ -49,6 +49,25 @@ namespace HypaLens.Quest
             var pixels = await Readback(tex);
             ct.ThrowIfCancellationRequested();
             return new CapturedFrame { Width = size.x, Height = size.y, Pixels = pixels, CameraPose = pose, Intrinsics = intrinsics };
+        }
+
+        const string HeadsetCameraPermission = "horizonos.permission.HEADSET_CAMERA";
+
+        /// <summary>Asks for the headset camera permission once; throws PermissionDenied if refused. No-op off Android.</summary>
+        static async Task EnsurePermission()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (UnityEngine.Android.Permission.HasUserAuthorizedPermission(HeadsetCameraPermission)) return;
+            var tcs = new TaskCompletionSource<bool>();
+            var cb = new UnityEngine.Android.PermissionCallbacks();
+            cb.PermissionGranted += _ => tcs.TrySetResult(true);
+            cb.PermissionDenied += _ => tcs.TrySetResult(false);
+            cb.PermissionDeniedAndDontAskAgain += _ => tcs.TrySetResult(false);
+            UnityEngine.Android.Permission.RequestUserPermission(HeadsetCameraPermission, cb);
+            if (!await tcs.Task) throw new LensException(LensErrorKind.PermissionDenied);
+#else
+            await Task.CompletedTask;
+#endif
         }
 
         PassthroughCameraAccess GetCameraAccess()
