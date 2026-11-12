@@ -31,7 +31,10 @@ namespace HypaCore
             go.transform.localPosition = localPos;
             go.transform.localScale = new Vector3(size.x, size.y, 1f);
             go.GetComponent<Renderer>().material = NewMaterial(color);
-            if (!collider) UnityEngine.Object.Destroy(go.GetComponent<Collider>());
+            // The primitive's MeshCollider is one-sided: a hand ray arriving from behind (a hand held past the HUD,
+            // common when seated) would pass straight through. A thin box is hit from either side.
+            UnityEngine.Object.DestroyImmediate(go.GetComponent<Collider>());
+            if (collider) go.AddComponent<BoxCollider>().size = new Vector3(1f, 1f, 0.02f);
             return go;
         }
 

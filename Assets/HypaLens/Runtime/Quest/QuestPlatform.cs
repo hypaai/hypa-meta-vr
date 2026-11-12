@@ -4,7 +4,7 @@ using UnityEngine;
 namespace HypaLens.Quest
 {
     // Compiled only when MR Utility Kit is installed (asmdef defineConstraints: HYPA_MRUK).
-    // STATUS: written against MRUK's public API; NOT yet compiled against an installed SDK or run on a headset.
+    // Compiles against MRUK v209 and runs in the Meta XR Simulator; not yet run on a Quest headset.
     // Hands come from HypaCore.Quest (shared by every mode).
 
     /// <summary>Pins labels to real surfaces using the MRUK room model (walls, tables, etc.).</summary>
@@ -29,11 +29,12 @@ namespace HypaLens.Quest
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
         {
+            // Called by LensApp on the main thread when the simulated camera is off.
             LensPlatform.Factory = () => new LensPlatform
             {
+                Frames = new PcaFrameSource(),             // MRUK Passthrough Camera Access
+                Recognizer = MlKitRecognizer.TryCreate(),   // null off-device (LensApp shows a clear message)
                 Placer = new MrukSurfacePlacer(),
-                // Frames: DeviceFrameSource + Meta Passthrough Camera intrinsics/pose providers (TODO).
-                // Recognizer: on-headset OCR with word boxes (decision D2, TODO).
             };
         }
     }

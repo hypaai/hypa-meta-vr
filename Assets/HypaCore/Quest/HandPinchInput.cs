@@ -8,6 +8,7 @@ namespace HypaCore.Quest
     /// <summary>Hand-tracking pinch and pointer ray from OVRHand (index pinch). Picks whichever tracked hand is pinching.</summary>
     public sealed class HandPinchInput : IPinchInput
     {
+        const float RayBackOffset = 0.25f; // metres
         OVRHand[] _hands;
 
         OVRHand Active()
@@ -30,7 +31,10 @@ namespace HypaCore.Quest
             var h = Active();
             if (h != null && h.IsPointerPoseValid && h.PointerPose != null)
             {
-                ray = new Ray(h.PointerPose.position, h.PointerPose.forward);
+                // Start the ray a little behind the hand: seated UI sits within arm's reach, often level with the
+                // hand, and a ray that starts at the fingertips would skip anything at or just behind them.
+                var fwd = h.PointerPose.forward;
+                ray = new Ray(h.PointerPose.position - fwd * RayBackOffset, fwd);
                 return true;
             }
             ray = default;

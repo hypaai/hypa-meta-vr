@@ -1,7 +1,7 @@
 {
   "name": "HypaLens.Tests",
   "rootNamespace": "HypaLens.Tests",
-  "references": [ "HypaCore.Runtime", "HypaLens.Runtime", "UnityEngine.TestRunner", "UnityEditor.TestRunner" ],
+  "references": [ "HypaCore.Runtime", "HypaLens.Runtime", "HypaLens.Quest", "UnityEngine.TestRunner", "UnityEditor.TestRunner" ],
   "includePlatforms": [ "Editor" ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

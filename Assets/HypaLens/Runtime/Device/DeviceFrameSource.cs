@@ -52,7 +52,8 @@ namespace HypaLens
             finally { cam.Stop(); UnityEngine.Object.Destroy(cam); }
         }
 
-        static async Task EnsurePermission()
+        /// <summary>Asks for the headset camera permission once; throws PermissionDenied if refused. No-op off Android.</summary>
+        public static async Task EnsurePermission()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (Permission.HasUserAuthorizedPermission(HeadsetCameraPermission)) return;

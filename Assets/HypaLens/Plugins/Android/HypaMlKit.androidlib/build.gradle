@@ -1,0 +1,34 @@
+// Hypa Lens: Google ML Kit text recognition bridge (Unity Android library plug-in).
+// Bundled Latin model: works offline and needs no Google Play services (Quest has none).
+// ML Kit is downloaded from Google's Maven repo at build time; nothing from it is checked into this repo.
+apply plugin: 'com.android.library'
+
+android {
+    namespace "ai.hypa.lens.mlkit"
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 29
+        consumerProguardFiles 'proguard-rules.pro'
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src/main/java']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+}

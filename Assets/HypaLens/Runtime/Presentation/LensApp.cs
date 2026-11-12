@@ -22,9 +22,10 @@ namespace HypaLens
     /// </summary>
     public sealed class LensApp : MonoBehaviour
     {
-        [Tooltip("Fake camera frame, fake text recognition and a fixed wall. Turn off on device.")]
+        [Tooltip("Editor only: fake camera frame, fake text and a fixed wall. Off = real passthrough camera (Link or the " +
+                 "Meta XR Simulator in the editor). Quest builds always use the real camera.")]
         [SerializeField] bool useSimulatedCamera = true;
-        [Tooltip("Canned translations. Turn off to call the real Hypa API (needs a key in hypa.local.json).")]
+        [Tooltip("Canned translations. Turn off to call the real Hypa API (needs a key in .env).")]
         [SerializeField] bool useSimulatedApi = true;
         [SerializeField] float simWallDistance = 1.0f;
 
@@ -33,6 +34,7 @@ namespace HypaLens
 
         LensController _lens; LensPlatform _p; IHypaLensApi _api;
         SimHypaApi _simApi; SimFrameSource _simFrames; SimPlanePlacer _simPlacer;
+        bool _simCam;
         SavedListStore _saved;
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _cam, _hud, _world;
@@ -53,6 +55,7 @@ namespace HypaLens
             _cam = cam.transform;
             _world = new GameObject("HypaLens World").transform;
             PinchPointer.EnsureExists();
+            _simWall = GameObject.Find("Sim Wall");
             _saved = new SavedListStore();
 
             _p = BuildPlatform();
@@ -74,7 +77,8 @@ namespace HypaLens
         LensPlatform BuildPlatform()
         {
             LensPlatform p = null;
-            if (useSimulatedCamera)
+            _simCam = useSimulatedCamera && Application.isEditor; // a device build never fakes the camera
+            if (_simCam)
             {
                 _simFrames = new SimFrameSource(); _simPlacer = new SimPlanePlacer();
                 p = new LensPlatform { Frames = _simFrames, Recognizer = new SimRecognizer(), Placer = _simPlacer };
@@ -82,7 +86,7 @@ namespace HypaLens
             else if (LensPlatform.Factory != null) p = LensPlatform.Factory();
             p = p ?? new LensPlatform();
             p.Frames = p.Frames ?? new DeviceFrameSource();
-            p.Recognizer = p.Recognizer ?? new UnwiredRecognizer();
+            p.Recognizer = p.Recognizer ?? new UnavailableRecognizer();
             p.Placer = p.Placer ?? new UnwiredPlacer();
             return p;
         }
@@ -186,8 +190,9 @@ namespace HypaLens
         int PlaceLabels(OcrResult ocr)
         {
             var meta = _lens.LastFrameMeta;
-            if (useSimulatedCamera) _simPlacer.SetWallFromPose(meta.CameraPose, simWallDistance);
+            if (_simCam) _simPlacer.SetWallFromPose(meta.CameraPose, simWallDistance);
             var placed = 0;
+
             foreach (var line in ocr.Lines)
                 foreach (var w in line.Words)
                 {
@@ -346,8 +351,14 @@ namespace HypaLens
 
         // ---------- Editor shortcuts ----------
 
+        // The flat "Sim Wall" backdrop is only for mouse testing with no XR. With a headset, Link or the Meta XR
+        // Simulator running, passthrough shows the real room, so the wall would just block it. Checked every frame
+        // because the XR session can start a few frames after the scene does.
+        GameObject _simWall;
+
         void Update()
         {
+            if (_simWall != null && _simWall.activeSelf && UnityEngine.XR.XRSettings.isDeviceActive) _simWall.SetActive(false);
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();
             if (Input.GetKeyDown(KeyCode.H)) ShowOnboarding(_onboarding == null);

@@ -34,10 +34,31 @@ namespace HypaLens
         public bool IsEmpty => Lines.Count == 0;
     }
 
+    /// <summary>Pinhole intrinsics in the captured image's pixels (origin top-left, y down).</summary>
     public readonly struct CameraIntrinsics
     {
         public readonly float Fx, Fy, Cx, Cy;
         public CameraIntrinsics(float fx, float fy, float cx, float cy) { Fx = fx; Fy = fy; Cx = cx; Cy = cy; }
+
+        /// <summary>
+        /// Converts sensor intrinsics (Meta Passthrough Camera API: focal length and principal point in sensor
+        /// pixels) into intrinsics for an image of <paramref name="image"/> pixels, which the camera produces by
+        /// centre-cropping the sensor to the image's aspect ratio and scaling. Mirrors MRUK's
+        /// PassthroughCameraAccess.ViewportPointToRay, but in the top-left/y-down pixel space OCR boxes use.
+        /// </summary>
+        public static CameraIntrinsics FromSensor(Vector2 focal, Vector2 principal, Vector2Int sensor, Vector2Int image)
+        {
+            var scale = new Vector2((float)image.x / sensor.x, (float)image.y / sensor.y);
+            scale /= Mathf.Max(scale.x, scale.y);
+            var crop = new Rect(sensor.x * (1f - scale.x) * 0.5f, sensor.y * (1f - scale.y) * 0.5f, sensor.x * scale.x, sensor.y * scale.y);
+            var ppUp = new Vector2(principal.x, sensor.y - principal.y); // MRUK's bottom-up principal point
+            var sx = image.x / crop.width;
+            var sy = image.y / crop.height;
+            return new CameraIntrinsics(
+                focal.x * sx, focal.y * sy,
+                (ppUp.x - crop.x) * sx,
+                (crop.y + crop.height - ppUp.y) * sy);
+        }
     }
 
     /// <summary>
@@ -47,6 +68,7 @@ namespace HypaLens
     public sealed class CapturedFrame : IDisposable
     {
         public int Width, Height;
+        /// <summary>RGBA pixels in Unity order: bottom row first (as Texture2D/AsyncGPUReadback return them).</summary>
         public Color32[] Pixels;
         public Pose CameraPose;          // world pose of the camera at the moment of capture
         public CameraIntrinsics Intrinsics;
