@@ -30,7 +30,11 @@ namespace HypaCore
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPos;
             go.transform.localScale = new Vector3(size.x, size.y, 1f);
-            go.GetComponent<Renderer>().material = NewMaterial(color);
+            var r = go.GetComponent<Renderer>();
+            r.material = NewMaterial(color);
+            // Transparent UI is sorted by distance, so a large panel behind off-centre buttons can be drawn over them.
+            // Panel backgrounds always draw first, buttons next, text (sortingOrder 1) last.
+            if (color == Panel) r.sortingOrder = -1;
             // The primitive's MeshCollider is one-sided: a hand ray arriving from behind (a hand held past the HUD,
             // common when seated) would pass straight through. A thin box is hit from either side.
             UnityEngine.Object.DestroyImmediate(go.GetComponent<Collider>());
@@ -46,6 +50,7 @@ namespace HypaCore
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPos + new Vector3(0, 0, -0.002f); // just in front of a panel
             var tm = go.AddComponent<TextMesh>();
+            go.GetComponent<MeshRenderer>().sortingOrder = 1; // above buttons and panels (see Quad)
             tm.font = DefaultFont;
             tm.fontSize = 64;
             // A TextMesh line is about characterSize * fontSize * 0.1 units tall. Tune visually if needed.
@@ -74,6 +79,65 @@ namespace HypaCore
 
         /// <summary>The label TextMesh of a button made by <see cref="Button"/>.</summary>
         public static TextMesh LabelOf(PinchTarget button) => button.transform.parent.GetComponentInChildren<TextMesh>();
+
+        static Mesh _disc;
+
+        /// <summary>A flat coloured circle of <paramref name="radius"/> metres, readable from the -Z side.</summary>
+        public static GameObject Disc(string name, Transform parent, Vector3 localPos, float radius, Color color, bool collider)
+        {
+            if (_disc == null)
+            {
+                const int n = 48;
+                var v = new Vector3[n + 1]; var t = new int[n * 3];
+                for (var i = 0; i < n; i++)
+                {
+                    var a = i * Mathf.PI * 2f / n;
+                    v[i + 1] = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f);
+                    t[i * 3] = 0; t[i * 3 + 1] = (i + 1) % n + 1; t[i * 3 + 2] = i + 1;
+                }
+                _disc = new Mesh { name = "Hypa Disc", vertices = v, triangles = t };
+                _disc.RecalculateNormals(); _disc.RecalculateBounds();
+            }
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+            go.transform.localScale = new Vector3(radius, radius, 1f);
+            go.AddComponent<MeshFilter>().sharedMesh = _disc;
+            go.AddComponent<MeshRenderer>().material = NewMaterial(color);
+            if (collider) go.AddComponent<BoxCollider>().size = new Vector3(2f, 2f, 0.02f);
+            return go;
+        }
+
+        /// <summary>
+        /// Round button: short pinch = <paramref name="onPress"/>, long pinch = <paramref name="onLongPress"/> (optional).
+        /// With an <paramref name="icon"/> (e.g. a logo) the image is shown in a child named "icon" and the label text
+        /// starts empty; otherwise the label is shown.
+        /// </summary>
+        public static PinchTarget RoundButton(string label, Transform parent, Vector3 localPos, float radius, Color color, Action onPress,
+            Action onLongPress = null, Texture2D icon = null)
+        {
+            var root = new GameObject("Btn " + label);
+            root.transform.SetParent(parent, false);
+            root.transform.localPosition = localPos;
+            Disc("ring", root.transform, new Vector3(0, 0, 0.001f), radius * 1.12f, new Color(1f, 1f, 1f, 0.85f), false);
+            var bg = Disc("bg", root.transform, Vector3.zero, radius, color, true);
+            if (icon != null)
+            {
+                var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * 1.3f, Color.white, false);
+                var m = img.GetComponent<Renderer>();
+                m.material.mainTexture = icon;
+                m.sortingOrder = 1;
+            }
+            Text(root.transform, icon != null ? "" : label, radius * 0.55f, Vector3.zero, Color.white);
+            var pt = bg.AddComponent<PinchTarget>();
+            pt.OnPinch = k =>
+            {
+                if (k == PinchKind.Short) onPress?.Invoke();
+                else if (k == PinchKind.Long) onLongPress?.Invoke();
+            };
+            pt.OnHover = on => pt.SetColor(on ? Hover : (Color?)null);
+            return pt;
+        }
 
         public static string Wrap(string s, int maxChars)
         {

@@ -3,17 +3,22 @@ using UnityEngine;
 namespace HypaCore.Quest
 {
     // Compiled only when the Meta XR Core SDK v207+ is installed (asmdef defineConstraints: HYPA_META_XR).
-    // STATUS: written against the OVRHand public API; NOT yet compiled against an installed SDK or run on a headset.
 
-    /// <summary>Hand-tracking pinch and pointer ray from OVRHand (index pinch). Picks whichever tracked hand is pinching.</summary>
+    /// <summary>
+    /// Quest pointer: hands first (index pinch, OVRHand pointer pose), controllers as the optional fallback
+    /// (pointer from the controller, index trigger = pinch). Whichever hand is pinching wins; otherwise the
+    /// first tracked hand; otherwise the controller in use.
+    /// </summary>
     public sealed class HandPinchInput : IPinchInput
     {
-        const float RayBackOffset = 0.25f; // metres
+        const float TriggerDown = 0.55f;
         OVRHand[] _hands;
+        OVRCameraRig _rig;
 
-        OVRHand Active()
+        OVRHand ActiveHand()
         {
-            if (_hands == null || _hands.Length == 0) _hands = Object.FindObjectsByType<OVRHand>(FindObjectsSortMode.None);
+            if (_hands == null || _hands.Length == 0 || _hands[0] == null)
+                _hands = Object.FindObjectsByType<OVRHand>(FindObjectsInactive.Exclude);
             OVRHand tracked = null;
             foreach (var h in _hands)
             {
@@ -24,23 +29,56 @@ namespace HypaCore.Quest
             return tracked;
         }
 
-        public bool IsPinching { get { var h = Active(); return h != null && h.GetFingerIsPinching(OVRHand.HandFinger.Index); } }
+        static OVRInput.Controller ActiveController()
+        {
+            var connected = OVRInput.GetConnectedControllers();
+            bool Has(OVRInput.Controller c) => (connected & c) == c && OVRInput.GetControllerPositionTracked(c);
+            var r = Has(OVRInput.Controller.RTouch); var l = Has(OVRInput.Controller.LTouch);
+            if (r && l) // the one whose trigger is pulled, else the right
+                return OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.LTouch) > TriggerDown &&
+                       OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch) <= TriggerDown
+                    ? OVRInput.Controller.LTouch : OVRInput.Controller.RTouch;
+            return r ? OVRInput.Controller.RTouch : l ? OVRInput.Controller.LTouch : OVRInput.Controller.None;
+        }
+
+        public bool IsPinching
+        {
+            get
+            {
+                var h = ActiveHand();
+                if (h != null) return h.GetFingerIsPinching(OVRHand.HandFinger.Index);
+                var c = ActiveController();
+                return c != OVRInput.Controller.None && OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, c) > TriggerDown;
+            }
+        }
 
         public bool TryGetRay(out Ray ray)
         {
-            var h = Active();
+            var h = ActiveHand();
             if (h != null && h.IsPointerPoseValid && h.PointerPose != null)
             {
-                // Start the ray a little behind the hand: seated UI sits within arm's reach, often level with the
-                // hand, and a ray that starts at the fingertips would skip anything at or just behind them.
-                var fwd = h.PointerPose.forward;
-                ray = new Ray(h.PointerPose.position - fwd * RayBackOffset, fwd);
+                ray = new Ray(h.PointerPose.position, h.PointerPose.forward);
                 return true;
             }
+
+            var c = ActiveController();
+            if (c != OVRInput.Controller.None)
+            {
+                if (_rig == null) _rig = Object.FindAnyObjectByType<OVRCameraRig>();
+                var space = _rig != null ? _rig.trackingSpace : null;
+                var pos = OVRInput.GetLocalControllerPosition(c);
+                var rot = OVRInput.GetLocalControllerRotation(c);
+                if (space != null) { pos = space.TransformPoint(pos); rot = space.rotation * rot; }
+                ray = new Ray(pos, rot * Vector3.forward);
+                return true;
+            }
+
             ray = default;
             return false;
         }
 
+        // No hover haptics: OVRInput vibration keeps running (up to 2 s) until stopped, and this input has no update
+        // loop to stop it. The highlighted button and the pointer colour are the hover feedback.
         public void Pulse() { }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

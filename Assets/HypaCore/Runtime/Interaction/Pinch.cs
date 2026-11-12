@@ -3,10 +3,11 @@ using UnityEngine;
 
 namespace HypaCore
 {
-    /// <summary>A pointer that can pinch: a tracked hand on Quest, the mouse in the editor.</summary>
+    /// <summary>A pointer that can pinch: a tracked hand or a controller on Quest, the mouse in the editor.</summary>
     public interface IPinchInput
     {
         bool IsPinching { get; }
+        /// <summary>Pointer ray starting AT the hand/controller (the pointer adds its own reach behind it).</summary>
         bool TryGetRay(out Ray ray);
         /// <summary>Small feedback on hover; no-op where unsupported.</summary>
         void Pulse();
@@ -102,8 +103,15 @@ namespace HypaCore
     {
         public static PinchPointer Instance { get; private set; }
         public float MaxDistance = 5f;
+        /// <summary>
+        /// Hand/controller rays are cast from this far behind the hand: seated UI sits within arm's reach, often level
+        /// with the hand, and a ray starting at the fingertips would skip anything at or just behind them.
+        /// </summary>
+        public float BackReach = 0.25f;
+        const float IdleRayLength = 1.2f;
         readonly PinchTracker _tracker = new PinchTracker();
         PinchTarget _hover, _pressed;
+        LineRenderer _line; Transform _cursor; Renderer _cursorR;
 
         public static PinchPointer EnsureExists()
         {
@@ -122,9 +130,21 @@ namespace HypaCore
         void Update()
         {
             var input = HypaInput.Current;
+            var device = !(input is MouseInput);
             PinchTarget hit = null;
-            if (input.TryGetRay(out var ray) && Physics.Raycast(ray, out var h, MaxDistance))
-                hit = h.collider.GetComponentInParent<PinchTarget>();
+            var hasRay = input.TryGetRay(out var ray);
+            var hitPoint = Vector3.zero; var hitSomething = false;
+            if (hasRay)
+            {
+                var back = device ? BackReach : 0f;
+                var cast = new Ray(ray.origin - ray.direction * back, ray.direction);
+                if (Physics.Raycast(cast, out var h, MaxDistance + back))
+                {
+                    hit = h.collider.GetComponentInParent<PinchTarget>();
+                    hitPoint = h.point; hitSomething = true;
+                }
+            }
+            DrawPointer(device && hasRay, ray, hitSomething, hitPoint, hit != null, input.IsPinching);
 
             if (hit != _hover)
             {
@@ -142,5 +162,53 @@ namespace HypaCore
         }
 
         bool _wasPinching;
+
+        // ---------- Visible pointer (hands and controllers; the mouse has its own cursor) ----------
+
+        void DrawPointer(bool show, Ray ray, bool hitSomething, Vector3 hitPoint, bool onTarget, bool pinching)
+        {
+            if (_line == null) BuildPointer();
+            _line.enabled = show;
+            _cursor.gameObject.SetActive(show && hitSomething);
+            if (!show) return;
+
+            var end = hitSomething ? hitPoint : ray.GetPoint(IdleRayLength);
+            // A target just behind the hand (inside BackReach) gets a short stub instead of a line pointing backwards.
+            if (Vector3.Dot(end - ray.origin, ray.direction) < 0.02f) end = ray.origin + ray.direction * 0.02f;
+            _line.SetPosition(0, ray.origin);
+            _line.SetPosition(1, end);
+            var col = pinching ? Ui.Accent : onTarget ? Ui.Hover : new Color(1f, 1f, 1f, 0.55f);
+            _line.startColor = new Color(col.r, col.g, col.b, 0f); // fades in from the hand
+            _line.endColor = col;
+
+            if (hitSomething)
+            {
+                var cam = Camera.main;
+                _cursor.position = hitPoint - ray.direction * 0.004f;
+                if (cam != null) _cursor.rotation = Quaternion.LookRotation(_cursor.position - cam.transform.position);
+                var size = (pinching ? 0.010f : 0.014f) * Mathf.Max(0.6f, Vector3.Distance(ray.origin, hitPoint));
+                _cursor.localScale = new Vector3(size, size, 1f);
+                _cursorR.material.color = col;
+            }
+        }
+
+        void BuildPointer()
+        {
+            var lineGo = new GameObject("Pointer Ray");
+            lineGo.transform.SetParent(transform, false);
+            _line = lineGo.AddComponent<LineRenderer>();
+            _line.positionCount = 2;
+            _line.useWorldSpace = true;
+            _line.startWidth = 0.003f; _line.endWidth = 0.002f;
+            _line.material = Ui.NewMaterial(Color.white);
+            _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _line.receiveShadows = false;
+            _line.enabled = false;
+
+            var c = Ui.Quad("Pointer Cursor", transform, Vector3.zero, Vector2.one, Color.white, false);
+            _cursor = c.transform;
+            _cursorR = c.GetComponent<Renderer>();
+            c.SetActive(false);
+        }
     }
 }

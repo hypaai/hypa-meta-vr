@@ -71,7 +71,7 @@ namespace HypaLens
             _ = LoadLanguages();
             if (AppRouter.Consume(AppRouter.LensSavedWords)) TogglePractice();
             else if (!LensPrefs.Onboarded) ShowOnboarding(true);
-            SetStatus("Look at some text, then pinch Capture.");
+            SetStatus("Pinch the round Hypa Lens button to translate text.");
         }
 
         LensPlatform BuildPlatform()
@@ -93,20 +93,69 @@ namespace HypaLens
 
         // ---------- HUD: head-locked, low in a narrow field of view, within arm's reach ----------
 
+        // ---------- Launcher: one round button opens everything (seated, within reach, out of the way) ----------
+
+        Transform _launcherMenu;
+        TextMesh _launcherLabel;
+        GameObject _launcherIcon;
+        /// <summary>Launcher logo: Assets/HypaLens/Resources/HypaLensLogo.png (square, transparent background). "Hypa" text until it exists.</summary>
+        const string LogoResource = "HypaLensLogo";
+
         void BuildHud()
         {
             _hud = new GameObject("HypaLens HUD").transform;
             _hud.SetParent(_cam, false);
             _hud.localPosition = new Vector3(0f, -0.17f, 0.6f);
-            Ui.Button("Capture", _hud, new Vector3(-0.21f, 0, 0), new Vector2(0.13f, 0.055f), Ui.Accent, () => _ = CaptureAsync());
-            _fromText = Ui.LabelOf(Ui.Button("From", _hud, new Vector3(-0.065f, 0, 0), new Vector2(0.15f, 0.055f), Ui.Muted, () => OpenPicker(true)));
-            _toText = Ui.LabelOf(Ui.Button("To", _hud, new Vector3(0.095f, 0, 0), new Vector2(0.15f, 0.055f), Ui.Muted, () => OpenPicker(false)));
-            Ui.Button("Saved", _hud, new Vector3(0.23f, 0, 0), new Vector2(0.10f, 0.055f), Ui.Muted, TogglePractice);
-            _status = Ui.Text(_hud, "", 0.018f, new Vector3(0f, 0.055f, 0), Color.white);
+            _status = Ui.Text(_hud, "", 0.017f, new Vector3(-0.05f, -0.04f, 0), Color.white); // left of the launcher
+
+            // Low right, inside arm's reach. Pinch = open the menu; hold the pinch = translate text straight away.
+            var launcher = new GameObject("Hypa Launcher").transform;
+            launcher.SetParent(_hud, false);
+            launcher.localPosition = new Vector3(0.24f, -0.04f, 0f);
+            var logo = Resources.Load<Texture2D>(LogoResource);
+            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, 0.032f, Ui.Accent,
+                ToggleLauncher, () => { ShowLauncher(false); _ = CaptureAsync(); }, logo);
+            _launcherLabel = Ui.LabelOf(launcherBtn);
+            _launcherIcon = launcherBtn.transform.parent.Find("icon")?.gameObject;
+
+            _launcherMenu = new GameObject("Lens Menu").transform;
+            _launcherMenu.SetParent(launcher, false);
+            var items = HypaShell.Instance != null ? 6 : 5;
+            const float w = 0.19f, h = 0.046f, gap = 0.008f;
+            var height = items * h + (items - 1) * gap + 0.024f;
+            _launcherMenu.localPosition = new Vector3(-0.12f, 0.045f + height * 0.5f, 0f); // above and left of the button
+            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), new Vector2(w + 0.024f, height), Ui.Panel, true);
+            var y = height * 0.5f - 0.012f - h * 0.5f;
+            void Item(string label, Color c, Action a, out TextMesh text)
+            {
+                text = Ui.LabelOf(Ui.Button(label, _launcherMenu, new Vector3(0, y, 0), new Vector2(w, h), c, () => { ShowLauncher(false); a(); }));
+                y -= h + gap;
+            }
+            Item("Translate text", Ui.Accent, () => _ = CaptureAsync(), out _);
+            Item("From", Ui.Muted, () => OpenPicker(true), out _fromText);
+            Item("To", Ui.Muted, () => OpenPicker(false), out _toText);
+            Item("Saved words", Ui.Muted, TogglePractice, out _);
+            Item("How it works", Ui.Muted, () => ShowOnboarding(true), out _);
+            if (HypaShell.Instance != null) Item("Apps", Ui.Muted, () => HypaShell.Instance.ToggleMenu(), out _);
+            _launcherMenu.gameObject.SetActive(false);
+
+            HypaShell.Instance?.SetMenuButtonVisible(false); // the launcher's "Apps" replaces the shell's Menu button here
             UpdateLanguageText();
         }
 
-        void SetStatus(string s) { if (_status != null) _status.text = Ui.Wrap(s, 60); }
+        void ToggleLauncher() => ShowLauncher(!_launcherMenu.gameObject.activeSelf);
+
+        void ShowLauncher(bool open)
+        {
+            if (_launcherMenu == null) return;
+            if (open) { _picker?.Close(); ShowOnboarding(false); if (_practice != null) { Destroy(_practice); _practice = null; } }
+            _launcherMenu.gameObject.SetActive(open);
+            // Open: the button reads "Close". Closed: the Hypa Lens logo (or "Hypa" if the logo isn't in the project).
+            if (_launcherIcon != null) _launcherIcon.SetActive(!open);
+            _launcherLabel.text = open ? "Close" : _launcherIcon != null ? "" : "Hypa";
+        }
+
+        void SetStatus(string s) { if (_status != null) _status.text = Ui.Wrap(s, 44); }
 
         void UpdateLanguageText()
         {
@@ -123,6 +172,9 @@ namespace HypaLens
         void OpenPicker(bool source)
         {
             _picker?.Close();
+            // Onboarding, practice and the picker share the spot above the HUD: show one at a time.
+            ShowOnboarding(false);
+            if (_practice != null) { Destroy(_practice); _practice = null; }
             if (_langs.Count == 0) { SetStatus("Loading languages... try again in a moment."); _ = LoadLanguages(); return; }
             _picker = new LanguagePicker(_hud, new Vector3(0f, 0.22f, -0.01f), source ? "Translate from" : "Translate to",
                 _langs, source ? _lens.SourceLanguage : _lens.TargetLanguage, source, name => _ = SetLanguage(source, name));
@@ -157,9 +209,9 @@ namespace HypaLens
             _onboarding = new GameObject("Onboarding");
             _onboarding.transform.SetParent(_hud, false);
             _onboarding.transform.localPosition = new Vector3(0f, 0.2f, 0f);
-            var bg = Ui.Quad("bg", _onboarding.transform, Vector3.zero, new Vector2(0.48f, 0.24f), Ui.Panel, true);
+            var bg = Ui.Quad("bg", _onboarding.transform, Vector3.zero, new Vector2(0.48f, 0.27f), Ui.Panel, true);
             Ui.Text(_onboarding.transform,
-                "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Pinch  Capture\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
+                "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Pinch the round Hypa Lens button, then Translate text\n    (or hold the pinch on it to capture straight away)\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nLanguages and saved words are in the same menu.\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
                 0.017f, Vector3.zero, Color.white);
             var pt = bg.AddComponent<PinchTarget>();
             pt.OnPinch = k => { if (k == PinchKind.Short) ShowOnboarding(false); };
@@ -319,6 +371,8 @@ namespace HypaLens
         void TogglePractice()
         {
             if (_practice != null) { Destroy(_practice); _practice = null; return; }
+            ShowOnboarding(false);
+            _picker?.Close();
             _deck = new PracticeDeck(_saved.Items);
             _practice = new GameObject("Practice");
             _practice.transform.SetParent(_hud, false);
@@ -370,6 +424,7 @@ namespace HypaLens
         {
             _cts.Cancel();
             _cts.Dispose();
+            HypaShell.Instance?.SetMenuButtonVisible(true);
             if (_hud != null) Destroy(_hud.gameObject);    // the HUD hangs off the camera, which the shell keeps alive
             if (_world != null) Destroy(_world.gameObject);
         }
