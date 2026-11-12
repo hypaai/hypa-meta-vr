@@ -1,0 +1,14 @@
+{
+  "name": "HypaStories.Editor",
+  "rootNamespace": "HypaStories.EditorTools",
+  "references": [ "HypaCore.Runtime", "HypaStories.Runtime" ],
+  "includePlatforms": [ "Editor" ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

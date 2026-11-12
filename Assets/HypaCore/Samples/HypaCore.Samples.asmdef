@@ -1,0 +1,14 @@
+{
+  "name": "HypaCore.Samples",
+  "rootNamespace": "HypaCore.Samples",
+  "references": [ "HypaCore.Runtime" ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
