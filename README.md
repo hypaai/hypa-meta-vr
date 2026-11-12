@@ -38,7 +38,7 @@ The key is never in the repo, the scenes, `StreamingAssets`, `Resources` or the 
 - **Alternatives:** the environment variable `HYPA_API_KEY`, or **Hypa > Create API Key File** (`hypa.local.json`, git-ignored).
   Lookup order: environment variables, then `.env`, then `hypa.local.json`.
 - **Quest (local builds):** push the same file to the app's data folder:
-  `adb push .env /sdcard/Android/data/<bundle id>/files/.env`
+  `adb push .env /sdcard/Android/data/ai.hypa.lens/files/.env`
 - **Judges' build:** set `baseUrl` to the private proxy (built in `hypa-v2`, not here); no key in the app.
 
 ```dotenv

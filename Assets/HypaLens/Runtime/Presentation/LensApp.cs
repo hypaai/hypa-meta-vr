@@ -85,7 +85,7 @@ namespace HypaLens
             }
             else if (LensPlatform.Factory != null) p = LensPlatform.Factory();
             p = p ?? new LensPlatform();
-            p.Frames = p.Frames ?? new DeviceFrameSource();
+            p.Frames = p.Frames ?? new UnavailableFrameSource();
             p.Recognizer = p.Recognizer ?? new UnavailableRecognizer();
             p.Placer = p.Placer ?? new UnwiredPlacer();
             return p;
@@ -301,11 +301,13 @@ namespace HypaLens
                 var r = await _lens.ResolveAsync(sel, _cts.Token, partial =>
                 {
                     if (version == _resultVersion && body != null) body.text = CardText(partial);
+                }, audio =>
+                {
+                    if (version == _resultVersion) Play(audio);
                 });
                 if (version != _resultVersion || body == null) return; // a newer selection replaced this card
                 body.text = CardText(r);
                 AddCardButtons(r);
-                Play(r.TargetAudio);
             }
             catch (OperationCanceledException) { }
             catch (Exception e)

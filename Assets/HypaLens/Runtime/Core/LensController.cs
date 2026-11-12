@@ -22,7 +22,9 @@ namespace HypaLens
         readonly ITextRecognizer _recognizer;
         readonly IHypaLensApi _api;
         readonly Func<bool> _isOnline;
-        readonly Dictionary<string, LensResult> _results = new Dictionary<string, LensResult>();
+        // Audio links expire after about an hour, so cached results expire a bit before that.
+        static readonly TimeSpan ResultLife = TimeSpan.FromMinutes(50);
+        readonly Dictionary<string, (LensResult result, DateTime at)> _results = new Dictionary<string, (LensResult, DateTime)>();
         readonly Dictionary<string, bool> _pairs = new Dictionary<string, bool>();
 
         /// <summary>Hypa language label, or null = auto-detect.</summary>
@@ -84,14 +86,18 @@ namespace HypaLens
         /// <paramref name="onTranslation"/> fires as soon as the translation is in (meaning/audio still loading).
         /// Throws LensException (Offline, UnsupportedPair, Api) for the required part.
         /// </summary>
-        public async Task<LensResult> ResolveAsync(Selection sel, CancellationToken ct, Action<LensResult> onTranslation = null)
+        public async Task<LensResult> ResolveAsync(Selection sel, CancellationToken ct, Action<LensResult> onTranslation = null,
+            Action<HypaSpeech> onTargetAudio = null)
         {
             if (!_isOnline()) throw new LensException(LensErrorKind.Offline);
 
             var src = SourceLanguage; var tgt = TargetLanguage;
             var cacheKey = sel.Text + "|" + src + "|" + tgt;
-            if (_results.TryGetValue(cacheKey, out var cached)) return cached;
-            var isWord = sel.Kind == SelectionKind.Word;
+            if (_results.TryGetValue(cacheKey, out var cached) && DateTime.UtcNow - cached.at < ResultLife)
+            {
+                if (cached.result.TargetAudio != null) onTargetAudio?.Invoke(cached.result.TargetAudio);
+                return cached.result;
+            }
 
             try
             {
@@ -114,7 +120,13 @@ namespace HypaLens
                 };
                 onTranslation?.Invoke(result);
 
-                var targetAudioTask = SoftAudio(() => _api.SpeakAsync(tr.Text, tgt, ct));
+                // Plays as soon as it's ready, without waiting for the meaning or the source audio.
+                var targetAudioTask = SoftAudio(async () =>
+                {
+                    var audio = await _api.SpeakAsync(tr.Text, tgt, ct);
+                    if (audio != null) onTargetAudio?.Invoke(audio);
+                    return audio;
+                });
                 meaningTask = meaningTask ?? (detected != null
                     ? Meaning(sel, detected, ct)
                     : Task.FromResult<(string, string)>((null, "Couldn't tell the source language. Pick it with \"From\" to see a meaning.")));
@@ -131,7 +143,7 @@ namespace HypaLens
                 if (result.SourceAudio == null && result.TargetAudio == null)
                     result.AudioNote = targetAudioTask.Result.Item2 ?? "Audio isn't available right now.";
 
-                _results[cacheKey] = result;
+                _results[cacheKey] = (result, DateTime.UtcNow);
                 return result;
             }
             catch (OperationCanceledException) { throw; }

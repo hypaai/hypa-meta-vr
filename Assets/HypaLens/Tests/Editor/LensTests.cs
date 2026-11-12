@@ -152,9 +152,23 @@ namespace HypaLens.Tests
             var c = Make(api);
             var sel = LensController.SelectWord(Capture(c).Lines[0].Words[0]);
             Run(c.ResolveAsync(sel, CancellationToken.None));
-            Run(c.ResolveAsync(sel, CancellationToken.None));
+            HypaSpeech replayed = null;
+            Run(c.ResolveAsync(sel, CancellationToken.None, null, a => replayed = a));
             Assert.AreEqual(1, api.Translates);
             Assert.AreEqual(1, api.PairChecks);
+            Assert.IsNotNull(replayed, "a cached result still plays its audio");
+        }
+
+        [Test] public void Resolve_PlaysTargetAudio_BeforeMeaningArrives()
+        {
+            var gate = new TaskCompletionSource<string>();
+            var c = Make(new FakeApi { LookUpGate = gate });
+            HypaSpeech played = null;
+            var task = c.ResolveAsync(LensController.SelectWord(Capture(c).Lines[0].Words[0]), CancellationToken.None, null, a => played = a);
+            Assert.IsNotNull(played, "target audio should play without waiting for the dictionary");
+            Assert.IsFalse(task.IsCompleted);
+            gate.SetResult("meaning");
+            Assert.AreEqual("meaning", Run(task).Meaning);
         }
 
         [Test] public void EveryErrorKind_HasAMessage()
@@ -211,8 +225,9 @@ namespace HypaLens.Tests
                 if (TranslateError != null) throw TranslateError;
                 return Task.FromResult(new HypaTranslation { Text = "T", DetectedLanguage = Detected });
             }
+            public TaskCompletionSource<string> LookUpGate;
             public Task<string> LookUpAsync(string term, string lang, CancellationToken ct)
-                => FailExtras ? throw new HypaException(HypaErrorKind.Server, "x") : Task.FromResult("meaning");
+                => FailExtras ? throw new HypaException(HypaErrorKind.Server, "x") : LookUpGate?.Task ?? Task.FromResult("meaning");
             public Task<HypaSpeech> SpeakAsync(string text, string lang, CancellationToken ct)
                 => FailExtras ? throw new HypaException(HypaErrorKind.Server, "x") : Task.FromResult(new HypaSpeech { AudioUrl = "https://x" });
         }
