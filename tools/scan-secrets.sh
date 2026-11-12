@@ -19,6 +19,7 @@ if git rev-parse HEAD >/dev/null 2>&1; then
   if git log -p --all 2>/dev/null | grep -niE "^\+.*($PATTERN)" | grep -v 'tools/scan-secrets.sh'; then fail=1; fi
 fi
 # forbidden file types
-if echo "$files" | grep -E '\.(keystore|jks|p12|apk|aab|env)$|(^|/)\.env' ; then fail=1; fi
+# (.env.example is the committed template with an empty key, so it is allowed)
+if echo "$files" | grep -E '\.(keystore|jks|p12|apk|aab|env)$|(^|/)\.env' | grep -vE '(^|/)\.env\.example$' ; then fail=1; fi
 [ $fail -eq 0 ] && echo "secret scan: clean" || echo "secret scan: FOUND POSSIBLE SECRETS, do not push"
 exit $fail

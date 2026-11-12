@@ -33,14 +33,17 @@ Each folder has its own assembly definitions. **Lens never references Stories an
 
 The key is never in the repo, the scenes, `StreamingAssets`, `Resources` or the APK.
 
-- **Editor:** **Hypa > Create API Key File** makes `hypa.local.json` at the project root (git-ignored). Fill in `apiKey`.
-  Or set the environment variable `HYPA_API_KEY`.
+- **Editor (recommended):** `cp .env.example .env` at the project root and set `HYPA_API_KEY`. `.env` is git-ignored;
+  only `.env.example` (no key) is committed.
+- **Alternatives:** the environment variable `HYPA_API_KEY`, or **Hypa > Create API Key File** (`hypa.local.json`, git-ignored).
+  Lookup order: environment variables, then `.env`, then `hypa.local.json`.
 - **Quest (local builds):** push the same file to the app's data folder:
-  `adb push hypa.local.json /sdcard/Android/data/<bundle id>/files/hypa.local.json`
+  `adb push .env /sdcard/Android/data/<bundle id>/files/.env`
 - **Judges' build:** set `baseUrl` to the private proxy (built in `hypa-v2`, not here); no key in the app.
 
-```json
-{ "apiKey": "", "baseUrl": "https://api.hypaintelligence.com" }
+```dotenv
+HYPA_API_KEY=
+HYPA_BASE_URL=https://api.hypaintelligence.com
 ```
 
 Free tools (`list_languages`, `check_language_pair`) work without a key. Translation, speech and the dictionary need one.
@@ -73,8 +76,10 @@ See [docs/api-contract.md](docs/api-contract.md) for what has been verified live
 | HypaCore REST client (`mt`, `tts`, `asr`, `chat`, `dictionary`, `ocr`) | Generic client built; field names unverified |
 | Audio player (queue, fade stop, volume), settings, languages, shell, Stories stub | Built, not yet run in Unity |
 | Lens flow in the simulator | Built, not yet run in Unity |
-| Hands (`OVRHand`), MRUK placement, passthrough frame grab | Written; need compile fixes against the installed SDK and a headset |
-| On-headset text recognition | Not started: needs an engine decision (D2) |
+| Hands (`OVRHand`), MRUK placement | Compiles against Meta XR SDK v209; runs in the Meta XR Simulator |
+| Passthrough camera frames (MRUK `PassthroughCameraAccess`) | Runs in the Meta XR Simulator (frame, pose and intrinsics); not yet run on a headset |
+| On-headset text recognition (Google ML Kit, bundled Latin model) | Java bridge in `Assets/HypaLens/Plugins/Android/HypaMlKit.androidlib`; not yet built into an APK or run on a headset |
+| Server text recognition fallback | Not used: Hypa's `extract_text_from_image` returns no word positions, which HYP-163 requires for a fallback |
 | 60 fps, 3 rooms x 3 languages, Competition channel | Needs a headset |
 
-Nothing here has been compiled in Unity yet: the first person to open the project should fix compile errors and commit the result.
+The project compiles in Unity 6000.6.8f1 and all EditMode tests pass. Anything marked "not yet run on a headset" still needs a Quest 3 test.

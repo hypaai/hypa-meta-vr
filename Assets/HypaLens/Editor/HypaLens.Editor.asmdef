@@ -1,0 +1,14 @@
+{
+  "name": "HypaLens.Editor",
+  "rootNamespace": "HypaLens.EditorTools",
+  "references": [ "HypaCore.Runtime", "HypaLens.Runtime" ],
+  "includePlatforms": [ "Editor" ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

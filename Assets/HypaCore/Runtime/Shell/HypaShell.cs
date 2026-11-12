@@ -43,6 +43,7 @@ namespace HypaCore
         [SerializeField] bool openLastModeOnStart = true;
 
         Transform _cam, _menu, _practice;
+        GameObject _menuButton;
         TextMesh _status;
 
         void Awake()
@@ -75,7 +76,7 @@ namespace HypaCore
             var anchor = new GameObject("Hand Menu").transform;
             anchor.SetParent(_cam, false);
             anchor.localPosition = new Vector3(-0.30f, -0.22f, 0.55f); // low-left, inside reach and a narrow FOV
-            Ui.Button("Menu", anchor, Vector3.zero, new Vector2(0.10f, 0.05f), Ui.Muted, ToggleMenu);
+            _menuButton = Ui.Button("Menu", anchor, Vector3.zero, new Vector2(0.10f, 0.05f), Ui.Muted, ToggleMenu).transform.parent.gameObject;
             _menu = new GameObject("Menu Panel").transform;
             _menu.SetParent(anchor, false);
             _menu.localPosition = new Vector3(0.12f, 0.16f, 0f);
@@ -100,7 +101,11 @@ namespace HypaCore
             _menu.gameObject.SetActive(false);
         }
 
-        void ToggleMenu() => _menu.gameObject.SetActive(!_menu.gameObject.activeSelf);
+        /// <summary>Opens/closes the app menu (modes, practice, API test). Modes with their own launcher call this.</summary>
+        public void ToggleMenu() { if (_menu != null) _menu.gameObject.SetActive(!_menu.gameObject.activeSelf); }
+
+        /// <summary>A mode with its own launcher hides the shell's Menu button (and shows it again when it closes).</summary>
+        public void SetMenuButtonVisible(bool visible) { if (_menuButton != null) _menuButton.SetActive(visible); }
         void TogglePractice() => _practice.gameObject.SetActive(!_practice.gameObject.activeSelf);
 
         public void Open(string scene)

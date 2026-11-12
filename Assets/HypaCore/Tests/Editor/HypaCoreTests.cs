@@ -23,6 +23,15 @@ namespace HypaCore.Tests
 
         // ---------- Transport / MCP parsing ----------
 
+        [Test] public void Env_ParsesKeysQuotesCommentsAndExport()
+        {
+            var d = HypaConfig.ParseEnv("# comment\nHYPA_API_KEY=\"abc 123\"\r\nexport HYPA_BASE_URL=https://x.test # note\nEMPTY=\nbad line\n");
+            Assert.AreEqual("abc 123", d["HYPA_API_KEY"]);
+            Assert.AreEqual("https://x.test", d["HYPA_BASE_URL"]);
+            Assert.AreEqual("", d["EMPTY"]);
+            Assert.AreEqual(3, d.Count);
+        }
+
         [Test] public void Sse_ExtractsDataPayloads_AndSkipsDone()
         {
             var p = HypaHttp.JsonPayloads("event: message\ndata: {\"a\":1}\n\ndata: [DONE]\n\n");

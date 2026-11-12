@@ -33,6 +33,6 @@ Other tools listed: `translate_document`, `speech_to_text`, `process_voice_messa
 
 ## Rules that follow from it
 
-- `extract_text_from_image` returns text only, with no positions, and needs a full image upload. It can't pin labels and breaks the no-full-frames rule, so the Lens doesn't use it.
+- `extract_text_from_image` returns text only, with **no positions** (output `text`, `provider?`, `model?`; re-checked via tools/list 2026-11-12), and needs an image upload. HYP-163 allows it only as a fallback that returns positions, and forbids uploading frames, so the Lens doesn't use it. On-headset recognition is Google ML Kit.
 - Keyless calls run on a shared, capped anonymous budget. Only the free tools are called without a key; paid tools require a key (or the judges' proxy via `baseUrl`).
 - Audio links expire after about an hour: play them, never save them. Saved words re-request audio.

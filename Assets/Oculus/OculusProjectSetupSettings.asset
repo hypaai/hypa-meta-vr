@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 939e07d58bc74256b6cb58d86fe35a56, type: 3}
+  m_Name: OculusProjectSetupSettings
+  m_EditorClassIdentifier: Oculus.VR.Editor::OVRProjectSetupSettings
+  boolProperties:
+    keys:
+    - Meta.XR.SDK.6ec9abd7e02283dc0ddb8fdd69cd52ca.MarkedAsFixed.Standalone
+    - Meta.XR.SDK.0bb6bcddc8af78803c3fd1e7a3a6dcd4.MarkedAsFixed.Standalone
+    - Meta.XR.SDK.6ec9abd7e02283dc0ddb8fdd69cd52ca.MarkedAsFixed.Android
+    - Meta.XR.SDK.0bb6bcddc8af78803c3fd1e7a3a6dcd4.MarkedAsFixed.Android
+    values: 01010101y
+  intProperties:
+    keys: []
+    values: 
