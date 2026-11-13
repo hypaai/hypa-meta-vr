@@ -123,6 +123,139 @@ namespace HypaLens.Tests
             Assert.AreEqual("From: Auto", LensApp.LanguageLabel("From: ", "Auto", 0.02f, 0.05f), "nothing to drop: left for the ellipsis");
         }
 
+        // ---------- Live mode: dwell trigger, region crop, label reuse ----------
+
+        [Test] public void Dwell_FiresAfterASteadySecond_ThenAtMostOncePerSecond()
+        {
+            var d = new DwellTrigger { DwellSeconds = 1f, MinInterval = 1f, RadiusPx = 120f };
+            var p = new Vector2(600, 400);
+            Assert.IsFalse(d.Update(p, false, 0));
+            Assert.IsFalse(d.Update(p + new Vector2(50, 0), false, 0.5), "small wobble keeps the dwell");
+            Assert.IsFalse(d.Update(p, false, 0.9), "not yet");
+            Assert.IsTrue(d.Update(p, false, 1.0), "a second on the same spot");
+            Assert.IsFalse(d.Update(p, false, 1.5), "throttled");
+            Assert.IsTrue(d.Update(p, false, 2.0), "still looking: one more run a second later");
+            Assert.IsFalse(d.Update(p, true, 3.0), "never while a run is in progress");
+            Assert.IsTrue(d.Update(p, false, 3.1), "and as soon as it is free");
+        }
+
+        [Test] public void Dwell_MovingOrLosingTheAim_StartsOver()
+        {
+            var d = new DwellTrigger { DwellSeconds = 1f, MinInterval = 1f, RadiusPx = 120f };
+            d.Update(new Vector2(100, 100), false, 0);
+            d.Update(new Vector2(700, 100), false, 0.8); // moved to new text
+            Assert.IsFalse(d.Update(new Vector2(700, 100), false, 1.2), "the second has to pass on the new spot");
+            Assert.IsTrue(d.Update(new Vector2(700, 100), false, 1.8));
+            d.Update(null, false, 2.5); // hand lost
+            Assert.IsFalse(d.Update(new Vector2(700, 100), false, 3.0), "back again: starts over");
+            Assert.IsTrue(d.Update(new Vector2(700, 100), false, 4.0));
+        }
+
+        static CapturedFrame Frame4x3()
+        {
+            // pixel value encodes its image position: r = x, g = y (top-down). Stored bottom row first, as Unity does.
+            var px = new Color32[12];
+            for (var yTop = 0; yTop < 3; yTop++)
+                for (var x = 0; x < 4; x++)
+                    px[(2 - yTop) * 4 + x] = new Color32((byte)x, (byte)yTop, 0, 255);
+            return new CapturedFrame { Width = 4, Height = 3, Pixels = px, Intrinsics = new CameraIntrinsics(4, 4, 2, 1.5f) };
+        }
+
+        [Test] public void Crop_TakesTheRightPixels_InUnityRowOrder_AndRemembersWhereItCameFrom()
+        {
+            var c = FrameCrop.Crop(Frame4x3(), new FrameRect(1, 1, 2, 2));
+            Assert.AreEqual((2, 2, 1, 1, 4, 3), (c.Width, c.Height, c.CropX, c.CropY, c.FullWidth, c.FullHeight));
+            Assert.IsTrue(c.IsCrop);
+            // bottom row of the crop = image row 2; top row = image row 1
+            Assert.AreEqual(new Color32(1, 2, 0, 255), c.Pixels[0]); Assert.AreEqual(new Color32(2, 2, 0, 255), c.Pixels[1]);
+            Assert.AreEqual(new Color32(1, 1, 0, 255), c.Pixels[2]); Assert.AreEqual(new Color32(2, 1, 0, 255), c.Pixels[3]);
+            Assert.IsNull(FrameCrop.Crop(Frame4x3(), new FrameRect(4, 0, 2, 2)), "a region outside the frame is nothing");
+            var sim = FrameCrop.Crop(new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0] }, new FrameRect(100, 100, 200, 200));
+            Assert.AreEqual(0, sim.Pixels.Length, "a pixel-less simulator frame still crops its geometry");
+        }
+
+        [Test] public void Crop_RegionAroundTheAim_StaysInsideTheFrame_AndBoxesComeBackInFullFramePixels()
+        {
+            var r = FrameCrop.RegionAround(new Vector2(0, 0), 1280, 960, 0.4f);
+            Assert.AreEqual((0f, 0f, 512f, 384f), (r.X, r.Y, r.Width, r.Height), "clamped to the top-left corner");
+            r = FrameCrop.RegionAround(new Vector2(640, 480), 1280, 960, 0.4f);
+            Assert.AreEqual((384f, 288f), (r.X, r.Y), "centred");
+            var ocr = new OcrResult();
+            var line = new OcrLine { Text = "a b", Box = new FrameRect(10, 20, 100, 30) };
+            line.Words.Add(new OcrWord { Text = "a", Box = new FrameRect(10, 20, 40, 30), Line = line });
+            ocr.Lines.Add(line);
+            FrameCrop.OffsetBack(ocr, new CapturedFrame { CropX = 300, CropY = 200, FullWidth = 1280, FullHeight = 960 });
+            Assert.AreEqual((310f, 220f), (line.Words[0].Box.X, line.Words[0].Box.Y));
+            Assert.AreEqual((310f, 220f), (line.Box.X, line.Box.Y));
+            Assert.AreEqual(1280, ocr.FrameWidth);
+        }
+
+        [Test] public void Projector_WorldToPixel_IsTheInverseOfPixelToWorldRay()
+        {
+            var k = new CameraIntrinsics(900, 900, 640, 480);
+            var pose = new Pose(new Vector3(0.3f, 1.6f, 0), Quaternion.Euler(10, 40, 0));
+            var ray = FrameProjector.PixelToWorldRay(k, pose, new Vector2(200, 700));
+            Assert.IsTrue(FrameProjector.WorldToPixel(k, pose, ray.GetPoint(1.7f), out var px));
+            Assert.That(Vector2.Distance(px, new Vector2(200, 700)), Is.LessThan(0.01f));
+            Assert.IsFalse(FrameProjector.WorldToPixel(k, pose, pose.position - pose.rotation * Vector3.forward, out _), "behind the camera");
+        }
+
+        [Test] public void LiveLabels_ReuseTheSameWordInTheSamePlace_NewOtherwise()
+        {
+            var s = new LiveLabelSet<string> { MatchDistance = 0.06f };
+            s.BeginRun(); s.Add("L1", "Fish", new Vector3(1, 1, 2), 0);
+            s.BeginRun();
+            Assert.AreEqual("L1", s.Match("fish", new Vector3(1.03f, 1, 2), 1), "same word within 6 cm: reuse (case-insensitive)");
+            Assert.IsNull(s.Match("Fish", new Vector3(1.5f, 1, 2), 1), "same word elsewhere: a new label");
+            Assert.IsNull(s.Match("Rice", new Vector3(1, 1, 2), 1), "different word: a new label");
+            Assert.IsNull(s.Match("fish", new Vector3(1.03f, 1, 2), 1), "a label is matched once per run");
+        }
+
+        [Test] public void LiveLabels_DroppedAfterThreeLooksWithoutTheWord_OrTwoSecondsOutOfView()
+        {
+            var s = new LiveLabelSet<string> { MissLimit = 3, KeepOutOfViewSeconds = 2f };
+            s.Add("A", "Open", Vector3.zero, 0); s.Add("B", "Day", new Vector3(5, 0, 0), 0);
+            Func<Vector3, bool> coversA = p => p.x < 1f;
+            for (var i = 0; i < 2; i++) { s.BeginRun(); Assert.IsEmpty(s.EndRun(coversA), "two misses are forgiven"); }
+            s.BeginRun(); Assert.AreEqual("A", s.Match("Open", Vector3.zero, 1), "found again: misses reset");
+            Assert.IsEmpty(s.EndRun(coversA));
+            for (var i = 0; i < 2; i++) { s.BeginRun(); s.EndRun(coversA); }
+            s.BeginRun();
+            Assert.AreEqual(new[] { "A" }, s.EndRun(coversA), "third miss in a row: dropped; B was never looked at");
+            Assert.IsEmpty(s.Tick(p => true, 1.5), "in view: kept");
+            Assert.IsEmpty(s.Tick(p => false, 3.0), "out of view for 1.5 s: kept");
+            Assert.AreEqual(new[] { "B" }, s.Tick(p => false, 3.6), "out of view for over 2 s: dropped");
+            Assert.AreEqual(0, s.Count);
+        }
+
+        [Test] public void SimRecognizer_CroppedFrame_SeesOnlyWordsInsideTheCrop_InCropPixels()
+        {
+            var full = Run(new SimRecognizer().RecognizeAsync(new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0] }, CancellationToken.None));
+            var market = full.Lines[0].Words[3]; // "Welcome to the market"
+            Assert.AreEqual("market", market.Text);
+            var crop = FrameCrop.Crop(new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0] },
+                new FrameRect(market.Box.X - 10, market.Box.Y - 10, market.Box.Width + 20, market.Box.Height + 20));
+            var part = Run(new SimRecognizer().RecognizeAsync(crop, CancellationToken.None));
+            Assert.AreEqual(1, part.Lines.Count);
+            Assert.AreEqual(1, part.Lines[0].Words.Count, "only the word inside the crop");
+            Assert.AreEqual("market", part.Lines[0].Words[0].Text);
+            Assert.AreEqual(10f, part.Lines[0].Words[0].Box.X, 0.01f, "in the crop's own pixels");
+        }
+
+        [Test] public void Capture_WithRegion_ReturnsBoxesInFullFramePixels()
+        {
+            var c = Make();
+            var all = Capture(c);
+            var fish = all.Lines[1].Words[1]; // "Fresh fish and rice"
+            var region = new FrameRect(fish.Box.X - 5, fish.Box.Y - 5, fish.Box.Width + 10, fish.Box.Height + 10);
+            var ocr = Run(c.CaptureAsync(CancellationToken.None, region));
+            Assert.AreEqual(1, ocr.Lines.Count);
+            Assert.AreEqual("fish", ocr.Lines[0].Words[0].Text);
+            Assert.AreEqual(fish.Box.X, ocr.Lines[0].Words[0].Box.X, 0.01f, "same place as in the full frame");
+            Assert.AreEqual(1280, c.LastFrameMeta.Width, "the frame meta is the full frame");
+            Assert.AreEqual(LensErrorKind.NoTextFound, KindOf(() => c.CaptureAsync(CancellationToken.None, new FrameRect(0, 0, 50, 50))), "a patch with no text");
+        }
+
         // ---------- HUD placement: stays put, re-centres only after a big turn, never while in use ----------
 
         static Pose Settle(LazyFollow f, Vector3 head, Quaternion rot, Pose p, bool hold = false)

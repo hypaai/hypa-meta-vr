@@ -41,14 +41,25 @@ namespace HypaLens
             _isOnline = isOnline ?? (() => true);
         }
 
-        /// <summary>Capture one frame and recognise text. Throws LensException (NoTextFound, PermissionDenied, ...).</summary>
-        public async Task<OcrResult> CaptureAsync(CancellationToken ct)
+        /// <summary>
+        /// Capture one frame and recognise text. With a <paramref name="region"/> (live mode) only that part of the
+        /// frame is recognised, and the boxes come back in full-frame pixels. Throws LensException (NoTextFound,
+        /// PermissionDenied, ...).
+        /// </summary>
+        public async Task<OcrResult> CaptureAsync(CancellationToken ct, FrameRect? region = null)
         {
             CapturedFrame frame = null;
             try
             {
                 frame = await _frames.CaptureAsync(ct);
-                var ocr = await Task.Run(() => _recognizer.RecognizeAsync(frame, ct), ct);
+                var toRead = frame;
+                if (region != null && frame.Width > 0)
+                {
+                    toRead = FrameCrop.Crop(frame, region.Value);
+                    if (toRead == null) throw new LensException(LensErrorKind.NoTextFound);
+                }
+                var ocr = await Task.Run(() => _recognizer.RecognizeAsync(toRead, ct), ct);
+                if (toRead != frame) FrameCrop.OffsetBack(ocr, toRead);
                 if (ocr == null || ocr.IsEmpty) throw new LensException(LensErrorKind.NoTextFound);
 
                 LastFrameMeta = new CapturedFrame

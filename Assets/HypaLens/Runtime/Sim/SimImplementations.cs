@@ -27,7 +27,10 @@ namespace HypaLens.Sim
         }
     }
 
-    /// <summary>A fake menu laid out like a real photo: word and line boxes in frame pixels.</summary>
+    /// <summary>
+    /// A fake menu laid out like a real photo: word and line boxes in frame pixels. The menu is laid out on the full
+    /// frame; a cropped frame (live mode) sees only the words inside the crop, in the crop's own pixels, as ML Kit would.
+    /// </summary>
     public sealed class SimRecognizer : ITextRecognizer
     {
         static readonly string[] Menu = { "Welcome to the market", "Fresh fish and rice", "Please pay at the counter", "Open every day" };
@@ -36,7 +39,9 @@ namespace HypaLens.Sim
         {
             await Task.Delay(120, ct);
             var r = new OcrResult { FrameWidth = Math.Max(frame.Width, 1), FrameHeight = frame.Height };
-            if (frame.Width == 0) return r;
+            var fullW = frame.FullWidth > 0 ? frame.FullWidth : frame.Width;
+            if (fullW == 0) return r;
+            var crop = frame.IsCrop ? new FrameRect(frame.CropX, frame.CropY, frame.Width, frame.Height) : new FrameRect(0, 0, fullW, frame.FullHeight > 0 ? frame.FullHeight : frame.Height);
 
             const float wordH = 60f, charW = 30f, gap = 24f, top = 260f, lineGap = 110f;
             for (var li = 0; li < Menu.Length; li++)
@@ -44,16 +49,18 @@ namespace HypaLens.Sim
                 var words = Menu[li].Split(' ');
                 var total = -gap;
                 foreach (var w in words) total += w.Length * charW + gap;
-                var x = (frame.Width - total) * 0.5f;
+                var x = (fullW - total) * 0.5f;
                 var y = top + li * lineGap;
-                var line = new OcrLine { Text = Menu[li], Box = new FrameRect(x, y, total, wordH) };
+                var line = new OcrLine { Text = Menu[li], Box = new FrameRect(x - crop.X, y - crop.Y, total, wordH) };
                 foreach (var w in words)
                 {
                     var ww = w.Length * charW;
-                    line.Words.Add(new OcrWord { Text = w, Box = new FrameRect(x, y, ww, wordH), Line = line });
+                    var box = new FrameRect(x, y, ww, wordH);
+                    if (FrameCrop.Contains(crop, box.Center))
+                        line.Words.Add(new OcrWord { Text = w, Box = new FrameRect(x - crop.X, y - crop.Y, ww, wordH), Line = line });
                     x += ww + gap;
                 }
-                r.Lines.Add(line);
+                if (line.Words.Count > 0) r.Lines.Add(line);
             }
             return r;
         }
@@ -134,11 +141,13 @@ namespace HypaLens.Sim
     public sealed class SimPlanePlacer : ISurfacePlacer
     {
         Vector3 _point, _normal = Vector3.back;
+        public bool HasWall { get; private set; }
         public void SetWallFromPose(Pose p, float distance)
         {
             var fwd = p.rotation * Vector3.forward;
             _normal = -fwd;
             _point = p.position + fwd * distance;
+            HasWall = true;
         }
         public bool TryPlace(Ray ray, out Vector3 position, out Vector3 normal)
         {

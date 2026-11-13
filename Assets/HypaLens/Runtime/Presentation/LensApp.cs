@@ -15,6 +15,21 @@ namespace HypaLens
         public PinchTarget Target;
     }
 
+    /// <summary>A new label eases in (scale 0.6 to 1 over a few frames) instead of popping, so live mode never flickers.</summary>
+    public sealed class LabelPop : MonoBehaviour
+    {
+        public float Seconds = 0.18f;
+        float _t;
+        void OnEnable() { _t = 0f; transform.localScale = Vector3.one * 0.6f; }
+        void Update()
+        {
+            _t += Time.unscaledDeltaTime;
+            var k = Mathf.Clamp01(_t / Seconds);
+            transform.localScale = Vector3.one * Mathf.LerpUnclamped(0.6f, 1f, 1f - (1f - k) * (1f - k)); // ease out
+            if (k >= 1f) enabled = false;
+        }
+    }
+
     /// <summary>
     /// Minimum touch-target sizes for simulator hands (metres). Pinching with mouse-driven
     /// simulator hands is imprecise, so menu targets stay well above the 0.04 m pinchable floor.
@@ -163,6 +178,8 @@ namespace HypaLens
     /// <summary>
     /// Lens scene entry point. Builds the HUD, word labels and result card at runtime; input comes from HypaCore's
     /// PinchPointer (hands on Quest, mouse in the editor).
+    /// Live mode (menu toggle, or L in the editor): rest the hand pointer or head on text for a second and that part of
+    /// the view is recognised (one run a second at most); labels are reused while the text stays in view.
     /// Editor keys: Space = capture, hold left mouse = pinch (&gt; 0.6 s = sentence), O = offline, N = no text, H = help.
     /// With the Meta XR Simulator running, the hand aims and pinches as on the headset; the left mouse button also
     /// pinches, and P switches aiming to the mouse (for webcam hands, which pinch well but aim badly).
@@ -188,7 +205,7 @@ namespace HypaLens
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _cam, _hud, _world;
         TextMesh _status; GameObject _statusBg;
-        PinchTarget _fromBtn, _toBtn;
+        PinchTarget _fromBtn, _toBtn, _liveBtn;
         GameObject _onboarding, _card, _practice;
         LanguagePicker _picker;
         PracticeDeck _deck; TextMesh _deckText;
@@ -321,7 +338,7 @@ namespace HypaLens
             // A compact grid above-left of the button, so every item is one small hand movement away.
             _launcherMenu = new GameObject("Lens Menu").transform;
             _launcherMenu.SetParent(launcher, false);
-            var items = HypaShell.Instance != null ? 6 : 5;
+            var items = HypaShell.Instance != null ? 7 : 6;
             const float w = LensTouch.MenuButtonW, h = LensTouch.MenuButtonH, gap = LensTouch.MenuGap, pad = 0.012f;
             const int cols = LensTouch.MenuColumns;
             var size = MenuLayout.PanelSize(items, cols, w, h, gap, pad);
@@ -338,6 +355,7 @@ namespace HypaLens
                 n++;
             }
             Item("Translate text", Ui.Accent, () => _ = CaptureAsync(), out _);
+            Item("Live: off", Ui.Muted, ToggleLive, out _liveBtn);
             Item("From", Ui.Muted, () => OpenPicker(true), out _fromBtn);
             Item("To", Ui.Muted, () => OpenPicker(false), out _toBtn);
             Item("Saved words", Ui.Muted, TogglePractice, out _);
@@ -458,13 +476,13 @@ namespace HypaLens
             _onboarding.transform.localPosition = new Vector3(0f, 0.2f, 0f);
             var bg = Ui.Quad("bg", _onboarding.transform, Vector3.zero, new Vector2(0.48f, 0.27f), Ui.Panel, true);
             Ui.Text(_onboarding.transform,
-                "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Point at the round Hypa Lens button, then pinch Translate text\n    (or hold the pinch on the button to capture straight away)\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nLanguages and saved words are in the same menu.\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
+                "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Point at the round Hypa Lens button, then pinch Translate text\n    (or hold the pinch on the button to capture straight away)\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nLive mode (in the menu): rest your pointer on text for a second instead.\nLanguages and saved words are in the same menu.\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
                 0.017f, Vector3.zero, Color.white);
             var pt = bg.AddComponent<PinchTarget>();
             pt.OnPinch = k => { if (k == PinchKind.Short) ShowOnboarding(false); };
         }
 
-        // ---------- Capture ----------
+        // ---------- Capture (photo mode: one pinch, the whole view) ----------
 
         async Task CaptureAsync()
         {
@@ -486,11 +504,92 @@ namespace HypaLens
             finally { _busy = false; }
         }
 
-        int PlaceLabels(OcrResult ocr)
+        // ---------- Live mode: rest the pointer (or head) on text and it becomes pinchable ----------
+
+        const float LiveRegionFraction = 0.4f; // of the frame, around the aim: smaller image, faster recognition
+        bool _live;
+        readonly DwellTrigger _dwell = new DwellTrigger();
+        readonly LiveLabelSet<WordLabel> _liveLabels = new LiveLabelSet<WordLabel>();
+        Vector2Int _frameSize = new Vector2Int(1280, 960); // until the first frame tells us
+
+        public bool IsLive => _live;
+
+        void ToggleLive()
+        {
+            SetLive(!_live);
+            SetStatus(_live
+                ? "Live mode: rest your hand pointer (or just look) on text for a second and it becomes pinchable."
+                : "Live mode off. Pinch Translate text to capture.");
+        }
+
+        void SetLive(bool on)
+        {
+            _live = on;
+            _dwell.Reset();
+            if (_liveBtn != null) Ui.SetLabel(_liveBtn, on ? "Live: on" : "Live: off");
+            if (on) { ShowOnboarding(false); ClearLabels(); CloseCard(); }
+            else _liveLabels.Clear(); // labels stay on the walls as photo-mode labels
+        }
+
+        void LiveTick()
+        {
+            var now = Time.realtimeSinceStartupAsDouble;
+            var region = LiveRegion(out var aim);
+            if (_dwell.Update(region != null ? aim : (Vector2?)null, _busy, now) && region != null) _ = LiveCaptureAsync(region.Value);
+            foreach (var gone in _liveLabels.Tick(InView, now)) RemoveLabel(gone);
+        }
+
+        bool InView(Vector3 p)
+        {
+            var d = p - _cam.position;
+            return d.sqrMagnitude < 25f && Vector3.Angle(_cam.forward, d) < 50f;
+        }
+
+        /// <summary>The part of the next frame to read: around where the hand pointer (or the head, with no hand) rests.</summary>
+        FrameRect? LiveRegion(out Vector2 aimPx)
+        {
+            aimPx = default;
+            if (!HypaInput.Current.TryGetRay(out var aim)) aim = new Ray(_cam.position, _cam.forward);
+            var head = new Pose(_cam.position, _cam.rotation);
+            if (_simCam && !_simPlacer.HasWall) _simPlacer.SetWallFromPose(head, simWallDistance);
+            if (!_p.Placer.TryPlace(aim, out var hit, out _)) hit = aim.GetPoint(1.5f);
+            var k = _lens.LastFrameMeta != null ? _lens.LastFrameMeta.Intrinsics : FrameCrop.ApproxIntrinsics(_frameSize);
+            if (!FrameProjector.WorldToPixel(k, head, hit, out aimPx)) return null;
+            return FrameCrop.RegionAround(aimPx, _frameSize.x, _frameSize.y, LiveRegionFraction);
+        }
+
+        async Task LiveCaptureAsync(FrameRect region)
+        {
+            if (_busy) return;
+            _busy = true;
+            try
+            {
+                var ocr = await _lens.CaptureAsync(_cts.Token, region);
+                PlaceLabels(ocr, region);
+            }
+            catch (OperationCanceledException) { }
+            catch (LensException e) when (e.Kind == LensErrorKind.NoTextFound) { } // nothing in that patch: normal in live mode
+            catch (Exception e)
+            {
+                SetLive(false); // camera or permission trouble: stop rather than repeat the error every second
+                SetStatus(LensException.From(e).UserMessage());
+            }
+            finally { _busy = false; }
+        }
+
+        /// <summary>
+        /// Pins one label per recognised word. In live mode (<paramref name="liveRegion"/> set) a word already labelled
+        /// where it stands reuses its label, and labels the run looked at but did not find take a miss.
+        /// </summary>
+        int PlaceLabels(OcrResult ocr, FrameRect? liveRegion = null)
         {
             var meta = _lens.LastFrameMeta;
-            if (_simCam) _simPlacer.SetWallFromPose(meta.CameraPose, simWallDistance);
+            _frameSize = new Vector2Int(meta.Width, meta.Height);
+            // The simulator's wall: photo mode puts it in front of each capture; live mode keeps one wall so labels line up between runs.
+            if (_simCam && (liveRegion == null || !_simPlacer.HasWall)) _simPlacer.SetWallFromPose(meta.CameraPose, simWallDistance);
+            var now = Time.realtimeSinceStartupAsDouble;
             var placed = 0;
+            if (liveRegion != null) _liveLabels.BeginRun();
 
             foreach (var line in ocr.Lines)
                 foreach (var w in line.Words)
@@ -501,6 +600,12 @@ namespace HypaLens
                     var dist = Vector3.Distance(ray.origin, pos);
                     if (dist < 0.1f || dist > 4f) continue; // implausible hit: drop it rather than float it
                     if (Vector3.Dot(normal, -ray.direction) < 0) normal = -normal;
+
+                    if (liveRegion != null)
+                    {
+                        var existing = _liveLabels.Match(w.Text, pos, now);
+                        if (existing != null) { existing.Word = w; placed++; continue; } // same word, same place: keep it still
+                    }
                     var size = FrameProjector.PixelSizeToWorld(meta.Intrinsics, w.Box, dist) * 1.1f;
                     size = new Vector2(Mathf.Max(size.x, 0.03f), Mathf.Max(size.y, 0.035f)); // small print stays pinchable
 
@@ -508,9 +613,24 @@ namespace HypaLens
                     label.Target.OnPinch = k => OnWordPinch(label, k);
                     label.Target.OnHover = on => { if (!_selected.Contains(label)) label.Target.SetColor(on ? Ui.Hover : (Color?)null); };
                     _labels.Add(label);
+                    if (liveRegion != null) _liveLabels.Add(label, w.Text, pos, now);
                     placed++;
                 }
+
+            if (liveRegion != null)
+            {
+                var r = liveRegion.Value;
+                foreach (var gone in _liveLabels.EndRun(p => FrameProjector.WorldToPixel(meta.Intrinsics, meta.CameraPose, p, out var px) && FrameCrop.Contains(r, px)))
+                    RemoveLabel(gone);
+            }
             return placed;
+        }
+
+        void RemoveLabel(WordLabel l)
+        {
+            if (l == null) return;
+            _labels.Remove(l); _selected.Remove(l);
+            Destroy(l.gameObject);
         }
 
         /// <summary>Widens the pill so the printed word fits inside it. Pure, unit tested.</summary>
@@ -538,13 +658,14 @@ namespace HypaLens
             var label = root.AddComponent<WordLabel>();
             label.Word = word;
             label.Target = pill.AddComponent<PinchTarget>();
+            root.AddComponent<LabelPop>();
             return label;
         }
 
         void ClearLabels()
         {
             foreach (var l in _labels) if (l != null) Destroy(l.gameObject);
-            _labels.Clear(); _selected.Clear();
+            _labels.Clear(); _selected.Clear(); _liveLabels.Clear();
         }
 
         // ---------- Selection + result card ----------
@@ -692,8 +813,10 @@ namespace HypaLens
             if (_launcherMenu != null && _linger.Update(_launcherMenu.gameObject.activeSelf, PointerOnLauncher, pinchingSomething, Time.realtimeSinceStartupAsDouble))
                 ShowLauncher(false);
             FollowHead();
+            if (_live) LiveTick();
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();
+            if (Input.GetKeyDown(KeyCode.L)) ToggleLive();
             if (Input.GetKeyDown(KeyCode.H)) ShowOnboarding(_onboarding == null);
             if (Input.GetKeyDown(KeyCode.P)) { EditorXrInput.HandAims = !EditorXrInput.HandAims; SetStatus(EditorXrInput.HandAims ? "Hand aims (P: mouse aims)." : "Mouse aims, hand or button pinches (P: hand aims)."); }
             if (Input.GetKeyDown(KeyCode.O) && _simApi != null) { _simApi.Offline = !_simApi.Offline; SetStatus("Sim offline: " + _simApi.Offline); }
