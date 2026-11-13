@@ -160,7 +160,7 @@ namespace HypaLens
         Transform _cam, _hud, _world;
         TextMesh _status; GameObject _statusBg;
         PinchTarget _sourceBtn, _targetBtn;
-        GameObject _onboarding, _card, _practice, _caption, _consent, _liveBadge;
+        GameObject _onboarding, _card, _practice, _caption, _liveBadge;
         LanguagePicker _picker;
         PracticeDeck _deck; TextMesh _deckText;
         readonly List<WordLabel> _labels = new List<WordLabel>();
@@ -264,21 +264,23 @@ namespace HypaLens
             FollowHead(); // first placement: in front of the eyes, then it stays put until the head turns away
 
             // Top bar: X | Auto ▾ | → Target ▾ | Saved
-            Ui.IconButton("x", _hud, new Vector3(-0.30f, TopY, 0), LensTouch.SmallIconRadius, GoHome);
+            Tooltip(Ui.IconButton("x", _hud, new Vector3(-0.30f, TopY, 0), LensTouch.SmallIconRadius, GoHome), "Back to Home", below: true);
             _sourceBtn = LanguagePill(new Vector3(-0.105f, TopY, 0), 0.13f, () => OpenPicker(true));
             Ui.Text(_hud, "→", 0.02f, new Vector3(-0.018f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
             _targetBtn = LanguagePill(new Vector3(0.105f, TopY, 0), 0.20f, () => OpenPicker(false));
-            Ui.IconButton("bookmark", _hud, new Vector3(0.30f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice);
+            Tooltip(Ui.IconButton("bookmark", _hud, new Vector3(0.30f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice), "Saved words", below: true);
 
             // Hint pill (the status), centred under the top bar.
             _status = Ui.Text(_hud, "", StatusLineH, new Vector3(0f, HintY, 0), new Color(1f, 1f, 1f, 0.95f));
 
-            // Bottom row: the camera controls.
+            // Bottom row: the camera controls, each with a tooltip on hover.
             const float r = LensTouch.IconRadius, pitch = 0.135f;
-            Ui.IconButton("camera", _hud, new Vector3(-1.5f * pitch, BottomY, 0), r, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary);
-            Ui.IconButton("languages", _hud, new Vector3(-0.5f * pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption");
-            Ui.IconButton("volume-2", _hud, new Vector3(0.5f * pitch, BottomY, 0), r, SpeakLast, "Speak");
-            Ui.IconButton("eraser", _hud, new Vector3(1.5f * pitch, BottomY, 0), r, ClearAll, "Clear");
+            Tooltip(Ui.IconButton("camera", _hud, new Vector3(-1.5f * pitch, BottomY, 0), r, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
+                "Reads the text in view on the headset.\nEach word becomes a label you can pinch.");
+            Tooltip(Ui.IconButton("languages", _hud, new Vector3(-0.5f * pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption"),
+                "Sends a photo of your view to Hypa to read\nand translate it as a whole. Not stored.");
+            Tooltip(Ui.IconButton("volume-2", _hud, new Vector3(0.5f * pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
+            Tooltip(Ui.IconButton("eraser", _hud, new Vector3(1.5f * pitch, BottomY, 0), r, ClearAll, "Clear"), "Remove the labels and cards.");
 
             // Live-mode badge (dev-only toggle for now; the mode itself is not in the UI yet).
             _liveBadge = Ui.Quad("live badge", _hud, new Vector3(0f, BottomY + r * 1.9f, 0f), new Vector2(0.075f, 0.026f), Ui.Accent, false, 0.013f);
@@ -287,6 +289,24 @@ namespace HypaLens
 
             HypaShell.Instance?.SetMenuButtonVisible(false); // the X replaces the shell's Home button here
             UpdateLanguageText();
+        }
+
+        /// <summary>A small note that appears above (or below) a control while the pointer rests on it.</summary>
+        static void Tooltip(PinchTarget btn, string text, bool below = false)
+        {
+            var root = btn.transform.parent;
+            var lines = text.Split('\n');
+            var longest = 0;
+            foreach (var l in lines) longest = Mathf.Max(longest, l.Length);
+            const float lineH = 0.013f, pad = 0.012f;
+            var size = new Vector2(Ui.TextWidth(new string('x', longest), lineH) + pad * 2f, lines.Length * lineH * 1.1f + pad * 1.3f);
+            var reach = btn.transform.lossyScale.x / Mathf.Max(1e-4f, root.lossyScale.x); // the button's radius in root units
+            var y = (below ? -1f : 1f) * (reach * 1.25f + size.y * 0.5f + 0.01f);
+            var tip = Ui.Quad("tooltip", root, new Vector3(0f, y, -0.004f), size, Ui.Panel, false);
+            Ui.Text(tip.transform, text, lineH, Vector3.zero, new Color(1f, 1f, 1f, 0.95f));
+            tip.SetActive(false);
+            var hover = btn.OnHover;
+            btn.OnHover = on => { hover?.Invoke(on); tip.SetActive(on); };
         }
 
         /// <summary>A dark pill with a language name and a small chevron, like the mobile app's language selector.</summary>
@@ -305,13 +325,13 @@ namespace HypaLens
         void GoHome()
         {
             ClearAll();
-            _picker?.Close(); ShowOnboarding(false); ShowCaption(null); ShowConsent(false);
+            _picker?.Close(); ShowOnboarding(false); ShowCaption(null);
             if (_practice != null) { Destroy(_practice); _practice = null; }
             if (HypaShell.Instance != null) HypaShell.Instance.ShowMenu(true);
             else SetStatus("Home needs the Hypa shell. Play from the HypaShell scene.");
         }
 
-        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null || _caption != null || _consent != null
+        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null || _caption != null
                               || (HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen);
 
         /// <summary>Onboarding, practice, the picker, the caption and the consent card share the spot above the bar: one at a time.</summary>
@@ -320,7 +340,6 @@ namespace HypaLens
             _picker?.Close();
             ShowOnboarding(false);
             ShowCaption(null);
-            ShowConsent(false);
             if (_practice != null) { Destroy(_practice); _practice = null; }
         }
 
@@ -447,7 +466,7 @@ namespace HypaLens
             if (_onboarding != null) return;
             _onboarding = Card("Onboarding", "Welcome to Hypa Lens", new Vector2(0.50f, 0.30f), () => ShowOnboarding(false));
             Ui.Text(_onboarding.transform,
-                "1. Look at a sign, menu or book and pinch Capture.\n2. Each word becomes a label on the real surface. Pinch one to translate,\n    hear and define it; hold the pinch for the whole sentence.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick languages at the top. Save words with the bookmark to practise later.\nHypa only sends the text you pinch (Caption sends the photo, and asks first).",
+                "1. Look at a sign, menu or book and pinch Capture.\n2. Each word becomes a label on the real surface. Pinch one to translate,\n    hear and define it; hold the pinch for the whole sentence.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick languages at the top. Save words with the bookmark to practise later.\nHypa only sends the text you pinch (Caption sends the photo).",
                 0.016f, new Vector3(-0.23f, -0.02f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
         }
 
@@ -473,12 +492,11 @@ namespace HypaLens
             finally { _busy = false; }
         }
 
-        // ---------- Caption (Hypa reads and translates the whole view; the photo leaves the headset) ----------
+        // ---------- Caption (Hypa reads and translates the whole view; the photo leaves the headset, as the tooltip says) ----------
 
         async Task CaptionAsync()
         {
             if (_busy) return;
-            if (!LensPrefs.CaptionAllowed) { ShowConsent(true); return; }
             _busy = true;
             CloseCards();
             SetStatus("Sending the view to Hypa...");
@@ -491,25 +509,6 @@ namespace HypaLens
             catch (OperationCanceledException) { }
             catch (Exception e) { SetStatus(LensException.From(e).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage)); }
             finally { _busy = false; }
-        }
-
-        void ShowConsent(bool on)
-        {
-            if (_consent != null) Destroy(_consent);
-            _consent = null;
-            if (!on) return;
-            CloseCards();
-            _consent = Card("Caption consent", "Caption sends a photo", new Vector2(0.46f, 0.24f), () => ShowConsent(false));
-            Ui.Text(_consent.transform,
-                "To caption, Hypa reads a photo of your view and translates it.\nThe photo is sent once, used for that caption, and not kept.\nCapture, on the other hand, never sends photos.",
-                0.016f, new Vector3(-0.21f, 0.005f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
-            Ui.Button("Allow", _consent.transform, new Vector3(-0.07f, -0.08f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Accent, () =>
-            {
-                LensPrefs.CaptionAllowed = true;
-                ShowConsent(false);
-                _ = CaptionAsync();
-            });
-            Ui.Button("Not now", _consent.transform, new Vector3(0.07f, -0.08f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Muted, () => ShowConsent(false));
         }
 
         void ShowCaption(HypaImageTranslation r)
