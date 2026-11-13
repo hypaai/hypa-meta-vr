@@ -29,8 +29,9 @@ namespace HypaLens
         [SerializeField] bool useSimulatedApi = true;
         [SerializeField] float simWallDistance = 1.0f;
 
-        static readonly Color LabelCol = new Color(1f, 0.85f, 0.2f, 0.28f);
-        static readonly Color LabelSel = new Color(0.2f, 0.9f, 0.5f, 0.5f);
+        // Neutral so real-world text stays legible behind it; selection uses Hypa's own accent, not an arbitrary colour.
+        static readonly Color LabelCol = new Color(1f, 1f, 1f, 0.16f);
+        static readonly Color LabelSel = new Color(1f, 1f, 1f, 0.42f);
 
         LensController _lens; LensPlatform _p; IHypaLensApi _api;
         SimHypaApi _simApi; SimFrameSource _simFrames; SimPlanePlacer _simPlacer;
@@ -56,6 +57,7 @@ namespace HypaLens
             _world = new GameObject("HypaLens World").transform;
             PinchPointer.EnsureExists();
             _simWall = GameObject.Find("Sim Wall");
+            if (_simWall != null && !Application.isEditor) _simWall.SetActive(false);
             _saved = new SavedListStore();
 
             _p = BuildPlatform();
@@ -98,8 +100,8 @@ namespace HypaLens
         Transform _launcherMenu;
         TextMesh _launcherLabel;
         GameObject _launcherIcon;
-        /// <summary>Launcher logo: Assets/HypaLens/Resources/HypaLensLogo.png (square, transparent background). "Hypa" text until it exists.</summary>
-        const string LogoResource = "HypaLensLogo";
+        /// <summary>The shared Hypa mark: Assets/HypaCore/Resources/HypaLogo.png (square, transparent, white on dark).</summary>
+        const string LogoResource = "HypaLogo";
 
         void BuildHud()
         {
@@ -113,7 +115,7 @@ namespace HypaLens
             launcher.SetParent(_hud, false);
             launcher.localPosition = new Vector3(0.24f, -0.04f, 0f);
             var logo = Resources.Load<Texture2D>(LogoResource);
-            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, 0.032f, Ui.Accent,
+            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, 0.032f, Ui.Panel,
                 ToggleLauncher, () => { ShowLauncher(false); _ = CaptureAsync(); }, logo);
             _launcherLabel = Ui.LabelOf(launcherBtn);
             _launcherIcon = launcherBtn.transform.parent.Find("icon")?.gameObject;
@@ -124,7 +126,7 @@ namespace HypaLens
             const float w = 0.19f, h = 0.046f, gap = 0.008f;
             var height = items * h + (items - 1) * gap + 0.024f;
             _launcherMenu.localPosition = new Vector3(-0.12f, 0.045f + height * 0.5f, 0f); // above and left of the button
-            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), new Vector2(w + 0.024f, height), Ui.Panel, true);
+            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), new Vector2(w + 0.024f, height), Ui.Panel, true, rounded: true);
             var y = height * 0.5f - 0.012f - h * 0.5f;
             void Item(string label, Color c, Action a, out TextMesh text)
             {
@@ -209,7 +211,7 @@ namespace HypaLens
             _onboarding = new GameObject("Onboarding");
             _onboarding.transform.SetParent(_hud, false);
             _onboarding.transform.localPosition = new Vector3(0f, 0.2f, 0f);
-            var bg = Ui.Quad("bg", _onboarding.transform, Vector3.zero, new Vector2(0.48f, 0.27f), Ui.Panel, true);
+            var bg = Ui.Quad("bg", _onboarding.transform, Vector3.zero, new Vector2(0.48f, 0.27f), Ui.Panel, true, rounded: true);
             Ui.Text(_onboarding.transform,
                 "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Pinch the round Hypa Lens button, then Translate text\n    (or hold the pinch on it to capture straight away)\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nLanguages and saved words are in the same menu.\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
                 0.017f, Vector3.zero, Color.white);
@@ -337,7 +339,7 @@ namespace HypaLens
             _card.transform.SetParent(_world, false);
             _card.transform.position = anchor.position + _cam.right * (0.27f * side) - anchor.forward * 0.02f;
             _card.transform.rotation = anchor.rotation;
-            Ui.Quad("bg", _card.transform, Vector3.zero, new Vector2(0.40f, 0.30f), Ui.Panel, true);
+            Ui.Quad("bg", _card.transform, Vector3.zero, new Vector2(0.40f, 0.30f), Ui.Panel, true, rounded: true);
             return Ui.Text(_card.transform, "", 0.021f, new Vector3(-0.18f, 0.13f, 0), Color.white, TextAnchor.UpperLeft);
         }
 
@@ -348,7 +350,7 @@ namespace HypaLens
             var w = new Vector2(0.09f, 0.045f);
             if (r.SourceAudio != null) Ui.Button("Hear", t, new Vector3(-0.15f, y, z), w, Ui.Accent, () => Play(r.SourceAudio));
             if (r.TargetAudio != null) Ui.Button("Hear ->", t, new Vector3(-0.05f, y, z), w, Ui.Accent, () => Play(r.TargetAudio));
-            var save = Ui.Button(_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", t, new Vector3(0.05f, y, z), w, new Color(.1f, .6f, .35f), null);
+            var save = Ui.Button(_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", t, new Vector3(0.05f, y, z), w, Ui.Accent, null);
             var saveLabel = Ui.LabelOf(save);
             save.OnPinch = k => { if (k == PinchKind.Short) { _saved.Add(r); saveLabel.text = "Saved"; } };
             Ui.Button("Close", t, new Vector3(0.15f, y, z), w, Ui.Muted, CloseCard);
@@ -379,7 +381,7 @@ namespace HypaLens
             _practice = new GameObject("Practice");
             _practice.transform.SetParent(_hud, false);
             _practice.transform.localPosition = new Vector3(0f, 0.21f, 0f);
-            var bg = Ui.Quad("bg", _practice.transform, Vector3.zero, new Vector2(0.42f, 0.26f), Ui.Panel, true);
+            var bg = Ui.Quad("bg", _practice.transform, Vector3.zero, new Vector2(0.42f, 0.26f), Ui.Panel, true, rounded: true);
             bg.AddComponent<PinchTarget>().OnPinch = k => { if (k == PinchKind.Short) { _deck.Flip(); RefreshDeck(); } };
             _deckText = Ui.Text(_practice.transform, "", 0.03f, new Vector3(0f, 0.03f, 0), Color.white);
             var t = _practice.transform;
@@ -407,14 +409,14 @@ namespace HypaLens
 
         // ---------- Editor shortcuts ----------
 
-        // The flat "Sim Wall" backdrop is only for mouse testing with no XR. With a headset, Link or the Meta XR
-        // Simulator running, passthrough shows the real room, so the wall would just block it. Checked every frame
-        // because the XR session can start a few frames after the scene does.
+        // The flat "Sim Wall" backdrop is only for mouse testing in the editor. On a headset it would
+        // sit in front of the real room. Quest's OpenXR path often leaves XRSettings.isDeviceActive false,
+        // so a device build hides the wall outright.
         GameObject _simWall;
 
         void Update()
         {
-            if (_simWall != null && _simWall.activeSelf && UnityEngine.XR.XRSettings.isDeviceActive) _simWall.SetActive(false);
+            if (_simWall != null && _simWall.activeSelf && !Application.isEditor) _simWall.SetActive(false);
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();
             if (Input.GetKeyDown(KeyCode.H)) ShowOnboarding(_onboarding == null);

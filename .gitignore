@@ -7,6 +7,8 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
+# Android native build scratch (CMake/ninja), left in the project root by an Android Build And Run
+/.utmp/
 *.csproj
 *.sln
 *.pidb

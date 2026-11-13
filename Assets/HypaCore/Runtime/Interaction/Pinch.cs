@@ -177,8 +177,8 @@ namespace HypaCore
             if (Vector3.Dot(end - ray.origin, ray.direction) < 0.02f) end = ray.origin + ray.direction * 0.02f;
             _line.SetPosition(0, ray.origin);
             _line.SetPosition(1, end);
-            var col = pinching ? Ui.Accent : onTarget ? Ui.Hover : new Color(1f, 1f, 1f, 0.55f);
-            _line.startColor = new Color(col.r, col.g, col.b, 0f); // fades in from the hand
+            var col = pinching || onTarget ? Color.white : new Color(1f, 1f, 1f, 0.85f);
+            _line.startColor = new Color(col.r, col.g, col.b, 0.45f);
             _line.endColor = col;
 
             if (hitSomething)
@@ -199,13 +199,14 @@ namespace HypaCore
             _line = lineGo.AddComponent<LineRenderer>();
             _line.positionCount = 2;
             _line.useWorldSpace = true;
-            _line.startWidth = 0.003f; _line.endWidth = 0.002f;
+            _line.startWidth = 0.004f; _line.endWidth = 0.003f;
             _line.material = Ui.NewMaterial(Color.white);
             _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _line.receiveShadows = false;
             _line.enabled = false;
 
-            var c = Ui.Quad("Pointer Cursor", transform, Vector3.zero, Vector2.one, Color.white, false);
+            // A round dot, not a square: DrawPointer rescales it every frame regardless of the radius given here.
+            var c = Ui.Disc("Pointer Cursor", transform, Vector3.zero, 1f, Color.white, false);
             _cursor = c.transform;
             _cursorR = c.GetComponent<Renderer>();
             c.SetActive(false);

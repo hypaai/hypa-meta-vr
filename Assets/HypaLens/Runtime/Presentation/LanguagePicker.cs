@@ -30,7 +30,7 @@ namespace HypaLens
             _root.SetParent(parent, false);
             _root.localPosition = localPos;
             // Slightly behind the buttons so rays hit buttons first; its collider blocks labels behind the picker.
-            Ui.Quad("bg", _root, new Vector3(0, 0, 0.003f), new Vector2(0.40f, 0.30f), Ui.Panel, true);
+            Ui.Quad("bg", _root, new Vector3(0, 0, 0.003f), new Vector2(0.40f, 0.30f), Ui.Panel, true, rounded: true);
             Ui.Text(_root, title, 0.022f, new Vector3(0, 0.12f, 0), Color.white);
             Ui.Button("<", _root, new Vector3(-0.15f, -0.12f, 0), new Vector2(0.06f, 0.04f), Ui.Muted, () => Show(_page - 1));
             Ui.Button(">", _root, new Vector3(0.15f, -0.12f, 0), new Vector2(0.06f, 0.04f), Ui.Muted, () => Show(_page + 1));
@@ -57,7 +57,7 @@ namespace HypaLens
                 var name = auto ? null : _all[i - (_offerAuto ? 1 : 0)].Name;
                 var col = k % 2 == 0 ? -0.095f : 0.095f;
                 var row = 0.075f - (k / 2) * 0.05f;
-                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(0.18f, 0.042f), Ui.Accent, () =>
+                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(0.18f, 0.042f), Ui.Muted, () =>
                 {
                     _onPick(name);
                     Close();
