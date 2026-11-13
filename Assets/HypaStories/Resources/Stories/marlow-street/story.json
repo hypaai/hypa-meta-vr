@@ -1,0 +1,24 @@
+{
+  "theme": 1,
+  "accent": "#FF5963",
+  "eyebrow": "Crime story · Prototype",
+  "title": "The Last Light\non Marlow Street",
+  "description": "Rain, a taped-off alley, and one witness who saw nothing, until the streetlight started to flicker.",
+  "rain": 0.55,
+  "wind": 0.25,
+  "lines": [
+    {"id": "rain", "text": "It was raining on Marlow Street, the kind of rain that hides footsteps."},
+    {"id": "tape", "text": "Detective Nia stood behind the yellow tape, watching the alley breathe red and blue."},
+    {"id": "body", "text": "A man had been found at the far end, beside the old brick wall."},
+    {"id": "witness", "text": "No weapon. No wallet. Only one witness, a girl who swore she had seen nothing."},
+    {"id": "streetlight", "text": "But the streetlight above the alley had been flickering all night.", "flashes": [1.2]},
+    {"id": "not-random", "text": "Nia noticed it never flickered at random."},
+    {"id": "pattern", "text": "It went dark for three seconds, then flashed twice.", "flashes": [0.8, 3.1]},
+    {"id": "message", "text": "Over and over, like someone sending a message.", "flashes": [1.4]},
+    {"id": "key", "text": "She followed the pattern to the lamp post and found a small brass key taped beneath it."},
+    {"id": "door", "text": "The key fit a door that had been bricked over for twenty years."},
+    {"id": "cupboard", "text": "Behind the bricks was a cupboard, and inside it a single photograph."},
+    {"id": "photo", "text": "It showed the witness, much younger, standing beside the missing man."},
+    {"id": "truth", "text": "The girl had not seen nothing. She had seen everything, and she had been waiting for someone to ask the right question."}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "theme": 0,
+  "accent": "#FFB35C",
+  "eyebrow": "Folk tale · Prototype",
+  "title": "Kiko and the\nRemembering Fire",
+  "description": "A curious tortoise follows his questions into the forest, toward a fire that has never gone out.",
+  "lines": [
+    {"id": "village", "text": "Long ago, in a small village surrounded by forests,"},
+    {"id": "kiko", "text": "there lived a curious tortoise named Kiko."},
+    {"id": "questions", "text": "Kiko was known throughout the village for asking too many questions."},
+    {"id": "everything", "text": "He wanted to know everything:"},
+    {"id": "moon", "text": "why the moon followed travellers,"},
+    {"id": "birds", "text": "why birds sang before sunrise,"},
+    {"id": "baobab", "text": "and why the old baobab tree never seemed to lose its leaves."},
+    {"id": "mystery", "text": "But there was one mystery nobody could explain."},
+    {"id": "night", "text": "Every night, deep inside the forest,"},
+    {"id": "fire", "text": "a fire could be seen burning beneath an ancient tree.", "wind": 0.1},
+    {"id": "never-out", "text": "It never went out."},
+    {"id": "rain", "text": "Not when it rained.", "rain": 0.4, "wind": 0.5},
+    {"id": "wind", "text": "Not when the wind blew.", "rain": 0.8, "flashes": [0.9]},
+    {"id": "storm", "text": "Not even during the heaviest storms.", "rain": 1, "wind": 1, "flashes": [0.4, 1.4]},
+    {"id": "name", "text": "The villagers called it the Remembering Fire.", "rain": 0.1, "wind": 0.15},
+    {"id": "memories", "text": "They believed it held the memories of everyone who had ever lived.", "rain": 0, "wind": 0}
+  ]
+}

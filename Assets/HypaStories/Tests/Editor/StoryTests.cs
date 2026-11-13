@@ -21,24 +21,30 @@ namespace HypaStories.Tests
             Assert.AreEqual(1f, StoryDirector.Track(k, 99f));
         }
 
-        [Test] public void Director_Kiko_RainStartsAtNotWhenItRained()
+        static StoryTimeline Kiko => StoryLibrary.Find("kiko").Timeline;
+        static Caption Line(StoryTimeline tl, string id) => tl.Captions.First(c => c.Id == id);
+
+        [Test] public void Director_Kiko_RainBuildsFromNotWhenItRained()
         {
-            var d = new StoryDirector(StoryLibrary.Kiko);
+            var d = new StoryDirector(Kiko);
             Assert.AreEqual(-1, d.Sample(0f).Index);
-            Assert.AreEqual(0f, d.Sample(30f).Rain);
-            var s = d.Sample(36.4f);
+            Assert.AreEqual(0f, d.Sample(Line(Kiko, "rain").At).Rain);
+            Assert.AreEqual(0.4f, d.Sample(Line(Kiko, "rain").Until).Rain, 1e-4);
+            var s = d.Sample(Line(Kiko, "storm").Until);
             Assert.AreEqual(1f, s.Rain, 1e-4);
-            Assert.AreEqual("Not even during the heaviest storms.", StoryLibrary.Kiko.Captions[s.Index].Text);
-            Assert.AreEqual(0f, d.Sample(34f).Flash);
-            Assert.Greater(d.Sample(34.45f).Flash, 0.3f);
+            Assert.AreEqual("Not even during the heaviest storms.", Kiko.Captions[s.Index].Text);
+            var flash = Line(Kiko, "wind").At + 0.9f;
+            Assert.AreEqual(0f, d.Sample(flash - 0.4f).Flash);
+            Assert.Greater(d.Sample(flash + 0.05f).Flash, 0.3f);
         }
 
         [Test] public void Director_ThunderFollowsEachFlash_Once()
         {
-            var d = new StoryDirector(StoryLibrary.Kiko);
-            Assert.AreEqual(0, d.ThunderBetween(34f, 34.7f));
-            Assert.AreEqual(1, d.ThunderBetween(34.7f, 34.8f));
-            Assert.AreEqual(3, d.ThunderBetween(0f, 48f));
+            var d = new StoryDirector(Kiko);
+            var flash = Line(Kiko, "wind").At + 0.9f;
+            Assert.AreEqual(0, d.ThunderBetween(flash - 0.4f, flash + 0.3f));
+            Assert.AreEqual(1, d.ThunderBetween(flash + 0.3f, flash + 0.4f));
+            Assert.AreEqual(3, d.ThunderBetween(0f, Kiko.Duration));
         }
 
         [Test] public void WordsShown_LightUpWithTheVoice()
@@ -49,14 +55,30 @@ namespace HypaStories.Tests
             Assert.AreEqual(4, StoryDirector.WordsShown(c, 20f, 4));
         }
 
-        [Test] public void Marlow_TimesFromWordCount_InOrder()
+        [Test] public void Stories_TimesFromWordCount_InOrder()
         {
-            var caps = StoryLibrary.Marlow.Captions;
+            var marlow = StoryLibrary.Find("marlow-street").Timeline;
+            var caps = marlow.Captions;
             Assert.AreEqual(13, caps.Length);
             Assert.AreEqual(0.4f, caps[0].At, 1e-4);
             for (var i = 1; i < caps.Length; i++) Assert.Greater(caps[i].At, caps[i - 1].Until);
-            Assert.GreaterOrEqual(StoryLibrary.Marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
-            Assert.AreEqual(4, StoryLibrary.Marlow.Flashes.Length);
+            Assert.GreaterOrEqual(marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
+            Assert.AreEqual(4, marlow.Flashes.Length);
+        }
+
+        [Test] public void Parse_TranslatesById_FallsBackToEnglish_AndEasesCuesOverTheirLine()
+        {
+            const string story = @"{ ""title"": ""T"", ""rain"": 0.2, ""lines"": [
+                { ""id"": ""a"", ""text"": ""one two three"" },
+                { ""id"": ""b"", ""text"": ""four five"", ""rain"": 1, ""flashes"": [0.5] } ] }";
+            var st = StoryLibrary.Parse("t", story, new Dictionary<string, string> { ["fr"] = @"{ ""a"": ""un deux trois"" }" });
+            var caps = st.Timeline.Captions;
+            Assert.AreEqual("un deux trois", caps[0].TextFor("fr"));
+            Assert.AreEqual("four five", caps[1].TextFor("fr"));
+            var d = new StoryDirector(st.Timeline);
+            Assert.AreEqual(0.2f, d.Sample(caps[1].At).Rain, 1e-4);
+            Assert.AreEqual(1f, d.Sample(caps[1].Until).Rain, 1e-4);
+            Assert.AreEqual(caps[1].At + 0.5f, st.Timeline.Flashes[0], 1e-4);
         }
 
         [Test] public void EveryLine_IsTranslated_AndFallsBackToEnglish()
@@ -65,7 +87,7 @@ namespace HypaStories.Tests
                 foreach (var c in st.Timeline.Captions)
                     foreach (var lang in new[] { "fr", "es" })
                         Assert.IsFalse(string.IsNullOrEmpty(c.TextFor(lang)) || c.TextFor(lang) == c.Text, $"{st.Id} {lang}: {c.Text}");
-            Assert.AreEqual("It never went out.", StoryLibrary.Kiko.Captions[10].TextFor("yo"));
+            Assert.AreEqual("It never went out.", Line(Kiko, "never-out").TextFor("yo"));
         }
 
         [Test] public void Languages_FindByCodeOrHypaLabel()

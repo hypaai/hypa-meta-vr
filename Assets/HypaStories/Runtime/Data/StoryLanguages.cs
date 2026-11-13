@@ -22,7 +22,8 @@ namespace HypaStories
 
     /// <summary>
     /// Languages offered for narration, questions and answers: the ones with speech-to-text, translation and text-to-speech
-    /// and a translated script (the prototype's public/languages.json). Add a language here and in each caption's Tr.
+    /// and a translated script (the prototype's public/languages.json). Add a language here and a {code}.json to each story
+    /// (see <see cref="StoryLibrary"/>).
     /// </summary>
     public static class StoryLanguages
     {

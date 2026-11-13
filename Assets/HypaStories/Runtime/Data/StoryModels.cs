@@ -3,9 +3,11 @@ using UnityEngine;
 
 namespace HypaStories
 {
-    /// <summary>One line of the script on the story clock (seconds of the voice-over), with its translations.</summary>
+    /// <summary>One line of the script on the story clock (seconds, estimated by <see cref="StoryLibrary"/>), with its translations.</summary>
     public sealed class Caption
     {
+        /// <summary>Stable id from story.json: translation files are keyed by it.</summary>
+        public string Id;
         public float At, Until;
         public string Text;
         /// <summary>Translated line per language code ("fr", "es"). Missing = the English line.</summary>

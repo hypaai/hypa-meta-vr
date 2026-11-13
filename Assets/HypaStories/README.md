@@ -41,7 +41,7 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | `rain.js` | `Shaders/StoryRain`: camera-following streaks (quads, not 1 px lines). |
 | `card.js` | `Shaders/StoryCard` + `Ui/StoryListView`: same art (lantern pines, noir alley), ripples from the pinch ray's hit point, tilt, press burst, reveal, dim. Text is real TextMesh on the card. |
 | `director.js` | `Core/StoryDirector`: pure function of the story clock (captions, rain, wind, lightning, thunder). |
-| `stories.js`, `story-kiko.js`, `story-marlow.js` | `Data/StoryLibrary` (same text, timings, translations, weather). |
+| `stories.js`, `story-kiko.js`, `story-marlow.js` | `Resources/Stories/` data files, loaded by `Data/StoryLibrary` (same text and translations; see Stories). |
 | Story player panel | `Ui/PlayerView`: script with the current line's words lighting up with the voice, progress, `<<` / Pause / `>>`, Ask. |
 | `storyteller.js` | `World/Storyteller`: seated pose, breathing, talking gestures, head to the fire / to you on interrupt, `mouthOpen` lip sync from the voice. Stand-in figure without the model. |
 | `audio.js` | `Audio/StoryAudio` (beds per scene, spatial fire, ducking under the voice, random wolves and crickets, storm, thunder, chime, tap) and `Audio/ProceduralClips` (the synthesised sounds, filtered offline). |
@@ -50,6 +50,20 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | `qa.js` | `Core/StoryQa`: `IStoryQa` seam + the same spoiler-guarded stub. |
 | `public/languages.json` | `Data/StoryLanguages`. |
 | Swipe up / `H` to raise a hand | `Core/RaiseHand` + `Quest/QuestStoryInput` (tracked hand or controller above the head, held 0.35 s; thumbsticks walk and snap-turn). |
+
+## Stories
+
+Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `StoryLibrary.Ids`:
+
+- `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the starting `rain` / `wind` (0..1), and the English
+  `lines`, each `{ "id", "text" }` with optional cues: `rain` / `wind` (reached by the end of that line) and `flashes` (lightning,
+  seconds after the line starts).
+- `{code}.json` per translation (`fr.json`, `es.json`): `{ "line id": "text" }`. A missing file or line is told in English, and a
+  test lists every untranslated line of the offered languages.
+
+Lines have no times: the storyteller's TTS paces the story, so each line's slot is estimated from its English word count. To add a
+language, add it to `StoryLanguages.All` and a `{code}.json` to each story. Keep line ids stable when editing a script: they are what
+the translations are matched on.
 
 ## Hypa API use
 
