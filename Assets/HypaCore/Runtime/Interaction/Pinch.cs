@@ -153,11 +153,14 @@ namespace HypaCore
         readonly IPinchInput _device; readonly MouseInput _mouse = new MouseInput();
         public EditorXrInput(IPinchInput device) { _device = device; }
         public bool IsPinching => _mouse.IsPinching || (_device != null && _device.IsPinching);
-        /// <summary>True when the hand is aiming right now (tracked, with a pointer pose).</summary>
-        public bool HandRay => HandAims && _device != null && _device.TryGetRay(out _);
+        /// <summary>
+        /// True when the hand is aiming right now (tracked, with a pointer pose, and the mouse button is up). A mouse
+        /// click is a pinch aimed by the mouse: it lands where the cursor is, not where the hand happens to point.
+        /// </summary>
+        public bool HandRay => HandAims && !_mouse.IsPinching && _device != null && _device.TryGetRay(out _);
         public bool TryGetRay(out Ray ray)
         {
-            if (HandAims && _device != null && _device.TryGetRay(out ray)) return true;
+            if (HandRay && _device.TryGetRay(out ray)) return true;
             return _mouse.TryGetRay(out ray);
         }
         public void Pulse() { }

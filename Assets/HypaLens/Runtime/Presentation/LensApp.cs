@@ -37,6 +37,7 @@ namespace HypaLens
     public static class LensTouch
     {
         public const float IconRadius = 0.034f;
+        public const float ShutterRadius = 0.046f;
         public const float SmallIconRadius = 0.028f;
         public const float PillH = 0.05f;
         public const float PickerRowW = 0.18f;
@@ -57,7 +58,7 @@ namespace HypaLens
         // From the eyes. Beyond the hands (0.3-0.6 m out), so a hand ray crosses the HUD instead of running level
         // with it. The UI was designed in metres at 0.6 m; LensApp scales the HUD by Distance / DesignDistance.
         public const float DesignDistance = 0.6f;
-        public float Distance = 1.0f, Height = -0.28f;
+        public float Distance = 1.0f, Height = -0.20f;
         public float Smoothing = 5f;           // per second; higher = snappier glide
         bool _placed, _gliding;
         Vector3 _headAtPlace, _targetPos;
@@ -268,19 +269,19 @@ namespace HypaLens
             _sourceBtn = LanguagePill(new Vector3(-0.105f, TopY, 0), 0.13f, () => OpenPicker(true));
             Ui.Text(_hud, "→", 0.02f, new Vector3(-0.018f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
             _targetBtn = LanguagePill(new Vector3(0.105f, TopY, 0), 0.20f, () => OpenPicker(false));
-            Tooltip(Ui.IconButton("bookmark", _hud, new Vector3(0.30f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice), "Saved words", below: true);
 
             // Hint pill (the status), centred under the top bar.
             _status = Ui.Text(_hud, "", StatusLineH, new Vector3(0f, HintY, 0), new Color(1f, 1f, 1f, 0.95f));
 
-            // Bottom row: the camera controls, each with a tooltip on hover.
-            const float r = LensTouch.IconRadius, pitch = 0.135f;
-            Tooltip(Ui.IconButton("camera", _hud, new Vector3(-1.5f * pitch, BottomY, 0), r, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
-                "Reads the text in view on the headset.\nEach word becomes a label you can pinch.");
-            Tooltip(Ui.IconButton("languages", _hud, new Vector3(-0.5f * pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption"),
+            // Bottom row: Capture big in the middle (the shutter), the rest spread either side, each with a tooltip.
+            const float r = LensTouch.IconRadius, pitch = 0.19f;
+            Tooltip(Ui.IconButton("eraser", _hud, new Vector3(-2f * pitch, BottomY, 0), r, ClearAll, "Clear"), "Remove the labels and cards.");
+            Tooltip(Ui.IconButton("languages", _hud, new Vector3(-pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption"),
                 "Sends a photo of your view to Hypa to read\nand translate it as a whole. Not stored.");
-            Tooltip(Ui.IconButton("volume-2", _hud, new Vector3(0.5f * pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
-            Tooltip(Ui.IconButton("eraser", _hud, new Vector3(1.5f * pitch, BottomY, 0), r, ClearAll, "Clear"), "Remove the labels and cards.");
+            Tooltip(Ui.IconButton("camera", _hud, new Vector3(0f, BottomY, 0), LensTouch.ShutterRadius, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
+                "Reads the text in view on the headset.\nEach word becomes a label you can pinch.");
+            Tooltip(Ui.IconButton("volume-2", _hud, new Vector3(pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
+            Tooltip(Ui.IconButton("bookmark", _hud, new Vector3(2f * pitch, BottomY, 0), r, TogglePractice, "Saved"), "Your saved words, as practice cards.");
 
             // Live-mode badge (dev-only toggle for now; the mode itself is not in the UI yet).
             _liveBadge = Ui.Quad("live badge", _hud, new Vector3(0f, BottomY + r * 1.9f, 0f), new Vector2(0.075f, 0.026f), Ui.Accent, false, 0.013f);

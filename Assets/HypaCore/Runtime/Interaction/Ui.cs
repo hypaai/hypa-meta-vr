@@ -293,7 +293,8 @@ namespace HypaCore
             bg.GetComponent<BoxCollider>().size = new Vector3(3.2f, 3.2f, 0.02f);
             if (icon != null)
             {
-                var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * iconScale, Color.white, false, rounded: false);
+                // Icons are white on transparent; on a light button they take the dark text colour instead.
+                var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * iconScale, TextColorFor(color), false, rounded: false);
                 var m = img.GetComponent<Renderer>();
                 m.material.mainTexture = icon;
                 m.sortingOrder = 1;
