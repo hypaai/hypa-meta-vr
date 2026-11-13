@@ -30,12 +30,12 @@ namespace HypaLens
             _root.SetParent(parent, false);
             _root.localPosition = localPos;
             // Slightly behind the buttons so rays hit buttons first; its collider blocks labels behind the picker.
-            Ui.Quad("bg", _root, new Vector3(0, 0, 0.003f), new Vector2(0.40f, 0.30f), Ui.Panel, true);
-            Ui.Text(_root, title, 0.022f, new Vector3(0, 0.12f, 0), Color.white);
-            Ui.Button("<", _root, new Vector3(-0.15f, -0.12f, 0), new Vector2(0.06f, 0.04f), Ui.Muted, () => Show(_page - 1));
-            Ui.Button(">", _root, new Vector3(0.15f, -0.12f, 0), new Vector2(0.06f, 0.04f), Ui.Muted, () => Show(_page + 1));
-            Ui.Button("Close", _root, new Vector3(0.04f, -0.12f, 0), new Vector2(0.09f, 0.04f), Ui.Muted, Close);
-            _pageText = Ui.Text(_root, "", 0.016f, new Vector3(-0.06f, -0.12f, 0), Color.white);
+            Ui.Quad("bg", _root, new Vector3(0, 0, 0.003f), new Vector2(0.42f, 0.36f), Ui.Panel, true);
+            Ui.Text(_root, title, 0.022f, new Vector3(0, 0.128f, 0), Color.white);
+            Ui.Button("<", _root, new Vector3(-0.15f, -0.142f, 0), new Vector2(0.06f, 0.044f), Ui.Muted, () => Show(_page - 1));
+            Ui.Button(">", _root, new Vector3(0.15f, -0.142f, 0), new Vector2(0.06f, 0.044f), Ui.Muted, () => Show(_page + 1));
+            Ui.Button("Close", _root, new Vector3(0.04f, -0.142f, 0), new Vector2(0.09f, 0.044f), Ui.Muted, Close);
+            _pageText = Ui.Text(_root, "", 0.016f, new Vector3(-0.06f, -0.142f, 0), Color.white);
 
             var idx = 0;
             for (var i = 0; i < all.Count; i++) if (all[i].Name == current) idx = i + (offerAuto ? 1 : 0);
@@ -56,8 +56,8 @@ namespace HypaLens
                 var auto = _offerAuto && i == 0;
                 var name = auto ? null : _all[i - (_offerAuto ? 1 : 0)].Name;
                 var col = k % 2 == 0 ? -0.095f : 0.095f;
-                var row = 0.075f - (k / 2) * 0.05f;
-                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(0.18f, 0.042f), Ui.Accent, () =>
+                var row = 0.084f - (k / 2) * LensTouch.PickerPitch;
+                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(LensTouch.PickerRowW, LensTouch.PickerRowH), Ui.Accent, () =>
                 {
                     _onPick(name);
                     Close();

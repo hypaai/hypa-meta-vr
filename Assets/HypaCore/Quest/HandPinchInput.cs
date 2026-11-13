@@ -6,27 +6,36 @@ namespace HypaCore.Quest
 
     /// <summary>
     /// Quest pointer: hands first (index pinch, OVRHand pointer pose), controllers as the optional fallback
-    /// (pointer from the controller, index trigger = pinch). Whichever hand is pinching wins; otherwise the
-    /// first tracked hand; otherwise the controller in use.
+    /// (pointer from the controller, index trigger = pinch). Whichever hand is pinching wins; otherwise the hand
+    /// that pinched last; otherwise the right hand; otherwise any tracked hand; otherwise the controller in use.
     /// </summary>
     public sealed class HandPinchInput : IPinchInput
     {
         const float TriggerDown = 0.55f;
-        OVRHand[] _hands;
+        OVRHand[] _hands; OVRHand _lastPinched;
         OVRCameraRig _rig;
 
         OVRHand ActiveHand()
         {
             if (_hands == null || _hands.Length == 0 || _hands[0] == null)
                 _hands = Object.FindObjectsByType<OVRHand>(FindObjectsInactive.Exclude);
-            OVRHand tracked = null;
+            OVRHand tracked = null, right = null;
             foreach (var h in _hands)
             {
                 if (h == null || !h.IsTracked) continue;
-                if (h.GetFingerIsPinching(OVRHand.HandFinger.Index)) return h;
+                if (h.GetFingerIsPinching(OVRHand.HandFinger.Index)) { _lastPinched = h; return h; }
+                if (IsRight(h)) right = h;
                 tracked = tracked ?? h;
             }
-            return tracked;
+            if (_lastPinched != null && _lastPinched.IsTracked) return _lastPinched;
+            return right ?? tracked;
+        }
+
+        // OVRHand's hand type is internal; the skeleton it provides says which hand it is.
+        static bool IsRight(OVRHand h)
+        {
+            var t = ((OVRSkeleton.IOVRSkeletonDataProvider)h).GetSkeletonType();
+            return t == OVRSkeleton.SkeletonType.HandRight || t == OVRSkeleton.SkeletonType.XRHandRight;
         }
 
         static OVRInput.Controller ActiveController()

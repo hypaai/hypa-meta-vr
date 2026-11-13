@@ -174,6 +174,107 @@ namespace HypaCore.Tests
             Assert.AreEqual(PinchKind.None, t.Update(false, 2.1));
         }
 
+        [Test] public void Pinch_LongWaits_WhileItCannotFire()
+        {
+            var t = new PinchTracker { LongPressSeconds = 0.6f };
+            t.Update(true, 0);
+            Assert.AreEqual(PinchKind.None, t.Update(true, 0.8, canFireLong: false), "long must wait while blocked");
+            Assert.AreEqual(PinchKind.Long, t.Update(true, 0.9, canFireLong: true), "and fire once unblocked");
+            Assert.AreEqual(PinchKind.None, t.Update(false, 1.5), "no short after a long");
+            t.Update(true, 2);
+            t.Update(true, 2.8, canFireLong: false);
+            Assert.AreEqual(PinchKind.Short, t.Update(false, 2.9), "released while blocked = a short pinch");
+        }
+
+        // The router works on any reference type; strings stand in for PinchTargets here.
+        static PinchRouter<string> Router() => new PinchRouter<string> { LongPressSeconds = 0.6f };
+        static bool SlideOk(string s) => s.StartsWith("item");
+
+        [Test] public void Router_PinchSlideRelease_PicksTheMenuItem_NotTheLauncher()
+        {
+            var r = Router();
+            r.Update(true, 0, "launcher", SlideOk, out _);
+            Assert.AreEqual(PinchKind.None, r.Update(true, 0.5, "panel", SlideOk, out _));
+            Assert.AreEqual(PinchKind.None, r.Update(true, 1.0, "item A", SlideOk, out _), "no long pinch while sliding onto another target");
+            Assert.AreEqual(PinchKind.Short, r.Update(false, 1.2, "item A", SlideOk, out var target));
+            Assert.AreEqual("item A", target);
+            Assert.IsNull(r.Pressed);
+        }
+
+        [Test] public void Router_ReleasedOverSomethingThatDoesNotAcceptSlides_GoesToTheStartTarget()
+        {
+            var r = Router();
+            r.Update(true, 0, "word A", SlideOk, out _);
+            Assert.AreEqual(PinchKind.Short, r.Update(false, 0.3, "word B", SlideOk, out var target));
+            Assert.AreEqual("word A", target, "a drifting hand still pinches what it aimed at");
+            r.Update(true, 1, "launcher", SlideOk, out _);
+            Assert.AreEqual(PinchKind.Short, r.Update(false, 1.3, null, SlideOk, out target));
+            Assert.AreEqual("launcher", target);
+        }
+
+        [Test] public void Router_HoldingStill_OrOverNothing_FiresLong_OnTheStartTarget()
+        {
+            var r = Router();
+            r.Update(true, 0, "word", SlideOk, out _);
+            r.Update(true, 0.3, null, SlideOk, out _); // flickered off the small label
+            Assert.AreEqual(PinchKind.Long, r.Update(true, 0.7, "word", SlideOk, out var target));
+            Assert.AreEqual("word", target);
+            Assert.AreEqual(PinchKind.None, r.Update(false, 0.9, "word", SlideOk, out _), "no short after a long");
+
+            r.Update(true, 2, "launcher", SlideOk, out _);
+            Assert.AreEqual(PinchKind.Long, r.Update(true, 2.7, null, SlideOk, out target), "over nothing still counts as holding");
+            Assert.AreEqual("launcher", target);
+        }
+
+        [Test] public void Router_LongDeferredWhileOverAnotherTarget_FiresOnReturn()
+        {
+            var r = Router();
+            r.Update(true, 0, "launcher", SlideOk, out _);
+            Assert.AreEqual(PinchKind.None, r.Update(true, 0.8, "item A", SlideOk, out _));
+            Assert.AreEqual(PinchKind.Long, r.Update(true, 1.0, "launcher", SlideOk, out var target));
+            Assert.AreEqual("launcher", target);
+        }
+
+        [Test] public void Router_PinchStartedOnNothing_CanStillSlideOntoAnItem()
+        {
+            var r = Router();
+            r.Update(true, 0, null, SlideOk, out _);
+            Assert.AreEqual(PinchKind.Short, r.Update(false, 0.3, "item B", SlideOk, out var target));
+            Assert.AreEqual("item B", target);
+            r.Update(true, 1, null, SlideOk, out _);
+            Assert.AreEqual(PinchKind.Short, r.Update(false, 1.3, "word", SlideOk, out target));
+            Assert.IsNull(target, "a word never picks up a stray pinch");
+        }
+
+        [Test] public void FitLineHeight_ShrinksOnlyWhenNeeded_AndNotBelowTheFloor()
+        {
+            Assert.AreEqual(0.02f, Ui.FitLineHeight("Short", 0.02f, 0.2f), "fits already: unchanged");
+            var shrunk = Ui.FitLineHeight("To: Arabic (Libyan)", 0.0235f, 0.19f);
+            Assert.Less(shrunk, 0.0235f);
+            Assert.That(Ui.TextWidth("To: Arabic (Libyan)", shrunk), Is.LessThanOrEqualTo(0.19f + 1e-5f), "shrunk text fits the button");
+            Assert.AreEqual(0.02f * 0.75f, Ui.FitLineHeight(new string('w', 80), 0.02f, 0.1f), 1e-6f, "never below 75%");
+        }
+
+        [Test] public void Ellipsize_KeepsShortLabels_TrimsLongOnesToFit()
+        {
+            Assert.AreEqual("Saved words", Ui.Ellipsize("Saved words", 0.02f, 0.2f));
+            var trimmed = Ui.Ellipsize("To: Arabic (Libyan) in a very long label", 0.02f, 0.15f);
+            Assert.IsTrue(trimmed.EndsWith("…"), trimmed);
+            Assert.That(Ui.TextWidth(trimmed, 0.02f), Is.LessThanOrEqualTo(0.15f + 1e-5f), "trimmed text fits");
+            Assert.AreEqual("", Ui.Ellipsize(null, 0.02f, 0.1f));
+        }
+
+        [Test] public void RoundedRect_IsClosed_AndStaysInsideItsBox()
+        {
+            var m = Ui.RoundedRect(0.2f, 0.05f, 0.025f);
+            Assert.AreEqual(m.vertexCount - 1, m.triangles.Length / 3, "a fan with one triangle per rim vertex");
+            foreach (var v in m.vertices)
+            {
+                Assert.That(Mathf.Abs(v.x), Is.LessThanOrEqualTo(0.1f + 1e-5f));
+                Assert.That(Mathf.Abs(v.y), Is.LessThanOrEqualTo(0.025f + 1e-5f));
+            }
+        }
+
         [Test] public void Wrap_BreaksOnWords_AndKeepsNewlines()
             => Assert.AreEqual("aaa bb\ncc\nd", Ui.Wrap("aaa bb cc\nd", 6));
 

@@ -29,7 +29,7 @@ namespace HypaLens
 
         /// <summary>Hypa language label, or null = auto-detect.</summary>
         public string SourceLanguage { get; set; }
-        public string TargetLanguage { get; set; } = "English";
+        public string TargetLanguage { get; set; } = "Annang";
 
         /// <summary>Pose and intrinsics of the last capture, for placing labels. Pixels are already gone.</summary>
         public CapturedFrame LastFrameMeta { get; private set; }

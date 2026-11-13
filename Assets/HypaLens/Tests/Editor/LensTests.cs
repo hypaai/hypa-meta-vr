@@ -70,6 +70,143 @@ namespace HypaLens.Tests
         [Test] public void Capture_NoText_IsNoTextFound()
             => Assert.AreEqual(LensErrorKind.NoTextFound, KindOf(() => Make(blank: true).CaptureAsync(CancellationToken.None)));
 
+        // ---------- Word labels (readable pills) ----------
+
+        [Test] public void WordLabel_PrintsTheWord_AndStaysPinchable()
+        {
+            var label = LensApp.NewWordLabel(new OcrWord { Text = "Welcome" }, new Vector2(0.05f, 0.035f), Vector3.zero, Quaternion.identity, null);
+            try
+            {
+                var tm = label.GetComponentInChildren<TextMesh>();
+                Assert.IsNotNull(tm, "label must print its word, not show an empty pill");
+                Assert.AreEqual("Welcome", tm.text);
+                Assert.IsNotNull(label.Target, "label must keep its pinch target");
+                Assert.IsNotNull(label.Target.GetComponent<Collider>(), "pill needs a collider for the hand ray");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(label.gameObject); }
+        }
+
+        [Test] public void FitPillToWord_GrowsForLongWords_KeepsShortOnes()
+        {
+            var grown = LensApp.FitPillToWord("Welcome", new Vector2(0.03f, 0.035f), 0.0175f);
+            Assert.Greater(grown.x, 0.03f, "long word must widen the pill so the text fits");
+            var kept = LensApp.FitPillToWord("a", new Vector2(0.05f, 0.035f), 0.0175f);
+            Assert.AreEqual(0.05f, kept.x, "short word keeps the OCR-sized pill");
+        }
+
+        [Test] public void DefaultTarget_IsAnnang_AndSimListsIt()
+        {
+            var c = new LensController(new SimFrameSource(), new SimRecognizer(), new SimHypaApi { LatencyMs = 0 });
+            Assert.AreEqual("Annang", c.TargetLanguage, "demo default must be Annang");
+            var langs = Run(new SimHypaApi { LatencyMs = 0 }.ListLanguagesAsync(CancellationToken.None));
+            var found = false;
+            foreach (var l in langs) if (l.Name == "Annang") found = true;
+            Assert.IsTrue(found, "Annang must appear in the language picker");
+        }
+
+        [Test] public void MenuTargets_StayAboveSimulatorMinimums()
+        {
+            Assert.GreaterOrEqual(LensTouch.MenuButtonH, 0.05f, "menu rows must stay tall enough for simulator hands");
+            Assert.GreaterOrEqual(LensTouch.LauncherRadius, 0.04f, "Hypa button must stay a big round target");
+            Assert.GreaterOrEqual(LensTouch.PickerRowH, 0.05f, "language rows must stay tall enough for simulator hands");
+            // Six items in two columns: the whole menu is within one small hand movement of the launcher.
+            var rows = (6 + LensTouch.MenuColumns - 1) / LensTouch.MenuColumns;
+            var height = rows * LensTouch.MenuButtonH + (rows - 1) * LensTouch.MenuGap;
+            Assert.LessOrEqual(height, 0.22f, "menu must stay compact (was a 0.4 m tall column)");
+        }
+
+        [Test] public void LanguageLabel_DropsTheBracketedVariant_BeforeTrimming()
+        {
+            Assert.AreEqual("To: Yoruba", LensApp.LanguageLabel("To: ", "Yoruba", 0.02f, 0.2f));
+            Assert.AreEqual("To: Arabic (Libyan)", LensApp.LanguageLabel("To: ", "Arabic (Libyan)", 0.02f, 0.5f), "kept when it fits");
+            Assert.AreEqual("To: Arabic", LensApp.LanguageLabel("To: ", "Arabic (Libyan)", 0.02f, 0.15f), "variant dropped when it does not");
+            Assert.AreEqual("From: Auto", LensApp.LanguageLabel("From: ", "Auto", 0.02f, 0.05f), "nothing to drop: left for the ellipsis");
+        }
+
+        // ---------- HUD placement: stays put, re-centres only after a big turn, never while in use ----------
+
+        static Pose Settle(LazyFollow f, Vector3 head, Quaternion rot, Pose p, bool hold = false)
+        {
+            for (var i = 0; i < 120; i++) p = f.Update(head, rot, p, hold, 1f / 60f);
+            return p;
+        }
+
+        [Test] public void LazyFollow_FirstPlacement_InFrontAndBelowEyes_IgnoringPitch()
+        {
+            var f = new LazyFollow { Distance = 0.6f, Height = -0.17f };
+            var lookingDown = Quaternion.Euler(40f, 0f, 0f);
+            var p = f.Update(new Vector3(0, 1.5f, 0), lookingDown, default, false, 0.016f);
+            Assert.That(Vector3.Distance(p.position, new Vector3(0, 1.33f, 0.6f)), Is.LessThan(0.001f), "0.6 m ahead, 0.17 m down, pitch ignored");
+            Assert.Greater(new LazyFollow().Distance, 0.75f, "the HUD must sit beyond the hands or a hand ray runs level with it");
+            Assert.That(Vector3.Angle(p.rotation * Vector3.forward, p.position - new Vector3(0, 1.5f, 0)), Is.LessThan(0.5f), "faces the eyes");
+        }
+
+        [Test] public void LazyFollow_SmallTurn_OrAnyTurnWhileInUse_DoesNotMoveIt()
+        {
+            var f = new LazyFollow();
+            var head = new Vector3(0, 1.5f, 0);
+            var p = f.Update(head, Quaternion.identity, default, false, 0.016f);
+            var after = Settle(f, head, Quaternion.Euler(0, 20f, 0), p);
+            Assert.AreEqual(p.position, after.position, "20 degrees is inside the dead zone");
+            after = Settle(f, head, Quaternion.Euler(0, 90f, 0), p, hold: true);
+            Assert.AreEqual(p.position, after.position, "never moves while the menu or hand is on it");
+        }
+
+        [Test] public void LazyFollow_BigTurn_GlidesBackInFront()
+        {
+            var f = new LazyFollow();
+            var head = new Vector3(0, 1.5f, 0);
+            var p = f.Update(head, Quaternion.identity, default, false, 0.016f);
+            var one = f.Update(head, Quaternion.Euler(0, 60f, 0), p, false, 1f / 60f);
+            Assert.AreNotEqual(p.position, one.position, "starts moving");
+            Assert.That(Vector3.Distance(one.position, p.position), Is.LessThan(0.1f), "but glides rather than jumps");
+            var end = Settle(f, head, Quaternion.Euler(0, 60f, 0), one);
+            var expected = head + Quaternion.Euler(0, 60f, 0) * Vector3.forward * f.Distance + Vector3.up * f.Height;
+            Assert.That(Vector3.Distance(end.position, expected), Is.LessThan(0.005f));
+            Assert.IsFalse(f.IsGliding);
+        }
+
+        [Test] public void LazyFollow_Reset_SnapsToTheNewHeadAtOnce()
+        {
+            var f = new LazyFollow();
+            var p = f.Update(new Vector3(0, 1.13f, 0), Quaternion.identity, default, false, 0.016f); // before the XR session: wrong height
+            f.Reset();
+            var snapped = f.Update(new Vector3(0, 1.70f, 0), Quaternion.identity, p, false, 0.016f);
+            Assert.That(Vector3.Distance(snapped.position, new Vector3(0, 1.70f + f.Height, f.Distance)), Is.LessThan(0.001f), "no glide: straight to eye height");
+        }
+
+        [Test] public void LazyFollow_WalkingAway_BringsItAlong()
+        {
+            var f = new LazyFollow();
+            var p = f.Update(new Vector3(0, 1.5f, 0), Quaternion.identity, default, false, 0.016f);
+            var end = Settle(f, new Vector3(0, 1.5f, 0.5f), Quaternion.identity, p);
+            Assert.That(Vector3.Distance(end.position, new Vector3(0, 1.5f + f.Height, 0.5f + f.Distance)), Is.LessThan(0.005f));
+        }
+
+        // ---------- Launcher menu: opens on hover, closes itself after the pointer leaves ----------
+
+        [Test] public void MenuLinger_ClosesOnlyAfterThePointerHasLeftForAWhile()
+        {
+            var l = new MenuLinger { CloseAfterSeconds = 1.5f };
+            Assert.IsFalse(l.Update(true, true, false, 0), "pointer inside: stay open");
+            Assert.IsFalse(l.Update(true, false, false, 1), "just left: not yet");
+            Assert.IsFalse(l.Update(true, false, false, 2.4), "still inside the grace period");
+            Assert.IsTrue(l.Update(true, false, false, 2.5), "grace over: close");
+            Assert.IsFalse(l.Update(false, false, false, 3), "closed menus do nothing");
+        }
+
+        [Test] public void MenuLinger_ForgivesAWander_AndNeverClosesMidPinch()
+        {
+            var l = new MenuLinger { CloseAfterSeconds = 1.5f };
+            l.Update(true, false, false, 0);
+            Assert.IsFalse(l.Update(true, true, false, 1), "came back: timer resets");
+            Assert.IsFalse(l.Update(true, false, false, 2));
+            Assert.IsFalse(l.Update(true, false, false, 3.4), "timer restarted when the pointer left again");
+            Assert.IsFalse(l.Update(true, false, true, 3.6), "pinching (e.g. a word) keeps it open");
+            Assert.IsFalse(l.Update(true, false, false, 4), "released: timer starts fresh");
+            Assert.IsTrue(l.Update(true, false, false, 5.5));
+        }
+
         // ---------- Resolve ----------
 
         [Test] public void Resolve_Word_TranslationMeaningAudio()

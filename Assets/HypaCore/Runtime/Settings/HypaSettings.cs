@@ -7,11 +7,11 @@ namespace HypaCore
     {
         const string TargetKey = "hypa.targetLanguage", ModeKey = "hypa.lastMode";
 
-        /// <summary>A Hypa language label, e.g. "Yoruba". Default English.</summary>
+        /// <summary>A Hypa language label, e.g. "Annang". Default Annang.</summary>
         public static string TargetLanguage
         {
-            get => PlayerPrefs.GetString(TargetKey, "English");
-            set { PlayerPrefs.SetString(TargetKey, value ?? "English"); PlayerPrefs.Save(); }
+            get => PlayerPrefs.GetString(TargetKey, "Annang");
+            set { PlayerPrefs.SetString(TargetKey, value ?? "Annang"); PlayerPrefs.Save(); }
         }
 
         /// <summary>Scene name of the last mode opened from the hand menu (see <see cref="HypaScenes"/>).</summary>

@@ -50,3 +50,8 @@ crashlytics-buildid.txt
 # Empty folder Unity recreates; its lone .meta would warn on fresh clones
 /[Aa]ssets/StreamingAssets.meta
 /[Aa]ssets/StreamingAssets/
+# Android Gradle/CMake native build intermediates (AGP prefab/externalNativeBuild)
+/.utmp/
+.gradle/
+.cxx/
+.externalNativeBuild/

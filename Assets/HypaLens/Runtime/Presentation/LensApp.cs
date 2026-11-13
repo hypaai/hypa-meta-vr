@@ -16,9 +16,116 @@ namespace HypaLens
     }
 
     /// <summary>
+    /// Minimum touch-target sizes for simulator hands (metres). Pinching with mouse-driven
+    /// simulator hands is imprecise, so menu targets stay well above the 0.04 m pinchable floor.
+    /// </summary>
+    public static class LensTouch
+    {
+        public const float MenuButtonW = 0.20f;
+        public const float MenuButtonH = 0.056f;
+        public const float MenuGap = 0.01f;
+        public const int MenuColumns = 2;
+        public const float LauncherRadius = 0.042f;
+        public const float PickerRowW = 0.18f;
+        public const float PickerRowH = 0.05f;
+        public const float PickerPitch = 0.058f;
+    }
+
+    /// <summary>
+    /// Where the HUD sits. Head-locked UI drags along with every head turn, so a hand pointing at the menu loses it
+    /// the moment the user looks at the menu (worse with webcam head tracking). Instead the HUD stays where it is in
+    /// the room and only glides back in front of the user once the head has turned or moved well away from it, and
+    /// never while the HUD is in use. Yaw only: looking up or down never moves it. Pure, unit tested.
+    /// </summary>
+    public sealed class LazyFollow
+    {
+        public float RecentreAngle = 30f;      // degrees of yaw between where the head looks and where the HUD is
+        public float RecentreDistance = 0.4f;  // metres the head has moved since the HUD was placed
+        // From the eyes. Beyond the hands (0.3-0.6 m out), so a hand ray crosses the HUD instead of running level
+        // with it. The UI was designed in metres at 0.6 m; LensApp scales the HUD by Distance / DesignDistance.
+        public const float DesignDistance = 0.6f;
+        public float Distance = 1.0f, Height = -0.28f;
+        public float Smoothing = 5f;           // per second; higher = snappier glide
+        bool _placed, _gliding;
+        Vector3 _headAtPlace, _targetPos; Quaternion _targetRot;
+
+        public bool IsGliding => _gliding;
+
+        /// <summary>Forget the placement: the next update snaps the HUD in front of the eyes again.</summary>
+        public void Reset() { _placed = false; _gliding = false; }
+
+        /// <summary>Returns the pose the HUD should have this frame. <paramref name="hold"/> = in use, don't move.</summary>
+        public Pose Update(Vector3 headPos, Quaternion headRot, Pose current, bool hold, float dt)
+        {
+            var fwd = Flat(headRot * Vector3.forward);
+            if (!_placed)
+            {
+                _placed = true;
+                SetTarget(headPos, fwd);
+                _gliding = false;
+                return new Pose(_targetPos, _targetRot); // first placement snaps
+            }
+            if (hold) { _gliding = false; return current; }
+            if (!_gliding)
+            {
+                var toHud = Flat(current.position - headPos);
+                var turned = toHud != Vector3.zero && Vector3.Angle(fwd, toHud) > RecentreAngle;
+                var moved = Vector3.Distance(headPos, _headAtPlace) > RecentreDistance;
+                if (!turned && !moved) return current;
+                SetTarget(headPos, fwd);
+            }
+            var t = 1f - Mathf.Exp(-Smoothing * dt);
+            var pos = Vector3.Lerp(current.position, _targetPos, t);
+            var rot = Quaternion.Slerp(current.rotation, _targetRot, t);
+            if (Vector3.Distance(pos, _targetPos) < 0.002f && Quaternion.Angle(rot, _targetRot) < 0.5f)
+            {
+                _gliding = false;
+                return new Pose(_targetPos, _targetRot);
+            }
+            return new Pose(pos, rot);
+        }
+
+        void SetTarget(Vector3 headPos, Vector3 fwd)
+        {
+            _gliding = true;
+            _headAtPlace = headPos;
+            _targetPos = headPos + fwd * Distance + Vector3.up * Height;
+            _targetRot = Quaternion.LookRotation(_targetPos - headPos, Vector3.up); // faces the eyes (UI reads from -Z)
+        }
+
+        static Vector3 Flat(Vector3 v)
+        {
+            v.y = 0f;
+            return v.sqrMagnitude < 1e-6f ? Vector3.zero : v.normalized;
+        }
+    }
+
+    /// <summary>
+    /// Keeps the launcher menu open while the pointer is on the launcher or the menu and closes it a moment after the
+    /// pointer has left (never mid-pinch, and a brief wander off the menu is forgiven). Pure, unit tested.
+    /// </summary>
+    public sealed class MenuLinger
+    {
+        public float CloseAfterSeconds = 1.5f;
+        double _leftAt = -1;
+
+        /// <summary>Returns true on the frame the menu should close.</summary>
+        public bool Update(bool open, bool pointerInside, bool pinching, double now)
+        {
+            if (!open || pointerInside || pinching) { _leftAt = -1; return false; }
+            if (_leftAt < 0) { _leftAt = now; return false; }
+            if (now - _leftAt < CloseAfterSeconds) return false;
+            _leftAt = -1;
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Lens scene entry point. Builds the HUD, word labels and result card at runtime; input comes from HypaCore's
     /// PinchPointer (hands on Quest, mouse in the editor).
     /// Editor keys: Space = capture, hold left mouse = pinch (&gt; 0.6 s = sentence), O = offline, N = no text, H = help.
+    /// With the Meta XR Simulator running, the hand aims and pinches as on the headset; the left mouse button also
+    /// pinches, and P switches aiming to the mouse (for webcam hands, which pinch well but aim badly).
     /// </summary>
     public sealed class LensApp : MonoBehaviour
     {
@@ -29,7 +136,7 @@ namespace HypaLens
         [SerializeField] bool useSimulatedApi = true;
         [SerializeField] float simWallDistance = 1.0f;
 
-        static readonly Color LabelCol = new Color(1f, 0.85f, 0.2f, 0.28f);
+        static readonly Color LabelBg = new Color(0.05f, 0.06f, 0.10f, 0.95f);
         static readonly Color LabelSel = new Color(0.2f, 0.9f, 0.5f, 0.5f);
 
         LensController _lens; LensPlatform _p; IHypaLensApi _api;
@@ -38,7 +145,8 @@ namespace HypaLens
         SavedListStore _saved;
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _cam, _hud, _world;
-        TextMesh _status, _fromText, _toText;
+        TextMesh _status; GameObject _statusBg;
+        PinchTarget _fromBtn, _toBtn;
         GameObject _onboarding, _card, _practice;
         LanguagePicker _picker;
         PracticeDeck _deck; TextMesh _deckText;
@@ -71,7 +179,7 @@ namespace HypaLens
             _ = LoadLanguages();
             if (AppRouter.Consume(AppRouter.LensSavedWords)) TogglePractice();
             else if (!LensPrefs.Onboarded) ShowOnboarding(true);
-            SetStatus("Pinch the round Hypa Lens button to translate text.");
+            SetStatus("Point at the round Hypa Lens button for the menu. Hold a pinch on it to translate text.");
         }
 
         LensPlatform BuildPlatform()
@@ -91,49 +199,107 @@ namespace HypaLens
             return p;
         }
 
-        // ---------- HUD: head-locked, low in a narrow field of view, within arm's reach ----------
+        // ---------- HUD: lazy-follow (see LazyFollow), low in a narrow field of view, within arm's reach ----------
+
+        readonly LazyFollow _follow = new LazyFollow();
+
+        /// <summary>Is the pointer on anything in the HUD (launcher, menu, picker, cards)?</summary>
+        bool PointerOnHud
+        {
+            get
+            {
+                var hover = PinchPointer.Instance != null ? PinchPointer.Instance.Hover : null;
+                return hover != null && _hud != null && hover.transform.IsChildOf(_hud);
+            }
+        }
+
+        /// <summary>Is a pinch in progress that started on the HUD? (A hand merely held in a pinch pose never holds the HUD.)</summary>
+        bool PinchingHud
+        {
+            get
+            {
+                var pressed = PinchPointer.Instance != null ? PinchPointer.Instance.Pressed : null;
+                return pressed != null && _hud != null && pressed.transform.IsChildOf(_hud);
+            }
+        }
+
+        bool _xrWasActive;
+
+        void FollowHead()
+        {
+            if (_hud == null || _cam == null) return;
+            // The XR session can start a few frames in, moving the camera to eye height: re-place the HUD instantly then.
+            var xrActive = UnityEngine.XR.XRSettings.isDeviceActive;
+            if (xrActive && !_xrWasActive) _follow.Reset();
+            _xrWasActive = xrActive;
+            var hold = (_launcherMenu != null && _launcherMenu.gameObject.activeSelf) || PointerOnHud || PinchingHud;
+            var pose = _follow.Update(_cam.position, _cam.rotation, new Pose(_hud.position, _hud.rotation), hold, Time.unscaledDeltaTime);
+            _hud.SetPositionAndRotation(pose.position, pose.rotation);
+        }
 
         // ---------- Launcher: one round button opens everything (seated, within reach, out of the way) ----------
+        // Hovering the button opens the menu; pinch an item, or pinch the button and slide onto an item and release.
+        // The menu closes itself once the pointer has left it. A short pinch on the button still toggles it, and a
+        // long pinch translates straight away.
 
-        Transform _launcherMenu;
+        Transform _launcher, _launcherMenu;
         TextMesh _launcherLabel;
         GameObject _launcherIcon;
+        readonly MenuLinger _linger = new MenuLinger();
         /// <summary>Launcher logo: Assets/HypaLens/Resources/HypaLensLogo.png (square, transparent background). "Hypa" text until it exists.</summary>
         const string LogoResource = "HypaLensLogo";
 
         void BuildHud()
         {
             _hud = new GameObject("HypaLens HUD").transform;
-            _hud.SetParent(_cam, false);
-            _hud.localPosition = new Vector3(0f, -0.17f, 0.6f);
-            _status = Ui.Text(_hud, "", 0.017f, new Vector3(-0.05f, -0.04f, 0), Color.white); // left of the launcher
+            _hud.SetParent(_world, false);
+            _hud.localScale = Vector3.one * (_follow.Distance / LazyFollow.DesignDistance); // same angular size as at 0.6 m
+            FollowHead(); // first placement: in front of the eyes, then it stays put until the head turns away
+            // Status: right-aligned just left of the launcher, so long messages grow leftwards into view, on a soft backdrop.
+            _status = Ui.Text(_hud, "", StatusLineH, new Vector3(StatusRight, -0.04f, 0), new Color(1f, 1f, 1f, 0.95f), TextAnchor.MiddleRight);
 
-            // Low right, inside arm's reach. Pinch = open the menu; hold the pinch = translate text straight away.
-            var launcher = new GameObject("Hypa Launcher").transform;
+            // Low right, inside arm's reach. Hover = open the menu; hold the pinch = translate text straight away.
+            var launcher = _launcher = new GameObject("Hypa Launcher").transform;
             launcher.SetParent(_hud, false);
             launcher.localPosition = new Vector3(0.24f, -0.04f, 0f);
             var logo = Resources.Load<Texture2D>(LogoResource);
-            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, 0.032f, Ui.Accent,
+            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, LensTouch.LauncherRadius, Ui.Accent,
                 ToggleLauncher, () => { ShowLauncher(false); _ = CaptureAsync(); }, logo);
             _launcherLabel = Ui.LabelOf(launcherBtn);
             _launcherIcon = launcherBtn.transform.parent.Find("icon")?.gameObject;
+            var launcherHover = launcherBtn.OnHover;
+            launcherBtn.OnHover = on =>
+            {
+                launcherHover(on);
+                // Open on hover, but never on top of a picker or card the user is in the middle of (a pinch still can).
+                if (on && !OtherViewOpen) ShowLauncher(true, closeOthers: false);
+            };
 
+            // A compact grid above-left of the button, so every item is one small hand movement away.
             _launcherMenu = new GameObject("Lens Menu").transform;
             _launcherMenu.SetParent(launcher, false);
             var items = HypaShell.Instance != null ? 6 : 5;
-            const float w = 0.19f, h = 0.046f, gap = 0.008f;
-            var height = items * h + (items - 1) * gap + 0.024f;
-            _launcherMenu.localPosition = new Vector3(-0.12f, 0.045f + height * 0.5f, 0f); // above and left of the button
-            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), new Vector2(w + 0.024f, height), Ui.Panel, true);
-            var y = height * 0.5f - 0.012f - h * 0.5f;
-            void Item(string label, Color c, Action a, out TextMesh text)
+            const float w = LensTouch.MenuButtonW, h = LensTouch.MenuButtonH, gap = LensTouch.MenuGap;
+            const int cols = LensTouch.MenuColumns;
+            var rows = (items + cols - 1) / cols;
+            var width = cols * w + (cols - 1) * gap + 0.024f;
+            var height = rows * h + (rows - 1) * gap + 0.024f;
+            // Right edge near the button's right edge, bottom edge just above it.
+            _launcherMenu.localPosition = new Vector3(LensTouch.LauncherRadius * 1.12f - width * 0.5f, 0.045f + height * 0.5f, 0f);
+            // The panel is a (no-op) target so a pinch that wanders onto it counts as "still in the menu".
+            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), new Vector2(width, height), Ui.Panel, true).AddComponent<PinchTarget>();
+            var n = 0;
+            void Item(string label, Color c, Action a, out PinchTarget btn)
             {
-                text = Ui.LabelOf(Ui.Button(label, _launcherMenu, new Vector3(0, y, 0), new Vector2(w, h), c, () => { ShowLauncher(false); a(); }));
-                y -= h + gap;
+                var x = -width * 0.5f + 0.012f + w * 0.5f + (n % cols) * (w + gap);
+                var y = height * 0.5f - 0.012f - h * 0.5f - (n / cols) * (h + gap);
+                btn = Ui.Button(label, _launcherMenu, new Vector3(x, y, 0), new Vector2(w, h), c, () => { ShowLauncher(false); a(); });
+                btn.AcceptsSlide = true; // pinch the button, slide here, release
+                n++;
             }
             Item("Translate text", Ui.Accent, () => _ = CaptureAsync(), out _);
-            Item("From", Ui.Muted, () => OpenPicker(true), out _fromText);
-            Item("To", Ui.Muted, () => OpenPicker(false), out _toText);
+            Item("From", Ui.Muted, () => OpenPicker(true), out _fromBtn);
+            Item("To", Ui.Muted, () => OpenPicker(false), out _toBtn);
             Item("Saved words", Ui.Muted, TogglePractice, out _);
             Item("How it works", Ui.Muted, () => ShowOnboarding(true), out _);
             if (HypaShell.Instance != null) Item("Apps", Ui.Muted, () => HypaShell.Instance.ToggleMenu(), out _);
@@ -145,22 +311,65 @@ namespace HypaLens
 
         void ToggleLauncher() => ShowLauncher(!_launcherMenu.gameObject.activeSelf);
 
-        void ShowLauncher(bool open)
+        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null;
+
+        /// <summary>Is the pointer on the launcher button or its menu?</summary>
+        bool PointerOnLauncher
         {
-            if (_launcherMenu == null) return;
-            if (open) { _picker?.Close(); ShowOnboarding(false); if (_practice != null) { Destroy(_practice); _practice = null; } }
+            get
+            {
+                var hover = PinchPointer.Instance != null ? PinchPointer.Instance.Hover : null;
+                return hover != null && _launcher != null && hover.transform.IsChildOf(_launcher);
+            }
+        }
+
+        void ShowLauncher(bool open, bool closeOthers = true)
+        {
+            if (_launcherMenu == null || _launcherMenu.gameObject.activeSelf == open) return;
+            if (open && closeOthers) { _picker?.Close(); ShowOnboarding(false); if (_practice != null) { Destroy(_practice); _practice = null; } }
             _launcherMenu.gameObject.SetActive(open);
             // Open: the button reads "Close". Closed: the Hypa Lens logo (or "Hypa" if the logo isn't in the project).
             if (_launcherIcon != null) _launcherIcon.SetActive(!open);
             _launcherLabel.text = open ? "Close" : _launcherIcon != null ? "" : "Hypa";
         }
 
-        void SetStatus(string s) { if (_status != null) _status.text = Ui.Wrap(s, 44); }
+        const float StatusLineH = 0.016f, StatusRight = 0.165f;
+        const int StatusWrap = 34;
+
+        void SetStatus(string s)
+        {
+            if (_status == null) return;
+            var text = Ui.Wrap(s, StatusWrap);
+            _status.text = text;
+            if (_statusBg != null) Destroy(_statusBg);
+            _statusBg = null;
+            if (string.IsNullOrEmpty(text)) return;
+            var lines = text.Split('\n');
+            var longest = 0;
+            foreach (var l in lines) longest = Mathf.Max(longest, l.Length);
+            var size = new Vector2(Ui.TextWidth(new string('x', longest), StatusLineH) + 0.024f, lines.Length * StatusLineH * 1.08f + 0.014f);
+            _statusBg = Ui.Quad("status bg", _hud, new Vector3(StatusRight + 0.012f - size.x * 0.5f, -0.04f, 0.003f), size,
+                new Color(0.05f, 0.06f, 0.09f, 0.72f), false);
+        }
 
         void UpdateLanguageText()
         {
-            _fromText.text = "From: " + (_lens.SourceLanguage ?? "Auto");
-            _toText.text = "To: " + _lens.TargetLanguage;
+            var maxW = LensTouch.MenuButtonW - 0.028f;
+            var lineH = LensTouch.MenuButtonH * 0.42f * 0.75f; // the smallest the label is allowed to shrink to
+            Ui.SetLabel(_fromBtn, LanguageLabel("From: ", _lens.SourceLanguage ?? "Auto", lineH, maxW));
+            Ui.SetLabel(_toBtn, LanguageLabel("To: ", _lens.TargetLanguage, lineH, maxW));
+        }
+
+        /// <summary>
+        /// "To: Arabic (Libyan)" when it fits, else "To: Arabic": the bracketed variant goes before any ellipsis.
+        /// Pure, unit tested.
+        /// </summary>
+        public static string LanguageLabel(string prefix, string name, float lineHeight, float maxWidth)
+        {
+            var full = prefix + name;
+            if (Ui.TextWidth(full, lineHeight) <= maxWidth) return full;
+            var bracket = name.IndexOf(" (", StringComparison.Ordinal);
+            return bracket > 0 ? prefix + name.Substring(0, bracket) : full;
         }
 
         async Task LoadLanguages()
@@ -211,7 +420,7 @@ namespace HypaLens
             _onboarding.transform.localPosition = new Vector3(0f, 0.2f, 0f);
             var bg = Ui.Quad("bg", _onboarding.transform, Vector3.zero, new Vector2(0.48f, 0.27f), Ui.Panel, true);
             Ui.Text(_onboarding.transform,
-                "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Pinch the round Hypa Lens button, then Translate text\n    (or hold the pinch on it to capture straight away)\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nLanguages and saved words are in the same menu.\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
+                "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Point at the round Hypa Lens button, then pinch Translate text\n    (or hold the pinch on the button to capture straight away)\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nLanguages and saved words are in the same menu.\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
                 0.017f, Vector3.zero, Color.white);
             var pt = bg.AddComponent<PinchTarget>();
             pt.OnPinch = k => { if (k == PinchKind.Short) ShowOnboarding(false); };
@@ -257,18 +466,41 @@ namespace HypaLens
                     var size = FrameProjector.PixelSizeToWorld(meta.Intrinsics, w.Box, dist) * 1.1f;
                     size = new Vector2(Mathf.Max(size.x, 0.03f), Mathf.Max(size.y, 0.035f)); // small print stays pinchable
 
-                    var go = Ui.Quad("Word " + w.Text, _world, Vector3.zero, size, LabelCol, true);
-                    go.transform.position = pos + normal * 0.003f;
-                    go.transform.rotation = FrameProjector.FaceViewer(normal, Vector3.up);
-                    var label = go.AddComponent<WordLabel>();
-                    label.Word = w;
-                    label.Target = go.AddComponent<PinchTarget>();
+                    var label = NewWordLabel(w, size, pos + normal * 0.003f, FrameProjector.FaceViewer(normal, Vector3.up), _world);
                     label.Target.OnPinch = k => OnWordPinch(label, k);
                     label.Target.OnHover = on => { if (!_selected.Contains(label)) label.Target.SetColor(on ? Ui.Hover : (Color?)null); };
                     _labels.Add(label);
                     placed++;
                 }
             return placed;
+        }
+
+        /// <summary>Widens the pill so the printed word fits inside it. Pure, unit tested.</summary>
+        public static Vector2 FitPillToWord(string text, Vector2 size, float lineHeight)
+        {
+            var need = (text ?? "").Length * lineHeight * 0.62f + lineHeight * 0.8f;
+            if (need > size.x) size.x = need;
+            return size;
+        }
+
+        /// <summary>
+        /// One readable word label: an unscaled root at the surface point, a dark pill (collider + pinch
+        /// target) and the word printed on top in white. The root stays unscaled so the text is undistorted.
+        /// </summary>
+        public static WordLabel NewWordLabel(OcrWord word, Vector2 size, Vector3 pos, Quaternion rot, Transform parent)
+        {
+            var lineH = size.y * 0.5f;
+            size = FitPillToWord(word.Text, size, lineH);
+            var root = new GameObject("Word " + word.Text);
+            root.transform.SetParent(parent, false);
+            root.transform.position = pos;
+            root.transform.rotation = rot;
+            var pill = Ui.Quad("pill", root.transform, Vector3.zero, size, LabelBg, true);
+            Ui.Text(root.transform, word.Text, lineH, Vector3.zero, Color.white);
+            var label = root.AddComponent<WordLabel>();
+            label.Word = word;
+            label.Target = pill.AddComponent<PinchTarget>();
+            return label;
         }
 
         void ClearLabels()
@@ -415,9 +647,17 @@ namespace HypaLens
         void Update()
         {
             if (_simWall != null && _simWall.activeSelf && UnityEngine.XR.XRSettings.isDeviceActive) _simWall.SetActive(false);
+            // A hand merely held in a pinch pose (common with simulator hands) must not pin the menu open or the HUD in place:
+            // only a pinch that started on something counts.
+            var pointer = PinchPointer.Instance;
+            var pinchingSomething = pointer != null && pointer.Pressed != null;
+            if (_launcherMenu != null && _linger.Update(_launcherMenu.gameObject.activeSelf, PointerOnLauncher, pinchingSomething, Time.realtimeSinceStartupAsDouble))
+                ShowLauncher(false);
+            FollowHead();
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();
             if (Input.GetKeyDown(KeyCode.H)) ShowOnboarding(_onboarding == null);
+            if (Input.GetKeyDown(KeyCode.P)) { EditorXrInput.HandAims = !EditorXrInput.HandAims; SetStatus(EditorXrInput.HandAims ? "Hand aims (P: mouse aims)." : "Mouse aims, hand or button pinches (P: hand aims)."); }
             if (Input.GetKeyDown(KeyCode.O) && _simApi != null) { _simApi.Offline = !_simApi.Offline; SetStatus("Sim offline: " + _simApi.Offline); }
             if (Input.GetKeyDown(KeyCode.N) && _simFrames != null) { _simFrames.ReturnBlankFrame = !_simFrames.ReturnBlankFrame; SetStatus("Sim blank frame: " + _simFrames.ReturnBlankFrame); }
         }
@@ -427,8 +667,7 @@ namespace HypaLens
             _cts.Cancel();
             _cts.Dispose();
             HypaShell.Instance?.SetMenuButtonVisible(true);
-            if (_hud != null) Destroy(_hud.gameObject);    // the HUD hangs off the camera, which the shell keeps alive
-            if (_world != null) Destroy(_world.gameObject);
+            if (_world != null) Destroy(_world.gameObject); // takes the HUD with it
         }
     }
 }

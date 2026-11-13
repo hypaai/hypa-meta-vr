@@ -66,7 +66,7 @@ namespace HypaLens.Sim
 
         static readonly HypaLanguage[] Langs =
         {
-            L("English", "en"), L("Yoruba", "yo"), L("Hausa", "ha"), L("Igbo", "ig"), L("French", "fr"), L("Spanish", "es"),
+            L("Annang", "ann"), L("English", "en"), L("Yoruba", "yo"), L("Hausa", "ha"), L("Igbo", "ig"), L("French", "fr"), L("Spanish", "es"),
         };
         static HypaLanguage L(string n, string c) => new HypaLanguage { Name = n, Code = c, Voices = new[] { "female" } };
 
