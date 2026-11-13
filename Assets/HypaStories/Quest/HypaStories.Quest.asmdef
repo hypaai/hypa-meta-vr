@@ -1,0 +1,16 @@
+{
+  "name": "HypaStories.Quest",
+  "rootNamespace": "HypaStories.Quest",
+  "references": [ "HypaStories.Runtime", "Oculus.VR" ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [ "HYPA_META_XR" ],
+  "versionDefines": [
+    { "name": "com.meta.xr.sdk.core", "expression": "207.0.0", "define": "HYPA_META_XR" }
+  ],
+  "noEngineReferences": false
+}

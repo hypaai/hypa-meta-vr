@@ -5,23 +5,37 @@ namespace HypaCore
 {
     /// <summary>
     /// World-space UI from generated meshes so modes need no prefabs or extra packages. Sizes are in metres.
-    /// The look: dark glass panels with a hairline edge, pill buttons (accent = primary action, muted = quiet),
-    /// Inter type that shrinks and then trims with an ellipsis rather than spilling out of its button.
+    /// The look is Hypa's dark theme (the same neutrals as the mobile and web apps), drawn like Horizon OS: dark glass
+    /// cards with a hairline edge and a soft top sheen, one light pill for the main action, dark pills for the quiet
+    /// rows, Inter type that shrinks and then trims with an ellipsis rather than spilling out of its button.
     /// </summary>
     public static class Ui
     {
-        public static readonly Color Accent = new Color(0.20f, 0.55f, 1f, 1f);
-        public static readonly Color Panel = new Color(0.07f, 0.08f, 0.11f, 0.94f);
-        /// <summary>Pass as a button colour for the quiet style (translucent white with an edge).</summary>
-        public static readonly Color Muted = new Color(0.30f, 0.30f, 0.38f, 1f);
-        public static readonly Color Hover = new Color(0.45f, 0.72f, 1f, 1f);
-        static readonly Color Quiet = new Color(1f, 1f, 1f, 0.10f);
-        static readonly Color QuietHover = new Color(1f, 1f, 1f, 0.24f);
-        static readonly Color Edge = new Color(1f, 1f, 1f, 0.14f);
+        public static readonly Color Panel = new Color(0.090f, 0.090f, 0.090f, 0.80f);  // card, #171717, a bit more glass than solid
+        public static readonly Color Primary = new Color(0.898f, 0.898f, 0.898f, 1f);   // primary, #e5e5e5
+        public static readonly Color Secondary = new Color(0.149f, 0.149f, 0.149f, 1f); // secondary, #262626
+        public static readonly Color Tertiary = new Color(0.32f, 0.32f, 0.32f, 1f);     // hover lift, not a bright blue
+
+        /// <summary>Accent = the one light action. Muted = the quiet dark rows. Hover = a dark row lighting up under the hand.</summary>
+        public static readonly Color Accent = Primary;
+        public static readonly Color Muted = Secondary;
+        public static readonly Color Hover = Tertiary;
+        static readonly Color PrimaryHover = new Color(0.78f, 0.78f, 0.78f, 1f);  // a light pill dims a touch instead
+        static readonly Color DarkText = new Color(0.09f, 0.09f, 0.09f, 1f);
+        static readonly Color Edge = new Color(1f, 1f, 1f, 0.12f);
 
         public const float CornerRadius = 0.012f;
         const float EdgeWidth = 0.0015f;
         const float ButtonPad = 0.014f;
+
+        /// <summary>Dark text on a light background (e.g. Primary), white text on a dark one.</summary>
+        public static Color TextColorFor(Color bg)
+        {
+            var luma = 0.299f * bg.r + 0.587f * bg.g + 0.114f * bg.b;
+            return luma > 0.6f ? DarkText : Color.white;
+        }
+
+        static Color HoverFor(Color bg) => TextColorFor(bg) == DarkText ? PrimaryHover : Hover;
 
         static Font _font;
         /// <summary>Inter (SIL OFL, Resources/Fonts). Unity's built-in font if it is missing.</summary>
@@ -78,19 +92,51 @@ namespace HypaCore
             return go;
         }
 
+        static Texture2D _sheenMask;
+
+        /// <summary>A soft top-to-bottom alpha fade (white, no shape), for the light-catching-glass highlight on cards.</summary>
+        static Texture2D SheenMask
+        {
+            get
+            {
+                if (_sheenMask != null) return _sheenMask;
+                const int h = 64;
+                var pixels = new Color32[h];
+                for (var y = 0; y < h; y++)
+                {
+                    var t = y / (float)(h - 1); // 0 at the bottom, 1 at the top
+                    var a = (byte)(Mathf.Pow(t, 1.6f) * 255); // most of the brightness sits near the very top
+                    pixels[y] = new Color32(255, 255, 255, a);
+                }
+                _sheenMask = new Texture2D(1, h, TextureFormat.RGBA32, false)
+                    { name = "Hypa Sheen", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+                _sheenMask.SetPixels32(pixels);
+                _sheenMask.Apply(false, true);
+                return _sheenMask;
+            }
+        }
+
         /// <summary>
         /// A coloured rounded rectangle (corner radius <see cref="CornerRadius"/> unless given), unscaled, with an
-        /// optional thin box collider that is hit from either side. Panels get a hairline edge behind them.
+        /// optional thin box collider that is hit from either side. Panels get the glass treatment: a hairline edge
+        /// behind and a soft highlight across the top, like light catching a pane of glass. Subtle on purpose.
+        /// <paramref name="rounded"/> = false gives square corners (an icon); everything else is rounded.
         /// </summary>
-        public static GameObject Quad(string name, Transform parent, Vector3 localPos, Vector2 size, Color color, bool collider, float radius = -1f)
+        public static GameObject Quad(string name, Transform parent, Vector3 localPos, Vector2 size, Color color, bool collider,
+            float radius = -1f, bool rounded = true)
         {
-            if (radius < 0f) radius = Mathf.Min(CornerRadius, size.y * 0.5f);
+            if (!rounded) radius = 0f;
+            else if (radius < 0f) radius = Mathf.Min(CornerRadius, size.y * 0.5f);
             // Transparent UI is sorted by distance, so a large panel behind off-centre buttons can be drawn over them.
-            // Panel edges draw first, panel backgrounds next, buttons after, text (sortingOrder 1) last.
+            // Panel edges draw first, panel backgrounds next, the sheen and buttons after, text (sortingOrder 1) last.
             var panel = color == Panel;
             var go = Shape(name, parent, localPos, RoundedRect(size.x, size.y, radius), color, panel ? -1 : 0);
             if (panel)
+            {
                 Shape("edge", go.transform, new Vector3(0, 0, 0.0005f), RoundedRect(size.x + EdgeWidth * 2, size.y + EdgeWidth * 2, radius + EdgeWidth), Edge, -2);
+                var sheen = Shape("sheen", go.transform, new Vector3(0, 0, -0.0005f), RoundedRect(size.x * 0.94f, size.y * 0.94f, radius), new Color(1f, 1f, 1f, 0.12f), 0);
+                sheen.GetComponent<Renderer>().material.mainTexture = SheenMask;
+            }
             // A thin box, not a mesh collider: a hand ray arriving from behind (a hand held past the HUD, common when
             // seated) must still hit it.
             if (collider) go.AddComponent<BoxCollider>().size = new Vector3(size.x, size.y, 0.02f);
@@ -178,22 +224,21 @@ namespace HypaCore
 
         /// <summary>
         /// A pinchable pill button: an unscaled root holding a background (collider) and a label that is shrunk and
-        /// then trimmed to fit. <see cref="Accent"/> = primary; <see cref="Muted"/> = quiet (translucent, with an edge).
+        /// then trimmed to fit. <see cref="Accent"/> = the one light primary action; <see cref="Muted"/> = a quiet dark
+        /// row. Buttons stay plain pills: on something this small an edge reads as a sticker outline, not glass.
         /// </summary>
         public static PinchTarget Button(string label, Transform parent, Vector3 localPos, Vector2 size, Color color, Action onPress)
         {
             var root = new GameObject("Btn " + label);
             root.transform.SetParent(parent, false);
             root.transform.localPosition = localPos;
-            var quiet = color == Muted;
-            var r = size.y * 0.5f;
-            var bg = Quad("bg", root.transform, Vector3.zero, size, quiet ? Quiet : color, true, r);
-            if (quiet) Shape("edge", root.transform, new Vector3(0, 0, 0.0005f), RoundedRect(size.x + EdgeWidth * 2, size.y + EdgeWidth * 2, r + EdgeWidth), Edge, -1);
+            var bg = Quad("bg", root.transform, Vector3.zero, size, color, true, size.y * 0.5f);
             var pt = bg.AddComponent<PinchTarget>();
-            Text(root.transform, "", size.y * 0.42f, Vector3.zero, Color.white);
+            Text(root.transform, "", size.y * 0.42f, Vector3.zero, TextColorFor(color));
             SetLabel(pt, label);
             pt.OnPinch = k => { if (k == PinchKind.Short) onPress?.Invoke(); };
-            pt.OnHover = on => pt.SetColor(on ? (quiet ? QuietHover : Hover) : (Color?)null);
+            var hover = HoverFor(color);
+            pt.OnHover = on => pt.SetColor(on ? hover : (Color?)null);
             return pt;
         }
 
@@ -223,24 +268,25 @@ namespace HypaCore
             var root = new GameObject("Btn " + label);
             root.transform.SetParent(parent, false);
             root.transform.localPosition = localPos;
-            Disc("halo", root.transform, new Vector3(0, 0, 0.002f), radius * 1.30f, new Color(1f, 1f, 1f, 0.10f), false);
-            Disc("ring", root.transform, new Vector3(0, 0, 0.001f), radius * 1.10f, new Color(1f, 1f, 1f, 0.95f), false);
+            // A thin light ring, like a Horizon icon button. Not a bright coloured halo.
+            Disc("ring", root.transform, new Vector3(0, 0, 0.001f), radius * 1.08f, new Color(1f, 1f, 1f, 0.18f), false);
             var bg = Disc("bg", root.transform, Vector3.zero, radius, color, true);
             if (icon != null)
             {
-                var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * 1.3f, Color.white, false, 0f);
+                var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * 1.3f, Color.white, false, rounded: false);
                 var m = img.GetComponent<Renderer>();
                 m.material.mainTexture = icon;
                 m.sortingOrder = 1;
             }
-            Text(root.transform, icon != null ? "" : label, radius * 0.5f, Vector3.zero, Color.white);
+            Text(root.transform, icon != null ? "" : label, radius * 0.5f, Vector3.zero, TextColorFor(color));
             var pt = bg.AddComponent<PinchTarget>();
             pt.OnPinch = k =>
             {
                 if (k == PinchKind.Short) onPress?.Invoke();
                 else if (k == PinchKind.Long) onLongPress?.Invoke();
             };
-            pt.OnHover = on => pt.SetColor(on ? Hover : (Color?)null);
+            var hover = HoverFor(color);
+            pt.OnHover = on => pt.SetColor(on ? hover : (Color?)null);
             return pt;
         }
 

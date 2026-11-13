@@ -136,8 +136,10 @@ namespace HypaLens
         [SerializeField] bool useSimulatedApi = true;
         [SerializeField] float simWallDistance = 1.0f;
 
-        static readonly Color LabelBg = new Color(0.05f, 0.06f, 0.10f, 0.95f);
-        static readonly Color LabelSel = new Color(0.2f, 0.9f, 0.5f, 0.5f);
+        // A dark pill with the word printed on it, so the label is readable whatever is behind it; the selected
+        // word lifts to a lighter neutral (Hypa's theme has no loud accent).
+        static readonly Color LabelBg = new Color(0.09f, 0.09f, 0.09f, 0.95f);
+        static readonly Color LabelSel = new Color(0.40f, 0.40f, 0.40f, 0.95f);
 
         LensController _lens; LensPlatform _p; IHypaLensApi _api;
         SimHypaApi _simApi; SimFrameSource _simFrames; SimPlanePlacer _simPlacer;
@@ -164,6 +166,7 @@ namespace HypaLens
             _world = new GameObject("HypaLens World").transform;
             PinchPointer.EnsureExists();
             _simWall = GameObject.Find("Sim Wall");
+            if (_simWall != null && !Application.isEditor) _simWall.SetActive(false);
             _saved = new SavedListStore();
 
             _p = BuildPlatform();
@@ -246,8 +249,8 @@ namespace HypaLens
         TextMesh _launcherLabel;
         GameObject _launcherIcon;
         readonly MenuLinger _linger = new MenuLinger();
-        /// <summary>Launcher logo: Assets/HypaLens/Resources/HypaLensLogo.png (square, transparent background). "Hypa" text until it exists.</summary>
-        const string LogoResource = "HypaLensLogo";
+        /// <summary>The shared Hypa mark: Assets/HypaCore/Resources/HypaLogo.png (square, transparent, white on dark).</summary>
+        const string LogoResource = "HypaLogo";
 
         void BuildHud()
         {
@@ -263,7 +266,7 @@ namespace HypaLens
             launcher.SetParent(_hud, false);
             launcher.localPosition = new Vector3(0.24f, -0.04f, 0f);
             var logo = Resources.Load<Texture2D>(LogoResource);
-            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, LensTouch.LauncherRadius, Ui.Accent,
+            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, LensTouch.LauncherRadius, Ui.Panel,
                 ToggleLauncher, () => { ShowLauncher(false); _ = CaptureAsync(); }, logo);
             _launcherLabel = Ui.LabelOf(launcherBtn);
             _launcherIcon = launcherBtn.transform.parent.Find("icon")?.gameObject;
@@ -580,7 +583,7 @@ namespace HypaLens
             var w = new Vector2(0.09f, 0.045f);
             if (r.SourceAudio != null) Ui.Button("Hear", t, new Vector3(-0.15f, y, z), w, Ui.Accent, () => Play(r.SourceAudio));
             if (r.TargetAudio != null) Ui.Button("Hear ->", t, new Vector3(-0.05f, y, z), w, Ui.Accent, () => Play(r.TargetAudio));
-            var save = Ui.Button(_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", t, new Vector3(0.05f, y, z), w, new Color(.1f, .6f, .35f), null);
+            var save = Ui.Button(_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", t, new Vector3(0.05f, y, z), w, Ui.Accent, null);
             var saveLabel = Ui.LabelOf(save);
             save.OnPinch = k => { if (k == PinchKind.Short) { _saved.Add(r); saveLabel.text = "Saved"; } };
             Ui.Button("Close", t, new Vector3(0.15f, y, z), w, Ui.Muted, CloseCard);
@@ -639,14 +642,14 @@ namespace HypaLens
 
         // ---------- Editor shortcuts ----------
 
-        // The flat "Sim Wall" backdrop is only for mouse testing with no XR. With a headset, Link or the Meta XR
-        // Simulator running, passthrough shows the real room, so the wall would just block it. Checked every frame
-        // because the XR session can start a few frames after the scene does.
+        // The flat "Sim Wall" backdrop is only for mouse testing in the editor. On a headset it would sit in front of
+        // the real room, and Quest's OpenXR path often leaves XRSettings.isDeviceActive false, so a device build hides
+        // the wall outright; in the editor it goes once the simulator (or Link) is running.
         GameObject _simWall;
 
         void Update()
         {
-            if (_simWall != null && _simWall.activeSelf && UnityEngine.XR.XRSettings.isDeviceActive) _simWall.SetActive(false);
+            if (_simWall != null && _simWall.activeSelf && (!Application.isEditor || UnityEngine.XR.XRSettings.isDeviceActive)) _simWall.SetActive(false);
             // A hand merely held in a pinch pose (common with simulator hands) must not pin the menu open or the HUD in place:
             // only a pinch that started on something counts.
             var pointer = PinchPointer.Instance;

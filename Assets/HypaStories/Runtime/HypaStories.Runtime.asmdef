@@ -1,7 +1,7 @@
 {
   "name": "HypaStories.Runtime",
   "rootNamespace": "HypaStories",
-  "references": [ "HypaCore.Runtime" ],
+  "references": [ "HypaCore.Runtime", "Unity.TextMeshPro" ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

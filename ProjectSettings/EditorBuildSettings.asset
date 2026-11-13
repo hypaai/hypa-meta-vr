@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/HypaLens/Scenes/HypaLens.unity
     guid: 4bffdc8119ab542c584c3c28e848d114
   - enabled: 1
+    path: Assets/HypaStories/Scenes/HypaStory.unity
+    guid: 5da2fc3c55d3f47b0aa845c3950563f8
+  - enabled: 1
     path: Assets/HypaCore/Scenes/HypaCoreTest.unity
     guid: 90ce47044fcfa43e3ad1c3dc22df131f
   m_configObjects:

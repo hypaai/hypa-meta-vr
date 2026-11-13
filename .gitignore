@@ -7,6 +7,8 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
+# Android native build scratch (CMake/ninja), left in the project root by an Android Build And Run
+/.utmp/
 *.csproj
 *.sln
 *.pidb
@@ -51,7 +53,10 @@ crashlytics-buildid.txt
 /[Aa]ssets/StreamingAssets.meta
 /[Aa]ssets/StreamingAssets/
 # Android Gradle/CMake native build intermediates (AGP prefab/externalNativeBuild)
-/.utmp/
 .gradle/
 .cxx/
 .externalNativeBuild/
+# Hypa Stories: media this public repo may not redistribute (Epidemic Sound beds, narration of unconfirmed origin,
+# placeholder avatar). Kept locally only; the app falls back without them. See Assets/HypaStories/README.md.
+/[Aa]ssets/HypaStories/Local/
+/[Aa]ssets/HypaStories/Local.meta

@@ -1,2 +1,6 @@
 #!/usr/bin/env bash
-exec "$(git rev-parse --show-toplevel)/tools/scan-secrets.sh"
+set -e
+refs=$(cat)
+"$(git rev-parse --show-toplevel)/tools/scan-secrets.sh" </dev/null
+command -v git-lfs >/dev/null 2>&1 || { echo "git-lfs is not installed: binary assets would not be uploaded. brew install git-lfs" >&2; exit 2; }
+printf '%s\n' "$refs" | git lfs pre-push "$@"

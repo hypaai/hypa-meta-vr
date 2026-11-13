@@ -57,7 +57,7 @@ namespace HypaLens
                 var name = auto ? null : _all[i - (_offerAuto ? 1 : 0)].Name;
                 var col = k % 2 == 0 ? -0.095f : 0.095f;
                 var row = 0.084f - (k / 2) * LensTouch.PickerPitch;
-                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(LensTouch.PickerRowW, LensTouch.PickerRowH), Ui.Accent, () =>
+                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(LensTouch.PickerRowW, LensTouch.PickerRowH), Ui.Muted, () =>
                 {
                     _onPick(name);
                     Close();

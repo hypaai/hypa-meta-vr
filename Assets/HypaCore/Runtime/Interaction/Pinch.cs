@@ -250,8 +250,8 @@ namespace HypaCore
             if (Vector3.Dot(end - ray.origin, ray.direction) < 0.02f) end = ray.origin + ray.direction * 0.02f;
             _line.SetPosition(0, ray.origin);
             _line.SetPosition(1, end);
-            var col = pinching ? Ui.Accent : onTarget ? Ui.Hover : new Color(1f, 1f, 1f, 0.9f);
-            _line.startColor = new Color(col.r, col.g, col.b, 0.15f); // fades in from the hand
+            var col = pinching || onTarget ? Color.white : new Color(1f, 1f, 1f, 0.85f);
+            _line.startColor = new Color(col.r, col.g, col.b, 0.45f); // fades in from the hand
             _line.endColor = col;
 
             if (hitSomething)
@@ -272,7 +272,7 @@ namespace HypaCore
             _line = lineGo.AddComponent<LineRenderer>();
             _line.positionCount = 2;
             _line.useWorldSpace = true;
-            _line.startWidth = 0.006f; _line.endWidth = 0.004f;
+            _line.startWidth = 0.005f; _line.endWidth = 0.0035f;
             _line.material = Ui.NewMaterial(Color.white);
             _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _line.receiveShadows = false;

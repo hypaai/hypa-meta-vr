@@ -65,6 +65,34 @@ namespace HypaCore.EditorTools
             Debug.Log("Hypa: Build Settings = " + string.Join(", ", scenes.Select(s => Path.GetFileNameWithoutExtension(s.path))));
         }
 
+        /// <summary>
+        /// HypaLens.unity shipped with its own camera rig and hand tracking, stacked on top of the one Shell already
+        /// keeps alive (DontDestroyOnLoad) once you navigate into Lens. Two live rigs is why a hand's ray can go
+        /// missing and pinching can feel off. This removes Lens's own copy; Shell's rig already covers every scene.
+        /// </summary>
+        [MenuItem("Hypa/Lens/Remove Duplicate Camera Rig")]
+        static void RemoveDuplicateLensRig()
+        {
+            if (EditorApplication.isPlaying) { Debug.LogError("Hypa: stop Play mode first."); return; }
+            var path = AssetDatabase.FindAssets("t:Scene HypaLens")
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == HypaScenes.Lens);
+            if (path == null) { Debug.LogError("Hypa: couldn't find the HypaLens scene."); return; }
+
+            var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+            // Not "MR Utility Kit": Shell has no copy of that one, and Lens needs it to pin labels to real surfaces.
+            string[] names = { "[BuildingBlock] Camera Rig", "[BuildingBlock] Passthrough" };
+            var removed = 0;
+            foreach (var root in scene.GetRootGameObjects())
+                if (names.Contains(root.name)) { Object.DestroyImmediate(root); removed++; }
+
+            if (removed == 0) { Debug.Log("Hypa: nothing to remove in HypaLens — already clean."); return; }
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log($"Hypa: removed {removed} duplicate rig object(s) from HypaLens and saved the scene. " +
+                      "Build And Run again to pick it up.");
+        }
+
         /// <summary>Creates the git-ignored key file at the project root, with an empty key to fill in.</summary>
         [MenuItem("Hypa/Create API Key File (git-ignored)")]
         static void CreateKeyFile()
