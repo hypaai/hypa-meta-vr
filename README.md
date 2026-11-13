@@ -3,7 +3,7 @@
 One Quest 3 / 3S app, one competition entry (Meta VR Start Developer Competition, Productivity track):
 
 - **Hypa Lens:** look at real text, pinch a word or sentence, and get the translation, audio and meaning, pinned in the room.
-- **Hypa Story:** a mode inside the same app (tickets 3A-3E).
+- **Hypa Story:** a mode inside the same app (tickets 3A-3E): a storyteller by a campfire who tells a story, and you can raise a hand to ask a question. See [Assets/HypaStories/README.md](Assets/HypaStories/README.md).
 
 Licensed under Apache 2.0. No code from `hypa-v2`: every Hypa feature comes from Hypa's public API through `HypaCore`.
 
@@ -11,7 +11,7 @@ Licensed under Apache 2.0. No code from `hypa-v2`: every Hypa feature comes from
 Assets/
   HypaCore/      shared core: API client, languages, audio, settings, hands/pinch, world UI, app shell
   HypaLens/      Lens (HYP-163)
-  HypaStories/   Stories (3A-3E), stub for now
+  HypaStories/   Stories (3A-3E): campfire, storyteller, story player, ask loop (port of the Three.js prototype)
 ```
 
 Each folder has its own assembly definitions. **Lens never references Stories and Stories never references Lens**; both use HypaCore. An EditMode test enforces this. Each team edits only its own scenes and prefabs.
@@ -22,11 +22,12 @@ Each folder has its own assembly definitions. **Lens never references Stories an
 2. Clone, then run once: `tools/setup-git.sh`. This sets up Git LFS, Unity Smart Merge, and the secret-scan hooks. Install `git-lfs` first.
 3. Open the folder in Unity. Asset Serialization is forced to **Force Text** and **Visible Meta Files** on open.
 4. **Project Settings > Player > Active Input Handling = Both** (editor mouse input uses the legacy `Input` class).
-5. Install the **Meta XR SDK (All-in-One) v207+** and **Meta XR Simulator** from the Package Manager / Asset Store. Run **Meta > Tools > Project Setup Tool** and fix all issues for Android. The Quest-only assemblies (`HypaCore.Quest`, `HypaLens.Quest`) compile only once those packages are present.
-6. Create the scenes from the menu, then sync Build Settings:
+5. glTFast (`com.unity.cloud.gltfast`, Apache 2.0) is in the manifest; Stories imports its models with it.
+6. Install the **Meta XR SDK (All-in-One) v207+** and **Meta XR Simulator** from the Package Manager / Asset Store. Run **Meta > Tools > Project Setup Tool** and fix all issues for Android. The Quest-only assemblies (`HypaCore.Quest`, `HypaLens.Quest`) compile only once those packages are present.
+7. Create the scenes from the menu, then sync Build Settings:
    - **Hypa > Create Shell and Core Test Scenes**
    - **Hypa > Lens > Create Lens Scene**
-   - **Hypa > Stories > Create Story Stub Scene**
+   - **Hypa > Stories > Create Story Scene**
    - **Hypa > Sync Build Settings** (order: HypaShell, HypaLens, HypaStory, HypaCoreTest)
 
 ## Hypa API key
@@ -53,6 +54,7 @@ See [docs/api-contract.md](docs/api-contract.md) for what has been verified live
 
 - **HypaLens scene, Play:** simulated camera, simulated text, canned translations. Space = capture, hold left mouse = pinch (over 0.6 s = sentence), O = offline, N = no text, H = help. Untick **Use Simulated Api** on the `HypaLens` object to call the real API with your key.
 - **HypaCoreTest scene, Play:** translates and speaks a sentence through the live API (needs a key). R repeats.
+- **HypaStory scene, Play:** the campfire. Right mouse = look, Enter = choose, Space = pause, H or Q = ask, 1-3 = suggested question, Esc = back. Licensed audio and the avatar are local only (see the Stories README).
 - **HypaShell scene, Play:** the full app. M or the **Menu** button opens Lens / Practice (Saved words, Hypa Story) / API test.
 - **Meta XR Simulator:** enable it from the Meta menu, put the Meta camera rig in HypaShell, and set `HypaInput.MouseInEditor = false` to test hands.
 - **Tests:** Window > General > Test Runner > EditMode.
@@ -74,7 +76,8 @@ See [docs/api-contract.md](docs/api-contract.md) for what has been verified live
 | -- | -- |
 | HypaCore MCP client | Built; transport and schemas verified live with free tools; paid tools not yet called with a key |
 | HypaCore REST client (`mt`, `tts`, `asr`, `chat`, `dictionary`, `ocr`) | Generic client built; field names unverified |
-| Audio player (queue, fade stop, volume), settings, languages, shell, Stories stub | Built, not yet run in Unity |
+| Audio player (queue, fade stop, volume), settings, languages, shell | Built, not yet run in Unity |
+| Hypa Story: campfire, storyteller, story player, ask loop (TTS + speech_to_text, stub answers) | Compiles, EditMode tests pass, scene builds; not yet played in the editor or on a headset; Hypa chat not wired (no MCP chat tool) |
 | Lens flow in the simulator | Built, not yet run in Unity |
 | Hands (`OVRHand`), MRUK placement | Compiles against Meta XR SDK v209; runs in the Meta XR Simulator |
 | Passthrough camera frames (MRUK `PassthroughCameraAccess`) | Runs in the Meta XR Simulator (frame, pose and intrinsics); not yet run on a headset |
