@@ -269,8 +269,11 @@ namespace HypaCore
             root.transform.SetParent(parent, false);
             root.transform.localPosition = localPos;
             // A thin light ring, like a Horizon icon button. Not a bright coloured halo.
-            Disc("ring", root.transform, new Vector3(0, 0, 0.001f), radius * 1.08f, new Color(1f, 1f, 1f, 0.18f), false);
+            var ring = Disc("ring", root.transform, new Vector3(0, 0, 0.001f), radius * 1.08f, new Color(1f, 1f, 1f, 0.18f), false);
+            var ringR = ring.GetComponent<Renderer>();
             var bg = Disc("bg", root.transform, Vector3.zero, radius, color, true);
+            // A generous hit area, 1.6x the radius: a ray that lands just beside the button still counts (hands wobble).
+            bg.GetComponent<BoxCollider>().size = new Vector3(3.2f, 3.2f, 0.02f);
             if (icon != null)
             {
                 var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * 1.3f, Color.white, false, rounded: false);
@@ -286,7 +289,13 @@ namespace HypaCore
                 else if (k == PinchKind.Long) onLongPress?.Invoke();
             };
             var hover = HoverFor(color);
-            pt.OnHover = on => pt.SetColor(on ? hover : (Color?)null);
+            // Unmistakable hover: the fill lifts, the ring lights up and the whole button grows a little.
+            pt.OnHover = on =>
+            {
+                pt.SetColor(on ? hover : (Color?)null);
+                ringR.material.color = new Color(1f, 1f, 1f, on ? 0.75f : 0.18f);
+                root.transform.localScale = Vector3.one * (on ? 1.08f : 1f);
+            };
             return pt;
         }
 

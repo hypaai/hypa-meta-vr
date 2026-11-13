@@ -28,20 +28,28 @@ namespace HypaLens.Sim
     }
 
     /// <summary>
-    /// A fake menu laid out like a real photo: word and line boxes in frame pixels. The menu is laid out on the full
-    /// frame; a cropped frame (live mode) sees only the words inside the crop, in the crop's own pixels, as ML Kit would.
+    /// A fake menu laid out like a real photo: word and line boxes in frame pixels. With a <see cref="Wall"/> the menu
+    /// is printed on that wall once (where the first capture looked) and each frame sees it from its own pose, as a
+    /// real sign would: look away and it leaves the frame, look back and it is where it was, so live mode's label
+    /// reuse behaves as on a headset. Without a wall the menu is centred in every frame. A cropped frame (live mode)
+    /// sees only the words inside the crop, in the crop's own pixels, as ML Kit would.
     /// </summary>
     public sealed class SimRecognizer : ITextRecognizer
     {
         static readonly string[] Menu = { "Welcome to the market", "Fresh fish and rice", "Please pay at the counter", "Open every day" };
+
+        /// <summary>The simulator's wall; the menu is anchored to it once it has been placed.</summary>
+        public SimPlanePlacer Wall;
 
         public async Task<OcrResult> RecognizeAsync(CapturedFrame frame, CancellationToken ct)
         {
             await Task.Delay(120, ct);
             var r = new OcrResult { FrameWidth = Math.Max(frame.Width, 1), FrameHeight = frame.Height };
             var fullW = frame.FullWidth > 0 ? frame.FullWidth : frame.Width;
+            var fullH = frame.FullHeight > 0 ? frame.FullHeight : frame.Height;
             if (fullW == 0) return r;
-            var crop = frame.IsCrop ? new FrameRect(frame.CropX, frame.CropY, frame.Width, frame.Height) : new FrameRect(0, 0, fullW, frame.FullHeight > 0 ? frame.FullHeight : frame.Height);
+            var crop = frame.IsCrop ? new FrameRect(frame.CropX, frame.CropY, frame.Width, frame.Height) : new FrameRect(0, 0, fullW, fullH);
+            var anchored = Wall != null && Wall.HasWall;
 
             const float wordH = 60f, charW = 30f, gap = 24f, top = 260f, lineGap = 110f;
             for (var li = 0; li < Menu.Length; li++)
@@ -51,18 +59,40 @@ namespace HypaLens.Sim
                 foreach (var w in words) total += w.Length * charW + gap;
                 var x = (fullW - total) * 0.5f;
                 var y = top + li * lineGap;
-                var line = new OcrLine { Text = Menu[li], Box = new FrameRect(x - crop.X, y - crop.Y, total, wordH) };
+                var line = new OcrLine { Text = Menu[li] };
+                float lx0 = float.MaxValue, ly0 = float.MaxValue, lx1 = float.MinValue, ly1 = float.MinValue;
                 foreach (var w in words)
                 {
                     var ww = w.Length * charW;
                     var box = new FrameRect(x, y, ww, wordH);
-                    if (FrameCrop.Contains(crop, box.Center))
-                        line.Words.Add(new OcrWord { Text = w, Box = new FrameRect(x - crop.X, y - crop.Y, ww, wordH), Line = line });
                     x += ww + gap;
+                    if (anchored && !SeenFromHere(box, frame, out box)) continue;
+                    if (!FrameCrop.Contains(crop, box.Center)) continue;
+                    line.Words.Add(new OcrWord { Text = w, Box = new FrameRect(box.X - crop.X, box.Y - crop.Y, box.Width, box.Height), Line = line });
+                    lx0 = Math.Min(lx0, box.X); ly0 = Math.Min(ly0, box.Y); lx1 = Math.Max(lx1, box.X + box.Width); ly1 = Math.Max(ly1, box.Y + box.Height);
                 }
-                if (line.Words.Count > 0) r.Lines.Add(line);
+                if (line.Words.Count == 0) continue;
+                line.Box = new FrameRect(lx0 - crop.X, ly0 - crop.Y, lx1 - lx0, ly1 - ly0);
+                r.Lines.Add(line);
             }
             return r;
+        }
+
+        /// <summary>Where a word printed on the wall (laid out from the wall's anchor pose) lands in this frame.</summary>
+        bool SeenFromHere(FrameRect printed, CapturedFrame frame, out FrameRect box)
+        {
+            box = default;
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var corner in new[] { new Vector2(printed.X, printed.Y), new Vector2(printed.X + printed.Width, printed.Y),
+                                           new Vector2(printed.X, printed.Y + printed.Height), new Vector2(printed.X + printed.Width, printed.Y + printed.Height) })
+            {
+                var ray = FrameProjector.PixelToWorldRay(frame.Intrinsics, Wall.AnchorPose, corner);
+                if (!Wall.TryPlace(ray, out var world, out _)) return false;
+                if (!FrameProjector.WorldToPixel(frame.Intrinsics, frame.CameraPose, world, out var px)) return false;
+                x0 = Math.Min(x0, px.x); y0 = Math.Min(y0, px.y); x1 = Math.Max(x1, px.x); y1 = Math.Max(y1, px.y);
+            }
+            box = new FrameRect(x0, y0, x1 - x0, y1 - y0);
+            return true;
         }
     }
 
@@ -142,11 +172,14 @@ namespace HypaLens.Sim
     {
         Vector3 _point, _normal = Vector3.back;
         public bool HasWall { get; private set; }
+        /// <summary>The pose the wall was placed from (the fake menu is printed as seen from here).</summary>
+        public Pose AnchorPose { get; private set; }
         public void SetWallFromPose(Pose p, float distance)
         {
             var fwd = p.rotation * Vector3.forward;
             _normal = -fwd;
             _point = p.position + fwd * distance;
+            AnchorPose = p;
             HasWall = true;
         }
         public bool TryPlace(Ray ray, out Vector3 position, out Vector3 normal)

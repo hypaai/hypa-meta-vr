@@ -106,6 +106,8 @@ namespace HypaLens
         public float MatchDistance = 0.06f;
         public float KeepOutOfViewSeconds = 2f;
         public int MissLimit = 3;
+        /// <summary>Hard cap: beyond this the label seen longest ago goes, whatever else happens (keeps the frame rate safe).</summary>
+        public int MaxLabels = 80;
 
         sealed class Entry { public T Item; public string Text; public Vector3 Pos; public double LastSeen; public int Misses; public bool Matched; }
         readonly List<Entry> _entries = new List<Entry>();
@@ -130,8 +132,17 @@ namespace HypaLens
             return best.Item;
         }
 
-        public void Add(T item, string text, Vector3 pos, double now)
-            => _entries.Add(new Entry { Item = item, Text = text, Pos = pos, LastSeen = now, Matched = true });
+        /// <summary>Tracks a new label. Returns the label that had to go to stay under <see cref="MaxLabels"/>, or null.</summary>
+        public T Add(T item, string text, Vector3 pos, double now)
+        {
+            _entries.Add(new Entry { Item = item, Text = text, Pos = pos, LastSeen = now, Matched = true });
+            if (_entries.Count <= MaxLabels) return null;
+            var oldest = 0;
+            for (var i = 1; i < _entries.Count; i++) if (_entries[i].LastSeen < _entries[oldest].LastSeen) oldest = i;
+            var gone = _entries[oldest].Item;
+            _entries.RemoveAt(oldest);
+            return gone;
+        }
 
         /// <summary>End of a run: labels the run looked at (<paramref name="covered"/>) but did not find get a miss. Returns the labels to drop.</summary>
         public List<T> EndRun(Func<Vector3, bool> covered)

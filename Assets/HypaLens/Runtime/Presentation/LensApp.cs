@@ -249,7 +249,7 @@ namespace HypaLens
             if (_simCam)
             {
                 _simFrames = new SimFrameSource(); _simPlacer = new SimPlanePlacer();
-                p = new LensPlatform { Frames = _simFrames, Recognizer = new SimRecognizer(), Placer = _simPlacer };
+                p = new LensPlatform { Frames = _simFrames, Recognizer = new SimRecognizer { Wall = _simPlacer }, Placer = _simPlacer };
             }
             else if (LensPlatform.Factory != null) p = LensPlatform.Factory();
             p = p ?? new LensPlatform();
@@ -304,7 +304,7 @@ namespace HypaLens
 
         Transform _launcher, _launcherMenu;
         TextMesh _launcherLabel;
-        GameObject _launcherIcon;
+        GameObject _launcherIcon, _liveBadge;
         readonly MenuLinger _linger = new MenuLinger();
         /// <summary>The shared Hypa mark: Assets/HypaCore/Resources/HypaLogo.png (square, transparent, white on dark).</summary>
         const string LogoResource = "HypaLogo";
@@ -327,6 +327,10 @@ namespace HypaLens
                 ToggleLauncher, () => { ShowLauncher(false); _ = CaptureAsync(); }, logo);
             _launcherLabel = Ui.LabelOf(launcherBtn);
             _launcherIcon = launcherBtn.transform.parent.Find("icon")?.gameObject;
+            // Mode badge above the button, so live mode is always visibly different from photo mode.
+            _liveBadge = Ui.Quad("live badge", launcher, new Vector3(0f, LensTouch.LauncherRadius * 1.75f, 0f), new Vector2(0.075f, 0.026f), Ui.Accent, false, 0.013f);
+            Ui.Text(_liveBadge.transform, "● LIVE", 0.012f, Vector3.zero, Ui.TextColorFor(Ui.Accent));
+            _liveBadge.SetActive(false);
             var launcherHover = launcherBtn.OnHover;
             launcherBtn.OnHover = on =>
             {
@@ -360,7 +364,7 @@ namespace HypaLens
             Item("To", Ui.Muted, () => OpenPicker(false), out _toBtn);
             Item("Saved words", Ui.Muted, TogglePractice, out _);
             Item("How it works", Ui.Muted, () => ShowOnboarding(true), out _);
-            if (HypaShell.Instance != null) Item("Apps", Ui.Muted, () => HypaShell.Instance.ToggleMenu(), out _);
+            if (HypaShell.Instance != null) Item("Apps", Ui.Muted, () => HypaShell.Instance.ShowMenu(true), out _);
             _launcherMenu.gameObject.SetActive(false);
 
             HypaShell.Instance?.SetMenuButtonVisible(false); // the launcher's "Apps" replaces the shell's Menu button here
@@ -369,7 +373,8 @@ namespace HypaLens
 
         void ToggleLauncher() => ShowLauncher(!_launcherMenu.gameObject.activeSelf);
 
-        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null;
+        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null
+                              || (HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen);
 
         /// <summary>Is the pointer on the launcher button or its menu?</summary>
         bool PointerOnLauncher
@@ -447,16 +452,47 @@ namespace HypaLens
 
         async Task SetLanguage(bool source, string name)
         {
+            Apply(source, name);
+            try
+            {
+                if (await _lens.IsPairSupportedAsync(_lens.SourceLanguage, _lens.TargetLanguage, _cts.Token))
+                {
+                    SetStatus($"{_lens.SourceLanguage ?? "Auto"} -> {_lens.TargetLanguage}. Pinch a word.");
+                    return;
+                }
+                // Hypa has no model for some regional variants (e.g. Amharic -> Arabic (Libyan)) where the base language
+                // works. Fall back to the base rather than leaving the user stuck with an error.
+                var baseName = BaseLanguage(name, _langs);
+                if (baseName != null)
+                {
+                    Apply(source, baseName);
+                    if (await _lens.IsPairSupportedAsync(_lens.SourceLanguage, _lens.TargetLanguage, _cts.Token))
+                    {
+                        SetStatus($"Hypa doesn't have {name} for this pair yet, so it's using {baseName}. {_lens.SourceLanguage ?? "Auto"} -> {_lens.TargetLanguage}.");
+                        return;
+                    }
+                    Apply(source, name);
+                }
+                SetStatus(new LensException(LensErrorKind.UnsupportedPair).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage));
+            }
+            catch (Exception e) { SetStatus(LensException.From(e).UserMessage()); }
+        }
+
+        void Apply(bool source, string name)
+        {
             if (source) { _lens.SourceLanguage = name; LensPrefs.Source = name; }
             else if (name != null) { _lens.TargetLanguage = name; HypaSettings.TargetLanguage = name; } // remembered
             UpdateLanguageText();
-            try
-            {
-                if (!await _lens.IsPairSupportedAsync(_lens.SourceLanguage, _lens.TargetLanguage, _cts.Token))
-                    SetStatus(new LensException(LensErrorKind.UnsupportedPair).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage));
-                else SetStatus($"{_lens.SourceLanguage ?? "Auto"} -> {_lens.TargetLanguage}. Pinch a word.");
-            }
-            catch (Exception e) { SetStatus(LensException.From(e).UserMessage()); }
+        }
+
+        /// <summary>"Arabic (Libyan)" -> "Arabic" when that language is in the list; null when there is no variant to drop. Pure, unit tested.</summary>
+        public static string BaseLanguage(string name, IReadOnlyList<HypaLanguage> langs)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            var bracket = name.IndexOf(" (", StringComparison.Ordinal);
+            if (bracket <= 0) return null;
+            var baseName = name.Substring(0, bracket);
+            return HypaLanguages.Find(langs, baseName) != null ? baseName : null;
         }
 
         // ---------- Onboarding ----------
@@ -527,6 +563,7 @@ namespace HypaLens
             _live = on;
             _dwell.Reset();
             if (_liveBtn != null) Ui.SetLabel(_liveBtn, on ? "Live: on" : "Live: off");
+            if (_liveBadge != null) _liveBadge.SetActive(on);
             if (on) { ShowOnboarding(false); ClearLabels(); CloseCard(); }
             else _liveLabels.Clear(); // labels stay on the walls as photo-mode labels
         }
@@ -613,7 +650,7 @@ namespace HypaLens
                     label.Target.OnPinch = k => OnWordPinch(label, k);
                     label.Target.OnHover = on => { if (!_selected.Contains(label)) label.Target.SetColor(on ? Ui.Hover : (Color?)null); };
                     _labels.Add(label);
-                    if (liveRegion != null) _liveLabels.Add(label, w.Text, pos, now);
+                    if (liveRegion != null) RemoveLabel(_liveLabels.Add(label, w.Text, pos, now)); // over the cap: the stalest goes
                     placed++;
                 }
 
@@ -812,6 +849,8 @@ namespace HypaLens
             var pinchingSomething = pointer != null && pointer.Pressed != null;
             if (_launcherMenu != null && _linger.Update(_launcherMenu.gameObject.activeSelf, PointerOnLauncher, pinchingSomething, Time.realtimeSinceStartupAsDouble))
                 ShowLauncher(false);
+            // The shell's Apps card is a modal over everything: the Lens menu stays out of its way.
+            if (HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen && _launcherMenu != null && _launcherMenu.gameObject.activeSelf) ShowLauncher(false);
             FollowHead();
             if (_live) LiveTick();
             if (!Application.isEditor) return;

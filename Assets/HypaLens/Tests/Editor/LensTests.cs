@@ -242,6 +242,45 @@ namespace HypaLens.Tests
             Assert.AreEqual(10f, part.Lines[0].Words[0].Box.X, 0.01f, "in the crop's own pixels");
         }
 
+        [Test] public void SimRecognizer_AnchoredToTheWall_TextStaysPut_WhenTheHeadTurns()
+        {
+            var wall = new SimPlanePlacer();
+            var anchor = new Pose(new Vector3(0, 1.6f, 0), Quaternion.identity);
+            wall.SetWallFromPose(anchor, 1.0f);
+            var rec = new SimRecognizer { Wall = wall };
+            var k = new CameraIntrinsics(900, 900, 640, 480);
+            CapturedFrame From(Pose p) => new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0], CameraPose = p, Intrinsics = k };
+
+            var same = Run(rec.RecognizeAsync(From(anchor), CancellationToken.None));
+            var plain = Run(new SimRecognizer().RecognizeAsync(From(anchor), CancellationToken.None));
+            Assert.AreEqual(plain.Lines[1].Words[1].Box.X, same.Lines[1].Words[1].Box.X, 0.5f, "from the anchor pose the layout is the original one");
+
+            var nudged = Run(rec.RecognizeAsync(From(new Pose(anchor.position, Quaternion.Euler(0, 5f, 0))), CancellationToken.None));
+            Assert.Less(nudged.Lines[1].Words[1].Box.X, same.Lines[1].Words[1].Box.X - 50f, "turn right: the text slides left in the frame");
+
+            var away = Run(rec.RecognizeAsync(From(new Pose(anchor.position, Quaternion.Euler(0, 70f, 0))), CancellationToken.None));
+            Assert.IsTrue(away.IsEmpty, "look well away: the sign has left the frame");
+        }
+
+        [Test] public void LiveLabels_HardCap_DropsTheStalest()
+        {
+            var s = new LiveLabelSet<string> { MaxLabels = 3 };
+            Assert.IsNull(s.Add("A", "a", Vector3.zero, 0));
+            Assert.IsNull(s.Add("B", "b", Vector3.one, 5));
+            Assert.IsNull(s.Add("C", "c", Vector3.up, 3));
+            Assert.AreEqual("A", s.Add("D", "d", Vector3.right, 6), "the fourth pushes out the one seen longest ago");
+            Assert.AreEqual(3, s.Count);
+        }
+
+        [Test] public void BaseLanguage_DropsTheVariant_OnlyWhenTheBaseExists()
+        {
+            var langs = new[] { new HypaLanguage { Name = "Arabic", Code = "ar" }, new HypaLanguage { Name = "Arabic (Libyan)", Code = "ar-LY" }, new HypaLanguage { Name = "Pidgin (Nigerian)", Code = "pcm" } };
+            Assert.AreEqual("Arabic", LensApp.BaseLanguage("Arabic (Libyan)", langs));
+            Assert.IsNull(LensApp.BaseLanguage("Pidgin (Nigerian)", langs), "no plain Pidgin in the list");
+            Assert.IsNull(LensApp.BaseLanguage("Yoruba", langs));
+            Assert.IsNull(LensApp.BaseLanguage(null, langs));
+        }
+
         [Test] public void Capture_WithRegion_ReturnsBoxesInFullFramePixels()
         {
             var c = Make();
