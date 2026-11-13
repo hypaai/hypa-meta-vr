@@ -234,7 +234,7 @@ namespace HypaStories
             _busy = true; _active = i;
             var st = StoryLibrary.All[i];
             _audio.Tap();
-            _story.Load(st, assets.Voice(st.Voice));
+            _story.Load(st);
             _player.Load(st, _lang);
             _endNoted = false;
             MicListener.RequestPermission();

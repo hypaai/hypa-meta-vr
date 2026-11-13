@@ -12,8 +12,6 @@ namespace HypaStories
     /// </summary>
     public static class StoryLibrary
     {
-        public const string KikoVoice = "kiko-voice";
-
         static Caption C(float at, float until, string text, string fr, string es)
             => new Caption { At = at, Until = until, Text = text, Tr = { ["fr"] = fr, ["es"] = es } };
 
@@ -106,13 +104,13 @@ namespace HypaStories
         {
             new StoryInfo
             {
-                Id = "kiko", Theme = 0, Accent = new Color(1f, 0.70f, 0.36f), Voice = KikoVoice, Timeline = Kiko,
+                Id = "kiko", Theme = 0, Accent = new Color(1f, 0.70f, 0.36f), Timeline = Kiko,
                 Eyebrow = "Folk tale · Prototype", Title = "Kiko and the\nRemembering Fire",
                 Desc = "A curious tortoise follows his questions into the forest, toward a fire that has never gone out.",
             },
             new StoryInfo
             {
-                Id = "marlow-street", Theme = 1, Accent = new Color(1f, 0.35f, 0.39f), Voice = null, Timeline = Marlow,
+                Id = "marlow-street", Theme = 1, Accent = new Color(1f, 0.35f, 0.39f), Timeline = Marlow,
                 Eyebrow = "Crime story · Prototype", Title = "The Last Light\non Marlow Street",
                 Desc = "Rain, a taped-off alley, and one witness who saw nothing, until the streetlight started to flicker.",
             },

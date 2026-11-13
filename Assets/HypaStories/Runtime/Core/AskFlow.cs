@@ -19,7 +19,7 @@ namespace HypaStories
         string StoryId { get; }
         /// <summary>The script up to and including the interrupted line, in the current language (the answer's context).</summary>
         string StorySoFar { get; }
-        /// <summary>Fade the narration out (about 200 ms, never mid-word cut) and pause the clock.</summary>
+        /// <summary>Stop the line being read and pause the clock.</summary>
         void Interrupt();
         void Resume(int lineIndex);
     }

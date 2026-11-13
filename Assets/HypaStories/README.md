@@ -53,14 +53,14 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 
 ## Hypa API use
 
-- **TTS** (`text_to_speech`, verified schema): every line that isn't the recorded English narration: Marlow Street, any story in
-  French or Spanish, fillers, answers. Lines are cached for the session and the next line is fetched while the current one plays.
+- **TTS** (`text_to_speech`, verified schema): every line the storyteller says: the narration of both stories in every language,
+  fillers, answers. Lines are cached for the session and the next line is fetched while the current one plays.
 - **ASR** (`speech_to_text`, schema read from `tools/list` on 2026-11-13, not yet called with a key): 16 kHz mono WAV, the story
   language as `sourceLang`. Nothing is sent if nothing louder than the noise floor was heard.
 - **Chat:** Hypa's MCP endpoint has no chat tool, and the REST `chat` endpoint is unverified, so answers still come from
   `StubStoryQa` (as in the prototype). Implement `IStoryQa` on the real endpoint and pass it to `AskFlow` in `StoryApp`.
-- Without a key, the story still runs: the recording plays, TTS lines are "spoken" silently for about their length (subtitles keep
-  time), and questions use the suggestion buttons.
+- Without a key, the story still runs: lines are "spoken" silently for about their length (subtitles keep time), and questions
+  use the suggestion buttons.
 
 ## Assets and licences
 
@@ -68,12 +68,12 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
   (`Art/Models/camp_fire.glb`, **CC BY 4.0, credit required**, re-encoded without meshopt / WebP so glTFast imports it), the Hypa
   Reality mark (`Art/hypa-reality.png`, team-supplied).
 - **Not committed** (`Assets/HypaStories/Local/`, git-ignored, because this repo is public): the Epidemic Sound beds
-  (`amb-1/2`, `fire-1/2`, `wolf-1`; subscription licence, no redistribution), the Kiko narration (`kiko-voice.mp3`; origin
-  unconfirmed) and the storyteller avatar (`Models/storyteller.glb`; a Ready Player Me placeholder from the three.js examples).
+  (`amb-1/2`, `fire-1/2`, `wolf-1`; subscription licence, no redistribution) and the storyteller avatar
+  (`Models/storyteller.glb`; a Ready Player Me placeholder from the three.js examples).
   Copy them from `Ideation/public/{audio,models}` into `Local/Audio` and `Local/Models`, then rerun **Create Story Scene**.
-  Without them: synthesised wind and fire, TTS narration, a stand-in storyteller.
+  Without them: synthesised wind and fire and a stand-in storyteller.
 - Before release: replace the avatar with one from the team's own Ready Player Me account (or any humanoid with `Hips`/`Spine`/
-  `Head`/`LeftArm`… bones and a `mouthOpen` blend shape) and confirm the narration's rights.
+  `Head`/`LeftArm`… bones and a `mouthOpen` blend shape).
 
 ## Not ported (yet)
 

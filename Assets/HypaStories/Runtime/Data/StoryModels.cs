@@ -29,8 +29,7 @@ namespace HypaStories
     }
 
     /// <summary>
-    /// A story card. Theme picks the card art (0 = lantern in the pines, 1 = noir crime scene). Voice is the recorded English
-    /// narration (a <see cref="StoryAssets"/> clip key); without it, or in another language, the storyteller reads the lines with TTS.
+    /// A story card. Theme picks the card art (0 = lantern in the pines, 1 = noir crime scene). The storyteller reads the lines with TTS.
     /// </summary>
     public sealed class StoryInfo
     {
@@ -38,7 +37,6 @@ namespace HypaStories
         public int Theme;
         public Color Accent;
         public string Eyebrow, Title, Desc;
-        public string Voice;
         public StoryTimeline Timeline;
     }
 }

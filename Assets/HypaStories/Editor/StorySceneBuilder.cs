@@ -169,12 +169,12 @@ namespace HypaStories.EditorTools
 
             AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>($"{Local}/Audio/{file}");
             a.ambienceSplash = C("amb-1.mp3"); a.ambienceStory = C("amb-2.mp3");
-            a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3"); a.kikoVoice = C("kiko-voice.mp3");
+            a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3");
             a.logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Art}/hypa-reality.png");
 
             EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();
-            var missing = new (Object asset, string name)[] { (a.campFire, "camp fire"), (a.storyteller, "storyteller"), (a.ambienceStory, "ambience"), (a.kikoVoice, "Kiko narration") }
+            var missing = new (Object asset, string name)[] { (a.campFire, "camp fire"), (a.storyteller, "storyteller"), (a.ambienceStory, "ambience") }
                 .Where(x => x.asset == null).Select(x => x.name).ToArray();
             Debug.Log("Hypa Stories: StoryAssets updated." + (missing.Length > 0
                 ? " Missing (fallbacks will be used): " + string.Join(", ", missing) + ". Models need glTFast; audio and the avatar live in the git-ignored " + Local + "."

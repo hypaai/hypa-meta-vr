@@ -29,7 +29,7 @@ namespace HypaStories
         StoryLanguage _lang;
         string _pauseState;
         int _shownWords = -1, _shownLine = -2;
-        static readonly Color Unlit = new Color(1f, 0.97f, 0.92f, 0.32f);
+        static readonly Color Unlit = new Color(1f, 0.97f, 0.92f, 0.55f);
 
         public PlayerView(Transform uiRoot, Action prev, Action pause, Action next, Action askTap, Action askHold,
             Action back, Action toggleSound, Action<string> pickQuestion)
