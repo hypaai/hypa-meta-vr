@@ -166,7 +166,7 @@ namespace HypaStories
                 ListenResult r;
                 try
                 {
-                    s.Rec = _listener.Start(_language(), _view.SetLevel);
+                    s.Rec = _listener.Listen(_language(), _view.SetLevel);
                     r = await await Task.WhenAny(s.Rec.Result, typed.Task);
                 }
                 catch (OperationCanceledException) { return; }
