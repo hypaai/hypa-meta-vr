@@ -37,5 +37,8 @@ namespace HypaLens
 
         public Task<HypaSpeech> SpeakAsync(string text, string language, CancellationToken ct)
             => _mcp.TextToSpeechAsync(text, language, ct);
+
+        public Task<HypaImageTranslation> TranslateImageAsync(byte[] jpeg, string source, string target, CancellationToken ct)
+            => _mcp.TranslateImageAsync(jpeg, target, source, ct);
     }
 }

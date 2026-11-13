@@ -144,6 +144,13 @@ namespace HypaLens.Sim
             await Gate(ct);
             return new HypaSpeech { AudioBytes = SimTone.MakeWav(220f + (text.Length % 8) * 40f, 0.25f), Mime = "audio/wav" };
         }
+
+        public async Task<HypaImageTranslation> TranslateImageAsync(byte[] jpeg, string s, string t, CancellationToken ct)
+        {
+            await Gate(ct);
+            const string text = "Welcome to the market. Fresh fish and rice. Please pay at the counter. Open every day.";
+            return new HypaImageTranslation { Text = text, Translation = $"[{t}] {text}", Language = s ?? "English" };
+        }
     }
 
     static class SimTone

@@ -104,17 +104,6 @@ namespace HypaLens.Tests
             Assert.IsTrue(found, "Annang must appear in the language picker");
         }
 
-        [Test] public void MenuTargets_StayAboveSimulatorMinimums()
-        {
-            Assert.GreaterOrEqual(LensTouch.MenuButtonH, 0.05f, "menu rows must stay tall enough for simulator hands");
-            Assert.GreaterOrEqual(LensTouch.LauncherRadius, 0.04f, "Hypa button must stay a big round target");
-            Assert.GreaterOrEqual(LensTouch.PickerRowH, 0.05f, "language rows must stay tall enough for simulator hands");
-            // Six items in two columns: the whole menu is within one small hand movement of the launcher.
-            var rows = (6 + LensTouch.MenuColumns - 1) / LensTouch.MenuColumns;
-            var height = rows * LensTouch.MenuButtonH + (rows - 1) * LensTouch.MenuGap;
-            Assert.LessOrEqual(height, 0.22f, "menu must stay compact (was a 0.4 m tall column)");
-        }
-
         [Test] public void LanguageLabel_DropsTheBracketedVariant_BeforeTrimming()
         {
             Assert.AreEqual("To: Yoruba", LensApp.LanguageLabel("To: ", "Yoruba", 0.02f, 0.2f));
@@ -295,6 +284,49 @@ namespace HypaLens.Tests
             Assert.AreEqual(LensErrorKind.NoTextFound, KindOf(() => c.CaptureAsync(CancellationToken.None, new FrameRect(0, 0, 50, 50))), "a patch with no text");
         }
 
+        // ---------- Caption: the whole view read and translated by Hypa (translate_image) ----------
+
+        [Test] public void Caption_ReadsAndTranslatesTheView_ThroughTheImageTool()
+        {
+            byte[] seen = null;
+            var api = new SimHypaApi { LatencyMs = 0 };
+            var c = Make(api);
+            var r = Run(c.CaptionAsync(f => seen = new byte[] { 1, 2, 3 }, CancellationToken.None));
+            Assert.IsNotNull(seen, "the frame is encoded for the API");
+            Assert.That(r.Translation, Does.StartWith("[Yoruba]"));
+            Assert.That(r.Text, Does.Contain("market"));
+            Assert.AreEqual("English", r.Language);
+        }
+
+        [Test] public void Caption_Offline_IsOffline_AndNoText_IsNoTextFound()
+        {
+            Assert.AreEqual(LensErrorKind.Offline, KindOf(() => Make(online: () => false).CaptionAsync(f => null, CancellationToken.None)));
+            var noText = new NoTextImageApi();
+            Assert.AreEqual(LensErrorKind.NoTextFound, KindOf(() => Make(noText).CaptionAsync(f => null, CancellationToken.None)));
+        }
+
+        sealed class NoTextImageApi : IHypaLensApi
+        {
+            readonly SimHypaApi _sim = new SimHypaApi { LatencyMs = 0 };
+            public Task<IReadOnlyList<HypaLanguage>> ListLanguagesAsync(CancellationToken ct) => _sim.ListLanguagesAsync(ct);
+            public Task<bool> CheckPairAsync(string s, string t, CancellationToken ct) => _sim.CheckPairAsync(s, t, ct);
+            public Task<HypaTranslation> TranslateAsync(string text, string s, string t, CancellationToken ct) => _sim.TranslateAsync(text, s, t, ct);
+            public Task<string> LookUpAsync(string term, string l, CancellationToken ct) => _sim.LookUpAsync(term, l, ct);
+            public Task<HypaSpeech> SpeakAsync(string text, string l, CancellationToken ct) => _sim.SpeakAsync(text, l, ct);
+            public Task<HypaImageTranslation> TranslateImageAsync(byte[] jpeg, string s, string t, CancellationToken ct)
+                => Task.FromResult(new HypaImageTranslation { NoTextFound = true });
+        }
+
+        [Test] public void FrameEncoder_MakesAJpeg_AndSkipsPixellessFrames()
+        {
+            var f = new CapturedFrame { Width = 8, Height = 4, Pixels = new Color32[32] };
+            for (var i = 0; i < 32; i++) f.Pixels[i] = new Color32((byte)(i * 8), 100, 50, 255);
+            var jpeg = FrameEncoder.ToJpeg(f);
+            Assert.IsNotNull(jpeg);
+            Assert.AreEqual(0xFF, jpeg[0]); Assert.AreEqual(0xD8, jpeg[1]); // JPEG start-of-image marker
+            Assert.IsNull(FrameEncoder.ToJpeg(new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0] }), "the simulator's frame has no pixels");
+        }
+
         // ---------- HUD placement: stays put, re-centres only after a big turn, never while in use ----------
 
         static Pose Settle(LazyFollow f, Vector3 head, Quaternion rot, Pose p, bool hold = false)
@@ -351,25 +383,6 @@ namespace HypaLens.Tests
             Assert.That(pitch, Is.LessThan(40f).And.GreaterThan(0.5f), "still tilted up to meet the eyes");
         }
 
-        [Test] public void MenuLayout_FiveItems_LastOneSpansTheRow_SixFillTheGrid()
-        {
-            const float w = 0.2f, h = 0.05f, gap = 0.01f, pad = 0.012f;
-            var alone = MenuLayout.Cell(4, 5, 2, w, h, gap, pad);
-            Assert.AreEqual(0f, alone.x, 1e-5f, "fifth of five is centred");
-            Assert.AreEqual(2 * w + gap, alone.width, 1e-5f, "and spans both columns");
-            var left = MenuLayout.Cell(2, 5, 2, w, h, gap, pad);
-            var right = MenuLayout.Cell(3, 5, 2, w, h, gap, pad);
-            Assert.AreEqual(w, left.width, 1e-5f);
-            Assert.AreEqual(left.y, right.y, 1e-5f, "same row");
-            Assert.Greater(right.x, left.x);
-            Assert.Greater(left.y, alone.y, "the lone item sits on the bottom row");
-            var sixth = MenuLayout.Cell(5, 6, 2, w, h, gap, pad);
-            Assert.AreEqual(w, sixth.width, 1e-5f, "six items: a plain 2x3 grid");
-            var size = MenuLayout.PanelSize(5, 2, w, h, gap, pad);
-            Assert.AreEqual(2 * w + gap + 2 * pad, size.x, 1e-5f);
-            Assert.AreEqual(3 * h + 2 * gap + 2 * pad, size.y, 1e-5f);
-        }
-
         [Test] public void LazyFollow_Reset_SnapsToTheNewHeadAtOnce()
         {
             var f = new LazyFollow();
@@ -385,30 +398,6 @@ namespace HypaLens.Tests
             var p = f.Update(new Vector3(0, 1.5f, 0), Quaternion.identity, default, false, 0.016f);
             var end = Settle(f, new Vector3(0, 1.5f, 0.5f), Quaternion.identity, p);
             Assert.That(Vector3.Distance(end.position, new Vector3(0, 1.5f + f.Height, 0.5f + f.Distance)), Is.LessThan(0.005f));
-        }
-
-        // ---------- Launcher menu: opens on hover, closes itself after the pointer leaves ----------
-
-        [Test] public void MenuLinger_ClosesOnlyAfterThePointerHasLeftForAWhile()
-        {
-            var l = new MenuLinger { CloseAfterSeconds = 1.5f };
-            Assert.IsFalse(l.Update(true, true, false, 0), "pointer inside: stay open");
-            Assert.IsFalse(l.Update(true, false, false, 1), "just left: not yet");
-            Assert.IsFalse(l.Update(true, false, false, 2.4), "still inside the grace period");
-            Assert.IsTrue(l.Update(true, false, false, 2.5), "grace over: close");
-            Assert.IsFalse(l.Update(false, false, false, 3), "closed menus do nothing");
-        }
-
-        [Test] public void MenuLinger_ForgivesAWander_AndNeverClosesMidPinch()
-        {
-            var l = new MenuLinger { CloseAfterSeconds = 1.5f };
-            l.Update(true, false, false, 0);
-            Assert.IsFalse(l.Update(true, true, false, 1), "came back: timer resets");
-            Assert.IsFalse(l.Update(true, false, false, 2));
-            Assert.IsFalse(l.Update(true, false, false, 3.4), "timer restarted when the pointer left again");
-            Assert.IsFalse(l.Update(true, false, true, 3.6), "pinching (e.g. a word) keeps it open");
-            Assert.IsFalse(l.Update(true, false, false, 4), "released: timer starts fresh");
-            Assert.IsTrue(l.Update(true, false, false, 5.5));
         }
 
         // ---------- Resolve ----------
@@ -560,6 +549,8 @@ namespace HypaLens.Tests
 
             public Task<IReadOnlyList<HypaLanguage>> ListLanguagesAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<HypaLanguage>>(new HypaLanguage[0]);
             public Task<bool> CheckPairAsync(string s, string t, CancellationToken ct) { PairChecks++; return Task.FromResult(true); }
+            public Task<HypaImageTranslation> TranslateImageAsync(byte[] jpeg, string s, string t, CancellationToken ct)
+                => Task.FromResult(new HypaImageTranslation { Text = "image", Translation = "T", Language = Detected });
             public Task<HypaTranslation> TranslateAsync(string text, string s, string t, CancellationToken ct)
             {
                 Translates++;

@@ -31,8 +31,8 @@ namespace HypaCore
 
     /// <summary>
     /// App shell, in the HypaShell scene (first in Build Settings). Keeps the camera rig, pinch pointer and audio alive
-    /// across modes, and shows a hand menu: Lens, Practice (Saved words, Hypa Story) and the HypaCore API test.
-    /// The menu is opened with the Menu button low in the view (or M in the editor); it sits within arm's reach.
+    /// across modes, and shows Home: Hypa Lens, Stories and How it works. Home is the first thing the user sees; a
+    /// mode's X (or the Home button low in the view, or M in the editor) brings it back at any time.
     /// </summary>
     public sealed class HypaShell : MonoBehaviour
     {
@@ -40,11 +40,14 @@ namespace HypaCore
 
         [Tooltip("Root of the camera rig to keep across scenes. Empty = the main camera's root.")]
         [SerializeField] Transform cameraRig;
-        [SerializeField] bool openLastModeOnStart = true;
+        [Tooltip("Skip the Home card on launch and open the last mode straight away (dev convenience).")]
+        [SerializeField] bool openLastModeOnStart = false;
 
-        Transform _cam, _anchor, _menu, _practice;
+        Transform _cam, _anchor, _menu, _help;
         GameObject _menuButton;
         TextMesh _status;
+        /// <summary>The scene a mode lives in, or null while only the shell is loaded.</summary>
+        string _currentMode;
         // The shell UI lives in the room, not on the camera: head-locked UI at hand depth slides away from a hand ray
         // the moment the user turns to look at it. It sits 1 m out (beyond the hands), scaled so it reads as it would
         // at 0.6 m, and is re-placed in front of the user whenever it opens or they have walked away from it.
@@ -76,14 +79,15 @@ namespace HypaCore
         {
             if (_cam == null) { Debug.LogError("Hypa shell: no MainCamera."); return; }
             BuildMenuButton();
-            // Wait one frame so the camera rig can turn passthrough on before Lens replaces the scene.
-            if (openLastModeOnStart) StartCoroutine(OpenNextFrame());
+            // Wait one frame so the camera rig can turn passthrough on before a mode replaces the scene.
+            StartCoroutine(StartNextFrame());
         }
 
-        System.Collections.IEnumerator OpenNextFrame()
+        System.Collections.IEnumerator StartNextFrame()
         {
             yield return null;
-            Open(HypaSettings.LastMode);
+            if (openLastModeOnStart) Open(HypaSettings.LastMode);
+            else ShowMenu(true); // the Home card is the first thing the user sees
         }
 
         void Update()
@@ -114,61 +118,72 @@ namespace HypaCore
             _anchor = new GameObject("Hypa Shell UI").transform;
             DontDestroyOnLoad(_anchor.gameObject);
             PlaceInFront();
-            // The Menu button: low-left, as in a narrow field of view. Modes with their own launcher hide it.
-            _menuButton = Ui.Button("Menu", _anchor, new Vector3(-0.30f, -0.22f, 0f), new Vector2(0.10f, 0.05f), Ui.Muted, ToggleMenu).transform.parent.gameObject;
+            // The Home button: low-left, as in a narrow field of view. A mode with its own X hides it.
+            _menuButton = Ui.IconButton("house", _anchor, new Vector3(-0.30f, -0.22f, 0f), 0.03f, () => ShowMenu(true)).transform.parent.gameObject;
 
-            // The app menu: a card at eye level with a title row, the modes, and its own Close.
-            _menu = new GameObject("Menu Panel").transform;
+            // Home: the first thing the user sees. Title row, the modes, how it works, and an X.
+            _menu = new GameObject("Home Card").transform;
             _menu.SetParent(_anchor, false);
             _menu.localPosition = new Vector3(0f, 0.05f, 0f); // eye level, clear of a mode's own HUD below
-            const float w = 0.30f, h = 0.42f;
+            const float w = 0.32f, h = 0.40f;
             Ui.Quad("bg", _menu, new Vector3(0, 0, 0.003f), new Vector2(w, h), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
             var logo = Resources.Load<Texture2D>(LogoResource);
-            const float titleY = 0.165f;
+            const float titleY = 0.15f;
             if (logo != null)
             {
-                var icon = Ui.Quad("logo", _menu, new Vector3(-0.095f, titleY, -0.001f), Vector2.one * 0.036f, Color.white, false, rounded: false);
+                var icon = Ui.Quad("logo", _menu, new Vector3(-0.115f, titleY, -0.001f), Vector2.one * 0.036f, Color.white, false, rounded: false);
                 icon.GetComponent<Renderer>().material.mainTexture = logo;
             }
-            Ui.Text(_menu, "Hypa", 0.024f, new Vector3(-0.065f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
-            Ui.Button("Hypa Lens", _menu, new Vector3(0, 0.09f, 0), new Vector2(0.24f, 0.06f), Ui.Accent, () => Open(HypaScenes.Lens));
-            Ui.Button("Practice", _menu, new Vector3(0, 0.02f, 0), new Vector2(0.24f, 0.06f), Ui.Muted, TogglePractice);
-            Ui.Button("API test", _menu, new Vector3(0, -0.05f, 0), new Vector2(0.24f, 0.05f), Ui.Muted, () => Open(HypaScenes.CoreTest));
-            Ui.Button("Close", _menu, new Vector3(0, -0.12f, 0), new Vector2(0.14f, 0.046f), Ui.Muted, () => ShowMenu(false));
-            _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.175f, 0), Color.white);
-
-            _practice = new GameObject("Practice Panel").transform;
-            _practice.SetParent(_menu, false);
-            _practice.localPosition = new Vector3(0.29f, 0.02f, 0f);
-            Ui.Quad("bg", _practice, new Vector3(0, 0, 0.003f), new Vector2(0.24f, 0.17f), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
-            Ui.Button("Saved words", _practice, new Vector3(0, 0.035f, 0), new Vector2(0.21f, 0.055f), Ui.Muted, () =>
-            {
-                AppRouter.Request(AppRouter.LensSavedWords);
-                Open(HypaScenes.Lens);
-            });
-            Ui.Button("Hypa Story", _practice, new Vector3(0, -0.035f, 0), new Vector2(0.21f, 0.055f), Ui.Muted, () => Open(HypaScenes.Story));
-
-            _practice.gameObject.SetActive(false);
+            Ui.Text(_menu, "Hypa", 0.024f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
+            Ui.IconButton("x", _menu, new Vector3(0.115f, titleY, -0.001f), 0.024f, () => ShowMenu(false));
+            Ui.Button("Hypa Lens", _menu, new Vector3(0, 0.065f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Lens));
+            Ui.Button("Stories", _menu, new Vector3(0, -0.005f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Story));
+            Ui.Button("How it works", _menu, new Vector3(0, -0.075f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => ShowHelp(true));
+            _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.145f, 0), Color.white);
             _menu.gameObject.SetActive(false);
+
+            // How it works: a card with the two experiences explained, and its own X.
+            _help = new GameObject("How It Works").transform;
+            _help.SetParent(_anchor, false);
+            _help.localPosition = new Vector3(0f, 0.05f, -0.01f);
+            Ui.Quad("bg", _help, new Vector3(0, 0, 0.003f), new Vector2(0.50f, 0.34f), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
+            Ui.Text(_help, "How it works", 0.024f, new Vector3(-0.22f, 0.135f, 0), Color.white, TextAnchor.MiddleLeft);
+            Ui.IconButton("x", _help, new Vector3(0.21f, 0.135f, -0.001f), 0.024f, () => ShowHelp(false));
+            Ui.Text(_help,
+                "Hypa Lens\nLook at a sign, menu or book and pinch Capture. Each word becomes a label on the real\nsurface: pinch one to translate, hear and define it; hold the pinch for the whole sentence.\nCaption reads the whole view at once. Save words to practise later.\n\nStories\nSit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.\n\nEverything works with your hands. Pinch X at any time to come back here.",
+                0.0155f, new Vector3(-0.22f, -0.02f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
+            _help.gameObject.SetActive(false);
         }
 
-        /// <summary>Opens/closes the app menu (modes, practice, API test). Modes with their own launcher call this.</summary>
+        /// <summary>Opens/closes Home. Modes call this from their X.</summary>
         public void ToggleMenu() { if (_menu != null) ShowMenu(!_menu.gameObject.activeSelf); }
 
-        public bool IsMenuOpen => _menu != null && _menu.gameObject.activeSelf;
+        public bool IsMenuOpen => _menu != null && (_menu.gameObject.activeSelf || _help.gameObject.activeSelf);
 
-        /// <summary>Opening always brings the card in front of the user, over whatever the mode is showing.</summary>
+        /// <summary>Home always comes up in front of the user, over whatever the mode is showing.</summary>
         public void ShowMenu(bool open)
         {
             if (_menu == null) return;
             if (open) PlaceInFront();
             _menu.gameObject.SetActive(open);
-            if (!open && _practice != null) _practice.gameObject.SetActive(false);
+            if (!open) _help.gameObject.SetActive(false);
         }
 
-        /// <summary>A mode with its own launcher hides the shell's Menu button (and shows it again when it closes).</summary>
+        void ShowHelp(bool open)
+        {
+            _help.gameObject.SetActive(open);
+            _menu.gameObject.SetActive(!open);
+        }
+
+        /// <summary>A mode with its own X hides the shell's Home button (and shows it again when it closes).</summary>
         public void SetMenuButtonVisible(bool visible) { if (_menuButton != null) _menuButton.SetActive(visible); }
-        void TogglePractice() => _practice.gameObject.SetActive(!_practice.gameObject.activeSelf);
+
+        /// <summary>Picking the mode that is already running just closes Home; anything else loads it.</summary>
+        void OpenOrResume(string scene)
+        {
+            if (scene == _currentMode) { ShowMenu(false); return; }
+            Open(scene);
+        }
 
         public void Open(string scene)
         {
@@ -179,6 +194,7 @@ namespace HypaCore
                 return;
             }
             HypaSettings.LastMode = scene;
+            _currentMode = scene;
             ShowMenu(false);
             SceneManager.LoadScene(scene, LoadSceneMode.Single);
         }

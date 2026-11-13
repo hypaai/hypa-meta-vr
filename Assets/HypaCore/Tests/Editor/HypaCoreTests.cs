@@ -55,6 +55,14 @@ namespace HypaCore.Tests
             Assert.IsFalse(langs[0].HasTts);
         }
 
+        [Test] public void Mcp_ParsesImageTranslation_IncludingNoTextFound()
+        {
+            var r = HypaMcpClient.ParseImageTranslation(JObject.Parse("{\"text\":\"Open every day\",\"translation\":\"Ṣí ojoojúmọ́\",\"language\":\"English\"}"));
+            Assert.AreEqual(("Open every day", "Ṣí ojoojúmọ́", "English", false), (r.Text, r.Translation, r.Language, r.NoTextFound));
+            var none = HypaMcpClient.ParseImageTranslation(JObject.Parse("{\"text\":\"\",\"translation\":\"\",\"language\":null,\"noTextFound\":true}"));
+            Assert.IsTrue(none.NoTextFound); Assert.IsNull(none.Language);
+        }
+
         [Test] public void Mcp_PrefersStructuredContent()
         {
             var o = HypaMcpClient.ParseToolResult(LivePairCheck, "check_language_pair");

@@ -31,16 +31,14 @@ namespace HypaLens
     }
 
     /// <summary>
-    /// Minimum touch-target sizes for simulator hands (metres). Pinching with mouse-driven
-    /// simulator hands is imprecise, so menu targets stay well above the 0.04 m pinchable floor.
+    /// Touch-target sizes (metres at the 0.6 m design distance). Pinching with simulator hands is imprecise, so
+    /// targets stay well above the 0.04 m pinchable floor.
     /// </summary>
     public static class LensTouch
     {
-        public const float MenuButtonW = 0.20f;
-        public const float MenuButtonH = 0.056f;
-        public const float MenuGap = 0.01f;
-        public const int MenuColumns = 2;
-        public const float LauncherRadius = 0.042f;
+        public const float IconRadius = 0.034f;
+        public const float SmallIconRadius = 0.028f;
+        public const float PillH = 0.05f;
         public const float PickerRowW = 0.18f;
         public const float PickerRowH = 0.05f;
         public const float PickerPitch = 0.058f;
@@ -129,60 +127,16 @@ namespace HypaLens
     }
 
     /// <summary>
-    /// Grid cells for the launcher menu: <paramref name="cols"/> across, and when the last row holds a single item
-    /// it spans the full width so the panel reads as a block rather than a column with a stub. Pure, unit tested.
-    /// </summary>
-    public static class MenuLayout
-    {
-        /// <summary>Centre (x, y) and width of item <paramref name="index"/>, relative to the panel centre.</summary>
-        public static Rect Cell(int index, int items, int cols, float w, float h, float gap, float pad)
-        {
-            var rows = (items + cols - 1) / cols;
-            var width = cols * w + (cols - 1) * gap;
-            var height = rows * h + (rows - 1) * gap;
-            var row = index / cols;
-            var y = height * 0.5f - h * 0.5f - row * (h + gap);
-            var lastRowAlone = row == rows - 1 && items - row * cols == 1;
-            if (lastRowAlone) return new Rect(0f, y, width, h);
-            var x = -width * 0.5f + w * 0.5f + (index % cols) * (w + gap);
-            return new Rect(x, y, w, h);
-        }
-
-        public static Vector2 PanelSize(int items, int cols, float w, float h, float gap, float pad)
-        {
-            var rows = (items + cols - 1) / cols;
-            return new Vector2(cols * w + (cols - 1) * gap + pad * 2f, rows * h + (rows - 1) * gap + pad * 2f);
-        }
-    }
-
-    /// <summary>
-    /// Keeps the launcher menu open while the pointer is on the launcher or the menu and closes it a moment after the
-    /// pointer has left (never mid-pinch, and a brief wander off the menu is forgiven). Pure, unit tested.
-    /// </summary>
-    public sealed class MenuLinger
-    {
-        public float CloseAfterSeconds = 1.5f;
-        double _leftAt = -1;
-
-        /// <summary>Returns true on the frame the menu should close.</summary>
-        public bool Update(bool open, bool pointerInside, bool pinching, double now)
-        {
-            if (!open || pointerInside || pinching) { _leftAt = -1; return false; }
-            if (_leftAt < 0) { _leftAt = now; return false; }
-            if (now - _leftAt < CloseAfterSeconds) return false;
-            _leftAt = -1;
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Lens scene entry point. Builds the HUD, word labels and result card at runtime; input comes from HypaCore's
+    /// Lens scene entry point. Builds the HUD, word labels and cards at runtime; input comes from HypaCore's
     /// PinchPointer (hands on Quest, mouse in the editor).
-    /// Live mode (menu toggle, or L in the editor): rest the hand pointer or head on text for a second and that part of
-    /// the view is recognised (one run a second at most); labels are reused while the text stays in view.
-    /// Editor keys: Space = capture, hold left mouse = pinch (&gt; 0.6 s = sentence), O = offline, N = no text, H = help.
-    /// With the Meta XR Simulator running, the hand aims and pinches as on the headset; the left mouse button also
-    /// pinches, and P switches aiming to the mouse (for webcam hands, which pinch well but aim badly).
+    ///
+    /// The HUD follows the Hypa mobile Lens: a top bar (X, "Auto" and the target language, Saved), a hint pill, and a
+    /// bottom row of round controls: Capture (pinchable labels on the real text, recognised on the headset), Caption
+    /// (Hypa reads and translates the whole view; the photo leaves the headset, so the user is asked once), Speak and
+    /// Clear. X returns to the shell's Home card.
+    ///
+    /// Editor keys: Space = capture, C = caption, hold left mouse = pinch (&gt; 0.6 s = sentence), O = offline,
+    /// N = no text, H = help, L = live mode (dev only, not in the UI yet), P = mouse aims instead of the hand.
     /// </summary>
     public sealed class LensApp : MonoBehaviour
     {
@@ -205,8 +159,8 @@ namespace HypaLens
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _cam, _hud, _world;
         TextMesh _status; GameObject _statusBg;
-        PinchTarget _fromBtn, _toBtn, _liveBtn;
-        GameObject _onboarding, _card, _practice;
+        PinchTarget _sourceBtn, _targetBtn;
+        GameObject _onboarding, _card, _practice, _caption, _consent, _liveBadge;
         LanguagePicker _picker;
         PracticeDeck _deck; TextMesh _deckText;
         readonly List<WordLabel> _labels = new List<WordLabel>();
@@ -214,6 +168,7 @@ namespace HypaLens
         IReadOnlyList<HypaLanguage> _langs = new HypaLanguage[0];
         bool _busy;
         int _resultVersion;
+        HypaSpeech _lastSpeech; string _lastSpeechText, _lastSpeechLang;
 
         void Start()
         {
@@ -239,7 +194,7 @@ namespace HypaLens
             _ = LoadLanguages();
             if (AppRouter.Consume(AppRouter.LensSavedWords)) TogglePractice();
             else if (!LensPrefs.Onboarded) ShowOnboarding(true);
-            SetStatus("Point at the round Hypa Lens button for the menu. Hold a pinch on it to translate text.");
+            SetStatus("Point at text, then pinch Capture.");
         }
 
         LensPlatform BuildPlatform()
@@ -259,11 +214,11 @@ namespace HypaLens
             return p;
         }
 
-        // ---------- HUD: lazy-follow (see LazyFollow), low in a narrow field of view, within arm's reach ----------
+        // ---------- HUD placement: lazy-follow (see LazyFollow) ----------
 
         readonly LazyFollow _follow = new LazyFollow();
 
-        /// <summary>Is the pointer on anything in the HUD (launcher, menu, picker, cards)?</summary>
+        /// <summary>Is the pointer on anything in the HUD?</summary>
         bool PointerOnHud
         {
             get
@@ -292,22 +247,14 @@ namespace HypaLens
             var xrActive = UnityEngine.XR.XRSettings.isDeviceActive;
             if (xrActive && !_xrWasActive) _follow.Reset();
             _xrWasActive = xrActive;
-            var hold = (_launcherMenu != null && _launcherMenu.gameObject.activeSelf) || PointerOnHud || PinchingHud;
+            var hold = PointerOnHud || PinchingHud;
             var pose = _follow.Update(_cam.position, _cam.rotation, new Pose(_hud.position, _hud.rotation), hold, Time.unscaledDeltaTime);
             _hud.SetPositionAndRotation(pose.position, pose.rotation);
         }
 
-        // ---------- Launcher: one round button opens everything (seated, within reach, out of the way) ----------
-        // Hovering the button opens the menu; pinch an item, or pinch the button and slide onto an item and release.
-        // The menu closes itself once the pointer has left it. A short pinch on the button still toggles it, and a
-        // long pinch translates straight away.
+        // ---------- HUD: top bar, hint, bottom controls (the mobile Lens layout) ----------
 
-        Transform _launcher, _launcherMenu;
-        TextMesh _launcherLabel;
-        GameObject _launcherIcon, _liveBadge;
-        readonly MenuLinger _linger = new MenuLinger();
-        /// <summary>The shared Hypa mark: Assets/HypaCore/Resources/HypaLogo.png (square, transparent, white on dark).</summary>
-        const string LogoResource = "HypaLogo";
+        const float TopY = 0.30f, HintY = 0.215f, CardY = 0.085f, BottomY = -0.02f;
 
         void BuildHud()
         {
@@ -315,90 +262,83 @@ namespace HypaLens
             _hud.SetParent(_world, false);
             _hud.localScale = Vector3.one * (_follow.Distance / LazyFollow.DesignDistance); // same angular size as at 0.6 m
             FollowHead(); // first placement: in front of the eyes, then it stays put until the head turns away
-            // Status: a fixed-width card just left of the launcher with left-aligned text, so every message reads the same way.
-            _status = Ui.Text(_hud, "", StatusLineH, new Vector3(StatusRight - StatusW + StatusPad, -0.04f, 0), new Color(1f, 1f, 1f, 0.95f), TextAnchor.MiddleLeft);
 
-            // Low right, inside arm's reach. Hover = open the menu; hold the pinch = translate text straight away.
-            var launcher = _launcher = new GameObject("Hypa Launcher").transform;
-            launcher.SetParent(_hud, false);
-            launcher.localPosition = new Vector3(0.24f, -0.04f, 0f);
-            var logo = Resources.Load<Texture2D>(LogoResource);
-            var launcherBtn = Ui.RoundButton("Hypa", launcher, Vector3.zero, LensTouch.LauncherRadius, Ui.Panel,
-                ToggleLauncher, () => { ShowLauncher(false); _ = CaptureAsync(); }, logo);
-            _launcherLabel = Ui.LabelOf(launcherBtn);
-            _launcherIcon = launcherBtn.transform.parent.Find("icon")?.gameObject;
-            // Mode badge above the button, so live mode is always visibly different from photo mode.
-            _liveBadge = Ui.Quad("live badge", launcher, new Vector3(0f, LensTouch.LauncherRadius * 1.75f, 0f), new Vector2(0.075f, 0.026f), Ui.Accent, false, 0.013f);
+            // Top bar: X | Auto ▾ | → Target ▾ | Saved
+            Ui.IconButton("x", _hud, new Vector3(-0.30f, TopY, 0), LensTouch.SmallIconRadius, GoHome);
+            _sourceBtn = LanguagePill(new Vector3(-0.105f, TopY, 0), 0.13f, () => OpenPicker(true));
+            Ui.Text(_hud, "→", 0.02f, new Vector3(-0.018f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
+            _targetBtn = LanguagePill(new Vector3(0.105f, TopY, 0), 0.20f, () => OpenPicker(false));
+            Ui.IconButton("bookmark", _hud, new Vector3(0.30f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice);
+
+            // Hint pill (the status), centred under the top bar.
+            _status = Ui.Text(_hud, "", StatusLineH, new Vector3(0f, HintY, 0), new Color(1f, 1f, 1f, 0.95f));
+
+            // Bottom row: the camera controls.
+            const float r = LensTouch.IconRadius, pitch = 0.135f;
+            Ui.IconButton("camera", _hud, new Vector3(-1.5f * pitch, BottomY, 0), r, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary);
+            Ui.IconButton("languages", _hud, new Vector3(-0.5f * pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption");
+            Ui.IconButton("volume-2", _hud, new Vector3(0.5f * pitch, BottomY, 0), r, SpeakLast, "Speak");
+            Ui.IconButton("eraser", _hud, new Vector3(1.5f * pitch, BottomY, 0), r, ClearAll, "Clear");
+
+            // Live-mode badge (dev-only toggle for now; the mode itself is not in the UI yet).
+            _liveBadge = Ui.Quad("live badge", _hud, new Vector3(0f, BottomY + r * 1.9f, 0f), new Vector2(0.075f, 0.026f), Ui.Accent, false, 0.013f);
             Ui.Text(_liveBadge.transform, "● LIVE", 0.012f, Vector3.zero, Ui.TextColorFor(Ui.Accent));
             _liveBadge.SetActive(false);
-            var launcherHover = launcherBtn.OnHover;
-            launcherBtn.OnHover = on =>
-            {
-                launcherHover(on);
-                // Open on hover, but never on top of a picker or card the user is in the middle of (a pinch still can).
-                if (on && !OtherViewOpen) ShowLauncher(true, closeOthers: false);
-            };
 
-            // A compact grid above-left of the button, so every item is one small hand movement away.
-            _launcherMenu = new GameObject("Lens Menu").transform;
-            _launcherMenu.SetParent(launcher, false);
-            var items = HypaShell.Instance != null ? 7 : 6;
-            const float w = LensTouch.MenuButtonW, h = LensTouch.MenuButtonH, gap = LensTouch.MenuGap, pad = 0.012f;
-            const int cols = LensTouch.MenuColumns;
-            var size = MenuLayout.PanelSize(items, cols, w, h, gap, pad);
-            // Right edge near the button's right edge, bottom edge just above it.
-            _launcherMenu.localPosition = new Vector3(LensTouch.LauncherRadius * 1.12f - size.x * 0.5f, 0.045f + size.y * 0.5f, 0f);
-            // The panel is a (no-op) target so a pinch that wanders onto it counts as "still in the menu".
-            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), size, Ui.Panel, true).AddComponent<PinchTarget>();
-            var n = 0;
-            void Item(string label, Color c, Action a, out PinchTarget btn)
-            {
-                var cell = MenuLayout.Cell(n, items, cols, w, h, gap, pad);
-                btn = Ui.Button(label, _launcherMenu, new Vector3(cell.x, cell.y, 0), new Vector2(cell.width, cell.height), c, () => { ShowLauncher(false); a(); });
-                btn.AcceptsSlide = true; // pinch the button, slide here, release
-                n++;
-            }
-            Item("Translate text", Ui.Accent, () => _ = CaptureAsync(), out _);
-            Item("Live: off", Ui.Muted, ToggleLive, out _liveBtn);
-            Item("From", Ui.Muted, () => OpenPicker(true), out _fromBtn);
-            Item("To", Ui.Muted, () => OpenPicker(false), out _toBtn);
-            Item("Saved words", Ui.Muted, TogglePractice, out _);
-            Item("How it works", Ui.Muted, () => ShowOnboarding(true), out _);
-            if (HypaShell.Instance != null) Item("Apps", Ui.Muted, () => HypaShell.Instance.ShowMenu(true), out _);
-            _launcherMenu.gameObject.SetActive(false);
-
-            HypaShell.Instance?.SetMenuButtonVisible(false); // the launcher's "Apps" replaces the shell's Menu button here
+            HypaShell.Instance?.SetMenuButtonVisible(false); // the X replaces the shell's Home button here
             UpdateLanguageText();
         }
 
-        void ToggleLauncher() => ShowLauncher(!_launcherMenu.gameObject.activeSelf);
+        /// <summary>A dark pill with a language name and a small chevron, like the mobile app's language selector.</summary>
+        PinchTarget LanguagePill(Vector3 pos, float width, Action onPress)
+        {
+            var pill = Ui.Button("", _hud, pos, new Vector2(width, LensTouch.PillH), Ui.Muted, onPress);
+            var chevron = Ui.Icon("chevron-down");
+            if (chevron != null)
+            {
+                var q = Ui.Quad("chevron", pill.transform.parent, new Vector3(width * 0.5f - 0.02f, 0, -0.001f), Vector2.one * 0.02f, Color.white, false, rounded: false);
+                q.GetComponent<Renderer>().material.mainTexture = chevron;
+            }
+            return pill;
+        }
 
-        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null
+        void GoHome()
+        {
+            ClearAll();
+            _picker?.Close(); ShowOnboarding(false); ShowCaption(null); ShowConsent(false);
+            if (_practice != null) { Destroy(_practice); _practice = null; }
+            if (HypaShell.Instance != null) HypaShell.Instance.ShowMenu(true);
+            else SetStatus("Home needs the Hypa shell. Play from the HypaShell scene.");
+        }
+
+        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null || _caption != null || _consent != null
                               || (HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen);
 
-        /// <summary>Is the pointer on the launcher button or its menu?</summary>
-        bool PointerOnLauncher
+        /// <summary>Onboarding, practice, the picker, the caption and the consent card share the spot above the bar: one at a time.</summary>
+        void CloseCards()
         {
-            get
-            {
-                var hover = PinchPointer.Instance != null ? PinchPointer.Instance.Hover : null;
-                return hover != null && _launcher != null && hover.transform.IsChildOf(_launcher);
-            }
+            _picker?.Close();
+            ShowOnboarding(false);
+            ShowCaption(null);
+            ShowConsent(false);
+            if (_practice != null) { Destroy(_practice); _practice = null; }
         }
 
-        void ShowLauncher(bool open, bool closeOthers = true)
+        /// <summary>A card above the controls with a title and an X, sized to hold <paramref name="size"/>.</summary>
+        GameObject Card(string name, string title, Vector2 size, Action onClose)
         {
-            if (_launcherMenu == null || _launcherMenu.gameObject.activeSelf == open) return;
-            if (open && closeOthers) { _picker?.Close(); ShowOnboarding(false); if (_practice != null) { Destroy(_practice); _practice = null; } }
-            _launcherMenu.gameObject.SetActive(open);
-            // Open: the button reads "Close". Closed: the Hypa Lens logo (or "Hypa" if the logo isn't in the project).
-            if (_launcherIcon != null) _launcherIcon.SetActive(!open);
-            _launcherLabel.text = open ? "Close" : _launcherIcon != null ? "" : "Hypa";
+            var go = new GameObject(name);
+            go.transform.SetParent(_hud, false);
+            go.transform.localPosition = new Vector3(0f, CardY, -0.01f);
+            Ui.Quad("bg", go.transform, new Vector3(0, 0, 0.003f), size, Ui.Panel, true).AddComponent<PinchTarget>();
+            var top = size.y * 0.5f - 0.03f;
+            Ui.Text(go.transform, title, 0.022f, new Vector3(-size.x * 0.5f + 0.02f, top, 0), Color.white, TextAnchor.MiddleLeft);
+            Ui.IconButton("x", go.transform, new Vector3(size.x * 0.5f - 0.03f, top, -0.001f), 0.022f, onClose);
+            return go;
         }
 
-        const float StatusLineH = 0.016f, StatusRight = 0.18f, StatusW = 0.34f, StatusPad = 0.014f;
-        /// <summary>Characters per line that fit the card's width at <see cref="StatusLineH"/>.</summary>
-        static readonly int StatusWrap = Mathf.FloorToInt((StatusW - StatusPad * 2f) / (StatusLineH * Ui.CharWidth));
+        const float StatusLineH = 0.016f, StatusPad = 0.014f;
+        const int StatusWrap = 44;
 
         void SetStatus(string s)
         {
@@ -408,17 +348,18 @@ namespace HypaLens
             if (_statusBg != null) Destroy(_statusBg);
             _statusBg = null;
             if (string.IsNullOrEmpty(text)) return;
-            var lines = text.Split('\n').Length;
-            var size = new Vector2(StatusW, lines * StatusLineH * 1.08f + StatusPad * 1.6f);
-            _statusBg = Ui.Quad("status bg", _hud, new Vector3(StatusRight - StatusW * 0.5f, -0.04f, 0.003f), size, Ui.Panel, false);
+            var lines = text.Split('\n');
+            var longest = 0;
+            foreach (var l in lines) longest = Mathf.Max(longest, l.Length);
+            var size = new Vector2(Ui.TextWidth(new string('x', longest), StatusLineH) + StatusPad * 2f, lines.Length * StatusLineH * 1.08f + StatusPad * 1.4f);
+            _statusBg = Ui.Quad("status bg", _hud, new Vector3(0f, HintY, 0.003f), size, Ui.Panel, false);
         }
 
         void UpdateLanguageText()
         {
-            var maxW = LensTouch.MenuButtonW - 0.028f;
-            var lineH = LensTouch.MenuButtonH * 0.42f * 0.75f; // the smallest the label is allowed to shrink to
-            Ui.SetLabel(_fromBtn, LanguageLabel("From: ", _lens.SourceLanguage ?? "Auto", lineH, maxW));
-            Ui.SetLabel(_toBtn, LanguageLabel("To: ", _lens.TargetLanguage, lineH, maxW));
+            var lineH = LensTouch.PillH * 0.42f * 0.75f; // the smallest the label is allowed to shrink to
+            Ui.SetLabel(_sourceBtn, LanguageLabel("", _lens.SourceLanguage ?? "Auto", lineH, 0.13f - 0.05f) + "  ");
+            Ui.SetLabel(_targetBtn, LanguageLabel("", _lens.TargetLanguage, lineH, 0.20f - 0.05f) + "  ");
         }
 
         /// <summary>
@@ -441,12 +382,9 @@ namespace HypaLens
 
         void OpenPicker(bool source)
         {
-            _picker?.Close();
-            // Onboarding, practice and the picker share the spot above the HUD: show one at a time.
-            ShowOnboarding(false);
-            if (_practice != null) { Destroy(_practice); _practice = null; }
+            CloseCards();
             if (_langs.Count == 0) { SetStatus("Loading languages... try again in a moment."); _ = LoadLanguages(); return; }
-            _picker = new LanguagePicker(_hud, new Vector3(0f, 0.22f, -0.01f), source ? "Translate from" : "Translate to",
+            _picker = new LanguagePicker(_hud, new Vector3(0f, CardY, -0.01f), source ? "Translate from" : "Translate into",
                 _langs, source ? _lens.SourceLanguage : _lens.TargetLanguage, source, name => _ = SetLanguage(source, name));
         }
 
@@ -457,7 +395,7 @@ namespace HypaLens
             {
                 if (await _lens.IsPairSupportedAsync(_lens.SourceLanguage, _lens.TargetLanguage, _cts.Token))
                 {
-                    SetStatus($"{_lens.SourceLanguage ?? "Auto"} -> {_lens.TargetLanguage}. Pinch a word.");
+                    SetStatus($"{_lens.SourceLanguage ?? "Auto"} → {_lens.TargetLanguage}. Point at text, then pinch Capture.");
                     return;
                 }
                 // Hypa has no model for some regional variants (e.g. Amharic -> Arabic (Libyan)) where the base language
@@ -468,7 +406,7 @@ namespace HypaLens
                     Apply(source, baseName);
                     if (await _lens.IsPairSupportedAsync(_lens.SourceLanguage, _lens.TargetLanguage, _cts.Token))
                     {
-                        SetStatus($"Hypa doesn't have {name} for this pair yet, so it's using {baseName}. {_lens.SourceLanguage ?? "Auto"} -> {_lens.TargetLanguage}.");
+                        SetStatus($"Hypa doesn't have {name} for this pair yet, so it's using {baseName}.");
                         return;
                     }
                     Apply(source, name);
@@ -507,24 +445,19 @@ namespace HypaLens
                 return;
             }
             if (_onboarding != null) return;
-            _onboarding = new GameObject("Onboarding");
-            _onboarding.transform.SetParent(_hud, false);
-            _onboarding.transform.localPosition = new Vector3(0f, 0.2f, 0f);
-            var bg = Ui.Quad("bg", _onboarding.transform, Vector3.zero, new Vector2(0.48f, 0.27f), Ui.Panel, true);
+            _onboarding = Card("Onboarding", "Welcome to Hypa Lens", new Vector2(0.50f, 0.30f), () => ShowOnboarding(false));
             Ui.Text(_onboarding.transform,
-                "Welcome to Hypa Lens\n\n1. Look at a sign, menu or book\n2. Point at the round Hypa Lens button, then pinch Translate text\n    (or hold the pinch on the button to capture straight away)\n3. Pinch a word to translate, hear and define it\n    Hold the pinch to pick the whole sentence\n\nLive mode (in the menu): rest your pointer on text for a second instead.\nLanguages and saved words are in the same menu.\nHypa only sends the text you pinch. Photos never leave the headset.\n(pinch here to start)",
-                0.017f, Vector3.zero, Color.white);
-            var pt = bg.AddComponent<PinchTarget>();
-            pt.OnPinch = k => { if (k == PinchKind.Short) ShowOnboarding(false); };
+                "1. Look at a sign, menu or book and pinch Capture.\n2. Each word becomes a label on the real surface. Pinch one to translate,\n    hear and define it; hold the pinch for the whole sentence.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick languages at the top. Save words with the bookmark to practise later.\nHypa only sends the text you pinch (Caption sends the photo, and asks first).",
+                0.016f, new Vector3(-0.23f, -0.02f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
         }
 
-        // ---------- Capture (photo mode: one pinch, the whole view) ----------
+        // ---------- Capture (photo mode: pinchable labels, recognised on the headset) ----------
 
         async Task CaptureAsync()
         {
             if (_busy) return;
             _busy = true;
-            ShowOnboarding(false);
+            CloseCards();
             ClearLabels(); CloseCard();
             SetStatus("Reading text...");
             try
@@ -540,7 +473,87 @@ namespace HypaLens
             finally { _busy = false; }
         }
 
-        // ---------- Live mode: rest the pointer (or head) on text and it becomes pinchable ----------
+        // ---------- Caption (Hypa reads and translates the whole view; the photo leaves the headset) ----------
+
+        async Task CaptionAsync()
+        {
+            if (_busy) return;
+            if (!LensPrefs.CaptionAllowed) { ShowConsent(true); return; }
+            _busy = true;
+            CloseCards();
+            SetStatus("Sending the view to Hypa...");
+            try
+            {
+                var r = await _lens.CaptionAsync(f => FrameEncoder.ToJpeg(f), _cts.Token);
+                ShowCaption(r);
+                SetStatus("Caption ready. Pinch Speak to hear it.");
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception e) { SetStatus(LensException.From(e).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage)); }
+            finally { _busy = false; }
+        }
+
+        void ShowConsent(bool on)
+        {
+            if (_consent != null) Destroy(_consent);
+            _consent = null;
+            if (!on) return;
+            CloseCards();
+            _consent = Card("Caption consent", "Caption sends a photo", new Vector2(0.46f, 0.24f), () => ShowConsent(false));
+            Ui.Text(_consent.transform,
+                "To caption, Hypa reads a photo of your view and translates it.\nThe photo is sent once, used for that caption, and not kept.\nCapture, on the other hand, never sends photos.",
+                0.016f, new Vector3(-0.21f, 0.005f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
+            Ui.Button("Allow", _consent.transform, new Vector3(-0.07f, -0.08f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Accent, () =>
+            {
+                LensPrefs.CaptionAllowed = true;
+                ShowConsent(false);
+                _ = CaptionAsync();
+            });
+            Ui.Button("Not now", _consent.transform, new Vector3(0.07f, -0.08f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Muted, () => ShowConsent(false));
+        }
+
+        void ShowCaption(HypaImageTranslation r)
+        {
+            if (_caption != null) Destroy(_caption);
+            _caption = null;
+            if (r == null) return;
+            CloseCards();
+            _caption = Card("Caption", "Caption", new Vector2(0.50f, 0.32f), () => ShowCaption(null));
+            var body = $"\"{r.Text}\"  ({r.Language ?? _lens.SourceLanguage ?? "source?"})\n\n→ {r.Translation}  ({_lens.TargetLanguage})";
+            Ui.Text(_caption.transform, Ui.Wrap(body, 48), 0.017f, new Vector3(-0.23f, 0.02f, 0), Color.white, TextAnchor.MiddleLeft);
+            _lastSpeech = null; _lastSpeechText = r.Translation; _lastSpeechLang = _lens.TargetLanguage;
+            Ui.Button("Speak", _caption.transform, new Vector3(-0.07f, -0.125f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Accent, SpeakLast);
+            var save = Ui.Button(_saved.Contains(r.Text, _lens.TargetLanguage) ? "Saved" : "Save", _caption.transform, new Vector3(0.07f, -0.125f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Muted, null);
+            save.OnPinch = k =>
+            {
+                if (k != PinchKind.Short) return;
+                _saved.Add(new LensResult
+                {
+                    Selection = new Selection { Kind = SelectionKind.Sentence, Text = r.Text },
+                    SourceLanguage = r.Language ?? _lens.SourceLanguage, TargetLanguage = _lens.TargetLanguage, Translation = r.Translation,
+                });
+                Ui.SetLabel(save, "Saved");
+            };
+        }
+
+        /// <summary>Speak: the last translation heard (a pinched word's audio, or a caption, fetched fresh as audio links expire).</summary>
+        async void SpeakLast()
+        {
+            if (_lastSpeech != null) { Play(_lastSpeech); return; }
+            if (string.IsNullOrEmpty(_lastSpeechText)) { SetStatus("Pinch a word or take a caption first, then Speak."); return; }
+            try { Play(await _api.SpeakAsync(_lastSpeechText, _lastSpeechLang, _cts.Token)); }
+            catch (OperationCanceledException) { }
+            catch (Exception e) { SetStatus("Couldn't play audio: " + LensException.From(e).UserMessage()); }
+        }
+
+        void ClearAll()
+        {
+            ClearLabels(); CloseCard(); ShowCaption(null);
+            _lastSpeech = null; _lastSpeechText = null;
+            SetStatus("Point at text, then pinch Capture.");
+        }
+
+        // ---------- Live mode (dev-only toggle for now: L in the editor) ----------
 
         const float LiveRegionFraction = 0.4f; // of the frame, around the aim: smaller image, faster recognition
         bool _live;
@@ -555,16 +568,15 @@ namespace HypaLens
             SetLive(!_live);
             SetStatus(_live
                 ? "Live mode: rest your hand pointer (or just look) on text for a second and it becomes pinchable."
-                : "Live mode off. Pinch Translate text to capture.");
+                : "Live mode off. Pinch Capture to read text.");
         }
 
         void SetLive(bool on)
         {
             _live = on;
             _dwell.Reset();
-            if (_liveBtn != null) Ui.SetLabel(_liveBtn, on ? "Live: on" : "Live: off");
             if (_liveBadge != null) _liveBadge.SetActive(on);
-            if (on) { ShowOnboarding(false); ClearLabels(); CloseCard(); }
+            if (on) { CloseCards(); ClearLabels(); CloseCard(); }
             else _liveLabels.Clear(); // labels stay on the walls as photo-mode labels
         }
 
@@ -613,6 +625,8 @@ namespace HypaLens
             }
             finally { _busy = false; }
         }
+
+        // ---------- Labels ----------
 
         /// <summary>
         /// Pins one label per recognised word. In live mode (<paramref name="liveRegion"/> set) a word already labelled
@@ -731,9 +745,10 @@ namespace HypaLens
                     if (version == _resultVersion && body != null) body.text = CardText(partial);
                 }, audio =>
                 {
-                    if (version == _resultVersion) Play(audio);
+                    if (version == _resultVersion) { _lastSpeech = audio; Play(audio); }
                 });
                 if (version != _resultVersion || body == null) return; // a newer selection replaced this card
+                _lastSpeech = r.TargetAudio; _lastSpeechText = r.Translation; _lastSpeechLang = r.TargetLanguage;
                 body.text = CardText(r);
                 AddCardButtons(r);
             }
@@ -750,7 +765,7 @@ namespace HypaLens
         {
             var sb = new System.Text.StringBuilder();
             sb.Append('"').Append(r.Selection.Text).Append("\"  (").Append(r.SourceLanguage ?? "source?").Append(")\n");
-            sb.Append("-> ").Append(r.Translation).Append("  (").Append(r.TargetLanguage).Append(")\n\n");
+            sb.Append("→ ").Append(r.Translation).Append("  (").Append(r.TargetLanguage).Append(")\n\n");
             sb.Append(r.Meaning ?? r.MeaningNote ?? "");
             if (r.AudioNote != null) sb.Append('\n').Append(r.AudioNote);
             return Ui.Wrap(sb.ToString(), 32);
@@ -766,6 +781,7 @@ namespace HypaLens
             _card.transform.position = anchor.position + _cam.right * (0.27f * side) - anchor.forward * 0.02f;
             _card.transform.rotation = anchor.rotation;
             Ui.Quad("bg", _card.transform, Vector3.zero, new Vector2(0.40f, 0.30f), Ui.Panel, true);
+            Ui.IconButton("x", _card.transform, new Vector3(0.17f, 0.12f, -0.001f), 0.02f, CloseCard);
             return Ui.Text(_card.transform, "", 0.021f, new Vector3(-0.18f, 0.13f, 0), Color.white, TextAnchor.UpperLeft);
         }
 
@@ -773,13 +789,11 @@ namespace HypaLens
         {
             var t = _card.transform;
             const float y = -0.12f, z = -0.001f;
-            var w = new Vector2(0.09f, 0.045f);
-            if (r.SourceAudio != null) Ui.Button("Hear", t, new Vector3(-0.15f, y, z), w, Ui.Accent, () => Play(r.SourceAudio));
-            if (r.TargetAudio != null) Ui.Button("Hear ->", t, new Vector3(-0.05f, y, z), w, Ui.Accent, () => Play(r.TargetAudio));
-            var save = Ui.Button(_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", t, new Vector3(0.05f, y, z), w, Ui.Accent, null);
-            var saveLabel = Ui.LabelOf(save);
-            save.OnPinch = k => { if (k == PinchKind.Short) { _saved.Add(r); saveLabel.text = "Saved"; } };
-            Ui.Button("Close", t, new Vector3(0.15f, y, z), w, Ui.Muted, CloseCard);
+            var w = new Vector2(0.10f, 0.045f);
+            if (r.SourceAudio != null) Ui.Button("Hear", t, new Vector3(-0.13f, y, z), w, Ui.Accent, () => Play(r.SourceAudio));
+            if (r.TargetAudio != null) Ui.Button("Hear →", t, new Vector3(0f, y, z), w, Ui.Accent, () => Play(r.TargetAudio));
+            var save = Ui.Button(_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", t, new Vector3(0.13f, y, z), w, Ui.Muted, null);
+            save.OnPinch = k => { if (k == PinchKind.Short) { _saved.Add(r); Ui.SetLabel(save, "Saved"); } };
         }
 
         void CloseCard()
@@ -801,19 +815,16 @@ namespace HypaLens
         void TogglePractice()
         {
             if (_practice != null) { Destroy(_practice); _practice = null; return; }
-            ShowOnboarding(false);
-            _picker?.Close();
+            CloseCards();
             _deck = new PracticeDeck(_saved.Items);
-            _practice = new GameObject("Practice");
-            _practice.transform.SetParent(_hud, false);
-            _practice.transform.localPosition = new Vector3(0f, 0.21f, 0f);
-            var bg = Ui.Quad("bg", _practice.transform, Vector3.zero, new Vector2(0.42f, 0.26f), Ui.Panel, true);
-            bg.AddComponent<PinchTarget>().OnPinch = k => { if (k == PinchKind.Short) { _deck.Flip(); RefreshDeck(); } };
-            _deckText = Ui.Text(_practice.transform, "", 0.03f, new Vector3(0f, 0.03f, 0), Color.white);
+            _practice = Card("Practice", "Saved words", new Vector2(0.44f, 0.30f), () => { Destroy(_practice); _practice = null; });
+            var face = Ui.Quad("face", _practice.transform, new Vector3(0, 0.005f, -0.001f), new Vector2(0.40f, 0.15f), Ui.Muted, true);
+            face.AddComponent<PinchTarget>().OnPinch = k => { if (k == PinchKind.Short) { _deck.Flip(); RefreshDeck(); } };
+            _deckText = Ui.Text(_practice.transform, "", 0.024f, new Vector3(0f, 0.005f, 0), Color.white);
             var t = _practice.transform;
-            Ui.Button("<", t, new Vector3(-0.15f, -0.095f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Accent, () => { _deck.Prev(); RefreshDeck(); });
-            Ui.Button("Hear", t, new Vector3(0f, -0.095f, -0.001f), new Vector2(0.10f, 0.045f), Ui.Accent, () => _ = PlayDeckAudio());
-            Ui.Button(">", t, new Vector3(0.15f, -0.095f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Accent, () => { _deck.Next(); RefreshDeck(); });
+            Ui.Button("<", t, new Vector3(-0.15f, -0.11f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Muted, () => { _deck.Prev(); RefreshDeck(); });
+            Ui.Button("Hear", t, new Vector3(0f, -0.11f, -0.001f), new Vector2(0.10f, 0.045f), Ui.Accent, () => _ = PlayDeckAudio());
+            Ui.Button(">", t, new Vector3(0.15f, -0.11f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Muted, () => { _deck.Next(); RefreshDeck(); });
             RefreshDeck();
         }
 
@@ -821,7 +832,7 @@ namespace HypaLens
         {
             _deckText.text = _deck.IsEmpty
                 ? "No saved words yet.\nPinch a word, then Save."
-                : Ui.Wrap(_deck.Face, 20) + "\n\n" + $"({(_deck.Flipped ? "pinch card to flip back" : "pinch card to reveal")})  {_deck.Index + 1}/{_saved.Items.Count}";
+                : Ui.Wrap(_deck.Face, 24) + "\n" + $"({(_deck.Flipped ? "pinch to flip back" : "pinch to reveal")})  {_deck.Index + 1}/{_saved.Items.Count}";
         }
 
         async Task PlayDeckAudio()
@@ -833,7 +844,7 @@ namespace HypaLens
             catch (Exception e) { _deckText.text = LensException.From(e).UserMessage(); }
         }
 
-        // ---------- Editor shortcuts ----------
+        // ---------- Per frame ----------
 
         // The flat "Sim Wall" backdrop is only for mouse testing in the editor. On a headset it would sit in front of
         // the real room, and Quest's OpenXR path often leaves XRSettings.isDeviceActive false, so a device build hides
@@ -843,20 +854,16 @@ namespace HypaLens
         void Update()
         {
             if (_simWall != null && _simWall.activeSelf && (!Application.isEditor || UnityEngine.XR.XRSettings.isDeviceActive)) _simWall.SetActive(false);
-            // A hand merely held in a pinch pose (common with simulator hands) must not pin the menu open or the HUD in place:
-            // only a pinch that started on something counts.
-            var pointer = PinchPointer.Instance;
-            var pinchingSomething = pointer != null && pointer.Pressed != null;
-            if (_launcherMenu != null && _linger.Update(_launcherMenu.gameObject.activeSelf, PointerOnLauncher, pinchingSomething, Time.realtimeSinceStartupAsDouble))
-                ShowLauncher(false);
-            // The shell's Apps card is a modal over everything: the Lens menu stays out of its way.
-            if (HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen && _launcherMenu != null && _launcherMenu.gameObject.activeSelf) ShowLauncher(false);
-            FollowHead();
-            if (_live) LiveTick();
+            // Home (the shell's card) is modal: the Lens HUD steps aside while it is up.
+            var home = HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen;
+            if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
+            if (!home) FollowHead();
+            if (_live && !home) LiveTick();
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();
-            if (Input.GetKeyDown(KeyCode.L)) ToggleLive();
+            if (Input.GetKeyDown(KeyCode.C)) _ = CaptionAsync();
             if (Input.GetKeyDown(KeyCode.H)) ShowOnboarding(_onboarding == null);
+            if (Input.GetKeyDown(KeyCode.L)) ToggleLive();
             if (Input.GetKeyDown(KeyCode.P)) { EditorXrInput.HandAims = !EditorXrInput.HandAims; SetStatus(EditorXrInput.HandAims ? "Hand aims (P: mouse aims)." : "Mouse aims, hand or button pinches (P: hand aims)."); }
             if (Input.GetKeyDown(KeyCode.O) && _simApi != null) { _simApi.Offline = !_simApi.Offline; SetStatus("Sim offline: " + _simApi.Offline); }
             if (Input.GetKeyDown(KeyCode.N) && _simFrames != null) { _simFrames.ReturnBlankFrame = !_simFrames.ReturnBlankFrame; SetStatus("Sim blank frame: " + _simFrames.ReturnBlankFrame); }

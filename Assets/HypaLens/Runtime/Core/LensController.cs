@@ -76,6 +76,29 @@ namespace HypaLens
             finally { frame?.Dispose(); }
         }
 
+        /// <summary>
+        /// Caption: one frame, read and translated by Hypa as a whole (translate_image; the picture leaves the
+        /// headset, so the caller has asked the user first). <paramref name="encode"/> turns the frame into JPEG on
+        /// the main thread. Throws LensException (Offline, NoTextFound, Api, ...).
+        /// </summary>
+        public async Task<HypaImageTranslation> CaptionAsync(Func<CapturedFrame, byte[]> encode, CancellationToken ct)
+        {
+            if (!_isOnline()) throw new LensException(LensErrorKind.Offline);
+            CapturedFrame frame = null;
+            try
+            {
+                frame = await _frames.CaptureAsync(ct);
+                var jpeg = encode(frame);
+                var r = await _api.TranslateImageAsync(jpeg, SourceLanguage, TargetLanguage, ct);
+                if (r == null || r.NoTextFound || string.IsNullOrWhiteSpace(r.Translation)) throw new LensException(LensErrorKind.NoTextFound);
+                return r;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (LensException) { throw; }
+            catch (Exception e) { throw LensException.From(e); }
+            finally { frame?.Dispose(); }
+        }
+
         public static Selection SelectWord(OcrWord w)
             => new Selection { Kind = SelectionKind.Word, Text = w.Text, Word = w, Line = w.Line };
 

@@ -257,13 +257,30 @@ namespace HypaCore
             tm.text = Ellipsize(label, lineH, maxW);
         }
 
+        /// <summary>A shared Lucide icon from Resources/Icons (white on transparent), or null if it is missing.</summary>
+        public static Texture2D Icon(string name) => Resources.Load<Texture2D>("Icons/" + name);
+
+        /// <summary>
+        /// A round icon button (x, camera, speaker...) with an optional small caption under it. Dark, like the mobile
+        /// app's camera controls; <paramref name="onLongPress"/> is optional.
+        /// </summary>
+        public static PinchTarget IconButton(string iconName, Transform parent, Vector3 localPos, float radius, Action onPress,
+            string caption = null, Action onLongPress = null, Color? color = null)
+        {
+            var icon = Icon(iconName);
+            var pt = RoundButton(icon != null ? "" : iconName, parent, localPos, radius, color ?? Secondary, onPress, onLongPress, icon, 1.0f);
+            if (!string.IsNullOrEmpty(caption))
+                Text(pt.transform.parent, caption, radius * 0.42f, new Vector3(0, -radius * 1.55f, 0), new Color(1f, 1f, 1f, 0.85f));
+            return pt;
+        }
+
         /// <summary>
         /// Round button: short pinch = <paramref name="onPress"/>, long pinch = <paramref name="onLongPress"/> (optional).
-        /// With an <paramref name="icon"/> (e.g. a logo) the image is shown in a child named "icon" and the label text
-        /// starts empty; otherwise the label is shown.
+        /// With an <paramref name="icon"/> (e.g. a logo) the image is shown in a child named "icon", <paramref name="iconScale"/>
+        /// times the radius across, and the label text starts empty; otherwise the label is shown.
         /// </summary>
         public static PinchTarget RoundButton(string label, Transform parent, Vector3 localPos, float radius, Color color, Action onPress,
-            Action onLongPress = null, Texture2D icon = null)
+            Action onLongPress = null, Texture2D icon = null, float iconScale = 1.3f)
         {
             var root = new GameObject("Btn " + label);
             root.transform.SetParent(parent, false);
@@ -276,7 +293,7 @@ namespace HypaCore
             bg.GetComponent<BoxCollider>().size = new Vector3(3.2f, 3.2f, 0.02f);
             if (icon != null)
             {
-                var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * 1.3f, Color.white, false, rounded: false);
+                var img = Quad("icon", root.transform, new Vector3(0, 0, -0.001f), Vector2.one * radius * iconScale, Color.white, false, rounded: false);
                 var m = img.GetComponent<Renderer>();
                 m.material.mainTexture = icon;
                 m.sortingOrder = 1;
