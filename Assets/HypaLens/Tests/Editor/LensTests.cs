@@ -166,6 +166,38 @@ namespace HypaLens.Tests
             Assert.IsFalse(f.IsGliding);
         }
 
+        [Test] public void LazyFollow_TurnsInPlaceToSquareWithTheView_WithoutMoving()
+        {
+            var f = new LazyFollow();
+            var head = new Vector3(0, 1.5f, 0);
+            var p = f.Update(head, Quaternion.identity, default, false, 0.016f);
+            var turned = Settle(f, head, Quaternion.Euler(0, 20f, 0), p); // inside the dead zone: stays put
+            Assert.AreEqual(p.position, turned.position);
+            var yaw = turned.rotation.eulerAngles.y;
+            Assert.AreEqual(20f, yaw, 0.5f, "but squares up with where the head is looking");
+            var pitch = turned.rotation.eulerAngles.x;
+            Assert.That(pitch, Is.LessThan(40f).And.GreaterThan(0.5f), "still tilted up to meet the eyes");
+        }
+
+        [Test] public void MenuLayout_FiveItems_LastOneSpansTheRow_SixFillTheGrid()
+        {
+            const float w = 0.2f, h = 0.05f, gap = 0.01f, pad = 0.012f;
+            var alone = MenuLayout.Cell(4, 5, 2, w, h, gap, pad);
+            Assert.AreEqual(0f, alone.x, 1e-5f, "fifth of five is centred");
+            Assert.AreEqual(2 * w + gap, alone.width, 1e-5f, "and spans both columns");
+            var left = MenuLayout.Cell(2, 5, 2, w, h, gap, pad);
+            var right = MenuLayout.Cell(3, 5, 2, w, h, gap, pad);
+            Assert.AreEqual(w, left.width, 1e-5f);
+            Assert.AreEqual(left.y, right.y, 1e-5f, "same row");
+            Assert.Greater(right.x, left.x);
+            Assert.Greater(left.y, alone.y, "the lone item sits on the bottom row");
+            var sixth = MenuLayout.Cell(5, 6, 2, w, h, gap, pad);
+            Assert.AreEqual(w, sixth.width, 1e-5f, "six items: a plain 2x3 grid");
+            var size = MenuLayout.PanelSize(5, 2, w, h, gap, pad);
+            Assert.AreEqual(2 * w + gap + 2 * pad, size.x, 1e-5f);
+            Assert.AreEqual(3 * h + 2 * gap + 2 * pad, size.y, 1e-5f);
+        }
+
         [Test] public void LazyFollow_Reset_SnapsToTheNewHeadAtOnce()
         {
             var f = new LazyFollow();

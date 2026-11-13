@@ -47,14 +47,18 @@ namespace HypaLens
         public float Distance = 1.0f, Height = -0.28f;
         public float Smoothing = 5f;           // per second; higher = snappier glide
         bool _placed, _gliding;
-        Vector3 _headAtPlace, _targetPos; Quaternion _targetRot;
+        Vector3 _headAtPlace, _targetPos;
 
         public bool IsGliding => _gliding;
 
         /// <summary>Forget the placement: the next update snaps the HUD in front of the eyes again.</summary>
         public void Reset() { _placed = false; _gliding = false; }
 
-        /// <summary>Returns the pose the HUD should have this frame. <paramref name="hold"/> = in use, don't move.</summary>
+        /// <summary>
+        /// Returns the pose the HUD should have this frame. <paramref name="hold"/> = in use, don't move. The position
+        /// is lazy; the rotation is not: the HUD always turns in place to square up with the way the head is facing
+        /// (yaw) while tilting to meet the eyes (pitch), so it never reads as a panel seen from the side.
+        /// </summary>
         public Pose Update(Vector3 headPos, Quaternion headRot, Pose current, bool hold, float dt)
         {
             var fwd = Flat(headRot * Vector3.forward);
@@ -63,25 +67,24 @@ namespace HypaLens
                 _placed = true;
                 SetTarget(headPos, fwd);
                 _gliding = false;
-                return new Pose(_targetPos, _targetRot); // first placement snaps
+                return new Pose(_targetPos, Facing(_targetPos, headPos, fwd)); // first placement snaps
             }
-            if (hold) { _gliding = false; return current; }
-            if (!_gliding)
+            var t = 1f - Mathf.Exp(-Smoothing * dt);
+            if (hold) _gliding = false;
+            else if (!_gliding)
             {
                 var toHud = Flat(current.position - headPos);
                 var turned = toHud != Vector3.zero && Vector3.Angle(fwd, toHud) > RecentreAngle;
                 var moved = Vector3.Distance(headPos, _headAtPlace) > RecentreDistance;
-                if (!turned && !moved) return current;
-                SetTarget(headPos, fwd);
+                if (turned || moved) SetTarget(headPos, fwd);
             }
-            var t = 1f - Mathf.Exp(-Smoothing * dt);
-            var pos = Vector3.Lerp(current.position, _targetPos, t);
-            var rot = Quaternion.Slerp(current.rotation, _targetRot, t);
-            if (Vector3.Distance(pos, _targetPos) < 0.002f && Quaternion.Angle(rot, _targetRot) < 0.5f)
+            var pos = current.position;
+            if (_gliding)
             {
-                _gliding = false;
-                return new Pose(_targetPos, _targetRot);
+                pos = Vector3.Lerp(current.position, _targetPos, t);
+                if (Vector3.Distance(pos, _targetPos) < 0.002f) { pos = _targetPos; _gliding = false; }
             }
+            var rot = Quaternion.Slerp(current.rotation, Facing(pos, headPos, fwd), t);
             return new Pose(pos, rot);
         }
 
@@ -90,13 +93,50 @@ namespace HypaLens
             _gliding = true;
             _headAtPlace = headPos;
             _targetPos = headPos + fwd * Distance + Vector3.up * Height;
-            _targetRot = Quaternion.LookRotation(_targetPos - headPos, Vector3.up); // faces the eyes (UI reads from -Z)
         }
+
+        /// <summary>Square to the head's yaw, pitched to meet the eyes (UI reads from -Z, so +Z points away from the viewer).</summary>
+        public static Quaternion Facing(Vector3 hudPos, Vector3 headPos, Vector3 headFwdFlat)
+        {
+            if (headFwdFlat == Vector3.zero) headFwdFlat = Vector3.forward;
+            var horizontal = Mathf.Max(0.05f, Vector3.Distance(Flat0(hudPos), Flat0(headPos)));
+            var rise = (hudPos.y - headPos.y) / horizontal;
+            return Quaternion.LookRotation(new Vector3(headFwdFlat.x, rise, headFwdFlat.z).normalized, Vector3.up);
+        }
+
+        static Vector3 Flat0(Vector3 v) { v.y = 0f; return v; }
 
         static Vector3 Flat(Vector3 v)
         {
             v.y = 0f;
             return v.sqrMagnitude < 1e-6f ? Vector3.zero : v.normalized;
+        }
+    }
+
+    /// <summary>
+    /// Grid cells for the launcher menu: <paramref name="cols"/> across, and when the last row holds a single item
+    /// it spans the full width so the panel reads as a block rather than a column with a stub. Pure, unit tested.
+    /// </summary>
+    public static class MenuLayout
+    {
+        /// <summary>Centre (x, y) and width of item <paramref name="index"/>, relative to the panel centre.</summary>
+        public static Rect Cell(int index, int items, int cols, float w, float h, float gap, float pad)
+        {
+            var rows = (items + cols - 1) / cols;
+            var width = cols * w + (cols - 1) * gap;
+            var height = rows * h + (rows - 1) * gap;
+            var row = index / cols;
+            var y = height * 0.5f - h * 0.5f - row * (h + gap);
+            var lastRowAlone = row == rows - 1 && items - row * cols == 1;
+            if (lastRowAlone) return new Rect(0f, y, width, h);
+            var x = -width * 0.5f + w * 0.5f + (index % cols) * (w + gap);
+            return new Rect(x, y, w, h);
+        }
+
+        public static Vector2 PanelSize(int items, int cols, float w, float h, float gap, float pad)
+        {
+            var rows = (items + cols - 1) / cols;
+            return new Vector2(cols * w + (cols - 1) * gap + pad * 2f, rows * h + (rows - 1) * gap + pad * 2f);
         }
     }
 
@@ -258,8 +298,8 @@ namespace HypaLens
             _hud.SetParent(_world, false);
             _hud.localScale = Vector3.one * (_follow.Distance / LazyFollow.DesignDistance); // same angular size as at 0.6 m
             FollowHead(); // first placement: in front of the eyes, then it stays put until the head turns away
-            // Status: right-aligned just left of the launcher, so long messages grow leftwards into view, on a soft backdrop.
-            _status = Ui.Text(_hud, "", StatusLineH, new Vector3(StatusRight, -0.04f, 0), new Color(1f, 1f, 1f, 0.95f), TextAnchor.MiddleRight);
+            // Status: a fixed-width card just left of the launcher with left-aligned text, so every message reads the same way.
+            _status = Ui.Text(_hud, "", StatusLineH, new Vector3(StatusRight - StatusW + StatusPad, -0.04f, 0), new Color(1f, 1f, 1f, 0.95f), TextAnchor.MiddleLeft);
 
             // Low right, inside arm's reach. Hover = open the menu; hold the pinch = translate text straight away.
             var launcher = _launcher = new GameObject("Hypa Launcher").transform;
@@ -282,21 +322,18 @@ namespace HypaLens
             _launcherMenu = new GameObject("Lens Menu").transform;
             _launcherMenu.SetParent(launcher, false);
             var items = HypaShell.Instance != null ? 6 : 5;
-            const float w = LensTouch.MenuButtonW, h = LensTouch.MenuButtonH, gap = LensTouch.MenuGap;
+            const float w = LensTouch.MenuButtonW, h = LensTouch.MenuButtonH, gap = LensTouch.MenuGap, pad = 0.012f;
             const int cols = LensTouch.MenuColumns;
-            var rows = (items + cols - 1) / cols;
-            var width = cols * w + (cols - 1) * gap + 0.024f;
-            var height = rows * h + (rows - 1) * gap + 0.024f;
+            var size = MenuLayout.PanelSize(items, cols, w, h, gap, pad);
             // Right edge near the button's right edge, bottom edge just above it.
-            _launcherMenu.localPosition = new Vector3(LensTouch.LauncherRadius * 1.12f - width * 0.5f, 0.045f + height * 0.5f, 0f);
+            _launcherMenu.localPosition = new Vector3(LensTouch.LauncherRadius * 1.12f - size.x * 0.5f, 0.045f + size.y * 0.5f, 0f);
             // The panel is a (no-op) target so a pinch that wanders onto it counts as "still in the menu".
-            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), new Vector2(width, height), Ui.Panel, true).AddComponent<PinchTarget>();
+            Ui.Quad("bg", _launcherMenu, new Vector3(0, 0, 0.003f), size, Ui.Panel, true).AddComponent<PinchTarget>();
             var n = 0;
             void Item(string label, Color c, Action a, out PinchTarget btn)
             {
-                var x = -width * 0.5f + 0.012f + w * 0.5f + (n % cols) * (w + gap);
-                var y = height * 0.5f - 0.012f - h * 0.5f - (n / cols) * (h + gap);
-                btn = Ui.Button(label, _launcherMenu, new Vector3(x, y, 0), new Vector2(w, h), c, () => { ShowLauncher(false); a(); });
+                var cell = MenuLayout.Cell(n, items, cols, w, h, gap, pad);
+                btn = Ui.Button(label, _launcherMenu, new Vector3(cell.x, cell.y, 0), new Vector2(cell.width, cell.height), c, () => { ShowLauncher(false); a(); });
                 btn.AcceptsSlide = true; // pinch the button, slide here, release
                 n++;
             }
@@ -336,8 +373,9 @@ namespace HypaLens
             _launcherLabel.text = open ? "Close" : _launcherIcon != null ? "" : "Hypa";
         }
 
-        const float StatusLineH = 0.016f, StatusRight = 0.165f;
-        const int StatusWrap = 34;
+        const float StatusLineH = 0.016f, StatusRight = 0.18f, StatusW = 0.34f, StatusPad = 0.014f;
+        /// <summary>Characters per line that fit the card's width at <see cref="StatusLineH"/>.</summary>
+        static readonly int StatusWrap = Mathf.FloorToInt((StatusW - StatusPad * 2f) / (StatusLineH * Ui.CharWidth));
 
         void SetStatus(string s)
         {
@@ -347,12 +385,9 @@ namespace HypaLens
             if (_statusBg != null) Destroy(_statusBg);
             _statusBg = null;
             if (string.IsNullOrEmpty(text)) return;
-            var lines = text.Split('\n');
-            var longest = 0;
-            foreach (var l in lines) longest = Mathf.Max(longest, l.Length);
-            var size = new Vector2(Ui.TextWidth(new string('x', longest), StatusLineH) + 0.024f, lines.Length * StatusLineH * 1.08f + 0.014f);
-            _statusBg = Ui.Quad("status bg", _hud, new Vector3(StatusRight + 0.012f - size.x * 0.5f, -0.04f, 0.003f), size,
-                new Color(0.05f, 0.06f, 0.09f, 0.72f), false);
+            var lines = text.Split('\n').Length;
+            var size = new Vector2(StatusW, lines * StatusLineH * 1.08f + StatusPad * 1.6f);
+            _statusBg = Ui.Quad("status bg", _hud, new Vector3(StatusRight - StatusW * 0.5f, -0.04f, 0.003f), size, Ui.Panel, false);
         }
 
         void UpdateLanguageText()
