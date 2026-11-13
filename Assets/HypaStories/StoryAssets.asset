@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b9f030a23e084238ae8bc6ae3ee40bb, type: 3}
+  m_Name: StoryAssets
+  m_EditorClassIdentifier: HypaStories.Runtime::HypaStories.StoryAssets
+  sky: {fileID: 4800000, guid: 2ef97b8bc68894bc68b7059df44a6ca8, type: 3}
+  flame: {fileID: 4800000, guid: d6cf64fcf582749cd885bff55f91807f, type: 3}
+  particles: {fileID: 4800000, guid: 30ac9eb366c394310b9a6ea307404bfa, type: 3}
+  rain: {fileID: 4800000, guid: 8ccb6c4201dd846298b9f8eeebd2b1b6, type: 3}
+  mist: {fileID: 4800000, guid: 7489cd0d7882f46739bb73539afa051b, type: 3}
+  additive: {fileID: 4800000, guid: f94bd9cbca1ec41949e15399c88cc43d, type: 3}
+  card: {fileID: 4800000, guid: 4970df69908534f74abce76ca5af6729, type: 3}
+  cutout: {fileID: 4800000, guid: a13ed3ac2eac94eb8a2e277434ebd62c, type: 3}
+  veil: {fileID: 4800000, guid: 7357786cb2bab4c5982da60e0fb026d6, type: 3}
+  pine: {fileID: 4800000, guid: 22caf231be50742fcbcfb962a8bfd310, type: 3}
+  uiPanel: {fileID: 4800000, guid: f6525e84d92ca4f63bdb108b6f9389c5, type: 3}
+  uiIcon: {fileID: 4800000, guid: 48bde19bf6687411bba34cd33edbdd77, type: 3}
+  lit: {fileID: 2100000, guid: e67fa3730deef4346bde65c7effa63a2, type: 2}
+  ground: {fileID: 2100000, guid: 4240ce2c3bbf149f38b5f94389905e12, type: 2}
+  log: {fileID: 2100000, guid: 61aecc26543e34d9f9e7b72ddc81efe1, type: 2}
+  campFire: {fileID: 8128668236925612103, guid: 024689840da914eb9b218e0d35a49607, type: 3}
+  storyteller: {fileID: 6635245195314443262, guid: 3be1a977b700547dcaeb4ccc5b87450c, type: 3}
+  deadTrunk: {fileID: 1079839889373478930, guid: 2c690c633d88b40f4b62af518e484873, type: 3}
+  stump: {fileID: 1589626869621635631, guid: 02ce66c0d83084daca63aa7311ffa42c, type: 3}
+  fern: {fileID: 8771091787928289351, guid: 6ea9bd29592ef435d8c38c8fd02334ff, type: 3}
+  grass: {fileID: 8771091787928289351, guid: b0a948c1e926840e3b880e0db83da288, type: 3}
+  rocks:
+  - {fileID: 8771091787928289351, guid: 69192ca938c5a498c8990ba4c3658989, type: 3}
+  - {fileID: 8771091787928289351, guid: a49b58403025e41afb7653f6564790e3, type: 3}
+  - {fileID: -2984254379172062463, guid: f57200a0d360f4d5eb2380d4f9990a0f, type: 3}
+  ambienceSplash: {fileID: 8300000, guid: badde89f108d3498aac62d99d201c661, type: 3}
+  ambienceStory: {fileID: 8300000, guid: ae6afe2e43bc94d14bfb9ff1dc5da4bb, type: 3}
+  fireFar: {fileID: 8300000, guid: e67c6285202474c50a24ef160c03cd10, type: 3}
+  fireNear: {fileID: 8300000, guid: 88257300349d54285a6c1de2ab0914f8, type: 3}
+  wolf: {fileID: 8300000, guid: f17bba97f4d8947da8732d75868ca91e, type: 3}
+  kikoVoice: {fileID: 8300000, guid: e6f0804493b9a4868b54223d99e644ba, type: 3}
+  logo: {fileID: 2800000, guid: a8024c25ad9ce412cab6fd1a6fc7134e, type: 3}
+  uiFont: {fileID: 11400000, guid: 8f1bdf25458bb4741853665d8ba3e20d, type: 2}
+  uiFontBold: {fileID: 11400000, guid: 9b295c222c83c4f82b64bb407c58f8de, type: 2}
+  serifFont: {fileID: 11400000, guid: 62e7d7c9a52e44fc29b1238030124a92, type: 2}
+  serifItalic: {fileID: 11400000, guid: 920cb12e45cd54672936a103bd907a9c, type: 2}
+  icons:
+  - {fileID: 2800000, guid: 97cb94a2cd3704c499638f500c863c8d, type: 3}
+  - {fileID: 2800000, guid: 28f323925790a446eaa63c5177133965, type: 3}
+  - {fileID: 2800000, guid: 5f49f585823e84fa5b2a5fe1e5da0346, type: 3}
+  - {fileID: 2800000, guid: 0d0e924ef350d42ddbb6ba9db8ce4b87, type: 3}
+  - {fileID: 2800000, guid: 82210b3740ab048508364bdc25e497d0, type: 3}
+  - {fileID: 2800000, guid: 826e676f86da349ef8d3a69ef519fec5, type: 3}
+  - {fileID: 2800000, guid: 7a4f635e249a040dbb31c75060029a52, type: 3}
+  - {fileID: 2800000, guid: 8d07004192ed348bcbb1c482c20fedc4, type: 3}
+  - {fileID: 2800000, guid: 62f7a2fbe72d7485b8c06607997e3850, type: 3}
+  - {fileID: 2800000, guid: 65fe1934e17b4465bad769cf18a88d73, type: 3}
+  - {fileID: 2800000, guid: 95ebab1239fd84cb0906a879fea9acee, type: 3}
+  - {fileID: 2800000, guid: fd8676721aa6842e68ccaa0affa58322, type: 3}
+  - {fileID: 2800000, guid: 4af0e4abb2bd14212a83c4ebd5636c3e, type: 3}
+  - {fileID: 2800000, guid: 3e7f48a70395f4c299fe9bd82f66d10f, type: 3}
+  - {fileID: 2800000, guid: 8762bc3ab14d24623856d3350c8a60b8, type: 3}
+  - {fileID: 2800000, guid: c6250aa3b18d54ee386152498c6f391e, type: 3}
+  - {fileID: 2800000, guid: 54509682f37854c84b84da1e1e685ccb, type: 3}
+  - {fileID: 2800000, guid: a406eb80867c84508b404b2333031b45, type: 3}

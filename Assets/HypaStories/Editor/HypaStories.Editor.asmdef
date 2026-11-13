@@ -1,7 +1,7 @@
 {
   "name": "HypaStories.Editor",
   "rootNamespace": "HypaStories.EditorTools",
-  "references": [ "HypaCore.Runtime", "HypaStories.Runtime" ],
+  "references": [ "HypaCore.Runtime", "HypaStories.Runtime", "Unity.TextMeshPro" ],
   "includePlatforms": [ "Editor" ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

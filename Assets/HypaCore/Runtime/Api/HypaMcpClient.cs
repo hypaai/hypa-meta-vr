@@ -137,6 +137,18 @@ namespace HypaCore
             SampleRate = (int?)o["sampleRate"] ?? 0, Voice = (string)o["voice"],
         };
 
+        /// <summary>
+        /// Speech to text. <paramref name="audio"/> is a whole file (e.g. WAV from <see cref="WavEncoder"/>), sent as base64.
+        /// sourceLang null = auto-detect. Schema from tools/list (2026-11-13); not yet called with a key.
+        /// </summary>
+        public async Task<string> SpeechToTextAsync(byte[] audio, string sourceLang, CancellationToken ct)
+        {
+            var args = new JObject { ["audio"] = System.Convert.ToBase64String(audio), ["audioType"] = "base64" };
+            if (!string.IsNullOrEmpty(sourceLang)) args["sourceLang"] = sourceLang;
+            var o = await CallToolAsync("speech_to_text", args, ct).ConfigureAwait(false);
+            return (string)o["transcript"] ?? "";
+        }
+
         /// <summary>word: 1..120 chars. language null = English.</summary>
         public async Task<HypaDictionaryEntry> LookUpTermAsync(string word, string language, CancellationToken ct)
         {
