@@ -43,27 +43,41 @@ namespace HypaCore
 
     /// <summary>
     /// Decides which target a gesture belongs to. A gesture belongs to the target under the ray when the pinch
-    /// started, so a hand that drifts during the pinch still hits what it aimed at. Two refinements make a hand menu
-    /// usable with shaky tracking: a long pinch only fires while the ray is on that target (or on nothing), so
-    /// sliding onto another target never triggers it; and a short pinch released over a target that accepts slides
-    /// (a menu item) picks that target instead, so pinch, slide, release works. Pure, unit tested.
+    /// started, so a hand that drifts during the pinch still hits what it aimed at. Refinements that make buttons
+    /// reliable with real hands and the simulator (whose pinch animation shifts the ray as the click lands):
+    /// - a pinch that starts on nothing actionable (a card's background, empty space) goes to the button the ray was on
+    ///   within the last <see cref="RecentSeconds"/>, the one the user was aiming at;
+    /// - a short pinch that started on a card's background and is released over a button goes to that button (one that
+    ///   started on empty space does not: a drifting hand must not pick up a word label in the room);
+    /// - a long pinch only fires while the ray is on its target (or on nothing), so sliding never triggers one;
+    /// - a short pinch released over a target that accepts slides (a menu item) picks that target.
+    /// A pinch that starts on one button never jumps to another. Pure, unit tested.
     /// </summary>
     public sealed class PinchRouter<T> where T : class
     {
         readonly PinchTracker _tracker = new PinchTracker();
         public float LongPressSeconds { get => _tracker.LongPressSeconds; set => _tracker.LongPressSeconds = value; }
-        T _pressed; bool _was;
+        /// <summary>How long a button the ray has just left still counts as the one being aimed at.</summary>
+        public double RecentSeconds = 0.35;
+        T _pressed, _recent; bool _was; double _recentAt = double.NegativeInfinity;
 
         /// <summary>The target the current pinch started on (null between pinches).</summary>
         public T Pressed => _pressed;
 
-        public PinchKind Update(bool pinching, double now, T hit, Func<T, bool> acceptsSlide, out T target)
+        public PinchKind Update(bool pinching, double now, T hit, Func<T, bool> acceptsSlide, out T target, Func<T, bool> actionable = null)
         {
-            if (pinching && !_was) _pressed = hit;
-            var onPressed = hit == null || hit == _pressed;
+            bool Acts(T t) => t != null && (actionable == null || actionable(t));
+            if (!pinching && Acts(hit)) { _recent = hit; _recentAt = now; }
+            if (pinching && !_was)
+                _pressed = !Acts(hit) && _recent != null && now - _recentAt <= RecentSeconds ? _recent : hit;
+            var onPressed = hit == null || hit == _pressed || !Acts(hit);
             var kind = _tracker.Update(pinching, now, canFireLong: onPressed);
             target = _pressed;
-            if (kind == PinchKind.Short && hit != null && hit != _pressed && acceptsSlide != null && acceptsSlide(hit)) target = hit;
+            if (kind == PinchKind.Short && Acts(hit) && hit != _pressed)
+            {
+                if (_pressed != null && !Acts(_pressed)) target = hit; // started on a card's background, released on a button
+                else if (acceptsSlide != null && acceptsSlide(hit)) target = hit;
+            }
             if (!pinching) _pressed = null;
             _was = pinching;
             return kind;
@@ -105,12 +119,10 @@ namespace HypaCore
         public static bool MouseInEditor = true;
 
         /// <summary>
-        /// Whether a tracked hand's own pinch counts. Always on a headset. Off in the editor by default: the Meta XR
-        /// Simulator's idle hands drift in and out of a pinch pose on their own, which pressed random buttons and, when
-        /// held, swallowed real clicks. In the editor a click (the simulator turns it into a trigger) is the pinch, aimed
-        /// by the hand ray you see. K in the editor turns hand pinches on (webcam hand tracking).
+        /// Whether a tracked hand's own pinch counts. On by default everywhere: in the Meta XR Simulator's hand mode a
+        /// mouse click arrives as a hand pinch. K in the editor turns it off (debugging only).
         /// </summary>
-        public static bool HandPinches = !Application.isEditor;
+        public static bool HandPinches = true;
 
         enum Kind { Mouse, Device, EditorXr }
         static IPinchInput _current; static Kind _kind;
@@ -220,7 +232,7 @@ namespace HypaCore
             if (Application.isEditor && Input.GetKeyDown(KeyCode.K))
             {
                 HypaInput.HandPinches = !HypaInput.HandPinches;
-                Debug.Log("[Hypa pinch] hand pinches " + (HypaInput.HandPinches ? "on (webcam hands)" : "off (click to pinch)"));
+                Debug.Log("[Hypa pinch] hand pinches " + (HypaInput.HandPinches ? "on" : "off"));
             }
             var input = HypaInput.Current;
             var device = !HypaInput.AimsWithMouse(input);
@@ -247,7 +259,7 @@ namespace HypaCore
             }
 
             var pinching = input.IsPinching;
-            var kind = _router.Update(pinching, Time.realtimeSinceStartupAsDouble, hit, t => t.AcceptsSlide, out var target);
+            var kind = _router.Update(pinching, Time.realtimeSinceStartupAsDouble, hit, t => t.AcceptsSlide, out var target, t => t.OnPinch != null && !t.Busy);
             if (kind != PinchKind.None && target != null && !target.Busy) target.OnPinch?.Invoke(kind);
             if (Application.isEditor && pinching != _wasPinching)
                 Debug.Log($"[Hypa pinch] {(pinching ? "down" : "up")} via {input.GetType().Name}" +

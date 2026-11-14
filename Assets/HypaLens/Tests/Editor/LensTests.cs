@@ -94,10 +94,10 @@ namespace HypaLens.Tests
             Assert.AreEqual(0.05f, kept.x, "short word keeps the OCR-sized pill");
         }
 
-        [Test] public void DefaultTarget_IsAnnang_AndSimListsIt()
+        [Test] public void DefaultTarget_IsEnglish_AndAnnangCanStillBePicked()
         {
             var c = new LensController(new SimFrameSource(), new SimRecognizer(), new SimHypaApi { LatencyMs = 0 });
-            Assert.AreEqual("Annang", c.TargetLanguage, "demo default must be Annang");
+            Assert.AreEqual("English", c.TargetLanguage, "English is the default target");
             var langs = Run(new SimHypaApi { LatencyMs = 0 }.ListLanguagesAsync(CancellationToken.None));
             var found = false;
             foreach (var l in langs) if (l.Name == "Annang") found = true;
@@ -336,6 +336,15 @@ namespace HypaLens.Tests
             Assert.IsTrue(LensApp.UseSimulated(true, isEditor: true), "the editor can still use them for testing");
         }
 
+        [Test] public void AllText_OneLinePerLineOfText_ForTheWholeTranslation()
+        {
+            var ocr = new OcrResult();
+            var a = new OcrLine { Text = "Welcome to the market" }; ocr.Lines.Add(a);
+            var b = new OcrLine { Text = "" }; b.Words.Add(new OcrWord { Text = "Fresh" }); b.Words.Add(new OcrWord { Text = "fish" }); ocr.Lines.Add(b);
+            ocr.Lines.Add(new OcrLine { Text = "  " });
+            Assert.AreEqual("Welcome to the market\nFresh fish", LensController.AllText(ocr));
+        }
+
         // ---------- Results popup: chip layout ----------
 
         [Test] public void LayoutChips_NewRowPerLine_WrapsLongLines_AndFits()
@@ -358,6 +367,10 @@ namespace HypaLens.Tests
             var bottom = 0f;
             foreach (var c in slots) bottom = Mathf.Max(bottom, c.Center.y + c.Size.y / 2f);
             Assert.That(bottom <= 0.25f + 1e-3f || scale <= 0.551f, "fits the space, or is at the smallest size");
+
+            var flowed = LensApp.LayoutChips(lines, 0.56f, 0.25f, out _, newRowPerLine: false);
+            Assert.AreEqual(flowed[3].Center.y, flowed[4].Center.y, 1e-4f, "flowing: the next line continues on the same row when it fits");
+            foreach (var c in flowed) Assert.Greater(c.Size.x, Ui.ButtonPad * 2f, "room for the label inside the padding");
         }
 
         // ---------- Resolve ----------

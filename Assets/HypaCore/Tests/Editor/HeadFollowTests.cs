@@ -139,5 +139,18 @@ namespace HypaCore.Tests
             var dir = (p.position - Head).normalized;
             Assert.AreEqual(60f, Mathf.Asin(dir.y) * Mathf.Rad2Deg, 0.2f);
         }
+
+        [Test] public void Delay_AGlancePastTheEdge_DoesNotMoveIt_StayingAwayDoes()
+        {
+            var f = new HeadFollow { FollowPitch = true, Threshold = 25f, Delay = 0.5f };
+            var p0 = f.Update(Head, Quaternion.identity, false, Dt);
+            var away = Quaternion.Euler(0, 40f, 0);
+            var glance = Run(f, Head, away, 20);           // ~0.28 s
+            Assert.That(Vector3.Distance(p0.position, glance.position), Is.LessThan(1e-4f), "a glance never moves it");
+            var back = Run(f, Head, Quaternion.identity, 30);
+            Assert.That(Vector3.Distance(p0.position, back.position), Is.LessThan(1e-4f));
+            var stayed = Run(f, Head, away, 300);
+            Assert.That(YawOff(stayed, Head, away), Is.LessThan(1f), "staying away brings it along");
+        }
     }
 }

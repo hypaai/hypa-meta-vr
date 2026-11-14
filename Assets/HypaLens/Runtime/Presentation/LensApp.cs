@@ -145,9 +145,10 @@ namespace HypaLens
         /// <summary>The HUD was designed in metres at 0.6 m; it sits further out and is scaled up to the same angular size.</summary>
         public const float HudDesignDistance = 0.6f;
         // 1 m out (beyond the hands, so a hand ray crosses the HUD), centred on the line of sight and square to it, up or
-        // down: looking up at the ceiling, the HUD still reads as if looking straight ahead. A small dead zone so a hand
-        // ray can aim at a control; past it a soft spring brings it back to the centre.
-        readonly HeadFollow _follow = new HeadFollow { Distance = 1.0f, Height = -0.22f, FollowPitch = true, Threshold = 8f, SmoothTime = 0.28f };
+        // down: looking up at the ceiling, the HUD still reads as if looking straight ahead. It holds still while you
+        // look anywhere on it (the popup spans about +-27 degrees) and while the hand points at it; it re-centres only
+        // after the gaze has been off it for half a second, on a soft spring.
+        readonly HeadFollow _follow = new HeadFollow { Distance = 1.0f, Height = -0.22f, FollowPitch = true, Threshold = 30f, Delay = 0.5f, SmoothTime = 0.35f };
 
         /// <summary>Is the pointer on anything in the HUD?</summary>
         bool PointerOnHud
@@ -216,7 +217,7 @@ namespace HypaLens
             Tooltip(_captionBtn = Ui.IconButton("languages", _hud, new Vector3(-pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption"),
                 "Sends a photo of your view to Hypa to read\nand translate it as a whole. Not stored.");
             Tooltip(_captureBtn = Ui.IconButton("camera", _hud, new Vector3(0f, BottomY, 0), LensTouch.ShutterRadius, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
-                "Reads the text in view on the headset.\nThe words open in a popup: pinch one.");
+                "Reads the text in view on the headset\nand translates it all in a popup.");
             Tooltip(_speakBtn = Ui.IconButton("volume-2", _hud, new Vector3(pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
             foreach (var b in new[] { _captionBtn, _captureBtn, _speakBtn }) _bottomRow.Add(b.transform.parent.gameObject);
 
@@ -333,7 +334,7 @@ namespace HypaLens
             foreach (var l in lines) longest = Mathf.Max(longest, l.Length);
             var size = new Vector2(Ui.TextWidth(new string('x', longest), StatusLineH) + StatusPad * 2f, lines.Length * StatusLineH * 1.08f + StatusPad * 1.4f);
             _statusBg = Ui.Quad("status bg", _hud, new Vector3(0f, HintY, 0.003f), size, Ui.Panel, false);
-            _statusBg.SetActive(_popup == null);
+            _statusBg.SetActive(!_modal);
         }
 
         const float SourcePillW = 0.15f, TargetPillW = 0.20f;
@@ -430,7 +431,7 @@ namespace HypaLens
             if (_onboarding != null) return;
             _onboarding = Card("Onboarding", "Welcome to Hypa Lens", new Vector2(0.50f, 0.30f), () => ShowOnboarding(false));
             Ui.Text(_onboarding.transform,
-                "1. Look at a sign, menu or book and pinch Capture.\n2. The words open in a popup. Pinch one to translate, hear and\n    define it; hold the pinch for the whole line.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick the language to translate into at the top. Save words with the bookmark.\nHypa only sends the text you pinch (Caption sends the photo).",
+                "1. Look at a sign, menu or book and pinch Capture.\n2. The text and its translation open in a popup: hear it or save it.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick the language to translate into at the top. Save words with the bookmark.\nHypa only sends the text you pinch (Caption sends the photo).",
                 0.016f, new Vector3(-0.23f, -0.02f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
         }
 
@@ -451,7 +452,7 @@ namespace HypaLens
                 var count = 0;
                 foreach (var l in ocr.Lines) count += l.Words.Count;
                 if (count == 0) ShowError("No text found. Point at a sign, menu or page and try again.");
-                else { ShowWords(ocr); SetStatus($"{count} words found."); }
+                else { SetStatus($"{count} words found."); ShowWords(ocr); }
             }
             catch (OperationCanceledException) { }
             catch (Exception e) { ShowError(LensException.From(e).UserMessage()); }
@@ -490,19 +491,17 @@ namespace HypaLens
             var c = PopupContent("Caption");
             var y = PopupTop - 0.05f;
             RenderResult(c, ref y, r.Text, r.Language ?? _lens.SourceLanguage, r.Translation, _lens.TargetLanguage, null);
-            var row = new List<(string, Color, Action<PinchTarget>)>
-            {
-                ("Speak", Ui.Accent, b => _ = Loading(SpeakLastAsync, b, _speakBtn)),
-                (_saved.Contains(r.Text, _lens.TargetLanguage) ? "Saved" : "Save", Ui.Muted, b =>
+            var row = new List<(string, Color, Action<PinchTarget>)> { ("Speak", Ui.Muted, b => _ = Loading(SpeakLastAsync, b, _speakBtn)) };
+            if (!string.IsNullOrWhiteSpace(r.Translation))
+                row.Add(SaveButton(_saved.Contains(r.Text, _lens.TargetLanguage), () =>
                 {
                     _saved.Add(new LensResult
                     {
                         Selection = new Selection { Kind = SelectionKind.Sentence, Text = r.Text },
                         SourceLanguage = r.Language ?? _lens.SourceLanguage, TargetLanguage = _lens.TargetLanguage, Translation = r.Translation,
                     });
-                    Ui.SetLabel(b, "Saved");
-                }),
-            };
+                    ShowCaption(r); // repaint: the button fills in as "Saved"
+                }));
             ButtonRow(c, row);
         }
 
@@ -722,7 +721,7 @@ namespace HypaLens
         // "Text found" lists the captured words as chips, line by line; pinching one switches the popup to its
         // translation (hold the pinch for the whole line), with Back to the words.
 
-        const float PopupW = 0.62f, PopupH = 0.40f, PopupY = 0.075f, PopupPad = 0.03f; // clear of the top bar (its pills end at 0.305)
+        const float PopupW = 0.62f, PopupH = 0.46f, PopupY = 0.068f, PopupPad = 0.03f; // top at 0.298, clear of the top bar (pills end at 0.305)
         const float PopupTop = PopupH / 2f - PopupPad - 0.012f, PopupLeft = -PopupW / 2f + PopupPad;
         const float ChipH = 0.042f, ChipGap = 0.009f, ChipRowGap = 0.011f;
         static readonly Color PopupMuted = new Color(1f, 1f, 1f, 0.62f);
@@ -730,6 +729,7 @@ namespace HypaLens
 
         GameObject _popup; Transform _popupContent; TextMesh _popupTitle;
         OcrResult _popupOcr;
+        HypaTranslation _foundTr; string _foundErr; // the whole capture, translated (kept for Back)
         readonly List<(OcrWord word, PinchTarget chip)> _chips = new List<(OcrWord, PinchTarget)>();
 
         /// <summary>Opens the popup (or reuses it) with a fresh, empty content area under <paramref name="title"/>.</summary>
@@ -763,44 +763,92 @@ namespace HypaLens
             _popup = null; _popupContent = null; _chips.Clear();
             foreach (var s in _selected) if (s != null) s.Target.SetColor(null);
             _selected.Clear();
-            SetPopupMode(false);
+            SetPopupMode(CardOpen);
         }
 
-        /// <summary>The bottom row and the hint step aside while the popup is up.</summary>
+        bool _modal;
+
+        /// <summary>Any card in the middle (the results popup, the language list, onboarding, saved words) is modal.</summary>
+        bool CardOpen => _popup != null || (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null;
+
+        /// <summary>The bottom row and the hint step aside while a card is up, so nothing draws over it.</summary>
         void SetPopupMode(bool open)
         {
+            _modal = open;
             foreach (var go in _bottomRow) if (go != null) go.SetActive(!open);
             if (_status != null) _status.gameObject.SetActive(!open);
             if (_statusBg != null) _statusBg.SetActive(!open);
         }
 
-        /// <summary>"Text found": the captured words as pinchable chips, one row (or more) per line of text.</summary>
+        /// <summary>
+        /// "Text found": opens at once with a spinner while Hypa translates everything the capture read into the target
+        /// language, then shows that translation, with the original text below as a plain paragraph.
+        /// </summary>
         void ShowWords(OcrResult ocr)
         {
-            _popupOcr = ocr;
-            var c = PopupContent("Text found");
-            var y = PopupTop - 0.042f;
-            Ui.Text(c, "Pinch a word to translate it. Hold the pinch for the whole line.", 0.0135f, new Vector3(PopupLeft, y, 0), PopupMuted, TextAnchor.MiddleLeft);
-            y -= 0.03f;
+            _popupOcr = ocr; _foundTr = null; _foundErr = null;
+            RenderFound(ocr);
+            _ = TranslateFoundAsync(ocr);
+        }
 
-            var lines = new List<IList<string>>();
-            foreach (var l in ocr.Lines) { var ws = new List<string>(); foreach (var w in l.Words) ws.Add(w.Text); lines.Add(ws); }
-            var bottom = -PopupH / 2f + PopupPad;
-            var chips = LayoutChips(lines, PopupW - PopupPad * 2f, y - bottom, out _);
-            foreach (var chip in chips)
+        async Task TranslateFoundAsync(OcrResult ocr)
+        {
+            try
             {
-                var word = ocr.Lines[chip.Line].Words[chip.Index];
-                var pos = new Vector3(PopupLeft + chip.Center.x, y - chip.Center.y, -0.001f);
-                var pt = Ui.Button(word.Text, c, pos, chip.Size, ChipBg, null);
-                pt.OnPinch = k =>
-                {
-                    if (k == PinchKind.None) return;
-                    foreach (var (_, other) in _chips) other.SetColor(null);
-                    var sel = k == PinchKind.Long ? LensController.SelectSentence(word) : LensController.SelectWord(word);
-                    _ = ShowTranslation(sel);
-                };
-                _chips.Add((word, pt));
+                var tr = await _lens.TranslateAllAsync(ocr, _cts.Token);
+                if (_popupOcr != ocr) return; // a newer capture
+                _foundTr = tr;
+                _lastSpeech = null; _lastSpeechText = tr.Text; _lastSpeechLang = _lens.TargetLanguage; // Speak reads it
             }
+            catch (OperationCanceledException) { return; }
+            catch (Exception e)
+            {
+                if (_popupOcr != ocr) return;
+                _foundErr = LensException.From(e).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage);
+            }
+            if (_popup != null && _popupTitle != null && _popupTitle.text == "Text found") RenderFound(ocr); // still on this view
+        }
+
+        void RenderFound(OcrResult ocr)
+        {
+            var c = PopupContent("Text found");
+            var y = PopupTop - 0.048f;
+            Ui.Text(c, $"Translated into {_lens.TargetLanguage}", 0.0125f, new Vector3(PopupLeft, y, 0), PopupMuted, TextAnchor.MiddleLeft);
+            y -= 0.03f;
+            if (_foundTr == null && _foundErr == null)
+            {
+                var spin = Ui.Quad("spinner", c, new Vector3(PopupLeft + 0.013f, y - 0.013f, -0.001f), Vector2.one * 0.026f, Color.white, false, rounded: false);
+                var tex = Ui.Icon("loader-circle");
+                var r = spin.GetComponent<Renderer>();
+                if (tex != null) r.material.mainTexture = tex;
+                r.sortingOrder = 2;
+                spin.AddComponent<Ui.Spin>();
+                Ui.Text(c, $"Translating to {_lens.TargetLanguage}...", 0.019f, new Vector3(PopupLeft + 0.036f, y - 0.013f, 0), Color.white, TextAnchor.MiddleLeft);
+                y -= 0.05f;
+            }
+            else Block(c, _foundErr ?? _foundTr.Text, 0.02f, _foundErr != null ? new Color(1f, 0.85f, 0.8f, 1f) : Color.white, ref y, 4);
+
+            // The original text, as a plain paragraph under the translation.
+            Ui.Text(c, "Original text", 0.0125f, new Vector3(PopupLeft, y, 0), PopupMuted, TextAnchor.MiddleLeft);
+            y -= 0.022f;
+            Block(c, LensController.AllText(ocr).Replace('\n', ' '), 0.015f, new Color(1f, 1f, 1f, 0.78f), ref y, 5);
+
+            var row = new List<(string, Color, Action<PinchTarget>)>();
+            if (_foundTr != null)
+            {
+                var tr = _foundTr; var all = LensController.AllText(ocr);
+                row.Add(("Hear", Ui.Muted, b => _ = Loading(SpeakLastAsync, b, _speakBtn)));
+                row.Add(SaveButton(_saved.Contains(all, _lens.TargetLanguage), () =>
+                {
+                    _saved.Add(new LensResult
+                    {
+                        Selection = new Selection { Kind = SelectionKind.Sentence, Text = all },
+                        SourceLanguage = tr.DetectedLanguage, TargetLanguage = _lens.TargetLanguage, Translation = tr.Text,
+                    });
+                    RenderFound(ocr); // repaint: the button fills in as "Saved"
+                }));
+            }
+            ButtonRow(c, row);
         }
 
         public struct ChipSlot { public int Line, Index; public Vector2 Center, Size; }
@@ -810,7 +858,7 @@ namespace HypaLens
         /// <paramref name="width"/>. Shrinks everything evenly (to no less than 55%) so it fits <paramref name="height"/>.
         /// Centres are relative to the top-left of the area, y downwards. Pure, unit tested.
         /// </summary>
-        public static List<ChipSlot> LayoutChips(IList<IList<string>> lines, float width, float height, out float scale)
+        public static List<ChipSlot> LayoutChips(IList<IList<string>> lines, float width, float height, out float scale, bool newRowPerLine = true)
         {
             scale = 1f;
             List<ChipSlot> slots = null;
@@ -821,10 +869,11 @@ namespace HypaLens
                 float x = 0f, rowTop = 0f;
                 for (var li = 0; li < lines.Count; li++)
                 {
-                    if (li > 0) { x = 0f; rowTop += h + rowGap; }
+                    if (li > 0 && newRowPerLine) { x = 0f; rowTop += h + rowGap; }
                     for (var wi = 0; wi < lines[li].Count; wi++)
                     {
-                        var w = Mathf.Min(width, Ui.TextWidth(lines[li][wi], textH) * 1.08f + h * 0.8f);
+                        // The label needs its own width plus the button's fixed padding either side, or it gets cut to "…".
+                        var w = Mathf.Min(width, Ui.TextWidth(lines[li][wi], textH) * 1.12f + Ui.ButtonPad * 2f + 0.004f);
                         if (x > 0f && x + w > width) { x = 0f; rowTop += h + rowGap; }
                         slots.Add(new ChipSlot { Line = li, Index = wi, Center = new Vector2(x + w / 2f, rowTop + h / 2f), Size = new Vector2(w, h) });
                         x += w + gap;
@@ -851,12 +900,12 @@ namespace HypaLens
                 RenderResult(c, ref y, sel.Text, r?.SourceLanguage ?? _lens.SourceLanguage, translation, _lens.TargetLanguage,
                     error == null ? (r?.Meaning ?? r?.MeaningNote) : null);
                 var row = new List<(string, Color, Action<PinchTarget>)>();
-                if (back != null) row.Add(("Back", Ui.Muted, _ => ShowWords(back)));
+                if (back != null) row.Add(("Back", Ui.Muted, _ => { ++_resultVersion; RenderFound(back); }));
                 if (r != null && error == null && r.Translation != null)
                 {
-                    if (r.SourceAudio != null) row.Add(("Hear", Ui.Accent, b => _ = Loading(() => PlayAsync(r.SourceAudio), b)));
-                    if (r.TargetAudio != null) row.Add(("Hear →", Ui.Accent, b => _ = Loading(() => PlayAsync(r.TargetAudio), b)));
-                    row.Add((_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", Ui.Muted, b => { _saved.Add(r); Ui.SetLabel(b, "Saved"); }));
+                    if (r.SourceAudio != null) row.Add(("Hear", Ui.Muted, b => _ = Loading(() => PlayAsync(r.SourceAudio), b)));
+                    if (r.TargetAudio != null) row.Add(("Hear →", Ui.Muted, b => _ = Loading(() => PlayAsync(r.TargetAudio), b)));
+                    row.Add(SaveButton(_saved.Contains(r.Selection.Text, r.TargetLanguage), () => { _saved.Add(r); Render(r, null); }));
                 }
                 ButtonRow(c, row);
             }
@@ -898,6 +947,13 @@ namespace HypaLens
             Ui.Text(c, string.Join("\n", lines), lineH, new Vector3(PopupLeft, y, 0), color, TextAnchor.UpperLeft);
             y -= lines.Length * lineH * 1.28f + 0.014f; // a TextMesh line (Inter, 1.08 spacing) is ~1.28 line heights tall
         }
+
+        /// <summary>
+        /// Save, shown only once there is a translation. Saved = filled (the light accent) and labelled "Saved", so it is
+        /// plain the item is in Saved words; pressing it again does nothing.
+        /// </summary>
+        static (string, Color, Action<PinchTarget>) SaveButton(bool saved, Action save)
+            => saved ? ("Saved", Ui.Accent, _ => { }) : ("Save", Ui.Muted, _ => save());
 
         /// <summary>Buttons spread along the bottom of the popup.</summary>
         static void ButtonRow(Transform c, List<(string label, Color color, Action<PinchTarget> onPress)> row)
@@ -972,6 +1028,8 @@ namespace HypaLens
             var home = HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen;
             if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
             if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) SetStatus(DefaultHint);
+            if (CardOpen != _modal) SetPopupMode(CardOpen);
+            if (!home && AppRouter.Consume(AppRouter.LensSavedWords)) { if (_practice == null) TogglePractice(); } // Home > Saved words
             if (_live && !home) LiveTick();
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();

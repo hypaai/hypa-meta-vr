@@ -10,7 +10,9 @@ namespace HypaCore
     /// - <see cref="FollowPitch"/>: it also follows looking up and down (to <see cref="MaxPitch"/>), staying centred in
     ///   the view and square to the line of sight, like a screen held in front of the eyes.
     ///
-    /// Looking around a little (inside <see cref="Threshold"/> degrees) leaves it still, so a hand ray can land on it.
+    /// Looking around a little (inside <see cref="Threshold"/> degrees) leaves it still, so a hand ray can land on it;
+    /// the threshold should be at least half the panel's width, or looking at its edge would move it. It only starts
+    /// after the gaze has stayed past the threshold for <see cref="Delay"/> seconds, so a glance never moves it.
     /// Past that it glides back to the centre on a critically damped spring (<see cref="SmoothTime"/>): it eases in and
     /// out, never kicks off at full speed, never overshoots, and swings round the user at a fixed distance. Walking
     /// carries it along at once (it is placed relative to the head every frame).
@@ -27,12 +29,13 @@ namespace HypaCore
         public float MaxPitch = 60f;     // degrees up/down it follows (FollowPitch only)
         public float Threshold = 28f;    // degrees off-centre before it follows
         public float SmoothTime = 0.3f;  // seconds; roughly how long a re-centre takes
+        public float Delay = 0f;         // seconds the gaze must stay past the threshold before it follows
         public float SnapJump = 0.5f;    // metres the head can move in one frame before it counts as a jump
         const float MaxStep = 1f / 30f;  // seconds; longer frames are treated as this long
         const float Settled = 0.4f;      // degrees: close enough to stop
 
         bool _placed, _moving;
-        float _yaw, _pitch, _yawVel, _pitchVel;
+        float _yaw, _pitch, _yawVel, _pitchVel, _away;
         Vector3 _lastHead;
 
         public bool IsFollowing => _moving;
@@ -50,13 +53,14 @@ namespace HypaCore
             if (!_placed || (headPos - _lastHead).sqrMagnitude > SnapJump * SnapJump)
             {
                 _placed = true; _moving = false;
-                _yaw = yaw; _pitch = pitch; _yawVel = _pitchVel = 0f;
+                _yaw = yaw; _pitch = pitch; _yawVel = _pitchVel = 0f; _away = 0f;
             }
             _lastHead = headPos;
             dt = Mathf.Clamp(dt, 0f, MaxStep);
 
             var off = Vector3.Angle(Dir(_yaw, _pitch), Dir(yaw, pitch));
-            if (!_moving && !hold && off > Threshold) _moving = true;
+            _away = off > Threshold && !hold ? _away + dt : 0f;
+            if (!_moving && _away >= Delay && off > Threshold && !hold) _moving = true;
             if (_moving && dt > 0f)
             {
                 _yaw = Mathf.SmoothDampAngle(_yaw, yaw, ref _yawVel, SmoothTime, Mathf.Infinity, dt);

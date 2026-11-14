@@ -26,7 +26,8 @@ namespace HypaCore
 
         public const float CornerRadius = 0.012f;
         const float EdgeWidth = 0.0015f;
-        const float ButtonPad = 0.014f;
+        /// <summary>Space kept clear either side of a button label.</summary>
+        public const float ButtonPad = 0.014f;
 
         /// <summary>Dark text on a light background (e.g. Primary), white text on a dark one.</summary>
         public static Color TextColorFor(Color bg)

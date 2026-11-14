@@ -12,6 +12,7 @@ namespace HypaLens
     public sealed class LanguagePicker
     {
         const int PerPage = 8;
+        static readonly Color RowBg = new Color(0.21f, 0.21f, 0.21f, 1f); // lighter than the panel, so each row reads as a button
         readonly Transform _root;
         readonly List<GameObject> _rows = new List<GameObject>();
         readonly IReadOnlyList<HypaLanguage> _all;
@@ -19,13 +20,14 @@ namespace HypaLens
         readonly Action<string> _onPick; // null = auto
         readonly TextMesh _pageText;
         int _page;
+        readonly string _current; // the selected language, filled in
 
         int Count => _all.Count + (_offerAuto ? 1 : 0);
         int Pages => Mathf.Max(1, (Count + PerPage - 1) / PerPage);
 
         public LanguagePicker(Transform parent, Vector3 localPos, string title, IReadOnlyList<HypaLanguage> all, string current, bool offerAuto, Action<string> onPick)
         {
-            _all = all; _offerAuto = offerAuto; _onPick = onPick;
+            _all = all; _offerAuto = offerAuto; _onPick = onPick; _current = current;
             _root = new GameObject("Language Picker").transform;
             _root.SetParent(parent, false);
             _root.localPosition = localPos;
@@ -57,7 +59,7 @@ namespace HypaLens
                 var name = auto ? null : _all[i - (_offerAuto ? 1 : 0)].Name;
                 var col = k % 2 == 0 ? -0.095f : 0.095f;
                 var row = 0.084f - (k / 2) * LensTouch.PickerPitch;
-                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(LensTouch.PickerRowW, LensTouch.PickerRowH), Ui.Muted, () =>
+                var btn = Ui.Button(auto ? "Auto-detect" : name, _root, new Vector3(col, row, 0), new Vector2(LensTouch.PickerRowW, LensTouch.PickerRowH), name == _current ? Ui.Accent : RowBg, () =>
                 {
                     _onPick(name);
                     Close();

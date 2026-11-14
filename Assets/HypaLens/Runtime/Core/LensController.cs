@@ -29,7 +29,7 @@ namespace HypaLens
 
         /// <summary>Hypa language label, or null = auto-detect.</summary>
         public string SourceLanguage { get; set; }
-        public string TargetLanguage { get; set; } = "Annang";
+        public string TargetLanguage { get; set; } = HypaSettings.DefaultTarget; // English
 
         /// <summary>Pose and intrinsics of the last capture, for placing labels. Pixels are already gone.</summary>
         public CapturedFrame LastFrameMeta { get; private set; }
@@ -113,6 +113,41 @@ namespace HypaLens
             ok = await _api.CheckPairAsync(source, target, ct);
             _pairs[key] = ok;
             return ok;
+        }
+
+        /// <summary>All the text a capture found, one line per line of text, as Hypa reads it. Pure, unit tested.</summary>
+        public static string AllText(OcrResult ocr)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var l in ocr.Lines)
+            {
+                var line = !string.IsNullOrWhiteSpace(l.Text) ? l.Text : string.Join(" ", l.Words.ConvertAll(w => w.Text));
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(line.Trim());
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Translates everything a capture found in one call (the source auto-detected), for the popup. Throws
+        /// LensException (Offline, UnsupportedPair, Api). No audio or meaning: those are per word.
+        /// </summary>
+        public async Task<HypaTranslation> TranslateAllAsync(OcrResult ocr, CancellationToken ct)
+        {
+            if (!_isOnline()) throw new LensException(LensErrorKind.Offline);
+            var text = AllText(ocr);
+            if (string.IsNullOrWhiteSpace(text)) throw new LensException(LensErrorKind.NoTextFound);
+            try
+            {
+                if (!await IsPairSupportedAsync(SourceLanguage, TargetLanguage, ct))
+                    throw new LensException(LensErrorKind.UnsupportedPair, $"{SourceLanguage ?? "auto"}->{TargetLanguage}");
+                var tr = await _api.TranslateAsync(text, SourceLanguage, TargetLanguage, ct);
+                if (tr == null || string.IsNullOrWhiteSpace(tr.Text)) throw new LensException(LensErrorKind.Api, "Hypa returned an empty translation.");
+                return tr;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e) { throw LensException.From(e); }
         }
 
         /// <summary>

@@ -51,7 +51,7 @@ namespace HypaCore
         // The shell UI follows where the head points (see HeadFollow): 1 m out (beyond the hands), scaled so it reads
         // as it would at 0.6 m. A small dead zone keeps it still while a hand ray aims at it.
         const float Distance = 1.0f, Scale = Distance / 0.6f;
-        readonly HeadFollow _follow = new HeadFollow { Distance = Distance };
+        readonly HeadFollow _follow = new HeadFollow { Distance = Distance, Delay = 0.4f }; // a glance never moves it
         bool _xrWasActive;
         /// <summary>The shared Hypa mark: Assets/HypaCore/Resources/HypaLogo.png (square, transparent, white on dark).</summary>
         const string LogoResource = "HypaLogo";
@@ -142,21 +142,23 @@ namespace HypaCore
             _menu = new GameObject("Home Card").transform;
             _menu.SetParent(_anchor, false);
             _menu.localPosition = Vector3.zero; // dead centre of the view (a mode's HUD steps aside while Home is up)
-            const float w = 0.32f, h = 0.40f;
+            const float w = 0.32f, h = 0.46f;
             Ui.Quad("bg", _menu, new Vector3(0, 0, 0.003f), new Vector2(w, h), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
             var logo = Resources.Load<Texture2D>(LogoResource);
-            const float titleY = 0.15f;
+            const float titleY = 0.18f;
             if (logo != null)
             {
                 var icon = Ui.Quad("logo", _menu, new Vector3(-0.115f, titleY, -0.001f), Vector2.one * 0.036f, Color.white, false, rounded: false);
                 icon.GetComponent<Renderer>().material.mainTexture = logo;
             }
             Ui.Text(_menu, "Hypa", 0.024f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
-            Ui.IconButton("x", _menu, new Vector3(0.115f, titleY, -0.001f), 0.024f, () => ShowMenu(false));
-            Ui.Button("Hypa Lens", _menu, new Vector3(0, 0.065f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Lens));
-            Ui.Button("Stories", _menu, new Vector3(0, -0.005f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Story));
-            Ui.Button("How it works", _menu, new Vector3(0, -0.075f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => ShowHelp(true));
-            _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.145f, 0), Color.white);
+            // The X closes the Hypa app.
+            Ui.IconButton("x", _menu, new Vector3(0.11f, titleY, -0.001f), 0.024f, QuitApp);
+            Ui.Button("Hypa Lens", _menu, new Vector3(0, 0.10f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Lens));
+            Ui.Button("Stories", _menu, new Vector3(0, 0.03f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Story));
+            Ui.Button("Saved words", _menu, new Vector3(0, -0.04f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, OpenSavedWords);
+            Ui.Button("How it works", _menu, new Vector3(0, -0.11f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => ShowHelp(true));
+            _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.18f, 0), Color.white);
             _menu.gameObject.SetActive(false);
 
             BuildHelp();
@@ -194,7 +196,7 @@ namespace HypaCore
                 y -= wrapped.Split('\n').Length * bodyH * line + 0.03f;
             }
             Section("camera", "Hypa Lens",
-                "Look at a sign, menu or book and pinch Capture. The words open in a popup: pinch one to translate, hear and define it, or hold the pinch for the whole line. Caption reads the whole view at once. Save words to practise later.");
+                "Look at a sign, menu or book and pinch Capture. The text and its translation open in a popup: hear it, or save it to practise later. Caption reads the whole view at once.");
             Section("languages", "Stories",
                 "Sit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.");
             Ui.Text(_help, Ui.Wrap("Everything works with your hands. Pinch Home at any time to come back here.", chars), bodyH,
@@ -235,6 +237,23 @@ namespace HypaCore
 
         /// <summary>The Home button steps aside while a Home card is open (it would sit on the card and do nothing new).</summary>
         void RefreshMenuButton() { if (_menuButton != null) _menuButton.SetActive(_menuButtonWanted && !IsMenuOpen); }
+
+        /// <summary>Saved words live in Lens: open Lens (or go back to it) straight onto the practice cards.</summary>
+        void OpenSavedWords()
+        {
+            AppRouter.Request(AppRouter.LensSavedWords);
+            OpenOrResume(HypaScenes.Lens);
+        }
+
+        /// <summary>Closes the Hypa app (stops Play Mode in the editor).</summary>
+        public void QuitApp()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
 
         /// <summary>The Home button: in a mode it leaves the mode; otherwise it opens the Home card.</summary>
         void HomeButton()

@@ -334,5 +334,41 @@ namespace HypaCore.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(root); }
         }
+
+        // The user's log: "down over How It Works (card bg), up over Btn Back to Home -> How It Works": the click did nothing.
+        static bool Acts(string t) => t != "card bg";
+
+        [Test] public void Router_PinchLandingOnTheCardBehindAButton_GoesToTheButtonJustAimedAt()
+        {
+            var r = Router();
+            r.Update(false, 0.00, "Back to Home", null, out _, Acts);          // aiming at the button
+            r.Update(true, 0.05, "card bg", null, out _, Acts);                 // the click's pinch shifts the ray off it
+            var k = r.Update(false, 0.15, "Back to Home", null, out var target, Acts);
+            Assert.AreEqual(PinchKind.Short, k);
+            Assert.AreEqual("Back to Home", target);
+        }
+
+        [Test] public void Router_StartedOnBackground_ReleasedOnButton_PressesTheButton()
+        {
+            var r = Router();
+            r.Update(false, 0.0, "card bg", null, out _, Acts);
+            r.Update(true, 0.1, "card bg", null, out _, Acts);
+            r.Update(false, 0.2, "X", null, out var target, Acts);
+            Assert.AreEqual("X", target);
+        }
+
+        [Test] public void Router_StartedOnOneButton_NeverJumpsToAnother_AndOldAimExpires()
+        {
+            var r = Router();
+            r.Update(true, 0.0, "Stories", null, out _, Acts);
+            r.Update(false, 0.1, "Hypa Lens", null, out var target, Acts);
+            Assert.AreEqual("Stories", target, "a pinch that starts on a button keeps it");
+
+            r = Router();
+            r.Update(false, 0.0, "Back to Home", null, out _, Acts);
+            r.Update(true, 1.0, "card bg", null, out _, Acts);                  // a second later: no longer what was aimed at
+            r.Update(false, 1.1, "card bg", null, out target, Acts);
+            Assert.AreEqual("card bg", target);
+        }
     }
 }
