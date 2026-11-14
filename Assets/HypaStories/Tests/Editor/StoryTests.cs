@@ -21,24 +21,30 @@ namespace HypaStories.Tests
             Assert.AreEqual(1f, StoryDirector.Track(k, 99f));
         }
 
-        [Test] public void Director_Kiko_RainStartsAtNotWhenItRained()
+        static StoryTimeline Kiko => StoryLibrary.Find("kiko").Timeline;
+        static Caption Line(StoryTimeline tl, string id) => tl.Captions.First(c => c.Id == id);
+
+        [Test] public void Director_Kiko_RainBuildsFromNotWhenItRained()
         {
-            var d = new StoryDirector(StoryLibrary.Kiko);
+            var d = new StoryDirector(Kiko);
             Assert.AreEqual(-1, d.Sample(0f).Index);
-            Assert.AreEqual(0f, d.Sample(30f).Rain);
-            var s = d.Sample(36.4f);
+            Assert.AreEqual(0f, d.Sample(Line(Kiko, "rain").At).Rain);
+            Assert.AreEqual(0.4f, d.Sample(Line(Kiko, "rain").Until).Rain, 1e-4);
+            var s = d.Sample(Line(Kiko, "storm").Until);
             Assert.AreEqual(1f, s.Rain, 1e-4);
-            Assert.AreEqual("Not even during the heaviest storms.", StoryLibrary.Kiko.Captions[s.Index].Text);
-            Assert.AreEqual(0f, d.Sample(34f).Flash);
-            Assert.Greater(d.Sample(34.45f).Flash, 0.3f);
+            Assert.AreEqual("Not even during the heaviest storms.", Kiko.Captions[s.Index].Text);
+            var flash = Line(Kiko, "wind").At + 0.9f;
+            Assert.AreEqual(0f, d.Sample(flash - 0.4f).Flash);
+            Assert.Greater(d.Sample(flash + 0.05f).Flash, 0.3f);
         }
 
         [Test] public void Director_ThunderFollowsEachFlash_Once()
         {
-            var d = new StoryDirector(StoryLibrary.Kiko);
-            Assert.AreEqual(0, d.ThunderBetween(34f, 34.7f));
-            Assert.AreEqual(1, d.ThunderBetween(34.7f, 34.8f));
-            Assert.AreEqual(3, d.ThunderBetween(0f, 48f));
+            var d = new StoryDirector(Kiko);
+            var flash = Line(Kiko, "wind").At + 0.9f;
+            Assert.AreEqual(0, d.ThunderBetween(flash - 0.4f, flash + 0.3f));
+            Assert.AreEqual(1, d.ThunderBetween(flash + 0.3f, flash + 0.4f));
+            Assert.AreEqual(3, d.ThunderBetween(0f, Kiko.Duration));
         }
 
         [Test] public void WordsShown_LightUpWithTheVoice()
@@ -49,30 +55,99 @@ namespace HypaStories.Tests
             Assert.AreEqual(4, StoryDirector.WordsShown(c, 20f, 4));
         }
 
-        [Test] public void Marlow_TimesFromWordCount_InOrder()
+        [Test] public void Stories_TimesFromWordCount_InOrder()
         {
-            var caps = StoryLibrary.Marlow.Captions;
+            var marlow = StoryLibrary.Find("marlow-street").Timeline;
+            var caps = marlow.Captions;
             Assert.AreEqual(13, caps.Length);
             Assert.AreEqual(0.4f, caps[0].At, 1e-4);
             for (var i = 1; i < caps.Length; i++) Assert.Greater(caps[i].At, caps[i - 1].Until);
-            Assert.GreaterOrEqual(StoryLibrary.Marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
-            Assert.AreEqual(4, StoryLibrary.Marlow.Flashes.Length);
+            Assert.GreaterOrEqual(marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
+            Assert.AreEqual(4, marlow.Flashes.Length);
         }
+
+        [Test] public void Parse_TranslatesById_FallsBackToEnglish_AndEasesCuesOverTheirLine()
+        {
+            const string story = @"{ ""title"": ""T"", ""rain"": 0.2, ""lines"": [
+                { ""id"": ""a"", ""text"": ""one two three"" },
+                { ""id"": ""b"", ""text"": ""four five"", ""rain"": 1, ""flashes"": [0.5] } ] }";
+            var st = StoryLibrary.Parse("t", story, new Dictionary<string, string> { ["fr"] = @"{ ""a"": ""un deux trois"" }" });
+            var caps = st.Timeline.Captions;
+            Assert.AreEqual("un deux trois", caps[0].TextFor("fr"));
+            Assert.AreEqual("four five", caps[1].TextFor("fr"));
+            var d = new StoryDirector(st.Timeline);
+            Assert.AreEqual(0.2f, d.Sample(caps[1].At).Rain, 1e-4);
+            Assert.AreEqual(1f, d.Sample(caps[1].Until).Rain, 1e-4);
+            Assert.AreEqual(caps[1].At + 0.5f, st.Timeline.Flashes[0], 1e-4);
+            Assert.AreEqual(StoryLibrary.DefaultModel, st.Model);
+            Assert.IsEmpty(st.VoicesFor("en")); // no voices: Auto
+        }
+
+        [Test] public void Parse_Voices_PerLanguage_FirstThatHasOneWins()
+        {
+            const string story = @"{ ""voices"": [
+                { ""model"": ""hypaai/orpheus"", ""voice"": { ""fr"": ""Alloy"", ""yo"": ""Toyin"" } },
+                { ""model"": ""x/y"" },
+                { ""model"": ""openai/gpt-4o-mini-tts"", ""voice"": ""fable"" } ], ""lines"": [ { ""id"": ""a"", ""text"": ""one"" } ] }";
+            var st = StoryLibrary.Parse("t", story, new Dictionary<string, string>());
+            Assert.AreEqual(2, st.Voices.Length); // the one without a voice is dropped
+            var yo = st.VoicesFor("yo");
+            Assert.AreEqual("hypaai/orpheus Toyin", yo[0].ToString());
+            Assert.AreEqual("openai/gpt-4o-mini-tts fable", yo[1].ToString()); // the fallback
+            Assert.AreEqual("openai/gpt-4o-mini-tts fable", st.VoicesFor("en").Single().ToString());
+        }
+
+        [Test] public void Suggestions_AreFromLinesToldSoFar_NewestFirst_InTheLanguage()
+        {
+            const string story = @"{ ""model"": ""meta/m"", ""lines"": [
+                { ""id"": ""a"", ""text"": ""one"", ""ask"": [""A?""] },
+                { ""id"": ""b"", ""text"": ""two"" },
+                { ""id"": ""c"", ""text"": ""three"", ""ask"": [""C?"", ""C2?""] },
+                { ""id"": ""d"", ""text"": ""four"", ""ask"": [""D?""] } ] }";
+            var st = StoryLibrary.Parse("t", story, new Dictionary<string, string> { ["fr"] = @"{ ""c.ask"": [""C fr ?""] }" });
+            Assert.AreEqual("meta/m", st.Model);
+            CollectionAssert.AreEqual(new[] { "A?" }, st.Suggestions(1, "en"));
+            CollectionAssert.AreEqual(new[] { "C?", "C2?", "A?" }, st.Suggestions(2, "en"));
+            CollectionAssert.AreEqual(new[] { "D?", "C?", "C2?" }, st.Suggestions(3, "en"));
+            CollectionAssert.AreEqual(new[] { "C fr ?", "A?" }, st.Suggestions(2, "fr"));
+        }
+
+        [Test] public void EveryStory_SuggestsFromTheStart_InEveryLanguage()
+        {
+            foreach (var st in StoryLibrary.All)
+            {
+                StringAssert.Contains("/", st.Model, st.Id);
+                foreach (var lang in StoryLanguages.All)
+                    Assert.IsNotEmpty(st.Suggestions(0, lang.Code), $"{st.Id} {lang.Code}");
+                foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))
+                    foreach (var lang in Translated)
+                        Assert.AreEqual(c.Ask.Length, c.AskFor(lang).Length, $"{st.Id} {c.Id} {lang}");
+                foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))
+                    foreach (var lang in Translated)
+                        CollectionAssert.AreNotEqual(c.Ask, c.AskFor(lang), $"{st.Id} {c.Id} {lang}: untranslated question");
+            }
+        }
+
+        static readonly string[] Translated = StoryLanguages.All.Where(l => l.Code != "en").Select(l => l.Code).ToArray();
 
         [Test] public void EveryLine_IsTranslated_AndFallsBackToEnglish()
         {
             foreach (var st in StoryLibrary.All)
                 foreach (var c in st.Timeline.Captions)
-                    foreach (var lang in new[] { "fr", "es" })
+                    foreach (var lang in Translated)
                         Assert.IsFalse(string.IsNullOrEmpty(c.TextFor(lang)) || c.TextFor(lang) == c.Text, $"{st.Id} {lang}: {c.Text}");
-            Assert.AreEqual("It never went out.", StoryLibrary.Kiko.Captions[10].TextFor("yo"));
+            Assert.AreEqual("It never went out.", Line(Kiko, "never-out").TextFor("sw")); // not offered: English
         }
 
         [Test] public void Languages_FindByCodeOrHypaLabel()
         {
             Assert.AreEqual("fr", StoryLanguages.Find("French").Code);
             Assert.AreEqual("Español", StoryLanguages.Find("ES").Name);
-            Assert.IsNull(StoryLanguages.Find("Yoruba"));
+            Assert.AreEqual("yo", StoryLanguages.Find("Yoruba").Code);
+            Assert.AreEqual("pcm", StoryLanguages.Find("Pidgin").Code);
+            Assert.IsNull(StoryLanguages.Find("Swahili"));
+            foreach (var l in StoryLanguages.All.Where(l => l.Code != "en"))
+                Assert.AreNotEqual(StoryLanguages.Lines("en").Again, StoryLanguages.Lines(l.Code).Again, l.Code);
         }
 
         // ---------- Q&A stand-in ----------
@@ -93,14 +168,56 @@ namespace HypaStories.Tests
             Assert.AreEqual("Nia is the detective on the case.", StubStoryQa.AnswerFor("who is nia", 3, "fr", "marlow-street")[0]);
         }
 
-        [Test] public void Qa_SuggestionsAreAnsweredOnceTold()
+        [Test] public void Chat_PromptHasTheStorySoFar_TheQuestion_AndTheLanguage()
         {
-            foreach (var st in StoryLibrary.All)
-                foreach (var q in StubStoryQa.Suggestions(st.Id, "en"))
-                    Assert.AreNotEqual("That is a good question.", StubStoryQa.AnswerFor(q, st.Timeline.Captions.Length - 1, "en", st.Id)[0], q);
+            var m = ChatStoryQa.Messages(new QaRequest
+            {
+                Question = "qui est Kiko ?", StorySoFar = "Il y a bien longtemps…", Language = StoryLanguages.Find("fr"),
+            }, "Kiko and the\nRemembering Fire");
+            Assert.AreEqual("system", (string)m[0]["role"]);
+            StringAssert.Contains("“Kiko and the Remembering Fire”", (string)m[0]["content"]);
+            StringAssert.Contains("Answer in French", (string)m[0]["content"]);
+            StringAssert.Contains("Il y a bien longtemps…", (string)m[1]["content"]);
+            StringAssert.EndsWith("qui est Kiko ?", (string)m[1]["content"]);
+        }
+
+        [Test] public void Chat_SplitsTheReplyIntoSpokenSentences()
+        {
+            CollectionAssert.AreEqual(new[] { "Well, Kiko is curious.", "“Why?” he asks!", "¿Y tú?" },
+                ChatStoryQa.Sentences("**Well**, Kiko is curious. “Why?” he asks!\n¿Y tú?"));
+            Assert.AreEqual(4, ChatStoryQa.Sentences("A. B. C. D. E.").Count);
+            Assert.IsEmpty(ChatStoryQa.Sentences("  "));
+        }
+
+        // ---------- UI ----------
+
+        [Test] public void Fade_RefreshWhileFadedOut_KeepsTheTextsOwnAlpha()
+        {
+            var root = new GameObject("group");
+            try
+            {
+                var text = new GameObject("text").AddComponent<TMPro.TextMeshPro>();
+                text.transform.SetParent(root.transform, false);
+                text.alpha = 0.5f;
+                var g = root.AddComponent<KitGroup>();
+                g.Refresh();
+                g.Set(0f);                 // leave a story
+                g.Refresh();               // load the next one while hidden
+                g.Set(1f);                 // fade back in
+                Assert.AreEqual(0.5f, text.alpha, 1e-4);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
         }
 
         // ---------- Listening / gestures ----------
+
+        [Test] public void Mic_SkipsVirtualInputs()
+        {
+            Assert.AreEqual("MacBook Pro Microphone",
+                MicListener.Device(new[] { "AlteredVirtualAudio Device", "BlackHole 2ch", "MacBook Pro Microphone", "ZoomAudioDevice" }));
+            Assert.AreEqual("Android audio input", MicListener.Device(new[] { "Android audio input" }));
+            Assert.IsNull(MicListener.Device(new[] { "BlackHole 2ch" }));
+        }
 
         [Test] public void Silence_EndsAfterSpeechThenQuiet()
         {
@@ -206,6 +323,7 @@ namespace HypaStories.Tests
             public int LineIndex => 12;
             public string StoryId => "kiko";
             public string StorySoFar => "Long ago…";
+            public string[] Suggestions => new[] { "Who is Kiko?" };
             public void Interrupt() => Interrupted = true;
             public void Resume(int lineIndex) => ResumedAt = lineIndex;
         }
@@ -218,6 +336,8 @@ namespace HypaStories.Tests
             public void SetLevel(float level01) { }
             public void SetQuestion(string text) => Question = text;
             public void SetAnswer(string text) { if (!string.IsNullOrEmpty(text)) Answer = text; }
+            public string[] Suggestions;
+            public void SetSuggestions(string[] questions) => Suggestions = questions;
         }
 
         FakeSpeech _speech; FakeListener _mic; FakeQa _qa; FakeNarration _story; FakeView _view; AskFlow _ask;
@@ -247,6 +367,7 @@ namespace HypaStories.Tests
             Assert.AreEqual(AskState.Idle, _ask.State);
             CollectionAssert.AreEqual(new[] { true, false }, _asking);
             Assert.AreEqual("Long ago…", _qa.Last.StorySoFar);
+            CollectionAssert.AreEqual(new[] { "Who is Kiko?" }, _view.Suggestions);
             var log = _ask.Log.Single();
             Assert.IsTrue(log.Ok);
             Assert.AreEqual(100, log.Filler);

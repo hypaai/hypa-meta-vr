@@ -153,10 +153,7 @@ namespace HypaStories.EditorTools
                 m.mainTextureScale = new Vector2(1f, 2f);
                 m.SetFloat("_Glossiness", 0.05f);
             });
-            a.uiFont = FontAsset("Outfit-Regular.ttf", "Outfit Regular SDF");
-            a.uiFontBold = FontAsset("Outfit-SemiBold.ttf", "Outfit SemiBold SDF");
-            a.serifFont = FontAsset("CormorantGaramond-Medium.ttf", "Cormorant Garamond Medium SDF");
-            a.serifItalic = FontAsset("CormorantGaramond-SemiBoldItalic.ttf", "Cormorant Garamond SemiBold Italic SDF");
+            (a.uiFont, a.uiFontBold, a.serifFont, a.serifItalic) = Fonts();
             a.icons = AssetDatabase.FindAssets("t:Texture2D", new[] { Art + "/Icons" })
                 .Select(g => AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(g))).Where(t => t != null).ToArray();
 
@@ -169,12 +166,12 @@ namespace HypaStories.EditorTools
 
             AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>($"{Local}/Audio/{file}");
             a.ambienceSplash = C("amb-1.mp3"); a.ambienceStory = C("amb-2.mp3");
-            a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3"); a.kikoVoice = C("kiko-voice.mp3");
+            a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3");
             a.logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Art}/hypa-reality.png");
 
             EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();
-            var missing = new (Object asset, string name)[] { (a.campFire, "camp fire"), (a.storyteller, "storyteller"), (a.ambienceStory, "ambience"), (a.kikoVoice, "Kiko narration") }
+            var missing = new (Object asset, string name)[] { (a.campFire, "camp fire"), (a.storyteller, "storyteller"), (a.ambienceStory, "ambience") }
                 .Where(x => x.asset == null).Select(x => x.name).ToArray();
             Debug.Log("Hypa Stories: StoryAssets updated." + (missing.Length > 0
                 ? " Missing (fallbacks will be used): " + string.Join(", ", missing) + ". Models need glTFast; audio and the avatar live in the git-ignored " + Local + "."
@@ -197,7 +194,8 @@ namespace HypaStories.EditorTools
             Debug.Log("Hypa Stories: imported TMP Essential Resources.");
         }
 
-        // Latin-1 plus the punctuation the stories use (English, French, Spanish)
+        // Latin-1 plus the punctuation the stories use (English, French, Spanish), and the letters and tone marks of Yoruba, Igbo and
+        // Hausa (dots below, hooked letters, combining accents for tones on dotted letters).
         static readonly string Charset = BuildCharset();
         static string BuildCharset()
         {
@@ -205,7 +203,31 @@ namespace HypaStories.EditorTools
             for (var c = 32; c < 127; c++) sb.Append((char)c);
             for (var c = 160; c < 256; c++) sb.Append((char)c);
             sb.Append("œŒ‘’“”…–—•·€");
+            sb.Append("ẹẸọỌṣṢịỊụỤṅṄńŃǹǸḿḾɓƁɗƊƙƘƴƳʼ\u0300\u0301\u0304\u0323");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Outfit (UI) and Cormorant Garamond (story) font assets, with Noto Sans behind them for the letters they lack (Outfit has no
+        /// dotted Yoruba / Igbo letters, neither has Hausa's hooked ones). Rerun after adding a language with new letters.
+        /// </summary>
+        [MenuItem("Hypa/Stories/Update Fonts")]
+        public static void UpdateFonts() => Fonts();
+
+        static (TMP_FontAsset ui, TMP_FontAsset uiBold, TMP_FontAsset serif, TMP_FontAsset serifItalic) Fonts()
+        {
+            var noto = FontAsset("NotoSans-Regular.ttf", "Noto Sans SDF");
+            var fonts = (FontAsset("Outfit-Regular.ttf", "Outfit Regular SDF"), FontAsset("Outfit-SemiBold.ttf", "Outfit SemiBold SDF"),
+                FontAsset("CormorantGaramond-Medium.ttf", "Cormorant Garamond Medium SDF"),
+                FontAsset("CormorantGaramond-SemiBoldItalic.ttf", "Cormorant Garamond SemiBold Italic SDF"));
+            foreach (var fa in new[] { fonts.Item1, fonts.Item2, fonts.Item3, fonts.Item4 })
+            {
+                if (fa == null || noto == null || fa.fallbackFontAssetTable.Contains(noto)) continue;
+                fa.fallbackFontAssetTable.Add(noto);
+                EditorUtility.SetDirty(fa);
+            }
+            AssetDatabase.SaveAssets();
+            return fonts;
         }
 
         /// <summary>A static SDF font asset (atlas pre-filled with <see cref="Charset"/>) next to its TTF in Art/Fonts.</summary>
@@ -213,7 +235,7 @@ namespace HypaStories.EditorTools
         {
             var path = $"{Art}/Fonts/{name}.asset";
             var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
-            if (existing != null) return existing;
+            if (existing != null) { AddCharset(existing, ttf); return existing; }
             if (TMP_Settings.instance == null)
             {
                 Debug.LogWarning("Hypa Stories: TextMeshPro resources are still importing; run Hypa > Stories > Create Story Scene again for the fonts.");
@@ -237,6 +259,20 @@ namespace HypaStories.EditorTools
             EditorUtility.SetDirty(fa);
             AssetDatabase.SaveAssets();
             return fa;
+        }
+
+        /// <summary>Adds the <see cref="Charset"/> letters an existing font asset is missing (the font's own glyphs only).</summary>
+        static void AddCharset(TMP_FontAsset fa, string ttf)
+        {
+            var have = new System.Collections.Generic.HashSet<uint>(fa.characterTable.Select(c => c.unicode));
+            var add = new string(Charset.Where(c => !have.Contains(c)).ToArray());
+            if (add.Length == 0) return;
+            fa.atlasPopulationMode = AtlasPopulationMode.Dynamic;
+            fa.TryAddCharacters(add, out var missing);
+            fa.atlasPopulationMode = AtlasPopulationMode.Static;
+            EditorUtility.SetDirty(fa);
+            if (missing != add) Debug.Log($"Hypa Stories: added {add.Length - (missing?.Length ?? 0)} letters to {fa.name}" +
+                                          (string.IsNullOrEmpty(missing) ? "" : $"; {ttf} has none for: {missing} (Noto Sans covers them)"));
         }
 
         static Material Material(string path, System.Action<Material> setup)

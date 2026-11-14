@@ -108,18 +108,24 @@ namespace HypaStories
                 _dots.Add(dot);
             }
 
-            Kit.Glass(_chrome, "Language", new Vector3(0f, -0.075f, 0.004f), new Vector2(0.52f, 0.07f), 0.035f);
-            Kit.Icon(_chrome, "languages", new Vector3(-0.225f, -0.075f, 0f), 0.026f, KitTheme.Dim);
+            // languages: four chips a row, as many rows as it takes
+            const int perRow = 4;
+            const float row = 0.056f;
+            var rows = (StoryLanguages.All.Length + perRow - 1) / perRow;
+            var extra = (rows - 1) * row;
+            Kit.Glass(_chrome, "Language", new Vector3(0f, -0.075f - extra / 2f, 0.004f), new Vector2(0.56f, 0.07f + extra), 0.035f);
+            Kit.Icon(_chrome, "languages", new Vector3(-0.25f, -0.075f - extra / 2f, 0f), 0.026f, KitTheme.Dim);
             for (var i = 0; i < StoryLanguages.All.Length; i++)
             {
                 var lang = StoryLanguages.All[i];
-                var btn = Kit.Button(_chrome, new Vector3(-0.1f + i * 0.13f, -0.075f, 0f), new Vector2(0.122f, 0.05f), lang.Name, null, KitStyle.Ghost, null, null, 0.017f);
+                var pos = new Vector3(-0.165f + i % perRow * 0.118f, -0.075f - i / perRow * row, 0f);
+                var btn = Kit.Button(_chrome, pos, new Vector2(0.112f, 0.048f), lang.Name, null, KitStyle.Ghost, null, null, 0.017f);
                 btn.OnPress = () => { pickLanguage(lang); PaintLanguage(lang); };
                 _chips.Add((lang, btn));
             }
 
-            Kit.Button(_chrome, new Vector3(-0.19f, -0.155f, 0f), new Vector2(0.15f, 0.052f), "Back", "arrow-left", KitStyle.Ghost, back, null, 0.018f);
-            _sound = Kit.Button(_chrome, new Vector3(0.235f, -0.155f, 0f), new Vector2(0.052f, 0.052f), null, "volume-2", KitStyle.Ghost, toggleSound);
+            Kit.Button(_chrome, new Vector3(-0.19f, -0.155f - extra, 0f), new Vector2(0.15f, 0.052f), "Back", "arrow-left", KitStyle.Ghost, back, null, 0.018f);
+            _sound = Kit.Button(_chrome, new Vector3(0.235f, -0.155f - extra, 0f), new Vector2(0.052f, 0.052f), null, "volume-2", KitStyle.Ghost, toggleSound);
             PaintLanguage(StoryLanguages.Current);
             Chrome = _chrome.gameObject.AddComponent<KitGroup>();
             Chrome.Refresh();

@@ -13,17 +13,21 @@ namespace HypaCore
     /// </summary>
     public static class HypaHttp
     {
-        static readonly HttpClient Client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        // No client-wide timeout: each request gets its own (see Send), because Hypa's speech can take far longer than a
+        // translation, and running out of time is not the same as being offline.
+        static readonly HttpClient Client = new HttpClient { Timeout = System.Threading.Timeout.InfiniteTimeSpan };
+        public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
+        public static readonly TimeSpan AudioDownloadTimeout = TimeSpan.FromSeconds(60);
 
         /// <summary>POST JSON to the Hypa API. Sends x-api-key when one is configured. Returns the raw body (JSON or SSE).</summary>
-        public static async Task<string> PostAsync(HypaConfig cfg, string path, string json, CancellationToken ct)
+        public static async Task<string> PostAsync(HypaConfig cfg, string path, string json, CancellationToken ct, TimeSpan? timeout = null)
         {
             using (var req = new HttpRequestMessage(HttpMethod.Post, cfg.BaseUrl + path))
             {
                 req.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 req.Headers.TryAddWithoutValidation("Accept", "application/json, text/event-stream");
                 if (cfg.HasKey) req.Headers.TryAddWithoutValidation("x-api-key", cfg.ApiKey);
-                using (var res = await Send(req, ct).ConfigureAwait(false))
+                using (var res = await Send(req, ct, timeout ?? DefaultTimeout).ConfigureAwait(false))
                 {
                     var body = await res.Content.ReadAsStringAsync().ConfigureAwait(false);
                     if (!res.IsSuccessStatusCode) throw HypaException.FromHttp((int)res.StatusCode, body);
@@ -36,7 +40,7 @@ namespace HypaCore
         public static async Task<byte[]> GetBytesAsync(string url, CancellationToken ct)
         {
             using (var req = new HttpRequestMessage(HttpMethod.Get, url))
-            using (var res = await Send(req, ct).ConfigureAwait(false))
+            using (var res = await Send(req, ct, AudioDownloadTimeout).ConfigureAwait(false))
             {
                 if (!res.IsSuccessStatusCode)
                     throw new HypaException(HypaErrorKind.BadRequest, $"Audio link returned HTTP {(int)res.StatusCode} (links expire after about an hour).", (int)res.StatusCode);
@@ -44,12 +48,16 @@ namespace HypaCore
             }
         }
 
-        static async Task<HttpResponseMessage> Send(HttpRequestMessage req, CancellationToken ct)
+        static async Task<HttpResponseMessage> Send(HttpRequestMessage req, CancellationToken ct, TimeSpan timeout)
         {
-            try { return await Client.SendAsync(req, ct).ConfigureAwait(false); }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-            catch (TaskCanceledException e) { throw new HypaException(HypaErrorKind.Timeout, "Request timed out.", 0, null, e); }
-            catch (HttpRequestException e) { throw new HypaException(HypaErrorKind.Offline, e.Message, 0, null, e); }
+            using (var limit = CancellationTokenSource.CreateLinkedTokenSource(ct))
+            {
+                limit.CancelAfter(timeout);
+                try { return await Client.SendAsync(req, HttpCompletionOption.ResponseContentRead, limit.Token).ConfigureAwait(false); }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+                catch (OperationCanceledException e) { throw new HypaException(HypaErrorKind.Timeout, $"Request timed out after {timeout.TotalSeconds:0} s.", 0, null, e); }
+                catch (HttpRequestException e) { throw new HypaException(HypaErrorKind.Offline, e.Message, 0, null, e); }
+            }
         }
 
         /// <summary>
