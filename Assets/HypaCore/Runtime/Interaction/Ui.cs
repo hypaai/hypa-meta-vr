@@ -11,7 +11,7 @@ namespace HypaCore
     /// </summary>
     public static class Ui
     {
-        public static readonly Color Panel = new Color(0.090f, 0.090f, 0.090f, 0.80f);  // card, #171717, a bit more glass than solid
+        public static readonly Color Panel = new Color(0.090f, 0.090f, 0.090f, 0.92f);  // card, #171717, mostly solid so text reads over a busy room
         public static readonly Color Primary = new Color(0.898f, 0.898f, 0.898f, 1f);   // primary, #e5e5e5
         public static readonly Color Secondary = new Color(0.149f, 0.149f, 0.149f, 1f); // secondary, #262626
         public static readonly Color Tertiary = new Color(0.32f, 0.32f, 0.32f, 1f);     // hover lift, not a bright blue

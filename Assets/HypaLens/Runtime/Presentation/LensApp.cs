@@ -46,88 +46,6 @@ namespace HypaLens
     }
 
     /// <summary>
-    /// Where the HUD sits. Head-locked UI drags along with every head turn, so a hand pointing at the menu loses it
-    /// the moment the user looks at the menu (worse with webcam head tracking). Instead the HUD stays where it is in
-    /// the room and only glides back in front of the user once the head has turned or moved well away from it, and
-    /// never while the HUD is in use. Yaw only: looking up or down never moves it. Pure, unit tested.
-    /// </summary>
-    public sealed class LazyFollow
-    {
-        public float RecentreAngle = 30f;      // degrees of yaw between where the head looks and where the HUD is
-        public float RecentreDistance = 0.4f;  // metres the head has moved since the HUD was placed
-        // From the eyes. Beyond the hands (0.3-0.6 m out), so a hand ray crosses the HUD instead of running level
-        // with it. The UI was designed in metres at 0.6 m; LensApp scales the HUD by Distance / DesignDistance.
-        public const float DesignDistance = 0.6f;
-        public float Distance = 1.0f, Height = -0.20f;
-        public float Smoothing = 5f;           // per second; higher = snappier glide
-        bool _placed, _gliding;
-        Vector3 _headAtPlace, _targetPos;
-
-        public bool IsGliding => _gliding;
-
-        /// <summary>Forget the placement: the next update snaps the HUD in front of the eyes again.</summary>
-        public void Reset() { _placed = false; _gliding = false; }
-
-        /// <summary>
-        /// Returns the pose the HUD should have this frame. <paramref name="hold"/> = in use, don't move. The position
-        /// is lazy; the rotation is not: the HUD always turns in place to square up with the way the head is facing
-        /// (yaw) while tilting to meet the eyes (pitch), so it never reads as a panel seen from the side.
-        /// </summary>
-        public Pose Update(Vector3 headPos, Quaternion headRot, Pose current, bool hold, float dt)
-        {
-            var fwd = Flat(headRot * Vector3.forward);
-            if (!_placed)
-            {
-                _placed = true;
-                SetTarget(headPos, fwd);
-                _gliding = false;
-                return new Pose(_targetPos, Facing(_targetPos, headPos, fwd)); // first placement snaps
-            }
-            var t = 1f - Mathf.Exp(-Smoothing * dt);
-            if (hold) _gliding = false;
-            else if (!_gliding)
-            {
-                var toHud = Flat(current.position - headPos);
-                var turned = toHud != Vector3.zero && Vector3.Angle(fwd, toHud) > RecentreAngle;
-                var moved = Vector3.Distance(headPos, _headAtPlace) > RecentreDistance;
-                if (turned || moved) SetTarget(headPos, fwd);
-            }
-            var pos = current.position;
-            if (_gliding)
-            {
-                pos = Vector3.Lerp(current.position, _targetPos, t);
-                if (Vector3.Distance(pos, _targetPos) < 0.002f) { pos = _targetPos; _gliding = false; }
-            }
-            var rot = Quaternion.Slerp(current.rotation, Facing(pos, headPos, fwd), t);
-            return new Pose(pos, rot);
-        }
-
-        void SetTarget(Vector3 headPos, Vector3 fwd)
-        {
-            _gliding = true;
-            _headAtPlace = headPos;
-            _targetPos = headPos + fwd * Distance + Vector3.up * Height;
-        }
-
-        /// <summary>Square to the head's yaw, pitched to meet the eyes (UI reads from -Z, so +Z points away from the viewer).</summary>
-        public static Quaternion Facing(Vector3 hudPos, Vector3 headPos, Vector3 headFwdFlat)
-        {
-            if (headFwdFlat == Vector3.zero) headFwdFlat = Vector3.forward;
-            var horizontal = Mathf.Max(0.05f, Vector3.Distance(Flat0(hudPos), Flat0(headPos)));
-            var rise = (hudPos.y - headPos.y) / horizontal;
-            return Quaternion.LookRotation(new Vector3(headFwdFlat.x, rise, headFwdFlat.z).normalized, Vector3.up);
-        }
-
-        static Vector3 Flat0(Vector3 v) { v.y = 0f; return v; }
-
-        static Vector3 Flat(Vector3 v)
-        {
-            v.y = 0f;
-            return v.sqrMagnitude < 1e-6f ? Vector3.zero : v.normalized;
-        }
-    }
-
-    /// <summary>
     /// Lens scene entry point. Builds the HUD, word labels and cards at runtime; input comes from HypaCore's
     /// PinchPointer (hands on Quest, mouse in the editor).
     ///
@@ -215,9 +133,12 @@ namespace HypaLens
             return p;
         }
 
-        // ---------- HUD placement: lazy-follow (see LazyFollow) ----------
+        // ---------- HUD placement: follows where the head points (see HypaCore.HeadFollow) ----------
 
-        readonly LazyFollow _follow = new LazyFollow();
+        /// <summary>The HUD was designed in metres at 0.6 m; it sits further out and is scaled up to the same angular size.</summary>
+        public const float HudDesignDistance = 0.6f;
+        // 1 m out (beyond the hands, so a hand ray crosses the HUD), a little below the line of sight.
+        readonly HeadFollow _follow = new HeadFollow { Distance = 1.0f, Height = -0.20f };
 
         /// <summary>Is the pointer on anything in the HUD?</summary>
         bool PointerOnHud
@@ -249,7 +170,7 @@ namespace HypaLens
             if (xrActive && !_xrWasActive) _follow.Reset();
             _xrWasActive = xrActive;
             var hold = PointerOnHud || PinchingHud;
-            var pose = _follow.Update(_cam.position, _cam.rotation, new Pose(_hud.position, _hud.rotation), hold, Time.unscaledDeltaTime);
+            var pose = _follow.Update(_cam.position, _cam.rotation, hold, Time.unscaledDeltaTime);
             _hud.SetPositionAndRotation(pose.position, pose.rotation);
         }
 
@@ -261,11 +182,11 @@ namespace HypaLens
         {
             _hud = new GameObject("HypaLens HUD").transform;
             _hud.SetParent(_world, false);
-            _hud.localScale = Vector3.one * (_follow.Distance / LazyFollow.DesignDistance); // same angular size as at 0.6 m
-            FollowHead(); // first placement: in front of the eyes, then it stays put until the head turns away
+            _hud.localScale = Vector3.one * (_follow.Distance / HudDesignDistance); // same angular size as at 0.6 m
+            FollowHead(); // first placement: straight in front of the eyes
 
             // Top bar: X | Auto ▾ | → Target ▾ | Saved
-            Tooltip(Ui.IconButton("x", _hud, new Vector3(-0.30f, TopY, 0), LensTouch.SmallIconRadius, GoHome), "Back to Home", below: true);
+            Tooltip(Ui.IconButton("x", _hud, new Vector3(-0.30f, TopY, 0), LensTouch.SmallIconRadius, GoHome), "Leave Lens", below: true);
             _sourceBtn = LanguagePill(new Vector3(-0.105f, TopY, 0), 0.13f, () => OpenPicker(true));
             Ui.Text(_hud, "→", 0.02f, new Vector3(-0.018f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
             _targetBtn = LanguagePill(new Vector3(0.105f, TopY, 0), 0.20f, () => OpenPicker(false));
@@ -328,7 +249,7 @@ namespace HypaLens
             ClearAll();
             _picker?.Close(); ShowOnboarding(false); ShowCaption(null);
             if (_practice != null) { Destroy(_practice); _practice = null; }
-            if (HypaShell.Instance != null) HypaShell.Instance.ShowMenu(true);
+            if (HypaShell.Instance != null) HypaShell.Instance.ExitToHome(); // leaves Lens for the entry screen
             else SetStatus("Home needs the Hypa shell. Play from the HypaShell scene.");
         }
 
@@ -887,13 +808,20 @@ namespace HypaLens
         // the wall outright; in the editor it goes once the simulator (or Link) is running.
         GameObject _simWall;
 
+        // After the camera rig has taken this frame's head pose, so the HUD doesn't trail it by a frame.
+        void LateUpdate()
+        {
+            var home = HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen;
+            if (home) _follow.Reset(); // when Home closes the HUD comes back straight in front
+            else FollowHead();
+        }
+
         void Update()
         {
             if (_simWall != null && _simWall.activeSelf && (!Application.isEditor || UnityEngine.XR.XRSettings.isDeviceActive)) _simWall.SetActive(false);
             // Home (the shell's card) is modal: the Lens HUD steps aside while it is up.
             var home = HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen;
             if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
-            if (!home) FollowHead();
             if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) SetStatus(DefaultHint);
             if (_live && !home) LiveTick();
             if (!Application.isEditor) return;

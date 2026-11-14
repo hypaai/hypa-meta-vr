@@ -48,10 +48,11 @@ namespace HypaCore
         TextMesh _status;
         /// <summary>The scene a mode lives in, or null while only the shell is loaded.</summary>
         string _currentMode;
-        // The shell UI lives in the room, not on the camera: head-locked UI at hand depth slides away from a hand ray
-        // the moment the user turns to look at it. It sits 1 m out (beyond the hands), scaled so it reads as it would
-        // at 0.6 m, and is re-placed in front of the user whenever it opens or they have walked away from it.
+        // The shell UI follows where the head points (see HeadFollow): 1 m out (beyond the hands), scaled so it reads
+        // as it would at 0.6 m. A small dead zone keeps it still while a hand ray aims at it.
         const float Distance = 1.0f, Scale = Distance / 0.6f;
+        readonly HeadFollow _follow = new HeadFollow { Distance = Distance };
+        bool _xrWasActive;
         /// <summary>The shared Hypa mark: Assets/HypaCore/Resources/HypaLogo.png (square, transparent, white on dark).</summary>
         const string LogoResource = "HypaLogo";
 
@@ -93,24 +94,39 @@ namespace HypaCore
         void Update()
         {
             if (Application.isEditor && Input.GetKeyDown(KeyCode.M)) ToggleMenu();
-            // Walked away from it, or it ended up behind the user: bring it back in front.
-            if (_anchor != null && _cam != null)
+        }
+
+        // After the camera rig has taken this frame's head pose, so the UI doesn't trail it by a frame.
+        void LateUpdate() => FollowHead();
+
+        void FollowHead()
+        {
+            if (_anchor == null || _cam == null) return;
+            // The XR session starts a few frames in and lifts the camera to eye height: snap in front then.
+            var xrActive = UnityEngine.XR.XRSettings.isDeviceActive;
+            if (xrActive && !_xrWasActive) _follow.Reset();
+            _xrWasActive = xrActive;
+            var pose = _follow.Update(_cam.position, _cam.rotation, PointerOnShellUi, Time.unscaledDeltaTime);
+            _anchor.SetPositionAndRotation(pose.position, pose.rotation);
+        }
+
+        bool PointerOnShellUi
+        {
+            get
             {
-                var to = _anchor.position - _cam.position;
-                if (to.magnitude > 2.5f || Vector3.Dot(_cam.forward, to) < 0f) PlaceInFront();
+                var p = PinchPointer.Instance;
+                if (p == null || _anchor == null) return false;
+                return (p.Hover != null && p.Hover.transform.IsChildOf(_anchor)) || (p.Pressed != null && p.Pressed.transform.IsChildOf(_anchor));
             }
         }
 
-        /// <summary>Puts the shell UI 1 m in front of the eyes, square to the view (yaw only), facing the user.</summary>
+        /// <summary>Puts the shell UI straight in front of the eyes now.</summary>
         void PlaceInFront()
         {
-            if (_anchor == null || _cam == null) return;
-            var fwd = _cam.forward; fwd.y = 0f;
-            if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.forward;
-            fwd.Normalize();
-            _anchor.position = _cam.position + fwd * Distance;
-            _anchor.rotation = Quaternion.LookRotation(fwd, Vector3.up);
+            if (_anchor == null) return;
             _anchor.localScale = Vector3.one * Scale;
+            _follow.Reset();
+            FollowHead();
         }
 
         void BuildMenuButton()
@@ -118,13 +134,14 @@ namespace HypaCore
             _anchor = new GameObject("Hypa Shell UI").transform;
             DontDestroyOnLoad(_anchor.gameObject);
             PlaceInFront();
-            // The Home button: low-left, as in a narrow field of view. A mode with its own X hides it.
-            _menuButton = Ui.IconButton("house", _anchor, new Vector3(-0.30f, -0.22f, 0f), 0.03f, () => ShowMenu(true)).transform.parent.gameObject;
+            // The Home button: low and close to the middle, big enough to hit with a wobbly hand ray, with a caption.
+            // In a mode it leaves the mode; on its own it opens the Home card. A mode with its own X hides it.
+            _menuButton = Ui.IconButton("house", _anchor, new Vector3(-0.15f, -0.19f, 0f), 0.038f, HomeButton, "Home").transform.parent.gameObject;
 
             // Home: the first thing the user sees. Title row, the modes, how it works, and an X.
             _menu = new GameObject("Home Card").transform;
             _menu.SetParent(_anchor, false);
-            _menu.localPosition = new Vector3(0f, 0.05f, 0f); // eye level, clear of a mode's own HUD below
+            _menu.localPosition = Vector3.zero; // dead centre of the view (a mode's HUD steps aside while Home is up)
             const float w = 0.32f, h = 0.40f;
             Ui.Quad("bg", _menu, new Vector3(0, 0, 0.003f), new Vector2(w, h), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
             var logo = Resources.Load<Texture2D>(LogoResource);
@@ -142,16 +159,47 @@ namespace HypaCore
             _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.145f, 0), Color.white);
             _menu.gameObject.SetActive(false);
 
-            // How it works: a card with the two experiences explained, and its own X.
+            BuildHelp();
+        }
+
+        /// <summary>How it works: the two experiences, each a heading and a short wrapped paragraph, and a way back.</summary>
+        void BuildHelp()
+        {
+            const float w = 0.50f, h = 0.44f, pad = 0.03f, left = -w / 2f + pad;
+            const float bodyH = 0.0135f, headH = 0.018f, line = 1.08f;
+            var chars = Mathf.FloorToInt((w - pad * 2f) / (bodyH * Ui.CharWidth)) - 7; // what fits across the card, with room for wide glyphs
+            var body = new Color(1f, 1f, 1f, 0.78f);
+
             _help = new GameObject("How It Works").transform;
             _help.SetParent(_anchor, false);
-            _help.localPosition = new Vector3(0f, 0.05f, -0.01f);
-            Ui.Quad("bg", _help, new Vector3(0, 0, 0.003f), new Vector2(0.50f, 0.34f), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
-            Ui.Text(_help, "How it works", 0.024f, new Vector3(-0.22f, 0.135f, 0), Color.white, TextAnchor.MiddleLeft);
-            Ui.IconButton("x", _help, new Vector3(0.21f, 0.135f, -0.001f), 0.024f, () => ShowHelp(false));
-            Ui.Text(_help,
-                "Hypa Lens\nLook at a sign, menu or book and pinch Capture. Each word becomes a label on the real\nsurface: pinch one to translate, hear and define it; hold the pinch for the whole sentence.\nCaption reads the whole view at once. Save words to practise later.\n\nStories\nSit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.\n\nEverything works with your hands. Pinch X at any time to come back here.",
-                0.0155f, new Vector3(-0.22f, -0.02f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
+            _help.localPosition = new Vector3(0f, 0f, -0.01f);
+            Ui.Quad("bg", _help, new Vector3(0, 0, 0.003f), new Vector2(w, h), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
+            var top = h / 2f - pad - 0.012f;
+            Ui.Text(_help, "How it works", 0.024f, new Vector3(left, top, 0), Color.white, TextAnchor.MiddleLeft);
+            Ui.IconButton("x", _help, new Vector3(w / 2f - pad - 0.01f, top, -0.001f), 0.024f, () => ShowHelp(false));
+
+            var y = top - 0.045f;
+            void Section(string icon, string title, string text)
+            {
+                var tex = Ui.Icon(icon);
+                if (tex != null)
+                {
+                    var q = Ui.Quad("icon", _help, new Vector3(left + 0.011f, y - headH / 2f, -0.001f), Vector2.one * 0.022f, Color.white, false, rounded: false);
+                    q.GetComponent<Renderer>().material.mainTexture = tex;
+                }
+                Ui.Text(_help, title, headH, new Vector3(left + 0.032f, y - headH / 2f, 0), Color.white, TextAnchor.MiddleLeft);
+                y -= headH + 0.012f;
+                var wrapped = Ui.Wrap(text, chars);
+                Ui.Text(_help, wrapped, bodyH, new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
+                y -= wrapped.Split('\n').Length * bodyH * line + 0.03f;
+            }
+            Section("camera", "Hypa Lens",
+                "Look at a sign, menu or book and pinch Capture. Each word becomes a label on the real surface: pinch one to translate, hear and define it, or hold the pinch for the whole sentence. Caption reads the whole view at once. Save words to practise later.");
+            Section("languages", "Stories",
+                "Sit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.");
+            Ui.Text(_help, Ui.Wrap("Everything works with your hands. Pinch Home at any time to come back here.", chars), bodyH,
+                new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
+            Ui.Button("Back to Home", _help, new Vector3(0f, -h / 2f + pad + 0.028f, 0f), new Vector2(0.22f, 0.056f), Ui.Accent, () => ShowHelp(false));
             _help.gameObject.SetActive(false);
         }
 
@@ -167,16 +215,52 @@ namespace HypaCore
             if (open) PlaceInFront();
             _menu.gameObject.SetActive(open);
             if (!open) _help.gameObject.SetActive(false);
+            RefreshMenuButton();
         }
 
         void ShowHelp(bool open)
         {
             _help.gameObject.SetActive(open);
             _menu.gameObject.SetActive(!open);
+            RefreshMenuButton();
         }
 
         /// <summary>A mode with its own X hides the shell's Home button (and shows it again when it closes).</summary>
-        public void SetMenuButtonVisible(bool visible) { if (_menuButton != null) _menuButton.SetActive(visible); }
+        public void SetMenuButtonVisible(bool visible) { _menuButtonWanted = visible; RefreshMenuButton(); }
+
+        bool _menuButtonWanted = true;
+
+        /// <summary>The Home button steps aside while a Home card is open (it would sit on the card and do nothing new).</summary>
+        void RefreshMenuButton() { if (_menuButton != null) _menuButton.SetActive(_menuButtonWanted && !IsMenuOpen); }
+
+        /// <summary>The Home button: in a mode it leaves the mode; otherwise it opens the Home card.</summary>
+        void HomeButton()
+        {
+            if (_currentMode != null) ExitToHome();
+            else ShowMenu(true);
+        }
+
+        const string HomeScene = "HypaHome";
+
+        /// <summary>
+        /// Leaves the running mode and goes back to the entry screen: the mode's scene is unloaded (its world, HUD and
+        /// audio go with it) and the Home card comes up in front of the user. The camera rig, passthrough and pointer
+        /// live on (DontDestroyOnLoad), so an empty scene is all Home needs.
+        /// </summary>
+        public void ExitToHome()
+        {
+            var mode = _currentMode != null ? SceneManager.GetSceneByName(_currentMode) : default;
+            _currentMode = null;
+            if (mode.IsValid() && mode.isLoaded)
+            {
+                var home = SceneManager.GetSceneByName(HomeScene);
+                if (!home.IsValid()) home = SceneManager.CreateScene(HomeScene);
+                SceneManager.SetActiveScene(home);
+                SceneManager.UnloadSceneAsync(mode);
+            }
+            SetMenuButtonVisible(true);
+            ShowMenu(true);
+        }
 
         /// <summary>Picking the mode that is already running just closes Home; anything else loads it.</summary>
         void OpenOrResume(string scene)
