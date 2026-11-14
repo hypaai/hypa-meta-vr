@@ -7,6 +7,8 @@ This project is licensed under Apache 2.0 (see `LICENSE`). Dependencies and thei
 | Newtonsoft.Json for Unity (`com.unity.nuget.newtonsoft-json`) | JSON parsing in HypaCore | MIT | No, Unity package |
 | Unity Test Framework (`com.unity.test-framework`) | EditMode tests | Unity Companion License | No, Unity package |
 | Meta XR SDK (All-in-One, v207+), incl. Interaction SDK and MR Utility Kit | Hands, passthrough, room surfaces on Quest | Meta Platform Technologies SDK License | No, installed per developer |
+| Lucide icons (`Assets/HypaCore/Resources/Icons`, rendered to PNG) | Shared UI icons (Lens, shell) | ISC (`LUCIDE-LICENSE.txt`) | Yes |
+| Inter typeface (`Assets/HypaCore/Runtime/Resources/Fonts/Inter-Regular.ttf`) | UI text | SIL Open Font License 1.1 | Yes |
 | glTFast (`com.unity.cloud.gltfast`) | Importing the Stories glTF models | Apache 2.0 | No, Unity package |
 | Poly Haven models and textures (`Assets/HypaStories/Art/PolyHaven`) | Stories campfire props and forest floor | CC0 1.0 | Yes |
 | "Camp Fire" by JalenJacobson (`Assets/HypaStories/Art/Models/camp_fire.glb`) | Stories fire pit | CC BY 4.0, **credit required** (below) | Yes |

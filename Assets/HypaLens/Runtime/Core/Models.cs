@@ -72,6 +72,9 @@ namespace HypaLens
         public Color32[] Pixels;
         public Pose CameraPose;          // world pose of the camera at the moment of capture
         public CameraIntrinsics Intrinsics;
+        /// <summary>Set when this is a crop of a larger frame (live mode): where it sits in the full frame, whose size is FullWidth x FullHeight.</summary>
+        public int CropX, CropY, FullWidth, FullHeight;
+        public bool IsCrop => FullWidth > 0 && (Width != FullWidth || Height != FullHeight || CropX != 0 || CropY != 0);
 
         public void Dispose() { Pixels = null; }
     }

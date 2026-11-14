@@ -29,6 +29,16 @@ namespace HypaCore
         public string Model;
     }
 
+    /// <summary>translate_image: the text read from a picture and its translation (text only, no positions).</summary>
+    public sealed class HypaImageTranslation
+    {
+        public string Text;
+        public string Translation;
+        /// <summary>Detected source language label; may be null.</summary>
+        public string Language;
+        public bool NoTextFound;
+    }
+
     /// <summary>
     /// Speech from text_to_speech. Normally <see cref="AudioUrl"/> (signed, valid ~1 hour: play it, don't store it).
     /// <see cref="AudioBytes"/> is for local/test audio.

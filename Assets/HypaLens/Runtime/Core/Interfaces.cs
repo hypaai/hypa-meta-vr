@@ -33,6 +33,11 @@ namespace HypaLens
         /// <summary>Display text for the meaning, or null when there is none.</summary>
         Task<string> LookUpAsync(string term, string language, CancellationToken ct);
         Task<HypaSpeech> SpeakAsync(string text, string language, CancellationToken ct);
+        /// <summary>
+        /// Caption: Hypa reads the text in the picture and translates it (translate_image). The picture leaves the
+        /// headset, so the app asks the user first. sourceLanguage null = auto-detect.
+        /// </summary>
+        Task<HypaImageTranslation> TranslateImageAsync(byte[] jpeg, string sourceLanguage, string targetLanguage, CancellationToken ct);
     }
 
     /// <summary>Pins a point from a camera ray onto a real surface (MRUK on device, a plane in the simulator).</summary>

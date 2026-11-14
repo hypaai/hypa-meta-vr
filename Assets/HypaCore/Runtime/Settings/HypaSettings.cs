@@ -6,12 +6,25 @@ namespace HypaCore
     public static class HypaSettings
     {
         const string TargetKey = "hypa.targetLanguage", ModeKey = "hypa.lastMode";
+        /// <summary>The language Lens translates into until the user picks another.</summary>
+        public const string DefaultTarget = "English";
+        // Once per install: English becomes the selected target (earlier builds defaulted to Annang). A later pick sticks.
+        const string EnglishDefaultKey = "hypa.targetDefaultEnglish";
 
         /// <summary>A Hypa language label, e.g. "Yoruba". Default English.</summary>
         public static string TargetLanguage
         {
-            get => PlayerPrefs.GetString(TargetKey, "English");
-            set { PlayerPrefs.SetString(TargetKey, value ?? "English"); PlayerPrefs.Save(); }
+            get
+            {
+                if (PlayerPrefs.GetInt(EnglishDefaultKey, 0) == 0)
+                {
+                    PlayerPrefs.SetString(TargetKey, DefaultTarget);
+                    PlayerPrefs.SetInt(EnglishDefaultKey, 1);
+                    PlayerPrefs.Save();
+                }
+                return PlayerPrefs.GetString(TargetKey, DefaultTarget);
+            }
+            set { PlayerPrefs.SetString(TargetKey, value ?? DefaultTarget); PlayerPrefs.Save(); }
         }
 
         /// <summary>Scene name of the last mode opened from the hand menu (see <see cref="HypaScenes"/>).</summary>
