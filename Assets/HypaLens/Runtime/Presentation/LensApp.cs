@@ -79,10 +79,10 @@ namespace HypaLens
         Transform _cam, _hud, _world;
         TextMesh _status; GameObject _statusBg;
         PinchTarget _sourceBtn, _targetBtn, _captureBtn, _captionBtn, _speakBtn;
-        GameObject _onboarding, _practice, _liveBadge;
+        GameObject _onboarding, _liveBadge;
         readonly List<GameObject> _bottomRow = new List<GameObject>();
         LanguagePicker _picker;
-        PracticeDeck _deck; TextMesh _deckText;
+        PracticeDeck _deck;
         readonly List<WordLabel> _labels = new List<WordLabel>();
         readonly HashSet<WordLabel> _selected = new HashSet<WordLabel>();
         IReadOnlyList<HypaLanguage> _langs = new HypaLanguage[0];
@@ -112,7 +112,7 @@ namespace HypaLens
 
             BuildHud();
             _ = Loading(LoadLanguages, _targetBtn);
-            if (AppRouter.Consume(AppRouter.LensSavedWords)) TogglePractice();
+            if (AppRouter.Consume(AppRouter.LensSavedWords)) ShowSaved();
             else if (!LensPrefs.Onboarded) ShowOnboarding(true);
             SetStatus(DefaultHint);
         }
@@ -265,12 +265,12 @@ namespace HypaLens
         {
             ClearAll();
             _picker?.Close(); ShowOnboarding(false); ClosePopup();
-            if (_practice != null) { Destroy(_practice); _practice = null; }
+
             if (HypaShell.Instance != null) HypaShell.Instance.ExitToHome(); // leaves Lens for the entry screen
             else SetStatus("Home needs the Hypa shell. Play from the HypaShell scene.");
         }
 
-        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null || _popup != null
+        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _popup != null
                               || (HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen);
 
         /// <summary>Onboarding, practice, the picker, the caption and the consent card share the spot above the bar: one at a time.</summary>
@@ -279,7 +279,6 @@ namespace HypaLens
             _picker?.Close();
             ShowOnboarding(false);
             ClosePopup();
-            if (_practice != null) { Destroy(_practice); _practice = null; }
         }
 
         /// <summary>A card above the controls with a title and an X, sized to hold <paramref name="size"/>.</summary>
@@ -769,7 +768,7 @@ namespace HypaLens
         bool _modal;
 
         /// <summary>Any card in the middle (the results popup, the language list, onboarding, saved words) is modal.</summary>
-        bool CardOpen => _popup != null || (_picker != null && _picker.IsOpen) || _onboarding != null || _practice != null;
+        bool CardOpen => _popup != null || (_picker != null && _picker.IsOpen) || _onboarding != null;
 
         /// <summary>The bottom row and the hint step aside while a card is up, so nothing draws over it.</summary>
         void SetPopupMode(bool open)
@@ -971,39 +970,106 @@ namespace HypaLens
             }
         }
 
-        // ---------- Practice: saved list as flip cards with audio ----------
+        // ---------- Saved words: in the results popup, with Original / Translation tabs ----------
 
+        static readonly Color InsetBg = new Color(0.035f, 0.035f, 0.035f, 1f); // the text panel, clearly darker than the card
+
+        /// <summary>The bookmark in the top bar: opens Saved words, or closes it if it is already open.</summary>
         void TogglePractice()
         {
-            if (_practice != null) { Destroy(_practice); _practice = null; return; }
-            CloseCards();
-            _deck = new PracticeDeck(_saved.Items);
-            _practice = Card("Practice", "Saved words", new Vector2(0.44f, 0.30f), () => { Destroy(_practice); _practice = null; });
-            var face = Ui.Quad("face", _practice.transform, new Vector3(0, 0.005f, -0.001f), new Vector2(0.40f, 0.15f), Ui.Muted, true);
-            face.AddComponent<PinchTarget>().OnPinch = k => { if (k == PinchKind.Short) { _deck.Flip(); RefreshDeck(); } };
-            _deckText = Ui.Text(_practice.transform, "", 0.024f, new Vector3(0f, 0.005f, 0), Color.white);
-            var t = _practice.transform;
-            Ui.Button("<", t, new Vector3(-0.15f, -0.11f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Muted, () => { _deck.Prev(); RefreshDeck(); });
-            PinchTarget hear = null;
-            hear = Ui.Button("Hear", t, new Vector3(0f, -0.11f, -0.001f), new Vector2(0.10f, 0.045f), Ui.Accent, () => _ = Loading(PlayDeckAudio, hear));
-            Ui.Button(">", t, new Vector3(0.15f, -0.11f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Muted, () => { _deck.Next(); RefreshDeck(); });
-            RefreshDeck();
+            if (_popup != null && _popupTitle != null && _popupTitle.text == "Saved words") { ClosePopup(); return; }
+            ShowSaved();
         }
 
-        void RefreshDeck()
+        void ShowSaved(int index = 0, bool translation = false)
         {
-            _deckText.text = _deck.IsEmpty
-                ? "No saved words yet.\nPinch a word, then Save."
-                : Ui.Wrap(_deck.Face, 24) + "\n" + $"({(_deck.Flipped ? "pinch to flip back" : "pinch to reveal")})  {_deck.Index + 1}/{_saved.Items.Count}";
+            CloseCards();
+            _popupOcr = null;
+            _deck = new PracticeDeck(_saved.Items, index);
+            _deck.Show(translation);
+            RenderSaved();
         }
+
+        void RenderSaved()
+        {
+            var c = PopupContent("Saved words");
+            var innerW = PopupW - PopupPad * 2f;
+            if (_deck.IsEmpty)
+            {
+                var y0 = PopupTop - 0.07f;
+                Block(c, "Nothing saved yet.", 0.022f, Color.white, ref y0, 1);
+                Block(c, "Capture some text, then pinch Save in the popup. Everything you save shows up here to practise.", 0.015f, PopupMuted, ref y0, 3);
+                return;
+            }
+            var item = _deck.Current;
+            Ui.Text(c, $"{_deck.Index + 1} of {_deck.Count}", 0.014f, new Vector3(PopupW / 2f - PopupPad - 0.06f, PopupTop, 0), PopupMuted, TextAnchor.MiddleRight);
+
+            // Tabs: Original | Translation. The chosen one is filled.
+            const float tabW = 0.17f, tabH = 0.044f;
+            var tabY = PopupTop - 0.058f;
+            Ui.Button("Original", c, new Vector3(-tabW / 2f - 0.005f, tabY, -0.001f), new Vector2(tabW, tabH), _deck.Flipped ? ChipBg : Ui.Accent,
+                () => { _deck.Show(false); RenderSaved(); });
+            Ui.Button("Translation", c, new Vector3(tabW / 2f + 0.005f, tabY, -0.001f), new Vector2(tabW, tabH), _deck.Flipped ? Ui.Accent : ChipBg,
+                () => { _deck.Show(true); RenderSaved(); });
+
+            // The text on a darker inset panel, sized to fit it.
+            var top = tabY - tabH / 2f - 0.016f;
+            var bottom = -PopupH / 2f + PopupPad + 0.062f;
+            Ui.Quad("inset", c, new Vector3(0f, (top + bottom) / 2f, 0.001f), new Vector2(innerW, top - bottom), InsetBg, false);
+            const float pad = 0.018f;
+            var y = top - pad;
+            var lang = _deck.Flipped ? item.TargetLanguage : (string.IsNullOrEmpty(item.SourceLanguage) ? "Auto-detected" : item.SourceLanguage);
+            Ui.Text(c, lang ?? "", 0.0125f, new Vector3(PopupLeft + pad, y - 0.007f, -0.002f), PopupMuted, TextAnchor.MiddleLeft);
+            y -= 0.03f;
+            FitText(c, _deck.Face, PopupLeft + pad, y, innerW - pad * 2f, y - (bottom + pad), Color.white);
+
+            // Previous | Hear | Remove | Next
+            var row = new List<(string, Color, Action<PinchTarget>)>();
+            if (_deck.Count > 1) row.Add(("‹  Prev", Ui.Muted, _ => { _deck.Prev(); RenderSaved(); }));
+            if (!string.IsNullOrEmpty(_deck.FaceLanguage)) row.Add(("Hear", Ui.Muted, b => _ = Loading(PlayDeckAudio, b))); // only when its language is known
+            row.Add(("Remove", Ui.Muted, _ =>
+            {
+                var at = _deck.Index; var side = _deck.Flipped;
+                _saved.Remove(item.Id);
+                ShowSaved(Mathf.Min(at, _saved.Items.Count - 1), side);
+            }));
+            if (_deck.Count > 1) row.Add(("Next  ›", Ui.Muted, _ => { _deck.Next(); RenderSaved(); }));
+            ButtonRow(c, row);
+        }
+
+        /// <summary>
+        /// Wrapped text at the largest size that fits <paramref name="width"/> x <paramref name="height"/> (a single word is
+        /// big; a passage gets smaller), trimmed with an ellipsis only if it doesn't fit even at the smallest size.
+        /// </summary>
+        static void FitText(Transform c, string text, float left, float top, float width, float height, Color color)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            foreach (var h in new[] { 0.03f, 0.025f, 0.021f, 0.018f, 0.0155f, 0.0135f })
+            {
+                var lines = WrapToWidth(text, h, width);
+                var maxLines = Mathf.Max(1, Mathf.FloorToInt(height / (h * 1.28f)));
+                if (lines.Length <= maxLines || h <= 0.0135f)
+                {
+                    if (lines.Length > maxLines)
+                    {
+                        Array.Resize(ref lines, maxLines);
+                        lines[maxLines - 1] = lines[maxLines - 1].TrimEnd() + "…";
+                    }
+                    Ui.Text(c, string.Join("\n", lines), h, new Vector3(left, top, -0.002f), color, TextAnchor.UpperLeft);
+                    return;
+                }
+            }
+        }
+
+        static string[] WrapToWidth(string text, float lineH, float width)
+            => Ui.Wrap(text, Mathf.Max(6, Mathf.FloorToInt(width / (lineH * Ui.CharWidth)) - 2)).Split('\n'); // keeps the sign's own lines
 
         async Task PlayDeckAudio()
         {
-            if (_deck == null || _deck.IsEmpty) return;
-            var lang = _deck.FaceLanguage ?? _lens.TargetLanguage;
-            try { await PlayAsync(await _api.SpeakAsync(_deck.Face, lang, _cts.Token)); } // audio links expire, so fetch fresh
+            if (_deck == null || _deck.IsEmpty || string.IsNullOrEmpty(_deck.FaceLanguage)) return;
+            try { await PlayAsync(await _api.SpeakAsync(_deck.Face, _deck.FaceLanguage, _cts.Token)); } // audio links expire, so fetch fresh
             catch (OperationCanceledException) { }
-            catch (Exception e) { _deckText.text = LensException.From(e).UserMessage(); }
+            catch (Exception e) { ShowError("Couldn't play audio: " + LensException.From(e).UserMessage()); }
         }
 
         // ---------- Per frame ----------
@@ -1029,7 +1095,7 @@ namespace HypaLens
             if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
             if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) SetStatus(DefaultHint);
             if (CardOpen != _modal) SetPopupMode(CardOpen);
-            if (!home && AppRouter.Consume(AppRouter.LensSavedWords)) { if (_practice == null) TogglePractice(); } // Home > Saved words
+            if (!home && AppRouter.Consume(AppRouter.LensSavedWords)) ShowSaved(); // Home > Saved words
             if (_live && !home) LiveTick();
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();

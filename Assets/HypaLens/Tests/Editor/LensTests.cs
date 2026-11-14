@@ -507,9 +507,12 @@ namespace HypaLens.Tests
             });
             Assert.AreEqual("a", d.Face); Assert.AreEqual("English", d.FaceLanguage);
             d.Flip(); Assert.AreEqual("A", d.Face); Assert.AreEqual("Yoruba", d.FaceLanguage);
-            d.Next(); Assert.AreEqual("b", d.Face);
+            d.Next(); Assert.AreEqual("B", d.Face, "the Translation tab stays chosen while paging");
+            d.Show(false); Assert.AreEqual("b", d.Face, "Original tab");
             d.Next(); Assert.AreEqual("a", d.Face);
             d.Prev(); Assert.AreEqual("b", d.Face);
+            Assert.AreEqual(2, d.Count);
+            Assert.AreEqual(1, new PracticeDeck(new[] { new SavedItem(), new SavedItem() }, 5).Index, "start index clamps (after a removal)");
             Assert.IsTrue(new PracticeDeck(new SavedItem[0]).IsEmpty);
         }
 

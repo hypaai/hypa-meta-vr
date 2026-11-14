@@ -86,13 +86,21 @@ namespace HypaLens
         readonly IReadOnlyList<SavedItem> _items;
         public int Index { get; private set; }
         public bool Flipped { get; private set; }
-        public PracticeDeck(IReadOnlyList<SavedItem> items) { _items = items; }
+        public PracticeDeck(IReadOnlyList<SavedItem> items, int startIndex = 0)
+        {
+            _items = items;
+            Index = items.Count == 0 ? 0 : Mathf.Clamp(startIndex, 0, items.Count - 1);
+        }
+        /// <summary>Which side is showing: false = the original text, true = the translation.</summary>
+        public void Show(bool translation) { Flipped = translation; }
         public bool IsEmpty => _items.Count == 0;
         public SavedItem Current => IsEmpty ? null : _items[Index % _items.Count];
         public string Face => IsEmpty ? "" : (Flipped ? Current.Translation : Current.Source);
         public string FaceLanguage => IsEmpty ? null : (Flipped ? Current.TargetLanguage : Current.SourceLanguage);
         public void Flip() { Flipped = !Flipped; }
-        public void Next() { if (IsEmpty) return; Index = (Index + 1) % _items.Count; Flipped = false; }
-        public void Prev() { if (IsEmpty) return; Index = (Index - 1 + _items.Count) % _items.Count; Flipped = false; }
+        public int Count => _items.Count;
+        // Moving keeps the side the user chose (the tab), so they can read through all the translations.
+        public void Next() { if (IsEmpty) return; Index = (Index + 1) % _items.Count; }
+        public void Prev() { if (IsEmpty) return; Index = (Index - 1 + _items.Count) % _items.Count; }
     }
 }
