@@ -38,10 +38,18 @@ namespace HypaStories
         public Vector2[] Wind = { Vector2.zero };
     }
 
-    /// <summary>A text-to-speech voice: the model ("provider/model") and one of its voices, as list_voices names them.</summary>
+    /// <summary>
+    /// A text-to-speech model ("provider/model") and its voice, as list_voices names them: one <see cref="Voice"/> for every language,
+    /// and/or one per language code in <see cref="ByLanguage"/> (Hypa's voices are per language).
+    /// </summary>
     public sealed class VoiceOption
     {
         public string Model, Voice;
+        public Dictionary<string, string> ByLanguage = new Dictionary<string, string>();
+
+        /// <summary>The voice for a language, or null when this model has none for it.</summary>
+        public string For(string lang) => lang != null && ByLanguage.TryGetValue(lang, out var v) ? v : Voice;
+
         public override string ToString() => $"{Model} {Voice}";
     }
 
@@ -57,10 +65,15 @@ namespace HypaStories
         public string Eyebrow, Title, Desc;
         /// <summary>The chat model that answers questions, "provider/model" (e.g. "meta/muse-wonder-1.0").</summary>
         public string Model;
-        /// <summary>The storyteller's voices for this story. The first is used (the rest are for a voice picker later).</summary>
+        /// <summary>The storyteller's voices for this story, in order of preference.</summary>
         public VoiceOption[] Voices = new VoiceOption[0];
-        /// <summary>The voice the story is told in. Null = Hypa's Auto voice for the language.</summary>
-        public VoiceOption Voice => Voices.FirstOrDefault();
+
+        /// <summary>
+        /// The voices that can tell the story in a language, best first: each entry with a voice for it, as (model, voice).
+        /// The first is used; the next ones are the fallbacks. Empty = Hypa's Auto voice for the language. Pure.
+        /// </summary>
+        public VoiceOption[] VoicesFor(string lang)
+            => Voices.Where(v => !string.IsNullOrEmpty(v.For(lang))).Select(v => new VoiceOption { Model = v.Model, Voice = v.For(lang) }).ToArray();
         public StoryTimeline Timeline;
 
         /// <summary>

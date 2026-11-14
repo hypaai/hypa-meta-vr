@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HypaCore;
@@ -9,9 +10,9 @@ namespace HypaStories
 {
     /// <summary>
     /// The storyteller's voice, from his mouth: every line (narration, fillers, answers) through Hypa text_to_speech, in the story's
-    /// <see cref="Voice"/> (the same voice in every language). Clips are cached for the session and can be prefetched, so the next
-    /// line is usually ready before it is needed. If that voice fails, the line falls back to Hypa's Auto voice for the language. Without a key (or offline) a line
-    /// is "spoken" silently for about as long as it would take, so the flow and subtitles still run. <see cref="Level"/> drives the
+    /// voice for the language (<see cref="Voices"/>). Clips are cached for the session and can be prefetched, so the next line is usually
+    /// ready before it is needed. If that voice fails, the line tries the story's next voice for the language, then Hypa's Auto voice.
+    /// Without a key (or offline) a line is "spoken" silently for about as long as it would take, so the flow and subtitles still run. <see cref="Level"/> drives the
     /// lip sync.
     /// </summary>
     public sealed class StoryVoice : MonoBehaviour, IStorySpeech
@@ -28,8 +29,8 @@ namespace HypaStories
         public float Level { get; private set; }
         public bool IsSpeaking => _fake || (_speech != null && _speech.isPlaying);
         public bool TtsAvailable => HypaConfig.Current.HasKey;
-        /// <summary>The voice lines are spoken in (set per story). Null = Auto.</summary>
-        public VoiceOption Voice { get; set; }
+        /// <summary>The story's voices for a language code, best first (see <see cref="StoryInfo.VoicesFor"/>). Null or empty = Auto.</summary>
+        public Func<string, VoiceOption[]> Voices { get; set; }
 
         public void Init(Transform mouth)
         {
@@ -70,22 +71,25 @@ namespace HypaStories
 
         Task<AudioClip> Fetch(string text, StoryLanguage language)
         {
-            var voice = Voice;
-            var key = voice + "|" + language.HypaLabel + "|" + text;
+            var voices = Voices?.Invoke(language.Code) ?? new VoiceOption[0];
+            var key = voices.FirstOrDefault() + "|" + language.HypaLabel + "|" + text;
             if (_cache.TryGetValue(key, out var t) && !t.IsFaulted && !t.IsCanceled) return t;
-            return _cache[key] = FetchAsync(text, language.HypaLabel, voice);
+            return _cache[key] = FetchAsync(text, language.HypaLabel, voices);
         }
 
-        async Task<AudioClip> FetchAsync(string text, string label, VoiceOption voice)
+        async Task<AudioClip> FetchAsync(string text, string label, VoiceOption[] voices)
         {
-            HypaSpeech speech;
-            try { speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, voice?.Voice, voice?.Model); }
-            catch (HypaException e) when (voice != null && e.Kind != HypaErrorKind.MissingKey && e.Kind != HypaErrorKind.Unauthorized)
+            HypaSpeech speech = null;
+            foreach (var voice in voices)
             {
-                if (!_voiceWarned) Debug.LogWarning($"Hypa Stories: voice {voice} failed for {label} ({e.Message}); using Auto.");
-                _voiceWarned = true;
-                speech = await _mcp.TextToSpeechAsync(text, label, _life.Token);
+                try { speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, voice.Voice, voice.Model); break; }
+                catch (HypaException e) when (e.Kind != HypaErrorKind.MissingKey && e.Kind != HypaErrorKind.Unauthorized)
+                {
+                    if (!_voiceWarned) Debug.LogWarning($"Hypa Stories: voice {voice} failed for {label} ({e.Message}); trying the next voice.");
+                    _voiceWarned = true;
+                }
             }
+            if (speech == null) speech = await _mcp.TextToSpeechAsync(text, label, _life.Token); // Auto
             return await HypaAudioPlayer.LoadClipAsync(speech, _life.Token); // main thread: we were called from it
         }
 

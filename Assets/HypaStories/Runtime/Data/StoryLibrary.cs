@@ -80,9 +80,8 @@ namespace HypaStories
                 Id = id, Theme = (int?)o["theme"] ?? 0, Accent = accent,
                 Eyebrow = (string)o["eyebrow"] ?? "", Title = (string)o["title"] ?? id, Desc = (string)o["description"] ?? "",
                 Model = (string)o["model"] ?? DefaultModel,
-                Voices = ((o["voices"] as JArray) ?? new JArray()).OfType<JObject>()
-                    .Select(v => new VoiceOption { Model = (string)v["model"], Voice = (string)v["voice"] })
-                    .Where(v => !string.IsNullOrEmpty(v.Model) && !string.IsNullOrEmpty(v.Voice)).ToArray(),
+                Voices = ((o["voices"] as JArray) ?? new JArray()).OfType<JObject>().Select(Voice)
+                    .Where(v => !string.IsNullOrEmpty(v.Model) && (!string.IsNullOrEmpty(v.Voice) || v.ByLanguage.Count > 0)).ToArray(),
                 Timeline = new StoryTimeline
                 {
                     Duration = Mathf.Ceil(t - Gap + Tail),
@@ -111,6 +110,19 @@ namespace HypaStories
                 Keys.Add(new Vector2(c.Until, v.Value));
                 _value = v.Value;
             }
+        }
+
+        /// <summary>{ "model", "voice" }: voice is one name for every language, or { language code: name }.</summary>
+        static VoiceOption Voice(JObject v)
+        {
+            var o = new VoiceOption { Model = (string)v["model"] };
+            if (v["voice"] is JObject byLang)
+            {
+                foreach (var p in byLang.Properties())
+                    if (!string.IsNullOrEmpty((string)p.Value)) o.ByLanguage[p.Name] = (string)p.Value;
+            }
+            else o.Voice = (string)v["voice"];
+            return o;
         }
 
         static string[] Strings(JToken t)

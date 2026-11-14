@@ -16,8 +16,11 @@ namespace HypaStories
     {
         readonly StoryVoice _voice;
         readonly Func<StoryLanguage> _lang;
-        /// <summary>A line whose speech takes longer than this is read silently, so a slow TTS call never holds the story.</summary>
-        const int LineTimeoutMs = 5000;
+        /// <summary>
+        /// A line whose speech takes longer than this is read silently, so a slow TTS call never holds the story. Hypa's own voices
+        /// take 5-10 s a line (the next line is fetched while this one plays, so that is mostly hidden).
+        /// </summary>
+        const int LineTimeoutMs = 12000;
         CancellationTokenSource _tts = new CancellationTokenSource();
         int _ttsToken;
 
@@ -42,7 +45,7 @@ namespace HypaStories
         {
             StopTts();
             Story = story;
-            _voice.Voice = story.Voice;
+            _voice.Voices = story.VoicesFor;
             Director = new StoryDirector(story.Timeline);
             Live = Running = Paused = Asking = Ended = false;
             T = _lastT = 0f;

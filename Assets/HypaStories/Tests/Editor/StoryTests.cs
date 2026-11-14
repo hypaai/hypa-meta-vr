@@ -80,17 +80,21 @@ namespace HypaStories.Tests
             Assert.AreEqual(1f, d.Sample(caps[1].Until).Rain, 1e-4);
             Assert.AreEqual(caps[1].At + 0.5f, st.Timeline.Flashes[0], 1e-4);
             Assert.AreEqual(StoryLibrary.DefaultModel, st.Model);
-            Assert.IsNull(st.Voice); // no voices: Auto
+            Assert.IsEmpty(st.VoicesFor("en")); // no voices: Auto
         }
 
-        [Test] public void Parse_Voices_FirstIsTheStorysVoice()
+        [Test] public void Parse_Voices_PerLanguage_FirstThatHasOneWins()
         {
-            const string story = @"{ ""voices"": [ { ""model"": ""openai/gpt-4o-mini-tts"", ""voice"": ""fable"" }, { ""model"": ""x/y"" },
-                { ""model"": ""openai/tts-1"", ""voice"": ""onyx"" } ], ""lines"": [ { ""id"": ""a"", ""text"": ""one"" } ] }";
+            const string story = @"{ ""voices"": [
+                { ""model"": ""hypaai/orpheus"", ""voice"": { ""fr"": ""Alloy"", ""yo"": ""Toyin"" } },
+                { ""model"": ""x/y"" },
+                { ""model"": ""openai/gpt-4o-mini-tts"", ""voice"": ""fable"" } ], ""lines"": [ { ""id"": ""a"", ""text"": ""one"" } ] }";
             var st = StoryLibrary.Parse("t", story, new Dictionary<string, string>());
             Assert.AreEqual(2, st.Voices.Length); // the one without a voice is dropped
-            Assert.AreEqual("openai/gpt-4o-mini-tts", st.Voice.Model);
-            Assert.AreEqual("fable", st.Voice.Voice);
+            var yo = st.VoicesFor("yo");
+            Assert.AreEqual("hypaai/orpheus Toyin", yo[0].ToString());
+            Assert.AreEqual("openai/gpt-4o-mini-tts fable", yo[1].ToString()); // the fallback
+            Assert.AreEqual("openai/gpt-4o-mini-tts fable", st.VoicesFor("en").Single().ToString());
         }
 
         [Test] public void Suggestions_AreFromLinesToldSoFar_NewestFirst_InTheLanguage()
@@ -113,32 +117,39 @@ namespace HypaStories.Tests
             foreach (var st in StoryLibrary.All)
             {
                 StringAssert.Contains("/", st.Model, st.Id);
-                Assert.IsNotNull(st.Voice, $"{st.Id}: no voice");
+                foreach (var lang in StoryLanguages.All)
+                    Assert.IsNotEmpty(st.VoicesFor(lang.Code), $"{st.Id} {lang.Code}: no voice");
                 foreach (var lang in StoryLanguages.All)
                     Assert.IsNotEmpty(st.Suggestions(0, lang.Code), $"{st.Id} {lang.Code}");
                 foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))
-                    foreach (var lang in new[] { "fr", "es" })
+                    foreach (var lang in Translated)
                         Assert.AreEqual(c.Ask.Length, c.AskFor(lang).Length, $"{st.Id} {c.Id} {lang}");
                 foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))
-                    foreach (var lang in new[] { "fr", "es" })
+                    foreach (var lang in Translated)
                         CollectionAssert.AreNotEqual(c.Ask, c.AskFor(lang), $"{st.Id} {c.Id} {lang}: untranslated question");
             }
         }
+
+        static readonly string[] Translated = StoryLanguages.All.Where(l => l.Code != "en").Select(l => l.Code).ToArray();
 
         [Test] public void EveryLine_IsTranslated_AndFallsBackToEnglish()
         {
             foreach (var st in StoryLibrary.All)
                 foreach (var c in st.Timeline.Captions)
-                    foreach (var lang in new[] { "fr", "es" })
+                    foreach (var lang in Translated)
                         Assert.IsFalse(string.IsNullOrEmpty(c.TextFor(lang)) || c.TextFor(lang) == c.Text, $"{st.Id} {lang}: {c.Text}");
-            Assert.AreEqual("It never went out.", Line(Kiko, "never-out").TextFor("yo"));
+            Assert.AreEqual("It never went out.", Line(Kiko, "never-out").TextFor("sw")); // not offered: English
         }
 
         [Test] public void Languages_FindByCodeOrHypaLabel()
         {
             Assert.AreEqual("fr", StoryLanguages.Find("French").Code);
             Assert.AreEqual("Español", StoryLanguages.Find("ES").Name);
-            Assert.IsNull(StoryLanguages.Find("Yoruba"));
+            Assert.AreEqual("yo", StoryLanguages.Find("Yoruba").Code);
+            Assert.AreEqual("pcm", StoryLanguages.Find("Pidgin").Code);
+            Assert.IsNull(StoryLanguages.Find("Swahili"));
+            foreach (var l in StoryLanguages.All.Where(l => l.Code != "en"))
+                Assert.AreNotEqual(StoryLanguages.Lines("en").Again, StoryLanguages.Lines(l.Code).Again, l.Code);
         }
 
         // ---------- Q&A stand-in ----------

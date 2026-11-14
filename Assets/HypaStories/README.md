@@ -57,23 +57,31 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
 
 - `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `model` that answers questions
   (`"provider/model"`, default `meta/muse-wonder-1.0`), the storyteller's `voices` (`[{ "model", "voice" }]`, as Hypa
-  `list_voices` names them; the first is used in every language, the rest are for a voice picker later), the starting `rain` / `wind` (0..1), and the English `lines`, each
+  `list_voices` names them; `voice` is one name for every language or `{ "language code": name }`, since Hypa's voices are per
+  language; each language uses the first entry with a voice for it, and the next ones are its fallbacks), the starting `rain` /
+  `wind` (0..1), and the English `lines`, each
   `{ "id", "text" }` with optional `ask` (questions to suggest once the line is told) and cues: `rain` / `wind` (reached by the end
   of that line) and `flashes` (lightning, seconds after the line starts).
-- `{code}.json` per translation (`fr.json`, `es.json`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing file or line
-  is told in English, and a test lists every untranslated line of the offered languages.
+- `{code}.json` per translation (`fr`, `es`, `ha`, `ig`, `pcm`, `yo`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing
+  file or line is told in English, and a test lists every untranslated line of the offered languages. **The Hausa, Igbo, Pidgin and
+  Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
+  story): have a native speaker check them before release.**
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
 Lines have no times: the storyteller's TTS paces the story, so each line's slot is estimated from its English word count. To add a
-language, add it to `StoryLanguages.All` and a `{code}.json` to each story. Keep line ids stable when editing a script: they are what
+language, add it to `StoryLanguages.All` (with its storyteller lines) and a `{code}.json` to each story; if it has letters the fonts
+lack, add them to the builder's `Charset` and run **Hypa > Stories > Update Fonts** (Noto Sans fills in what Outfit and Cormorant don't have). Keep line ids stable when editing a script: they are what
 the translations are matched on.
 
 ## Hypa API use
 
 - **TTS** (`text_to_speech`, verified schema): every line the storyteller says: the narration of both stories in every language,
-  fillers, answers, in the story's voice (Kiko: `openai/gpt-4o-mini-tts` `fable`; Marlow Street: `onyx`; 1.7-2.5 s a line; Meta has
-  no TTS). If the voice fails, Auto picks one. Lines are cached for the session and the next line is fetched while the current one plays.
+  fillers, answers, in the story's voice for the language: Hypa's `hypa-orpheus-3b-tts-vc-flt` for French (`Alloy`), Hausa (`Asha`),
+  Igbo (`Prince`), Pidgin (`Asha`) and Yoruba (`Toyin`), 5-10 s a line; OpenAI `gpt-4o-mini-tts` for English and Spanish (Kiko
+  `fable`, Marlow Street `onyx`; 1.7-2.5 s a line) and as the fallback; Meta has no TTS. If a voice fails, the next one is tried,
+  then Auto. Lines are cached for the session and the next line is fetched while the current one plays; a line not ready after 12 s
+  is read silently. Hypa's speech endpoints scale down when idle: the first call can fail ("high traffic") for a couple of minutes.
 - **ASR** (`speech_to_text`, schema read from `tools/list` on 2026-11-13, not yet called with a key): 16 kHz mono WAV, the story
   language as `sourceLang`, model picked by Hypa's auto-router. Nothing is sent if nothing louder than the noise floor was heard.
 - **Chat** (REST `/v2/developer/chat`, `HypaRestClient.ChatAsync`, not streamed): `ChatStoryQa` sends the storyteller persona, the

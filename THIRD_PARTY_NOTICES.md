@@ -10,7 +10,7 @@ This project is licensed under Apache 2.0 (see `LICENSE`). Dependencies and thei
 | glTFast (`com.unity.cloud.gltfast`) | Importing the Stories glTF models | Apache 2.0 | No, Unity package |
 | Poly Haven models and textures (`Assets/HypaStories/Art/PolyHaven`) | Stories campfire props and forest floor | CC0 1.0 | Yes |
 | "Camp Fire" by JalenJacobson (`Assets/HypaStories/Art/Models/camp_fire.glb`) | Stories fire pit | CC BY 4.0, **credit required** (below) | Yes |
-| Outfit and Cormorant Garamond fonts (`Assets/HypaStories/Art/Fonts`) | Stories UI and story text | SIL OFL 1.1 (licence files next to the fonts) | Yes |
+| Outfit, Cormorant Garamond and Noto Sans fonts (`Assets/HypaStories/Art/Fonts`) | Stories UI and story text | SIL OFL 1.1 (licence files next to the fonts) | Yes |
 | Lucide icons (`Assets/HypaStories/Art/Icons`, rendered to PNG) | Stories UI icons | ISC (`LUCIDE-LICENSE.txt`) | Yes |
 | TextMeshPro Essential Resources (`Assets/TextMesh Pro`) | SDF text shaders and settings | Unity Companion License | Yes, Unity's standard import |
 | Epidemic Sound beds, Ready Player Me placeholder avatar | Stories audio and storyteller | Subscription / RPM terms | **No**: git-ignored `Assets/HypaStories/Local/`, never commit |
