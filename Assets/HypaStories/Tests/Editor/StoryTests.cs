@@ -180,6 +180,26 @@ namespace HypaStories.Tests
             Assert.IsEmpty(ChatStoryQa.Sentences("  "));
         }
 
+        // ---------- UI ----------
+
+        [Test] public void Fade_RefreshWhileFadedOut_KeepsTheTextsOwnAlpha()
+        {
+            var root = new GameObject("group");
+            try
+            {
+                var text = new GameObject("text").AddComponent<TMPro.TextMeshPro>();
+                text.transform.SetParent(root.transform, false);
+                text.alpha = 0.5f;
+                var g = root.AddComponent<KitGroup>();
+                g.Refresh();
+                g.Set(0f);                 // leave a story
+                g.Refresh();               // load the next one while hidden
+                g.Set(1f);                 // fade back in
+                Assert.AreEqual(0.5f, text.alpha, 1e-4);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
         // ---------- Listening / gestures ----------
 
         [Test] public void Mic_SkipsVirtualInputs()
