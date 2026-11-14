@@ -58,7 +58,8 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
 - `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `model` that answers questions
   (`"provider/model"`, default `meta/muse-wonder-1.0`), the storyteller's `voices` (`[{ "model", "voice" }]`, as Hypa
   `list_voices` names them; `voice` is one name for every language or `{ "language code": name }`, since Hypa's voices are per
-  language; each language uses the first entry with a voice for it, and the next ones are its fallbacks), the starting `rain` /
+  language; each language uses the first entry with a voice for it, and the next ones are its fallbacks; empty = Hypa's Auto
+  routing, which both stories use for now), the starting `rain` /
   `wind` (0..1), and the English `lines`, each
   `{ "id", "text" }` with optional `ask` (questions to suggest once the line is told) and cues: `rain` / `wind` (reached by the end
   of that line) and `flashes` (lightning, seconds after the line starts).
@@ -77,11 +78,12 @@ the translations are matched on.
 ## Hypa API use
 
 - **TTS** (`text_to_speech`, verified schema): every line the storyteller says: the narration of both stories in every language,
-  fillers, answers, in the story's voice for the language: Hypa's `hypa-orpheus-3b-tts-vc-flt` for French (`Alloy`), Hausa (`Asha`),
-  Igbo (`Prince`), Pidgin (`Asha`) and Yoruba (`Toyin`), 5-10 s a line; OpenAI `gpt-4o-mini-tts` for English and Spanish (Kiko
-  `fable`, Marlow Street `onyx`; 1.7-2.5 s a line) and as the fallback; Meta has no TTS. If a voice fails, the next one is tried,
-  then Auto. Lines are cached for the session and the next line is fetched while the current one plays; a line not ready after 12 s
-  is read silently. Hypa's speech endpoints scale down when idle: the first call can fail ("high traffic") for a couple of minutes.
+  fillers, answers. Both stories use Hypa's Auto routing (no `voices`): hypa-v2 ranks the speech models for the language by its
+  benchmarks, uses the top model's first voice and fails over to the next model on the server (on 2026-11-14: English OpenAI `alloy`,
+  Spanish Google `Achernar`, French / Hausa / Igbo / Pidgin / Yoruba Hypa Orpheus `Adaugo` / `Juliet` / `Amarachi` / `Prince` /
+  `Eniola`; 2.7-8 s a line). A story's `voices` pins voices instead (tried in order, then Auto). Meta has no TTS. Lines are cached for
+  the session and the next line is fetched while the current one plays; a line not ready after 12 s is read silently. Auto can't
+  take a chosen voice over MCP (hypa-v2 needs the voice's model with it; REST `/v2/developer/tts` can).
 - **ASR** (`speech_to_text`, schema read from `tools/list` on 2026-11-13, not yet called with a key): 16 kHz mono WAV, the story
   language as `sourceLang`, model picked by Hypa's auto-router. Nothing is sent if nothing louder than the noise floor was heard.
 - **Chat** (REST `/v2/developer/chat`, `HypaRestClient.ChatAsync`, not streamed): `ChatStoryQa` sends the storyteller persona, the

@@ -118,8 +118,6 @@ namespace HypaStories.Tests
             {
                 StringAssert.Contains("/", st.Model, st.Id);
                 foreach (var lang in StoryLanguages.All)
-                    Assert.IsNotEmpty(st.VoicesFor(lang.Code), $"{st.Id} {lang.Code}: no voice");
-                foreach (var lang in StoryLanguages.All)
                     Assert.IsNotEmpty(st.Suggestions(0, lang.Code), $"{st.Id} {lang.Code}");
                 foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))
                     foreach (var lang in Translated)

@@ -22,7 +22,9 @@ namespace HypaStories
         readonly CancellationTokenSource _life = new CancellationTokenSource();
         readonly float[] _buf = new float[256];
         HypaMcpClient _mcp;
-        bool _warned, _voiceWarned, _fake, _skip;
+        /// <summary>Failures already logged (voice / language / error), so each shows once instead of once per line.</summary>
+        readonly HashSet<string> _logged = new HashSet<string>();
+        bool _fake, _skip;
         int _playToken;
 
         /// <summary>Loudness of whatever the storyteller is saying, 0..1.</summary>
@@ -85,8 +87,7 @@ namespace HypaStories
                 try { speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, voice.Voice, voice.Model); break; }
                 catch (HypaException e) when (e.Kind != HypaErrorKind.MissingKey && e.Kind != HypaErrorKind.Unauthorized)
                 {
-                    if (!_voiceWarned) Debug.LogWarning($"Hypa Stories: voice {voice} failed for {label} ({e.Message}); trying the next voice.");
-                    _voiceWarned = true;
+                    Warn($"voice {voice} failed for {label} ({e.Message}); trying the next voice.");
                 }
             }
             if (speech == null) speech = await _mcp.TextToSpeechAsync(text, label, _life.Token); // Auto
@@ -107,10 +108,14 @@ namespace HypaStories
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception e)
             {
-                if (!_warned) Debug.LogWarning("Hypa Stories: text to speech unavailable, lines play silently: " + e.Message);
-                _warned = true;
+                Warn($"no voice could speak {language.HypaLabel}, lines play silently: {e.Message}");
                 return Silent(text);
             }
+        }
+
+        void Warn(string message)
+        {
+            if (_logged.Add(message)) Debug.LogWarning("Hypa Stories: " + message);
         }
 
         static async Task<T> WithCancellation<T>(Task<T> task, CancellationToken ct)
