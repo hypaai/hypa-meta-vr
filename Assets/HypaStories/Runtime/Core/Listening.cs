@@ -21,10 +21,11 @@ namespace HypaStories
         void Cancel();
     }
 
-    /// <summary>Microphone + speech-to-text. Start throws when there is no microphone (or no permission).</summary>
+    /// <summary>Microphone + speech-to-text. Listen throws when there is no microphone (or no permission).</summary>
     public interface IListener
     {
-        IListenSession Start(StoryLanguage language, Action<float> onLevel);
+        // Not named Start: MicListener is a MonoBehaviour, and Unity rejects Start methods that take arguments.
+        IListenSession Listen(StoryLanguage language, Action<float> onLevel);
     }
 
     /// <summary>
