@@ -327,6 +327,15 @@ namespace HypaLens.Tests
             Assert.IsNull(FrameEncoder.ToJpeg(new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0] }), "the simulator's frame has no pixels");
         }
 
+        // ---------- Headset: never the example words ----------
+
+        [Test] public void ExampleCameraWordsAndTranslations_AreEditorOnly()
+        {
+            Assert.IsFalse(LensApp.UseSimulated(true, isEditor: false), "a headset build always reads the real view and calls Hypa");
+            Assert.IsFalse(LensApp.UseSimulated(false, isEditor: true));
+            Assert.IsTrue(LensApp.UseSimulated(true, isEditor: true), "the editor can still use them for testing");
+        }
+
         // ---------- Results popup: chip layout ----------
 
         [Test] public void LayoutChips_NewRowPerLine_WrapsLongLines_AndFits()
@@ -384,14 +393,14 @@ namespace HypaLens.Tests
             Assert.IsNotNull(r.Meaning);
         }
 
-        [Test] public void Resolve_AutoDetectReturnsNull_StillShowsTranslation_AndAsksForSource()
+        [Test] public void Resolve_AutoDetectReturnsNull_StillShowsTranslation_WithNoSourceHint()
         {
             var api = new FakeApi { Detected = null };
             var c = Make(api); c.SourceLanguage = null;
             var r = Run(c.ResolveAsync(LensController.SelectWord(Capture(c).Lines[0].Words[0]), CancellationToken.None));
             Assert.AreEqual("T", r.Translation);
             Assert.IsNull(r.Meaning);
-            StringAssert.Contains("From", r.MeaningNote);
+            Assert.IsNull(r.MeaningNote, "the source is always auto: no 'pick it with From' hint");
         }
 
         [Test] public void Resolve_UnsupportedPair()

@@ -26,12 +26,14 @@ namespace HypaLens
         /// Editor stand-in for the passthrough camera: renders the main camera (with <paramref name="hide"/>, the HUD,
         /// switched off so the app's own UI isn't read) into a 1280x960 image and encodes it as JPEG.
         /// </summary>
-        public static byte[] ViewSnapshotJpeg(Transform hide = null)
+        public static byte[] ViewSnapshotJpeg(params Transform[] hide)
         {
             var cam = Camera.main;
             if (cam == null) return null;
-            var wasActive = hide != null && hide.gameObject.activeSelf;
-            if (wasActive) hide.gameObject.SetActive(false);
+            // Only the room goes in the picture: every piece of UI (instructions, buttons, the pointer) is hidden for it.
+            var hidden = new System.Collections.Generic.List<GameObject>();
+            foreach (var t in hide ?? new Transform[0])
+                if (t != null && t.gameObject.activeSelf) { t.gameObject.SetActive(false); hidden.Add(t.gameObject); }
             var rt = RenderTexture.GetTemporary(1280, 960, 24, RenderTextureFormat.ARGB32);
             var prevTarget = cam.targetTexture; var prevActive = RenderTexture.active;
             var tex = new Texture2D(1280, 960, TextureFormat.RGB24, false);
@@ -49,7 +51,7 @@ namespace HypaLens
                 cam.targetTexture = prevTarget; RenderTexture.active = prevActive;
                 RenderTexture.ReleaseTemporary(rt);
                 Object.Destroy(tex);
-                if (wasActive) hide.gameObject.SetActive(true);
+                foreach (var go in hidden) if (go != null) go.SetActive(true);
             }
         }
     }

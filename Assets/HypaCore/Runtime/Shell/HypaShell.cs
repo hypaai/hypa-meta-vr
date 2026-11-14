@@ -176,7 +176,7 @@ namespace HypaCore
             Ui.Quad("bg", _help, new Vector3(0, 0, 0.003f), new Vector2(w, h), Ui.Panel, true, rounded: true).AddComponent<PinchTarget>();
             var top = h / 2f - pad - 0.012f;
             Ui.Text(_help, "How it works", 0.024f, new Vector3(left, top, 0), Color.white, TextAnchor.MiddleLeft);
-            Ui.IconButton("x", _help, new Vector3(w / 2f - pad - 0.01f, top, -0.001f), 0.024f, () => ShowHelp(false));
+            Ui.IconButton("x", _help, new Vector3(w / 2f - pad - 0.02f, top, -0.001f), 0.022f, () => ShowHelp(false)); // inside the inner edge
 
             var y = top - 0.045f;
             void Section(string icon, string title, string text)
@@ -205,6 +205,9 @@ namespace HypaCore
 
         /// <summary>Opens/closes Home. Modes call this from their X.</summary>
         public void ToggleMenu() { if (_menu != null) ShowMenu(!_menu.gameObject.activeSelf); }
+
+        /// <summary>The shell's UI in the room (Home button and cards), e.g. to keep it out of a snapshot.</summary>
+        public Transform UiRoot => _anchor;
 
         public bool IsMenuOpen => _menu != null && (_menu.gameObject.activeSelf || _help.gameObject.activeSelf);
 

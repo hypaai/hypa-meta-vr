@@ -161,9 +161,11 @@ namespace HypaLens
                     if (audio != null) onTargetAudio?.Invoke(audio);
                     return audio;
                 });
+                // The source is always auto-detected: with no detected language there is simply no meaning to show.
+                var noSource = meaningTask == null && detected == null;
                 meaningTask = meaningTask ?? (detected != null
                     ? Meaning(sel, detected, ct)
-                    : Task.FromResult<(string, string)>((null, "Couldn't tell the source language. Pick it with \"From\" to see a meaning.")));
+                    : Task.FromResult<(string, string)>((null, null)));
                 sourceAudioTask = sourceAudioTask ?? (detected != null
                     ? SoftAudio(() => _api.SpeakAsync(sel.Text, detected, ct))
                     : Task.FromResult<(HypaSpeech, string)>((null, null)));
@@ -171,7 +173,7 @@ namespace HypaLens
                 await Task.WhenAll(meaningTask, sourceAudioTask, targetAudioTask);
 
                 (result.Meaning, result.MeaningNote) = meaningTask.Result;
-                if (result.Meaning == null && result.MeaningNote == null) result.MeaningNote = "No dictionary entry found.";
+                if (result.Meaning == null && result.MeaningNote == null && !noSource) result.MeaningNote = "No dictionary entry found.";
                 result.SourceAudio = sourceAudioTask.Result.Item1;
                 result.TargetAudio = targetAudioTask.Result.Item1;
                 if (result.SourceAudio == null && result.TargetAudio == null)

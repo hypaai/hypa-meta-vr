@@ -7,7 +7,9 @@ namespace HypaCore.Quest
     /// <summary>
     /// Quest pointer: hands first (index pinch, OVRHand pointer pose), controllers as the optional fallback
     /// (pointer from the controller, index trigger = pinch). A pulled trigger on any connected controller always
-    /// counts as a pinch, aimed by that controller. Otherwise the pinching hand wins, then the hand held up in front.
+    /// counts as a pinch; while a hand is tracked the hand ray still aims it (the Meta XR Simulator turns a mouse click
+    /// into a trigger, and the click must land where the drawn hand ray points, not under the mouse cursor).
+    /// Otherwise the pinching hand wins, then the hand held up in front. Hand pinches obey HypaInput.HandPinches.
     /// </summary>
     public sealed class HandPinchInput : IPinchInput
     {
@@ -26,7 +28,7 @@ namespace HypaCore.Quest
             {
                 if (h == null || !h.IsTracked) continue;
                 // A pinch always wins, so the click stays on the hand that is pinching.
-                if (h.GetFingerIsPinching(OVRHand.HandFinger.Index)) return h;
+                if (HypaInput.HandPinches && h.GetFingerIsPinching(OVRHand.HandFinger.Index)) return h;
                 // Otherwise the hand you are holding up in front of you, with a small preference for the dominant hand.
                 var score = h.IsDominantHand ? 1.5f : 0f;
                 if (h.GetHand() == OVRPlugin.Hand.HandRight) score += 0.25f;
@@ -74,6 +76,7 @@ namespace HypaCore.Quest
             get
             {
                 if (AnyControllerPress(out _)) return true;
+                if (!HypaInput.HandPinches) return false;
                 var h = ActiveHand();
                 return h != null && h.GetFingerIsPinching(OVRHand.HandFinger.Index);
             }
@@ -81,11 +84,13 @@ namespace HypaCore.Quest
 
         public bool TryGetRay(out Ray ray)
         {
-            // A controller being pressed aims with its own ray (point-and-click moves it to the mouse cursor).
-            if (AnyControllerPress(out var pressed) && OVRInput.GetControllerPositionTracked(pressed)) return ControllerRay(pressed, out ray);
-
+            // The tracked hand aims, even while a controller trigger is the pinch: what you click is what the drawn ray
+            // points at. A pressed controller aims only when no hand is tracked (real controllers in use).
             var h = ActiveHand();
-            if (h != null && h.IsTracked && h.IsPointerPoseValid && h.PointerPose != null)
+            var handAims = h != null && h.IsTracked && h.IsPointerPoseValid && h.PointerPose != null;
+            if (!handAims && AnyControllerPress(out var pressed) && OVRInput.GetControllerPositionTracked(pressed)) return ControllerRay(pressed, out ray);
+
+            if (handAims)
             {
                 // Aim with Quest's steady pointer, not the index bone. The index bone curls during a pinch and
                 // the line dives under the hand. Start the line at the fingertip so it still meets the hand you see.

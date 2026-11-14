@@ -102,25 +102,31 @@ namespace HypaLens
             _saved = new SavedListStore();
 
             _p = BuildPlatform();
-            _api = useSimulatedApi ? (_simApi = new SimHypaApi()) : (IHypaLensApi)new HypaCoreLensApi();
+            _api = UseSimulated(useSimulatedApi, Application.isEditor) ? (_simApi = new SimHypaApi()) : (IHypaLensApi)new HypaCoreLensApi();
             _lens = new LensController(_p.Frames, _p.Recognizer, _api,
-                () => useSimulatedApi || Application.internetReachability != NetworkReachability.NotReachable)
+                () => _simApi != null || Application.internetReachability != NetworkReachability.NotReachable)
             {
                 TargetLanguage = HypaSettings.TargetLanguage,
-                SourceLanguage = string.IsNullOrEmpty(LensPrefs.Source) ? null : LensPrefs.Source,
+                SourceLanguage = null, // always auto-detect (Hypa: sourceLang left out); never picked, never changed
             };
 
             BuildHud();
-            _ = Loading(LoadLanguages, _sourceBtn, _targetBtn);
+            _ = Loading(LoadLanguages, _targetBtn);
             if (AppRouter.Consume(AppRouter.LensSavedWords)) TogglePractice();
             else if (!LensPrefs.Onboarded) ShowOnboarding(true);
             SetStatus(DefaultHint);
         }
 
+        /// <summary>
+        /// The example camera, words and translations are for the editor only. On the headset Lens always reads the real
+        /// view and calls the real Hypa API, whatever the scene's checkboxes say. Pure, unit tested.
+        /// </summary>
+        public static bool UseSimulated(bool setting, bool isEditor) => setting && isEditor;
+
         LensPlatform BuildPlatform()
         {
             LensPlatform p = null;
-            _simCam = useSimulatedCamera && Application.isEditor; // a device build never fakes the camera
+            _simCam = UseSimulated(useSimulatedCamera, Application.isEditor); // a device build never fakes the camera
             if (_simCam)
             {
                 _simFrames = new SimFrameSource(); _simPlacer = new SimPlanePlacer();
@@ -179,7 +185,9 @@ namespace HypaLens
 
         // ---------- HUD: top bar, hint, bottom controls (the mobile Lens layout) ----------
 
-        const float TopY = 0.30f, HintY = 0.215f, CardY = 0.085f, BottomY = -0.02f;
+        // More room between the top bar and the bottom row than before (they read as cramped). The HUD's centre,
+        // (TopY + BottomY) / 2 = 0.13 at 1.67x scale, sits on the line of sight (HeadFollow Height -0.22).
+        const float TopY = 0.33f, HintY = 0.25f, CardY = 0.12f, BottomY = -0.07f;
 
         void BuildHud()
         {
@@ -188,27 +196,29 @@ namespace HypaLens
             _hud.localScale = Vector3.one * (_follow.Distance / HudDesignDistance); // same angular size as at 0.6 m
             FollowHead(); // first placement: straight in front of the eyes
 
-            // Top bar: X | Auto ▾ | → Target ▾ | Saved
-            Tooltip(Ui.IconButton("x", _hud, new Vector3(-0.30f, TopY, 0), LensTouch.SmallIconRadius, GoHome), "Leave Lens", below: true);
-            _sourceBtn = LanguagePill(new Vector3(-0.105f, TopY, 0), 0.13f, () => OpenPicker(true));
-            Ui.Text(_hud, "→", 0.02f, new Vector3(-0.018f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
-            _targetBtn = LanguagePill(new Vector3(0.105f, TopY, 0), 0.20f, () => OpenPicker(false));
+            // Top bar: X | Auto-detect → Target ▾ | Saved. The source is always auto-detected: its pill is a fixed label.
+            Tooltip(Ui.IconButton("x", _hud, new Vector3(-0.32f, TopY, 0), LensTouch.SmallIconRadius, GoHome), "Leave Lens", below: true);
+            _sourceBtn = Ui.Button("Auto-detect", _hud, new Vector3(-0.11f, TopY, 0), new Vector2(SourcePillW, LensTouch.PillH), Ui.Muted, null);
+            Tooltip(_sourceBtn, "Hypa detects the language of the text.", below: true);
+            Ui.Text(_hud, "→", 0.02f, new Vector3(0.0f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
+            _targetBtn = LanguagePill(new Vector3(0.125f, TopY, 0), TargetPillW, () => OpenPicker(false));
+            var savedBtn = Ui.IconButton("bookmark", _hud, new Vector3(0.32f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice);
+            Tooltip(savedBtn, "Your saved words, as practice cards.", below: true);
 
             // Hint pill (the status), centred under the top bar.
             _status = Ui.Text(_hud, "", StatusLineH, new Vector3(0f, HintY, 0), new Color(1f, 1f, 1f, 0.95f));
 
             // Bottom row: Capture big in the middle (the shutter), the rest spread either side, each with a tooltip.
             const float r = LensTouch.IconRadius, pitch = 0.19f;
-            var clear = Ui.IconButton("eraser", _hud, new Vector3(-2f * pitch, BottomY, 0), r, ClearAll, "Clear");
-            Tooltip(clear, "Clear the results.");
+            // Clear is off for now (the popup's X closes results). Kept for when it comes back.
+            // var clear = Ui.IconButton("eraser", _hud, new Vector3(-2f * pitch, BottomY, 0), r, ClearAll, "Clear");
+            // Tooltip(clear, "Clear the results.");
             Tooltip(_captionBtn = Ui.IconButton("languages", _hud, new Vector3(-pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption"),
                 "Sends a photo of your view to Hypa to read\nand translate it as a whole. Not stored.");
             Tooltip(_captureBtn = Ui.IconButton("camera", _hud, new Vector3(0f, BottomY, 0), LensTouch.ShutterRadius, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
                 "Reads the text in view on the headset.\nThe words open in a popup: pinch one.");
             Tooltip(_speakBtn = Ui.IconButton("volume-2", _hud, new Vector3(pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
-            var savedBtn = Ui.IconButton("bookmark", _hud, new Vector3(2f * pitch, BottomY, 0), r, TogglePractice, "Saved");
-            Tooltip(savedBtn, "Your saved words, as practice cards.");
-            foreach (var b in new[] { clear, _captionBtn, _captureBtn, _speakBtn, savedBtn }) _bottomRow.Add(b.transform.parent.gameObject);
+            foreach (var b in new[] { _captionBtn, _captureBtn, _speakBtn }) _bottomRow.Add(b.transform.parent.gameObject);
 
             // Live-mode badge (dev-only toggle for now; the mode itself is not in the UI yet).
             _liveBadge = Ui.Quad("live badge", _hud, new Vector3(0f, BottomY + r * 1.9f, 0f), new Vector2(0.075f, 0.026f), Ui.Accent, false, 0.013f);
@@ -280,7 +290,7 @@ namespace HypaLens
             Ui.Quad("bg", go.transform, new Vector3(0, 0, 0.003f), size, Ui.Panel, true).AddComponent<PinchTarget>();
             var top = size.y * 0.5f - 0.03f;
             Ui.Text(go.transform, title, 0.022f, new Vector3(-size.x * 0.5f + 0.02f, top, 0), Color.white, TextAnchor.MiddleLeft);
-            Ui.IconButton("x", go.transform, new Vector3(size.x * 0.5f - 0.03f, top, -0.001f), 0.022f, onClose);
+            Ui.IconButton("x", go.transform, new Vector3(size.x * 0.5f - 0.045f, top, -0.001f), 0.022f, onClose); // inside the card's inner edge
             return go;
         }
 
@@ -326,11 +336,13 @@ namespace HypaLens
             _statusBg.SetActive(_popup == null);
         }
 
+        const float SourcePillW = 0.15f, TargetPillW = 0.20f;
+
         void UpdateLanguageText()
         {
             var lineH = LensTouch.PillH * 0.42f * 0.75f; // the smallest the label is allowed to shrink to
-            Ui.SetLabel(_sourceBtn, LanguageLabel("", _lens.SourceLanguage ?? "Auto", lineH, 0.13f - 0.05f) + "  ");
-            Ui.SetLabel(_targetBtn, LanguageLabel("", _lens.TargetLanguage, lineH, 0.20f - 0.05f) + "  ");
+            Ui.SetLabel(_sourceBtn, "Auto-detect");
+            Ui.SetLabel(_targetBtn, LanguageLabel("", _lens.TargetLanguage, lineH, TargetPillW - 0.05f) + "  ");
         }
 
         /// <summary>
@@ -389,8 +401,8 @@ namespace HypaLens
 
         void Apply(bool source, string name)
         {
-            if (source) { _lens.SourceLanguage = name; LensPrefs.Source = name; }
-            else if (name != null) { _lens.TargetLanguage = name; HypaSettings.TargetLanguage = name; } // remembered
+            if (source) return; // the source is always auto-detect: it is never set
+            if (name != null) { _lens.TargetLanguage = name; HypaSettings.TargetLanguage = name; } // remembered
             UpdateLanguageText();
         }
 
@@ -418,7 +430,7 @@ namespace HypaLens
             if (_onboarding != null) return;
             _onboarding = Card("Onboarding", "Welcome to Hypa Lens", new Vector2(0.50f, 0.30f), () => ShowOnboarding(false));
             Ui.Text(_onboarding.transform,
-                "1. Look at a sign, menu or book and pinch Capture.\n2. The words open in a popup. Pinch one to translate, hear and\n    define it; hold the pinch for the whole line.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick languages at the top. Save words with the bookmark to practise later.\nHypa only sends the text you pinch (Caption sends the photo).",
+                "1. Look at a sign, menu or book and pinch Capture.\n2. The words open in a popup. Pinch one to translate, hear and\n    define it; hold the pinch for the whole line.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick the language to translate into at the top. Save words with the bookmark.\nHypa only sends the text you pinch (Caption sends the photo).",
                 0.016f, new Vector3(-0.23f, -0.02f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
         }
 
@@ -460,7 +472,7 @@ namespace HypaLens
             {
                 // The simulator's fake camera has no pixels: send a snapshot of the rendered view instead, so Caption
                 // can be tried end to end in the editor (it reads whatever text is in the virtual room).
-                var r = await _lens.CaptionAsync(f => FrameEncoder.ToJpeg(f) ?? (Application.isEditor ? FrameEncoder.ViewSnapshotJpeg(_hud) : null), _cts.Token);
+                var r = await _lens.CaptionAsync(f => FrameEncoder.ToJpeg(f) ?? (Application.isEditor ? FrameEncoder.ViewSnapshotJpeg(_hud, PinchPointer.Instance != null ? PinchPointer.Instance.transform : null, HypaShell.Instance != null ? HypaShell.Instance.UiRoot : null) : null), _cts.Token);
                 ShowCaption(r);
                 SetStatus("Caption ready. Pinch Speak to hear it.");
             }
@@ -710,7 +722,7 @@ namespace HypaLens
         // "Text found" lists the captured words as chips, line by line; pinching one switches the popup to its
         // translation (hold the pinch for the whole line), with Back to the words.
 
-        const float PopupW = 0.62f, PopupH = 0.38f, PopupY = 0.055f, PopupPad = 0.03f; // clear of the top bar (its pills end at 0.275)
+        const float PopupW = 0.62f, PopupH = 0.40f, PopupY = 0.075f, PopupPad = 0.03f; // clear of the top bar (its pills end at 0.305)
         const float PopupTop = PopupH / 2f - PopupPad - 0.012f, PopupLeft = -PopupW / 2f + PopupPad;
         const float ChipH = 0.042f, ChipGap = 0.009f, ChipRowGap = 0.011f;
         static readonly Color PopupMuted = new Color(1f, 1f, 1f, 0.62f);
@@ -730,7 +742,8 @@ namespace HypaLens
                 _popup.transform.localPosition = new Vector3(0f, PopupY, -0.012f);
                 Ui.Quad("bg", _popup.transform, new Vector3(0, 0, 0.003f), new Vector2(PopupW, PopupH), Ui.Panel, true).AddComponent<PinchTarget>();
                 _popupTitle = Ui.Text(_popup.transform, "", 0.022f, new Vector3(PopupLeft, PopupTop, 0), Color.white, TextAnchor.MiddleLeft);
-                Ui.IconButton("x", _popup.transform, new Vector3(PopupW / 2f - PopupPad - 0.006f, PopupTop, -0.001f), 0.024f, ClosePopup);
+                // Inside the card's inner edge, level with the title: the corner was too tight before.
+                Ui.IconButton("x", _popup.transform, new Vector3(PopupW / 2f - PopupPad - 0.022f, PopupTop, -0.001f), 0.022f, ClosePopup);
                 _popup.AddComponent<LabelPop>(); // eases in
                 SetPopupMode(true);
             }

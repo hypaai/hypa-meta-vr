@@ -104,6 +104,14 @@ namespace HypaCore
         /// </summary>
         public static bool MouseInEditor = true;
 
+        /// <summary>
+        /// Whether a tracked hand's own pinch counts. Always on a headset. Off in the editor by default: the Meta XR
+        /// Simulator's idle hands drift in and out of a pinch pose on their own, which pressed random buttons and, when
+        /// held, swallowed real clicks. In the editor a click (the simulator turns it into a trigger) is the pinch, aimed
+        /// by the hand ray you see. K in the editor turns hand pinches on (webcam hand tracking).
+        /// </summary>
+        public static bool HandPinches = !Application.isEditor;
+
         enum Kind { Mouse, Device, EditorXr }
         static IPinchInput _current; static Kind _kind;
 
@@ -209,6 +217,11 @@ namespace HypaCore
 
         void Update()
         {
+            if (Application.isEditor && Input.GetKeyDown(KeyCode.K))
+            {
+                HypaInput.HandPinches = !HypaInput.HandPinches;
+                Debug.Log("[Hypa pinch] hand pinches " + (HypaInput.HandPinches ? "on (webcam hands)" : "off (click to pinch)"));
+            }
             var input = HypaInput.Current;
             var device = !HypaInput.AimsWithMouse(input);
             PinchTarget hit = null;
