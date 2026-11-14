@@ -78,7 +78,7 @@ namespace HypaLens
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _cam, _hud, _world;
         TextMesh _status; GameObject _statusBg;
-        PinchTarget _sourceBtn, _targetBtn, _captureBtn, _captionBtn, _speakBtn;
+        PinchTarget _sourceBtn, _targetBtn, _captureBtn, _captionBtn, _speakBtn, _savedBtn;
         GameObject _onboarding, _liveBadge;
         readonly List<GameObject> _bottomRow = new List<GameObject>();
         readonly List<GameObject> _topBar = new List<GameObject>(); // X, languages, bookmark: hidden in Saved words
@@ -205,7 +205,7 @@ namespace HypaLens
             Tooltip(_sourceBtn, "Hypa detects the language of the text.", below: true);
             var arrow = Ui.Text(_hud, "→", 0.02f, new Vector3(0.0f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
             _targetBtn = LanguagePill(new Vector3(0.125f, TopY, 0), TargetPillW, () => OpenPicker(false));
-            var savedBtn = Ui.IconButton("bookmark", _hud, new Vector3(0.32f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice);
+            var savedBtn = _savedBtn = Ui.IconButton("bookmark", _hud, new Vector3(0.32f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice);
             Tooltip(savedBtn, "Your saved words, as practice cards.", below: true);
             foreach (var b in new[] { leave, _sourceBtn, _targetBtn, savedBtn }) _topBar.Add(b.transform.parent.gameObject);
             _topBar.Add(arrow.gameObject);
@@ -222,7 +222,8 @@ namespace HypaLens
                 "Sends a photo of your view to Hypa to read\nand translate it as a whole. Not stored.");
             Tooltip(_captureBtn = Ui.IconButton("camera", _hud, new Vector3(0f, BottomY, 0), LensTouch.ShutterRadius, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
                 "Reads the text in view on the headset\nand translates it all in a popup.");
-            Tooltip(_speakBtn = Ui.IconButton("volume-2", _hud, new Vector3(pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
+            Tooltip(_speakBtn = Ui.IconButton("volume-2", _hud, new Vector3(pitch, BottomY, 0), r, SpeakLast, "Speak"),
+                "Reads the text in view aloud,\ntranslated into your language.");
             foreach (var b in new[] { _captionBtn, _captureBtn, _speakBtn }) _bottomRow.Add(b.transform.parent.gameObject);
 
             // Live-mode badge (dev-only toggle for now; the mode itself is not in the UI yet).
@@ -267,6 +268,7 @@ namespace HypaLens
 
         void GoHome()
         {
+            if (_speakState == SpeakState.Playing) StopSpeaking();
             ClearAll();
             _picker?.Close(); ShowOnboarding(false); ClosePopup();
 
@@ -511,8 +513,80 @@ namespace HypaLens
             ButtonRow(c, row);
         }
 
-        /// <summary>Speak: the last translation heard (a pinched word's audio, or a caption, fetched fresh as audio links expire).</summary>
-        void SpeakLast() => _ = Loading(SpeakLastAsync, _speakBtn);
+        // ---------- The speaker in the bottom row: read the view aloud, translated, with no popup ----------
+
+        enum SpeakState { Idle, Working, Playing }
+        SpeakState _speakState;
+
+        /// <summary>
+        /// The speaker: reads the text in view, translates it all and plays it, without opening the popup. While Hypa
+        /// works the speaker spins and the other buttons are greyed out; while it plays the speaker is a stop button.
+        /// </summary>
+        void SpeakLast()
+        {
+            if (_speakState == SpeakState.Playing) { StopSpeaking(); return; }
+            if (_speakState == SpeakState.Working || _busy) return;
+            _ = ReadAloudAsync();
+        }
+
+        async Task ReadAloudAsync()
+        {
+            var target = _lens.TargetLanguage;
+            if (!CanSpeak(target)) { ShowError($"Hypa can't speak {target} yet. Pick another language to hear it."); return; }
+            _busy = true; _speakState = SpeakState.Working;
+            SetOthersDisabled(true);
+            Ui.SetBusy(_speakBtn, true);
+            var stage = "read"; var playing = false;
+            try
+            {
+                SetStatus("Reading text...");
+                var ocr = await _lens.CaptureAsync(_cts.Token);
+                stage = "translate";
+                SetStatus($"Translating to {target}...");
+                var tr = await _lens.TranslateAllAsync(ocr, _cts.Token);
+                _lastSpeechText = tr.Text; _lastSpeechLang = target; _lastSpeech = null;
+                stage = "speak";
+                SetStatus("Making the audio...");
+                var speech = await _api.SpeakAsync(tr.Text, target, _cts.Token);
+                _lastSpeech = speech;
+                await HypaAudioPlayer.Instance.PlayNowAsync(speech, _cts.Token);
+                playing = true;
+                SetStatus("Playing. Pinch Stop to stop.");
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception e)
+            {
+                ShowError(stage == "speak" ? SpeechError(e, target) : LensException.From(e).UserMessage(_lens.SourceLanguage, target));
+            }
+            finally
+            {
+                _busy = false;
+                Ui.SetBusy(_speakBtn, false);
+                SetOthersDisabled(false);
+                if (playing) { _speakState = SpeakState.Playing; Ui.SetIcon(_speakBtn, "square"); Ui.SetCaption(_speakBtn, "Stop"); }
+                else _speakState = SpeakState.Idle;
+            }
+        }
+
+        void StopSpeaking()
+        {
+            if (_speakState == SpeakState.Playing) HypaAudioPlayer.Instance.Stop(0.1f);
+            ResetSpeaker();
+            SetStatus(DefaultHint);
+        }
+
+        void ResetSpeaker()
+        {
+            _speakState = SpeakState.Idle;
+            Ui.SetIcon(_speakBtn, "volume-2");
+            Ui.SetCaption(_speakBtn, "Speak");
+        }
+
+        /// <summary>Grey out everything else while the speaker's request is in progress.</summary>
+        void SetOthersDisabled(bool disabled)
+        {
+            foreach (var b in new[] { _captureBtn, _captionBtn, _targetBtn, _savedBtn }) Ui.SetDisabled(b, disabled);
+        }
 
         async Task SpeakLastAsync()
         {
@@ -1178,6 +1252,11 @@ namespace HypaLens
             if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
             if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) { SetStatus(DefaultHint); if (_popupNote != null) _popupNote.text = ""; }
             if (CardOpen != _modal) SetPopupMode(CardOpen);
+            if (_speakState == SpeakState.Playing && !HypaAudioPlayer.Instance.IsPlaying && HypaAudioPlayer.Instance.Queued == 0)
+            {
+                ResetSpeaker(); // finished: the stop button turns back into the speaker
+                if (_errorUntil < 0f && _status != null && _status.text.StartsWith("Playing", StringComparison.Ordinal)) SetStatus(DefaultHint);
+            }
             // Saved words has its own X and no use for the language row: the whole top bar steps aside while it shows.
             var savedOpen = _popup != null && _popupTitle != null && _popupTitle.text == "Saved words";
             if (_topBar.Count > 0 && _topBar[0].activeSelf == savedOpen) foreach (var go in _topBar) if (go != null) go.SetActive(!savedOpen);

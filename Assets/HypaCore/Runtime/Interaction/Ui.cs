@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using UnityEngine;
 
@@ -292,6 +293,67 @@ namespace HypaCore
             if (spinner != null) spinner.gameObject.SetActive(busy);
             if (icon != null) icon.gameObject.SetActive(!busy);
             if (label != null && icon == null) label.gameObject.SetActive(!busy); // text buttons: the loader replaces the label
+        }
+
+        /// <summary>Swaps the icon of a button made by <see cref="IconButton"/> (e.g. speaker to stop).</summary>
+        public static void SetIcon(PinchTarget button, string iconName)
+        {
+            if (button == null) return;
+            var icon = button.transform.parent.Find("icon");
+            var tex = Icon(iconName);
+            if (icon != null && tex != null) icon.GetComponent<Renderer>().material.mainTexture = tex;
+        }
+
+        /// <summary>Changes the small caption under an <see cref="IconButton"/> (not its tooltip).</summary>
+        public static void SetCaption(PinchTarget button, string caption)
+        {
+            if (button == null) return;
+            var root = button.transform.parent;
+            foreach (var tm in root.GetComponentsInChildren<TextMesh>(true))
+                if (tm.transform.parent == root && tm.transform.localPosition.y < -0.001f) { tm.text = caption; return; }
+        }
+
+        /// <summary>
+        /// Greys a button out and ignores pinches on it (while another action is in progress), or restores it. Unlike
+        /// <see cref="SetBusy"/> there is no spinner: it is simply unavailable for now. Safe to call repeatedly.
+        /// </summary>
+        public static void SetDisabled(PinchTarget button, bool disabled)
+        {
+            if (button == null) return;
+            var root = button.transform.parent.gameObject;
+            var state = root.GetComponent<DisabledLook>() ?? root.AddComponent<DisabledLook>();
+            state.Set(disabled);
+            button.Busy = disabled;
+        }
+
+        /// <summary>Remembers a button's colours so it can be dimmed and brought back exactly.</summary>
+        public sealed class DisabledLook : MonoBehaviour
+        {
+            readonly Dictionary<Renderer, Color> _renderers = new Dictionary<Renderer, Color>();
+            readonly Dictionary<TextMesh, Color> _texts = new Dictionary<TextMesh, Color>();
+            bool _dim;
+            const float DimAlpha = 0.35f;
+
+            public void Set(bool dim)
+            {
+                if (dim == _dim) return;
+                _dim = dim;
+                if (dim)
+                {
+                    _renderers.Clear(); _texts.Clear();
+                    foreach (var tm in GetComponentsInChildren<TextMesh>(true)) { _texts[tm] = tm.color; var c = tm.color; c.a *= DimAlpha; tm.color = c; }
+                    foreach (var r in GetComponentsInChildren<Renderer>(true))
+                    {
+                        if (r.GetComponent<TextMesh>() != null || r.sharedMaterial == null || !r.sharedMaterial.HasProperty("_Color")) continue;
+                        _renderers[r] = r.material.color; var c = r.material.color; c.a *= DimAlpha; r.material.color = c;
+                    }
+                }
+                else
+                {
+                    foreach (var kv in _texts) if (kv.Key != null) kv.Key.color = kv.Value;
+                    foreach (var kv in _renderers) if (kv.Key != null) kv.Key.material.color = kv.Value;
+                }
+            }
         }
 
         /// <summary>Turns a loader icon steadily.</summary>
