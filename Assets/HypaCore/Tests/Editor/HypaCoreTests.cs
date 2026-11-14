@@ -370,5 +370,11 @@ namespace HypaCore.Tests
             r.Update(false, 1.1, "card bg", null, out target, Acts);
             Assert.AreEqual("card bg", target);
         }
+
+        [Test] public void SlowTools_GetMoreTime()
+        {
+            Assert.Greater(HypaMcpClient.TimeoutFor("text_to_speech").TotalSeconds, 60, "speech for a few lines can pass 30 s");
+            Assert.AreEqual(30, HypaMcpClient.TimeoutFor("translate_message").TotalSeconds, 0.01);
+        }
     }
 }

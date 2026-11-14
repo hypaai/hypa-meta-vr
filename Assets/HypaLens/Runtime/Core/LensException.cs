@@ -35,7 +35,8 @@ namespace HypaLens
             {
                 case LensException le: return le;
                 case HypaException he:
-                    var kind = he.Kind == HypaErrorKind.Offline || he.Kind == HypaErrorKind.Timeout ? LensErrorKind.Offline : LensErrorKind.Api;
+                    // Only a real network failure is "offline". A timeout means Hypa was slow ("took too long, try again").
+                    var kind = he.Kind == HypaErrorKind.Offline ? LensErrorKind.Offline : LensErrorKind.Api;
                     return new LensException(kind, he.Message, he);
                 case System.Net.Http.HttpRequestException _:
                 case System.IO.IOException _:

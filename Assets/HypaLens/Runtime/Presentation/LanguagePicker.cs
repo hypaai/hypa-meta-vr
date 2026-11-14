@@ -34,8 +34,8 @@ namespace HypaLens
             // Slightly behind the buttons so rays hit buttons first; its collider blocks labels behind the picker.
             Ui.Quad("bg", _root, new Vector3(0, 0, 0.003f), new Vector2(0.42f, 0.36f), Ui.Panel, true);
             Ui.Text(_root, title, 0.022f, new Vector3(0, 0.128f, 0), Color.white);
-            Ui.Button("<", _root, new Vector3(-0.15f, -0.142f, 0), new Vector2(0.06f, 0.044f), Ui.Muted, () => Show(_page - 1));
-            Ui.Button(">", _root, new Vector3(0.15f, -0.142f, 0), new Vector2(0.06f, 0.044f), Ui.Muted, () => Show(_page + 1));
+            Ui.IconButton("chevron-left", _root, new Vector3(-0.165f, -0.142f, 0), 0.022f, () => Show(_page - 1));   // Stories' chevrons
+            Ui.IconButton("chevron-right", _root, new Vector3(0.165f, -0.142f, 0), 0.022f, () => Show(_page + 1));
             Ui.Button("Close", _root, new Vector3(0.04f, -0.142f, 0), new Vector2(0.09f, 0.044f), Ui.Muted, Close);
             _pageText = Ui.Text(_root, "", 0.016f, new Vector3(-0.06f, -0.142f, 0), Color.white);
 

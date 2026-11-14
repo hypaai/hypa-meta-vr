@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -23,6 +24,10 @@ namespace HypaCore
         /// parameter; the REST mt call sends provider "auto".)
         /// </summary>
         public const string Model = "auto";
+
+        /// <summary>Speech and image reading are slow on Hypa's side (speech for a few lines can pass 30 s): give them longer.</summary>
+        public static TimeSpan TimeoutFor(string tool)
+            => tool == "text_to_speech" || tool == "translate_image" ? TimeSpan.FromSeconds(90) : HypaHttp.DefaultTimeout;
         static readonly HashSet<string> FreeTools = new HashSet<string>
             { "list_languages", "list_voices", "check_language_pair", "list_models", "word_of_the_day" };
 
@@ -42,7 +47,7 @@ namespace HypaCore
                 ["method"] = "tools/call",
                 ["params"] = new JObject { ["name"] = tool, ["arguments"] = args ?? new JObject() },
             };
-            var body = await HypaHttp.PostAsync(_cfg, Path, req.ToString(Formatting.None), ct).ConfigureAwait(false);
+            var body = await HypaHttp.PostAsync(_cfg, Path, req.ToString(Formatting.None), ct, TimeoutFor(tool)).ConfigureAwait(false);
             return ParseToolResult(body, tool);
         }
 

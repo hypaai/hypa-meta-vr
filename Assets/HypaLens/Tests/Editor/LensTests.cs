@@ -327,6 +327,14 @@ namespace HypaLens.Tests
             Assert.IsNull(FrameEncoder.ToJpeg(new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0] }), "the simulator's frame has no pixels");
         }
 
+        [Test] public void Timeout_IsNotReportedAsOffline()
+        {
+            var slow = LensException.From(new HypaException(HypaErrorKind.Timeout, "Request timed out after 30 s."));
+            Assert.AreNotEqual(LensErrorKind.Offline, slow.Kind);
+            StringAssert.Contains("too long", slow.UserMessage());
+            Assert.AreEqual(LensErrorKind.Offline, LensException.From(new HypaException(HypaErrorKind.Offline, "no route")).Kind);
+        }
+
         // ---------- Headset: never the example words ----------
 
         [Test] public void ExampleCameraWordsAndTranslations_AreEditorOnly()

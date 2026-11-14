@@ -305,6 +305,7 @@ namespace HypaLens
         void ShowError(string s)
         {
             SetStatus(s);
+            if (_popup != null) PopupNote(s);
             _errorUntil = Time.unscaledTime + ErrorSeconds;
         }
 
@@ -490,7 +491,8 @@ namespace HypaLens
             var c = PopupContent("Caption");
             var y = PopupTop - 0.05f;
             RenderResult(c, ref y, r.Text, r.Language ?? _lens.SourceLanguage, r.Translation, _lens.TargetLanguage, null);
-            var row = new List<(string, Color, Action<PinchTarget>)> { ("Speak", Ui.Muted, b => _ = Loading(SpeakLastAsync, b, _speakBtn)) };
+            var row = new List<(string, Color, Action<PinchTarget>)>();
+            if (CanSpeak(_lens.TargetLanguage)) row.Add((Speaker, Ui.Muted, b => _ = Loading(SpeakLastAsync, b, _speakBtn)));
             if (!string.IsNullOrWhiteSpace(r.Translation))
                 row.Add(SaveButton(_saved.Contains(r.Text, _lens.TargetLanguage), () =>
                 {
@@ -513,7 +515,7 @@ namespace HypaLens
             if (string.IsNullOrEmpty(_lastSpeechText)) { ShowError("Pinch a word or take a caption first, then Speak."); return; }
             try { await PlayAsync(await _api.SpeakAsync(_lastSpeechText, _lastSpeechLang, _cts.Token)); }
             catch (OperationCanceledException) { }
-            catch (Exception e) { ShowError("Couldn't play audio: " + LensException.From(e).UserMessage()); }
+            catch (Exception e) { ShowError(SpeechError(e, _lastSpeechLang)); }
         }
 
         void ClearAll()
@@ -836,7 +838,7 @@ namespace HypaLens
             if (_foundTr != null)
             {
                 var tr = _foundTr; var all = LensController.AllText(ocr);
-                row.Add(("Hear", Ui.Muted, b => _ = Loading(SpeakLastAsync, b, _speakBtn)));
+                if (CanSpeak(_lens.TargetLanguage)) row.Add((Speaker, Ui.Muted, b => _ = Loading(SpeakLastAsync, b, _speakBtn)));
                 row.Add(SaveButton(_saved.Contains(all, _lens.TargetLanguage), () =>
                 {
                     _saved.Add(new LensResult
@@ -899,11 +901,10 @@ namespace HypaLens
                 RenderResult(c, ref y, sel.Text, r?.SourceLanguage ?? _lens.SourceLanguage, translation, _lens.TargetLanguage,
                     error == null ? (r?.Meaning ?? r?.MeaningNote) : null);
                 var row = new List<(string, Color, Action<PinchTarget>)>();
-                if (back != null) row.Add(("Back", Ui.Muted, _ => { ++_resultVersion; RenderFound(back); }));
+                if (back != null) row.Add((Prev, Ui.Muted, _ => { ++_resultVersion; RenderFound(back); })); // back to the text
                 if (r != null && error == null && r.Translation != null)
                 {
-                    if (r.SourceAudio != null) row.Add(("Hear", Ui.Muted, b => _ = Loading(() => PlayAsync(r.SourceAudio), b)));
-                    if (r.TargetAudio != null) row.Add(("Hear →", Ui.Muted, b => _ = Loading(() => PlayAsync(r.TargetAudio), b)));
+                    if (r.TargetAudio != null) row.Add((Speaker, Ui.Muted, b => _ = Loading(() => PlayAsync(r.TargetAudio), b)));
                     row.Add(SaveButton(_saved.Contains(r.Selection.Text, r.TargetLanguage), () => { _saved.Add(r); Render(r, null); }));
                 }
                 ButtonRow(c, row);
@@ -954,20 +955,77 @@ namespace HypaLens
         static (string, Color, Action<PinchTarget>) SaveButton(bool saved, Action save)
             => saved ? ("Saved", Ui.Accent, _ => { }) : ("Save", Ui.Muted, _ => save());
 
-        /// <summary>Buttons spread along the bottom of the popup.</summary>
+        const string Prev = "icon:chevron-left", Next = "icon:chevron-right", Speaker = "icon:volume-2";
+
+        /// <summary>
+        /// Buttons along the bottom of the popup. A label "icon:name" is a round icon button (Stories' chevrons for
+        /// back / previous / next, the speaker for audio). A row that starts with the left chevron and ends with the
+        /// right one puts them at the edges, like a pager, with the rest centred between.
+        /// </summary>
         static void ButtonRow(Transform c, List<(string label, Color color, Action<PinchTarget> onPress)> row)
         {
             if (row.Count == 0) return;
-            const float h = 0.048f, gap = 0.014f;
-            var w = Mathf.Min(0.14f, (PopupW - PopupPad * 2f - gap * (row.Count - 1)) / row.Count);
-            var x = -(w * row.Count + gap * (row.Count - 1)) / 2f + w / 2f;
+            const float h = 0.048f, gap = 0.016f, r = 0.026f;
             var y = -PopupH / 2f + PopupPad + h / 2f;
-            foreach (var (label, color, onPress) in row)
+            var inner = PopupW - PopupPad * 2f;
+            var pager = row.Count >= 2 && row[0].label == Prev && row[row.Count - 1].label == Next;
+            bool IsIcon(string l) => l.StartsWith("icon:", StringComparison.Ordinal);
+
+            PinchTarget Make(string label, Color color, Action<PinchTarget> onPress, float x, float pillW)
             {
                 PinchTarget b = null;
-                b = Ui.Button(label, c, new Vector3(x, y, -0.001f), new Vector2(w, h), color, () => onPress(b));
+                if (IsIcon(label)) b = Ui.IconButton(label.Substring(5), c, new Vector3(x, y, -0.001f), r, () => onPress(b), null, null, color);
+                else b = Ui.Button(label, c, new Vector3(x, y, -0.001f), new Vector2(pillW, h), color, () => onPress(b));
+                return b;
+            }
+
+            var middle = pager ? row.GetRange(1, row.Count - 2) : row;
+            if (pager)
+            {
+                Make(row[0].label, row[0].color, row[0].onPress, -inner / 2f + r, 0f);
+                Make(row[row.Count - 1].label, row[row.Count - 1].color, row[row.Count - 1].onPress, inner / 2f - r, 0f);
+            }
+            var avail = pager ? inner - 4f * r - 2f * gap : inner;
+            var icons = 0; foreach (var m in middle) if (IsIcon(m.label)) icons++;
+            var pills = middle.Count - icons;
+            var pillWidth = pills == 0 ? 0f : Mathf.Min(0.14f, (avail - icons * 2f * r - gap * Mathf.Max(0, middle.Count - 1)) / pills);
+            var total = icons * 2f * r + pills * pillWidth + gap * Mathf.Max(0, middle.Count - 1);
+            var x = -total / 2f;
+            foreach (var (label, color, onPress) in middle)
+            {
+                var w = IsIcon(label) ? 2f * r : pillWidth;
+                Make(label, color, onPress, x + w / 2f, pillWidth);
                 x += w + gap;
             }
+        }
+
+        /// <summary>Can Hypa speak this language? From list_languages (no voices = no speech). Unknown = try.</summary>
+        bool CanSpeak(string language)
+        {
+            if (string.IsNullOrEmpty(language)) return false;
+            foreach (var l in _langs) if (l.Name == language) return l.HasTts;
+            return true;
+        }
+
+        /// <summary>A speech failure in plain words ("Hypa can't speak Gata' yet." when it has no voice for it).</summary>
+        static string SpeechError(Exception e, string language)
+        {
+            var msg = e.Message ?? "";
+            if (msg.IndexOf("No TTS model", StringComparison.OrdinalIgnoreCase) >= 0) return $"Hypa can't speak {language ?? "this language"} yet.";
+            var le = LensException.From(e);
+            if (le.Hypa != null && le.Hypa.Kind == HypaErrorKind.Timeout) return "The audio took too long to make. Try again.";
+            return "Couldn't play audio: " + LensException.From(e).UserMessage();
+        }
+
+        TextMesh _popupNote;
+
+        /// <summary>An error inside the open popup (the hint pill is hidden behind it), cleared with the hint's timer.</summary>
+        void PopupNote(string text)
+        {
+            if (_popupContent == null) return;
+            if (_popupNote == null)
+                _popupNote = Ui.Text(_popupContent, "", 0.0135f, new Vector3(0f, -PopupH / 2f + PopupPad + 0.068f, -0.002f), new Color(1f, 0.82f, 0.78f, 1f));
+            _popupNote.text = Ui.Wrap(text ?? "", 70);
         }
 
         // ---------- Saved words: in the results popup, with Original / Translation tabs ----------
@@ -1025,15 +1083,15 @@ namespace HypaLens
 
             // Previous | Hear | Remove | Next
             var row = new List<(string, Color, Action<PinchTarget>)>();
-            if (_deck.Count > 1) row.Add(("‹  Prev", Ui.Muted, _ => { _deck.Prev(); RenderSaved(); }));
-            if (!string.IsNullOrEmpty(_deck.FaceLanguage)) row.Add(("Hear", Ui.Muted, b => _ = Loading(PlayDeckAudio, b))); // only when its language is known
+            if (_deck.Count > 1) row.Add((Prev, Ui.Muted, _ => { _deck.Prev(); RenderSaved(); }));
+            if (CanSpeak(_deck.FaceLanguage)) row.Add((Speaker, Ui.Muted, b => _ = Loading(PlayDeckAudio, b))); // only when Hypa can speak it
             row.Add(("Remove", Ui.Muted, _ =>
             {
                 var at = _deck.Index; var side = _deck.Flipped;
                 _saved.Remove(item.Id);
                 ShowSaved(Mathf.Min(at, _saved.Items.Count - 1), side);
             }));
-            if (_deck.Count > 1) row.Add(("Next  ›", Ui.Muted, _ => { _deck.Next(); RenderSaved(); }));
+            if (_deck.Count > 1) row.Add((Next, Ui.Muted, _ => { _deck.Next(); RenderSaved(); }));
             ButtonRow(c, row);
         }
 
@@ -1069,7 +1127,7 @@ namespace HypaLens
             if (_deck == null || _deck.IsEmpty || string.IsNullOrEmpty(_deck.FaceLanguage)) return;
             try { await PlayAsync(await _api.SpeakAsync(_deck.Face, _deck.FaceLanguage, _cts.Token)); } // audio links expire, so fetch fresh
             catch (OperationCanceledException) { }
-            catch (Exception e) { ShowError("Couldn't play audio: " + LensException.From(e).UserMessage()); }
+            catch (Exception e) { ShowError(SpeechError(e, _deck.FaceLanguage)); }
         }
 
         // ---------- Per frame ----------
@@ -1093,7 +1151,7 @@ namespace HypaLens
             // Home (the shell's card) is modal: the Lens HUD steps aside while it is up.
             var home = HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen;
             if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
-            if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) SetStatus(DefaultHint);
+            if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) { SetStatus(DefaultHint); if (_popupNote != null) _popupNote.text = ""; }
             if (CardOpen != _modal) SetPopupMode(CardOpen);
             if (!home && AppRouter.Consume(AppRouter.LensSavedWords)) ShowSaved(); // Home > Saved words
             if (_live && !home) LiveTick();

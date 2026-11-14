@@ -201,7 +201,7 @@ namespace HypaCore
                 "Sit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.");
             Ui.Text(_help, Ui.Wrap("Everything works with your hands. Pinch Home at any time to come back here.", chars), bodyH,
                 new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
-            Ui.Button("Back to Home", _help, new Vector3(0f, -h / 2f + pad + 0.028f, 0f), new Vector2(0.22f, 0.056f), Ui.Accent, () => ShowHelp(false));
+            // Ui.IconButton("chevron-left", _help, new Vector3(0f, -h / 2f + pad + 0.03f, -0.001f), 0.028f, () => ShowHelp(false)); // back to Home (Stories' chevron)
             _help.gameObject.SetActive(false);
         }
 
