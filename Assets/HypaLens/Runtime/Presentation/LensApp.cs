@@ -372,7 +372,8 @@ namespace HypaLens
         {
             CloseCards();
             if (_langs.Count == 0) { SetStatus("Loading languages..."); _ = Loading(LoadLanguages, _sourceBtn, _targetBtn); return; }
-            _picker = new LanguagePicker(_hud, new Vector3(0f, CardY, -0.01f), source ? "Translate from" : "Translate into",
+            // Centred lower than other cards: it is 0.42 tall and must clear the top bar (its pills end at 0.305).
+            _picker = new LanguagePicker(_hud, new Vector3(0f, 0.08f, -0.012f), source ? "Translate from" : "Translate into",
                 _langs, source ? _lens.SourceLanguage : _lens.TargetLanguage, source, name => _ = Loading(() => SetLanguage(source, name), source ? _sourceBtn : _targetBtn));
         }
 

@@ -335,6 +335,15 @@ namespace HypaLens.Tests
             Assert.AreEqual(LensErrorKind.Offline, LensException.From(new HypaException(HypaErrorKind.Offline, "no route")).Kind);
         }
 
+        [Test] public void LanguagePicker_ShowsTheTotal_AndAClearRange()
+        {
+            Assert.AreEqual("160 languages", LanguagePicker.LanguagesTotal(160));
+            Assert.AreEqual("1 language", LanguagePicker.LanguagesTotal(1));
+            Assert.AreEqual("1–8 of 160", LanguagePicker.RangeLabel(0, 8, 160));
+            Assert.AreEqual("33–40 of 160", LanguagePicker.RangeLabel(4, 8, 160));
+            Assert.AreEqual("161–163 of 163", LanguagePicker.RangeLabel(20, 8, 163), "the last page shows only what is there");
+        }
+
         // ---------- Headset: never the example words ----------
 
         [Test] public void ExampleCameraWordsAndTranslations_AreEditorOnly()
