@@ -5,6 +5,7 @@
   "title": "The Last Light\non Marlow Street",
   "description": "Rain, a taped-off alley, and one witness who saw nothing, until the streetlight started to flicker.",
   "model": "meta/muse-wonder-1.0",
+  "voices": [{"model": "openai/gpt-4o-mini-tts", "voice": "onyx"}],
   "rain": 0.55,
   "wind": 0.25,
   "lines": [

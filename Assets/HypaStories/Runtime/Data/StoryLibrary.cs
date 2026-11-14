@@ -7,7 +7,7 @@ using UnityEngine;
 namespace HypaStories
 {
     /// <summary>
-    /// The stories, loaded from Resources/Stories/{id}/: story.json (the English script, card text, answer model, suggested
+    /// The stories, loaded from Resources/Stories/{id}/: story.json (the English script, card text, answer model, voices, suggested
     /// questions and weather cues) and one {language code}.json per translation ({ line id: text, "line id.ask": [questions] }).
     /// Adding a language = adding a file per story; a line it doesn't translate is told in English. See README > Stories.
     ///
@@ -80,6 +80,9 @@ namespace HypaStories
                 Id = id, Theme = (int?)o["theme"] ?? 0, Accent = accent,
                 Eyebrow = (string)o["eyebrow"] ?? "", Title = (string)o["title"] ?? id, Desc = (string)o["description"] ?? "",
                 Model = (string)o["model"] ?? DefaultModel,
+                Voices = ((o["voices"] as JArray) ?? new JArray()).OfType<JObject>()
+                    .Select(v => new VoiceOption { Model = (string)v["model"], Voice = (string)v["voice"] })
+                    .Where(v => !string.IsNullOrEmpty(v.Model) && !string.IsNullOrEmpty(v.Voice)).ToArray(),
                 Timeline = new StoryTimeline
                 {
                     Duration = Mathf.Ceil(t - Gap + Tail),

@@ -56,7 +56,8 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `StoryLibrary.Ids`:
 
 - `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `model` that answers questions
-  (`"provider/model"`, default `meta/muse-wonder-1.0`), the starting `rain` / `wind` (0..1), and the English `lines`, each
+  (`"provider/model"`, default `meta/muse-wonder-1.0`), the storyteller's `voices` (`[{ "model", "voice" }]`, as Hypa
+  `list_voices` names them; the first is used in every language, the rest are for a voice picker later), the starting `rain` / `wind` (0..1), and the English `lines`, each
   `{ "id", "text" }` with optional `ask` (questions to suggest once the line is told) and cues: `rain` / `wind` (reached by the end
   of that line) and `flashes` (lightning, seconds after the line starts).
 - `{code}.json` per translation (`fr.json`, `es.json`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing file or line
@@ -71,7 +72,8 @@ the translations are matched on.
 ## Hypa API use
 
 - **TTS** (`text_to_speech`, verified schema): every line the storyteller says: the narration of both stories in every language,
-  fillers, answers. Lines are cached for the session and the next line is fetched while the current one plays.
+  fillers, answers, in the story's voice (Kiko: `openai/gpt-4o-mini-tts` `fable`; Marlow Street: `onyx`; 1.7-2.5 s a line; Meta has
+  no TTS). If the voice fails, Auto picks one. Lines are cached for the session and the next line is fetched while the current one plays.
 - **ASR** (`speech_to_text`, schema read from `tools/list` on 2026-11-13, not yet called with a key): 16 kHz mono WAV, the story
   language as `sourceLang`, model picked by Hypa's auto-router. Nothing is sent if nothing louder than the noise floor was heard.
 - **Chat** (REST `/v2/developer/chat`, `HypaRestClient.ChatAsync`, not streamed): `ChatStoryQa` sends the storyteller persona, the

@@ -5,6 +5,7 @@
   "title": "Kiko and the\nRemembering Fire",
   "description": "A curious tortoise follows his questions into the forest, toward a fire that has never gone out.",
   "model": "meta/muse-wonder-1.0",
+  "voices": [{"model": "openai/gpt-4o-mini-tts", "voice": "fable"}],
   "lines": [
     {"id": "village", "text": "Long ago, in a small village surrounded by forests,", "ask": ["Where is the village?"]},
     {"id": "kiko", "text": "there lived a curious tortoise named Kiko.", "ask": ["Who is Kiko?"]},

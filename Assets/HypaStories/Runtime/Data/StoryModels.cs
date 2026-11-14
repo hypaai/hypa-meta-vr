@@ -38,6 +38,13 @@ namespace HypaStories
         public Vector2[] Wind = { Vector2.zero };
     }
 
+    /// <summary>A text-to-speech voice: the model ("provider/model") and one of its voices, as list_voices names them.</summary>
+    public sealed class VoiceOption
+    {
+        public string Model, Voice;
+        public override string ToString() => $"{Model} {Voice}";
+    }
+
     /// <summary>
     /// A story card. Theme picks the card art (0 = lantern in the pines, 1 = noir crime scene). The storyteller reads the lines with TTS
     /// and answers questions with <see cref="Model"/>.
@@ -50,6 +57,10 @@ namespace HypaStories
         public string Eyebrow, Title, Desc;
         /// <summary>The chat model that answers questions, "provider/model" (e.g. "meta/muse-wonder-1.0").</summary>
         public string Model;
+        /// <summary>The storyteller's voices for this story. The first is used (the rest are for a voice picker later).</summary>
+        public VoiceOption[] Voices = new VoiceOption[0];
+        /// <summary>The voice the story is told in. Null = Hypa's Auto voice for the language.</summary>
+        public VoiceOption Voice => Voices.FirstOrDefault();
         public StoryTimeline Timeline;
 
         /// <summary>

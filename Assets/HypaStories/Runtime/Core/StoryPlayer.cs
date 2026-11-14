@@ -42,6 +42,7 @@ namespace HypaStories
         {
             StopTts();
             Story = story;
+            _voice.Voice = story.Voice;
             Director = new StoryDirector(story.Timeline);
             Live = Running = Paused = Asking = Ended = false;
             T = _lastT = 0f;

@@ -80,6 +80,17 @@ namespace HypaStories.Tests
             Assert.AreEqual(1f, d.Sample(caps[1].Until).Rain, 1e-4);
             Assert.AreEqual(caps[1].At + 0.5f, st.Timeline.Flashes[0], 1e-4);
             Assert.AreEqual(StoryLibrary.DefaultModel, st.Model);
+            Assert.IsNull(st.Voice); // no voices: Auto
+        }
+
+        [Test] public void Parse_Voices_FirstIsTheStorysVoice()
+        {
+            const string story = @"{ ""voices"": [ { ""model"": ""openai/gpt-4o-mini-tts"", ""voice"": ""fable"" }, { ""model"": ""x/y"" },
+                { ""model"": ""openai/tts-1"", ""voice"": ""onyx"" } ], ""lines"": [ { ""id"": ""a"", ""text"": ""one"" } ] }";
+            var st = StoryLibrary.Parse("t", story, new Dictionary<string, string>());
+            Assert.AreEqual(2, st.Voices.Length); // the one without a voice is dropped
+            Assert.AreEqual("openai/gpt-4o-mini-tts", st.Voice.Model);
+            Assert.AreEqual("fable", st.Voice.Voice);
         }
 
         [Test] public void Suggestions_AreFromLinesToldSoFar_NewestFirst_InTheLanguage()
@@ -102,6 +113,7 @@ namespace HypaStories.Tests
             foreach (var st in StoryLibrary.All)
             {
                 StringAssert.Contains("/", st.Model, st.Id);
+                Assert.IsNotNull(st.Voice, $"{st.Id}: no voice");
                 foreach (var lang in StoryLanguages.All)
                     Assert.IsNotEmpty(st.Suggestions(0, lang.Code), $"{st.Id} {lang.Code}");
                 foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))

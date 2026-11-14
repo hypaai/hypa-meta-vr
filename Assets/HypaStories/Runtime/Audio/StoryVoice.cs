@@ -8,8 +8,9 @@ using UnityEngine;
 namespace HypaStories
 {
     /// <summary>
-    /// The storyteller's voice, from his mouth: every line (narration, fillers, answers) through Hypa text_to_speech. Clips are cached
-    /// for the session and can be prefetched, so the next line is usually ready before it is needed. Without a key (or offline) a line
+    /// The storyteller's voice, from his mouth: every line (narration, fillers, answers) through Hypa text_to_speech, in the story's
+    /// <see cref="Voice"/> (the same voice in every language). Clips are cached for the session and can be prefetched, so the next
+    /// line is usually ready before it is needed. If that voice fails, the line falls back to Hypa's Auto voice for the language. Without a key (or offline) a line
     /// is "spoken" silently for about as long as it would take, so the flow and subtitles still run. <see cref="Level"/> drives the
     /// lip sync.
     /// </summary>
@@ -20,13 +21,15 @@ namespace HypaStories
         readonly CancellationTokenSource _life = new CancellationTokenSource();
         readonly float[] _buf = new float[256];
         HypaMcpClient _mcp;
-        bool _warned, _fake, _skip;
+        bool _warned, _voiceWarned, _fake, _skip;
         int _playToken;
 
         /// <summary>Loudness of whatever the storyteller is saying, 0..1.</summary>
         public float Level { get; private set; }
         public bool IsSpeaking => _fake || (_speech != null && _speech.isPlaying);
         public bool TtsAvailable => HypaConfig.Current.HasKey;
+        /// <summary>The voice lines are spoken in (set per story). Null = Auto.</summary>
+        public VoiceOption Voice { get; set; }
 
         public void Init(Transform mouth)
         {
@@ -67,14 +70,22 @@ namespace HypaStories
 
         Task<AudioClip> Fetch(string text, StoryLanguage language)
         {
-            var key = language.HypaLabel + "|" + text;
+            var voice = Voice;
+            var key = voice + "|" + language.HypaLabel + "|" + text;
             if (_cache.TryGetValue(key, out var t) && !t.IsFaulted && !t.IsCanceled) return t;
-            return _cache[key] = FetchAsync(text, language.HypaLabel);
+            return _cache[key] = FetchAsync(text, language.HypaLabel, voice);
         }
 
-        async Task<AudioClip> FetchAsync(string text, string label)
+        async Task<AudioClip> FetchAsync(string text, string label, VoiceOption voice)
         {
-            var speech = await _mcp.TextToSpeechAsync(text, label, _life.Token);
+            HypaSpeech speech;
+            try { speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, voice?.Voice, voice?.Model); }
+            catch (HypaException e) when (voice != null && e.Kind != HypaErrorKind.MissingKey && e.Kind != HypaErrorKind.Unauthorized)
+            {
+                if (!_voiceWarned) Debug.LogWarning($"Hypa Stories: voice {voice} failed for {label} ({e.Message}); using Auto.");
+                _voiceWarned = true;
+                speech = await _mcp.TextToSpeechAsync(text, label, _life.Token);
+            }
             return await HypaAudioPlayer.LoadClipAsync(speech, _life.Token); // main thread: we were called from it
         }
 
