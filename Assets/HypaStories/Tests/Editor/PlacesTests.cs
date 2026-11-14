@@ -62,7 +62,9 @@ namespace HypaStories.Tests
         {
             Assert.AreEqual("Gather round", PlaceButtons.Label(PlaceIds.Camp, true));
             Assert.AreEqual("Campfire", PlaceButtons.Label(PlaceIds.Camp, false));
-            Assert.AreEqual("Hut", PlaceButtons.Label(PlaceIds.Hut, true));
+            Assert.AreEqual("Step inside", PlaceButtons.Label(PlaceIds.Hut, true));
+            Assert.AreEqual("Hut", PlaceButtons.Label(PlaceIds.Hut, false));
+            Assert.AreEqual("Meet the locals", PlaceButtons.Label(PlaceIds.Gathering, true));
             Assert.AreEqual("Village", PlaceButtons.Label(PlaceIds.Gathering, false));
         }
 

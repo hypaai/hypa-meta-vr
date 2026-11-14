@@ -6,7 +6,7 @@ namespace HypaStories
     /// <summary>
     /// The place row, the same in every place: Back (far left), then the three places with the one you are in solid in the
     /// middle (it starts that place: Gather round at the camp). The other two are light and take you there.
-    /// Camp: Back, Hut, [Gather round], Village. Hut: Back, Campfire, [Hut], Village. Village: Back, Hut, [Village], Campfire.
+    /// Camp: Back, Hut, [Gather round], Village. Hut: Back, Campfire, [Step inside], Village. Village: Back, Hut, [Meet the locals], Campfire.
     /// A null action leaves that button out (e.g. Back with no Hypa shell to go back to).
     /// </summary>
     public static class PlaceButtons
@@ -55,13 +55,20 @@ namespace HypaStories
             return (a, b);
         }
 
-        /// <summary>The button's label: the camp's start is "Gather round"; going back to it says "Campfire". Pure, unit tested.</summary>
+        /// <summary>
+        /// The button's label. Where you are, it invites you in: "Gather round" (sit by the fire for a story), "Step inside" (the
+        /// hut: a local at the table, things to pinch and learn), "Meet the locals" (the village: talk to the one villager by the
+        /// crowd). Elsewhere it names the place: Campfire, Hut, Village. Pure, unit tested.
+        /// </summary>
         public static string Label(string id, bool here) =>
-            id == PlaceIds.Camp ? (here ? "Gather round" : "Campfire") : id == PlaceIds.Hut ? "Hut" : "Village";
+            id == PlaceIds.Camp ? (here ? "Gather round" : "Campfire")
+            : id == PlaceIds.Hut ? (here ? "Step inside" : "Hut")
+            : here ? "Meet the locals" : "Village";
 
         static string Icon(string id) => id == PlaceIds.Camp ? "flame" : id == PlaceIds.Hut ? "house" : "users";
 
-        static float Width(string id, bool here) => id == PlaceIds.Camp ? (here ? 0.24f : 0.19f) : id == PlaceIds.Hut ? 0.15f : 0.17f;
+        static float Width(string id, bool here) =>
+            id == PlaceIds.Camp ? (here ? 0.24f : 0.19f) : id == PlaceIds.Hut ? (here ? 0.22f : 0.15f) : (here ? 0.26f : 0.17f);
 
         static Action For(string id, Action camp, Action hut, Action village) =>
             id == PlaceIds.Camp ? camp : id == PlaceIds.Hut ? hut : id == PlaceIds.Gathering ? village : null;
