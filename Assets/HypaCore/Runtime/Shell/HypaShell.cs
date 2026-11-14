@@ -9,6 +9,9 @@ namespace HypaCore
         public const string Shell = "HypaShell";
         public const string Lens = "HypaLens";
         public const string Story = "HypaStory";
+        /// <summary>Hypa Story places (ticket 3F): loaded from the campfire by HypaStories.Places, never by the shell.</summary>
+        public const string StoryHut = "HypaStoryHut";
+        public const string StoryGathering = "HypaStoryGathering";
         public const string CoreTest = "HypaCoreTest";
     }
 

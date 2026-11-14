@@ -74,7 +74,7 @@ namespace HypaStories.EditorTools
         /// StandaloneOnly, so under the shell the shell's rig is used instead. Without a headset, the rig's camera works as a plain
         /// camera and EditorMouseLook turns the rig. Built from prefabs by path: Stories has no code dependency on the SDK.
         /// </summary>
-        static GameObject BuildMetaRig()
+        internal static GameObject BuildMetaRig()
         {
             var rigPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(MetaPrefabs + "OVRCameraRig.prefab");
             var handPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(MetaPrefabs + "OVRHandPrefab.prefab");

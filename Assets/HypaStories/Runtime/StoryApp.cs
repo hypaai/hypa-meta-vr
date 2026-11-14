@@ -32,6 +32,8 @@ namespace HypaStories
         [SerializeField] float walkRadius = 18f;
         [Tooltip("Highest your eyes can be above the ground, metres (no flying up out of the forest).")]
         [SerializeField] float maxEyeHeight = 2.2f;
+        [Tooltip("A small 'Places (test)' panel with doors to the hut and the gathering, until 3L's portal lands. Hidden during a story.")]
+        [SerializeField] bool testDoors = true;
 
         enum Screen { Splash, List, Play }
 
@@ -55,6 +57,10 @@ namespace HypaStories
         AskFlow _ask;
         StoryLanguage _lang;
         readonly RaiseHandGesture _raise = new RaiseHandGesture();
+        // Places (3F): away = at another place; the camp stays loaded, hidden and quiet, and picks up when you come back.
+        bool _away, _wasPlaying;
+        readonly System.Collections.Generic.List<AudioSource> _resumeLoops = new System.Collections.Generic.List<AudioSource>();
+        Transform _doors;
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
         void Start()
@@ -104,7 +110,75 @@ namespace HypaStories
             _player.Root.gameObject.SetActive(false);
             _camp.Teller.gameObject.SetActive(false);
             BuildVeil();
+            Places.EnsureRunner();
+            Places.Leaving += OnLeavingPlace;
+            Places.Arrived += OnArrivedPlace;
+            Places.NumberKeysTaken = NumberKeysTaken; // 1-3 pick a suggested question while a story plays
+            if (testDoors) BuildTestDoors();
             StartCoroutine(Intro());
+        }
+
+        // ---------- places (3F) ----------
+
+        bool NumberKeysTaken() => !_away && _screen == Screen.Play;
+
+        /// <summary>Leaving the camp: pause the story (it never resumes on its own), stop any question, hide and quiet the camp.</summary>
+        void OnLeavingPlace(string id)
+        {
+            if (id != PlaceIds.Camp || _away) return;
+            _wasPlaying = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
+            _ask.Cancel();
+            _holdToTalk = false;
+            if (_story.Live) _story.Pause();
+            _resumeLoops.Clear();
+            foreach (var src in _world.GetComponentsInChildren<AudioSource>(true)) if (src.isPlaying && src.loop) _resumeLoops.Add(src);
+            foreach (var src in GetComponentsInChildren<AudioSource>(true)) if (src.isPlaying && src.loop) _resumeLoops.Add(src);
+            foreach (var src in _resumeLoops) src.Pause();
+            _audio.enabled = false; // no wolves or crickets from the camp while you're in the hut
+            _away = true;
+            _world.gameObject.SetActive(false);
+            _ui.gameObject.SetActive(false);
+        }
+
+        /// <summary>Back at the camp: show it where you stand, panels in front of you, sound back, story picking up where it was.</summary>
+        void OnArrivedPlace(string id)
+        {
+            if (id != PlaceIds.Camp || !_away) return;
+            _away = false;
+            _world.gameObject.SetActive(true);
+            _ui.gameObject.SetActive(true);
+            Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
+            if (_screen == Screen.Splash) _splash.Follow.Snap();
+            else if (_screen == Screen.List) _list.Follow.Snap();
+            else _player.Follow.Snap();
+            if (_doors != null) _doors.GetComponent<FollowView>().Snap();
+            _audio.enabled = true;
+            foreach (var src in _resumeLoops)
+            {
+                if (src == null || !src.gameObject.activeInHierarchy) continue;
+                src.UnPause();
+                if (!src.isPlaying) src.Play(); // hiding the camp stopped it outright: start the loop again
+            }
+            _resumeLoops.Clear();
+            if (_wasPlaying && _story.Paused) _story.TogglePause();
+            _wasPlaying = false;
+            Places.NumberKeysTaken = NumberKeysTaken;
+        }
+
+        /// <summary>
+        /// Test doors to the other places, off to the left (a pinch on a Quest, 2 / 3 in the editor), until the portal (3L) lands.
+        /// Hidden while a story plays.
+        /// </summary>
+        void BuildTestDoors()
+        {
+            _doors = new GameObject("Places (test)").transform;
+            _doors.SetParent(_ui, false);
+            Kit.Glass(_doors, "bg", Vector3.zero, new Vector2(0.34f, 0.13f), 0.03f);
+            Kit.Text(_doors, "Places (test)", 0.014f, new Vector3(0f, 0.036f, 0f), new Vector2(0.3f, 0.03f), KitTheme.Dim);
+            Kit.Button(_doors, new Vector3(-0.078f, -0.02f, 0f), new Vector2(0.14f, 0.05f), "Hut", null, KitStyle.Ghost, () => Places.GoTo(PlaceIds.Hut));
+            Kit.Button(_doors, new Vector3(0.078f, -0.02f, 0f), new Vector2(0.14f, 0.05f), "Gathering", null, KitStyle.Ghost, () => Places.GoTo(PlaceIds.Gathering));
+            var f = _doors.gameObject.AddComponent<FollowView>();
+            f.Distance = 1.0f; f.Height = -0.34f; f.YawOffset = -34f; f.Threshold = 40f;
         }
 
         // ---------- placement ----------
@@ -350,6 +424,8 @@ namespace HypaStories
 
         void Update()
         {
+            if (_away) return; // at another place: the camp waits, hidden
+            if (_doors != null && _doors.gameObject.activeSelf == (_screen == Screen.Play)) _doors.gameObject.SetActive(_screen != Screen.Play);
             var dt = Time.deltaTime;
             _hover = Approach(_hover, _portalHover && _screen == Screen.Splash && !_busy ? 1f : 0f, 5f, dt);
             _camp.Boost = _boost * (1f + 0.3f * _hover);
@@ -431,6 +507,9 @@ namespace HypaStories
 
         void OnDestroy()
         {
+            Places.Leaving -= OnLeavingPlace;
+            Places.Arrived -= OnArrivedPlace;
+            if (Places.NumberKeysTaken == (System.Func<bool>)NumberKeysTaken) Places.NumberKeysTaken = null;
             _cts.Cancel();
             _cts.Dispose();
             _ask?.Cancel();
