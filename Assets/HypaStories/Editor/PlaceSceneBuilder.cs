@@ -34,7 +34,7 @@ namespace HypaStories.EditorTools
 
         [MenuItem("Hypa/Stories/Create Gathering Scene (stub)")]
         public static void CreateGatheringStub() => CreatePlaceScene(HypaScenes.StoryGathering, root =>
-            Stub(root, HypaScenes.StoryGathering, "The gathering", "Stand-in until 3M builds the gathering.", new Color(0.22f, 0.24f, 0.18f), new[] { PlaceIds.Camp, PlaceIds.Hut }));
+            Stub(root, HypaScenes.StoryGathering, "The village", "Stand-in until 3M builds the village.", new Color(0.22f, 0.24f, 0.18f), new[] { PlaceIds.Camp, PlaceIds.Hut }));
 
         /// <summary>
         /// (Re)builds a place scene: rig, "Place" root with the PlaceEntry at its origin facing +Z, one warm real-time light

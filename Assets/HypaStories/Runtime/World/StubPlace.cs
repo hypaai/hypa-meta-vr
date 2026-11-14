@@ -5,45 +5,45 @@ using UnityEngine;
 namespace HypaStories
 {
     /// <summary>
-    /// A stand-in place (ticket 3F) until its owner builds it (3H the hut, 3M the gathering): a title in front of the entry
-    /// and a pinchable door to each other place, so moving between places can be tried in the editor and on a Quest from
-    /// day 1. Built at runtime with HypaCore's UI; the scene's builder adds the floor and the one light.
+    /// A stand-in place until its owner builds it: the same button row as the campfire. The place you are in is the solid
+    /// button (the start). The others are light and take you there. The hut and village starts are not built yet, so the
+    /// solid press stays put.
     /// </summary>
     public sealed class StubPlace : MonoBehaviour
     {
-        [Tooltip("Shown in front of the entry.")]
+        [Tooltip("Shown above the button row.")]
         public string Title = "A place";
         [Tooltip("Shown under the title.")]
         public string Note = "A stand-in until this place is built.";
-        [Tooltip("Place ids to offer doors to.")]
+        [Tooltip("Kept so older scenes still load. The row is the same in every place.")]
         public string[] Doors = { PlaceIds.Camp };
-
-        // The UI was designed in metres at 0.6 m; the sign stands about 1.8 m from the entry, so it is scaled up to match.
-        const float SignDistance = 1.8f, Scale = SignDistance / 0.6f;
 
         void Start()
         {
             Places.EnsureRunner();
             PinchPointer.EnsureExists();
-            var sign = new GameObject("Stub Sign").transform;
-            sign.SetParent(transform, false);
-            sign.localPosition = new Vector3(0f, 1.45f, SignDistance); // ahead of the entry (this object sits on it), at eye level
-            sign.localScale = Vector3.one * Scale;
+            if (!Kit.Ready) return; // the camp loads the UI kit; a place opened on its own has no row yet
 
-            // Title, note, then one full-width door per row (labels never squeeze).
-            const float pitch = 0.062f;
-            var h = 0.13f + Doors.Length * pitch;
-            Ui.Quad("bg", sign, new Vector3(0f, 0.08f - h / 2f, 0.003f), new Vector2(0.36f, h), Ui.Panel, true).AddComponent<PinchTarget>();
-            Ui.Text(sign, Title, 0.026f, new Vector3(0f, 0.045f, 0f), Color.white);
-            Ui.Text(sign, Note, 0.013f, new Vector3(0f, 0.008f, 0f), new Color(1f, 1f, 1f, 0.7f));
-            for (var i = 0; i < Doors.Length; i++)
-            {
-                var id = Doors[i];
-                Ui.Button(DoorLabel(id), sign, new Vector3(0f, -0.045f - i * pitch, -0.001f), new Vector2(0.28f, 0.05f), i == 0 ? Ui.Accent : Ui.Muted, () => Places.GoTo(id));
-            }
+            var here = Places.IdForScene(gameObject.scene.name);
+            var row = new GameObject("Place Buttons").transform;
+            row.SetParent(transform, false);
+            Kit.Text(row, Title, 0.02f, new Vector3(0f, 0.058f, 0f), new Vector2(0.7f, 0.03f), KitTheme.Dim);
+            PlaceButtons.Add(row, here, Back(), Go(PlaceIds.Camp), Go(PlaceIds.Hut), Go(PlaceIds.Gathering));
+            var follow = row.gameObject.AddComponent<FollowView>();
+            follow.Distance = 0.95f;
+            follow.Height = -0.34f;
+            row.gameObject.AddComponent<KitGroup>().Refresh();
         }
 
+        /// <summary>The place you are in is the solid start button. It does not leave. The others go there.</summary>
+        Action Go(string id) => Places.IdForScene(gameObject.scene.name) == id ? (Action)(() => { }) : () => Places.GoTo(id);
+
+        static Action Back() => HypaShell.Instance != null ? () => HypaShell.Instance.ExitToHome() : null;
+
         /// <summary>"Back to the camp", "To the hut"... Pure.</summary>
-        public static string DoorLabel(string placeId) => placeId == PlaceIds.Camp ? "Back to the camp" : "To the " + placeId;
+        public static string DoorLabel(string placeId) => placeId == PlaceIds.Camp ? "Back to the camp" : "To the " + PlaceName(placeId);
+
+        /// <summary>What a place is called on screen: the gathering is shown as "village". Pure.</summary>
+        public static string PlaceName(string placeId) => placeId == PlaceIds.Gathering ? "village" : placeId;
     }
 }
