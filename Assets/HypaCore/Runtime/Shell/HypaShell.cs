@@ -77,6 +77,7 @@ namespace HypaCore
             _cam = cam != null ? cam.transform : null;
             PinchPointer.EnsureExists();
             _ = HypaAudioPlayer.Instance;
+            EnsureAudio(); // before any sound plays: never let a "volume 0" moment at launch switch the sound off
         }
 
         void Start()
@@ -99,6 +100,26 @@ namespace HypaCore
             if (Application.isEditor && Input.GetKeyDown(KeyCode.M)) ToggleMenu();
         }
 
+        // A build starts the app while the headset is off, when the Quest can report its media volume as 0. With "output
+        // suspension" on, Unity stops the sound then and often doesn't start it again, so the first session is silent.
+        // Output suspension is off in Project Settings > Audio; this keeps it off and, as a safety net, starts the sound
+        // again if it isn't running when the app comes back. It never stops sound that is playing (no clicks or gaps).
+        void OnApplicationPause(bool paused) { if (!paused) EnsureAudio(); }
+        void OnApplicationFocus(bool focus) { if (focus) EnsureAudio(); }
+
+        System.Collections.IEnumerator EnsureAudioSoon()
+        {
+            yield return new WaitForSecondsRealtime(0.5f);
+            EnsureAudio();
+        }
+
+        static void EnsureAudio()
+        {
+            if (Application.platform != RuntimePlatform.Android) return;
+            AudioSettings.Mobile.stopAudioOutputOnMute = false;
+            if (!AudioSettings.Mobile.audioOutputStarted) AudioSettings.Mobile.StartAudioOutput();
+        }
+
         // After the camera rig has taken this frame's head pose, so the UI doesn't trail it by a frame.
         void LateUpdate() => FollowHead();
 
@@ -107,7 +128,7 @@ namespace HypaCore
             if (_anchor == null || _cam == null) return;
             // The XR session starts a few frames in and lifts the camera to eye height: snap in front then.
             var xrActive = UnityEngine.XR.XRSettings.isDeviceActive;
-            if (xrActive && !_xrWasActive) _follow.Reset();
+            if (xrActive && !_xrWasActive) { _follow.Reset(); StartCoroutine(EnsureAudioSoon()); }
             _xrWasActive = xrActive;
             var pose = _follow.Update(_cam.position, _cam.rotation, PointerOnShellUi, Time.unscaledDeltaTime);
             _anchor.SetPositionAndRotation(pose.position, pose.rotation);
