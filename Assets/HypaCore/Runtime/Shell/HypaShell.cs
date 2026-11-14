@@ -194,7 +194,7 @@ namespace HypaCore
                 y -= wrapped.Split('\n').Length * bodyH * line + 0.03f;
             }
             Section("camera", "Hypa Lens",
-                "Look at a sign, menu or book and pinch Capture. Each word becomes a label on the real surface: pinch one to translate, hear and define it, or hold the pinch for the whole sentence. Caption reads the whole view at once. Save words to practise later.");
+                "Look at a sign, menu or book and pinch Capture. The words open in a popup: pinch one to translate, hear and define it, or hold the pinch for the whole line. Caption reads the whole view at once. Save words to practise later.");
             Section("languages", "Stories",
                 "Sit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.");
             Ui.Text(_help, Ui.Wrap("Everything works with your hands. Pinch Home at any time to come back here.", chars), bodyH,

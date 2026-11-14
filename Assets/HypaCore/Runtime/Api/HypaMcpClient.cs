@@ -17,6 +17,12 @@ namespace HypaCore
     public sealed class HypaMcpClient
     {
         public const string Path = "/v2/mcp";
+        /// <summary>
+        /// Model sent on every translation / speech call. "auto" = Hypa picks the best-scoring model for the language,
+        /// with fallback. Fixed on purpose: the app never pins a specific model. (The MCP tools have no provider
+        /// parameter; the REST mt call sends provider "auto".)
+        /// </summary>
+        public const string Model = "auto";
         static readonly HashSet<string> FreeTools = new HashSet<string>
             { "list_languages", "list_voices", "check_language_pair", "list_models", "word_of_the_day" };
 
@@ -116,10 +122,25 @@ namespace HypaCore
         /// <summary>sourceLang null = auto-detect; the detected label comes back in DetectedLanguage (may be null).</summary>
         public async Task<HypaTranslation> TranslateAsync(string text, string targetLang, string sourceLang, CancellationToken ct)
         {
-            var args = new JObject { ["text"] = text, ["targetLang"] = targetLang };
-            if (!string.IsNullOrEmpty(sourceLang)) args["sourceLang"] = sourceLang;
+            var args = TranslateArgs(text, targetLang, sourceLang);
             var o = await CallToolAsync("translate_message", args, ct).ConfigureAwait(false);
             return new HypaTranslation { Text = (string)o["translation"], DetectedLanguage = (string)o["language"], Model = (string)o["model"] };
+        }
+
+        /// <summary>translate_message arguments. Pure, unit tested.</summary>
+        public static JObject TranslateArgs(string text, string targetLang, string sourceLang)
+        {
+            var args = new JObject { ["text"] = text, ["targetLang"] = targetLang, ["model"] = Model };
+            if (!string.IsNullOrEmpty(sourceLang)) args["sourceLang"] = sourceLang;
+            return args;
+        }
+
+        /// <summary>translate_image arguments. Pure, unit tested.</summary>
+        public static JObject TranslateImageArgs(byte[] image, string targetLang, string sourceLang)
+        {
+            var args = new JObject { ["image"] = System.Convert.ToBase64String(image), ["imageType"] = "base64", ["targetLang"] = targetLang, ["model"] = Model };
+            if (!string.IsNullOrEmpty(sourceLang)) args["sourceLang"] = sourceLang;
+            return args;
         }
 
         /// <summary>
@@ -129,8 +150,7 @@ namespace HypaCore
         public async Task<HypaImageTranslation> TranslateImageAsync(byte[] image, string targetLang, string sourceLang, CancellationToken ct)
         {
             if (image == null || image.Length == 0) throw new HypaException(HypaErrorKind.BadRequest, "translate_image: no image.");
-            var args = new JObject { ["image"] = System.Convert.ToBase64String(image), ["imageType"] = "base64", ["targetLang"] = targetLang };
-            if (!string.IsNullOrEmpty(sourceLang)) args["sourceLang"] = sourceLang;
+            var args = TranslateImageArgs(image, targetLang, sourceLang);
             var o = await CallToolAsync("translate_image", args, ct).ConfigureAwait(false);
             return ParseImageTranslation(o);
         }
@@ -145,7 +165,7 @@ namespace HypaCore
         /// <summary>Audio comes back as a signed URL (default) valid about an hour.</summary>
         public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null)
         {
-            var args = new JObject { ["text"] = text, ["language"] = language };
+            var args = new JObject { ["text"] = text, ["language"] = language, ["model"] = Model };
             if (!string.IsNullOrEmpty(voice)) args["voice"] = voice;
             var o = await CallToolAsync("text_to_speech", args, ct).ConfigureAwait(false);
             return ParseSpeech(o);

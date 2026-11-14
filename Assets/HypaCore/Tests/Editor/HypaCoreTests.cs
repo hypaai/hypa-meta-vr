@@ -306,5 +306,33 @@ namespace HypaCore.Tests
 
         [Test] public void NoKeyFileInsideAssets()
             => Assert.IsEmpty(Directory.GetFiles("Assets", HypaConfig.FileName, SearchOption.AllDirectories));
+
+        // ---------- Model / provider: always auto ----------
+
+        [Test] public void TranslationCalls_AlwaysAskForTheAutoModel()
+        {
+            Assert.AreEqual("auto", HypaMcpClient.Model, "the app must never pin a model");
+            Assert.AreEqual("auto", (string)HypaMcpClient.TranslateArgs("hi", "Yoruba", null)["model"]);
+            Assert.AreEqual("auto", (string)HypaMcpClient.TranslateArgs("hi", "Yoruba", "English")["model"]);
+            Assert.AreEqual("auto", (string)HypaMcpClient.TranslateImageArgs(new byte[] { 1 }, "Yoruba", null)["model"]);
+            Assert.IsNull(HypaMcpClient.TranslateArgs("hi", "Yoruba", null)["sourceLang"], "no source = auto-detect");
+        }
+
+        [Test] public void TextButton_GetsItsLabelBack_AfterALoadingState()
+        {
+            // Ui reads renderer.material, which in Edit Mode logs a material-leak error (not at runtime): not a failure here.
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
+            var root = new GameObject("test root");
+            try
+            {
+                var b = Ui.Button("Arabic", root.transform, Vector3.zero, new Vector2(0.2f, 0.05f), Ui.Muted, null);
+                Ui.SetBusy(b, true);
+                Assert.IsFalse(Ui.LabelOf(b).gameObject.activeSelf, "the loader replaces the label");
+                Ui.SetBusy(b, false);
+                Assert.IsTrue(Ui.LabelOf(b).gameObject.activeSelf, "the label must come back (language pills were left blank)");
+                Assert.AreEqual("Arabic", Ui.LabelOf(b).text);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
     }
 }

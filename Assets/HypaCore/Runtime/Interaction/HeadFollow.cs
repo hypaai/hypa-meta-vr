@@ -3,30 +3,37 @@ using UnityEngine;
 namespace HypaCore
 {
     /// <summary>
-    /// Keeps a panel comfortably in front of the viewer, the same way Stories' FollowView does, so every mode moves alike:
+    /// Keeps a panel comfortably in front of the viewer. Two styles:
     ///
-    /// - It sits <see cref="Distance"/> out at <see cref="Height"/> from eye level, in the direction the head faces (yaw).
-    /// - It always turns to face the eyes, so looking up or down at it it still reads straight on.
-    /// - Looking around a little leaves it still (a hand ray can land on it); past <see cref="Threshold"/> degrees, or after
-    ///   walking away, it glides back in front with an exponential ease (<see cref="Speed"/>), swinging round the user.
-    /// - While the hand is on it (<c>hold</c>) it doesn't start a glide; a glide that has started always finishes.
-    /// - A sudden jump of the head (the XR session starting at eye height, a recentre) snaps it straight in front.
-    /// - A long frame (a scene load, a hitch) is treated as a short one, so it never leaps.
-    /// Pure, unit tested.
+    /// - Yaw only (default, like Stories' FollowView): it sits <see cref="Distance"/> out at <see cref="Height"/> from eye
+    ///   level in the direction the head faces, and turns to face the eyes, so it reads straight on from above or below.
+    /// - <see cref="FollowPitch"/>: it also follows looking up and down (to <see cref="MaxPitch"/>), staying centred in
+    ///   the view and square to the line of sight, like a screen held in front of the eyes.
+    ///
+    /// Looking around a little (inside <see cref="Threshold"/> degrees) leaves it still, so a hand ray can land on it.
+    /// Past that it glides back to the centre on a critically damped spring (<see cref="SmoothTime"/>): it eases in and
+    /// out, never kicks off at full speed, never overshoots, and swings round the user at a fixed distance. Walking
+    /// carries it along at once (it is placed relative to the head every frame).
+    ///
+    /// While the hand is on it (<c>hold</c>) a glide doesn't start; one that has started always finishes. A sudden jump
+    /// of the head (the XR session starting at eye height, a recentre) snaps it in front, and a long frame (a scene load,
+    /// a hitch) is treated as a short one so it never leaps. Pure, unit tested.
     /// </summary>
     public sealed class HeadFollow
     {
         public float Distance = 1.0f;    // metres from the eyes; beyond the hands so a hand ray crosses the panel
-        public float Height = 0f;        // metres from eye level (negative = below)
-        public float Threshold = 28f;    // degrees of head yaw before it follows
-        public float MoveAway = 0.35f;   // metres of walking before it follows
-        public float Speed = 3.5f;       // per second; higher = snappier glide
+        public float Height = 0f;        // metres from the line of sight (negative = below)
+        public bool FollowPitch;         // also follow looking up/down
+        public float MaxPitch = 60f;     // degrees up/down it follows (FollowPitch only)
+        public float Threshold = 28f;    // degrees off-centre before it follows
+        public float SmoothTime = 0.3f;  // seconds; roughly how long a re-centre takes
         public float SnapJump = 0.5f;    // metres the head can move in one frame before it counts as a jump
         const float MaxStep = 1f / 30f;  // seconds; longer frames are treated as this long
+        const float Settled = 0.4f;      // degrees: close enough to stop
 
         bool _placed, _moving;
-        float _yaw;
-        Vector3 _pos, _lastHead;
+        float _yaw, _pitch, _yawVel, _pitchVel;
+        Vector3 _lastHead;
 
         public bool IsFollowing => _moving;
 
@@ -36,43 +43,52 @@ namespace HypaCore
         /// <summary>The pose the panel should have this frame. The panel's +Z points away from the viewer.</summary>
         public Pose Update(Vector3 headPos, Quaternion headRot, bool hold, float dt)
         {
-            var headYaw = YawOf(headRot);
+            Gaze(headRot, out var yaw, out var pitch);
+            if (!FollowPitch) pitch = 0f;
+            else pitch = Mathf.Clamp(pitch, -MaxPitch, MaxPitch);
+
             if (!_placed || (headPos - _lastHead).sqrMagnitude > SnapJump * SnapJump)
             {
                 _placed = true; _moving = false;
-                _yaw = headYaw;
-                _pos = Target(headPos);
+                _yaw = yaw; _pitch = pitch; _yawVel = _pitchVel = 0f;
             }
             _lastHead = headPos;
             dt = Mathf.Clamp(dt, 0f, MaxStep);
 
-            var off = Mathf.Abs(Mathf.DeltaAngle(headYaw, _yaw));
-            var flat = _pos - headPos; flat.y = 0f;
-            if (!_moving && !hold && (off > Threshold || Mathf.Abs(flat.magnitude - Distance) > MoveAway)) _moving = true;
-            if (_moving)
+            var off = Vector3.Angle(Dir(_yaw, _pitch), Dir(yaw, pitch));
+            if (!_moving && !hold && off > Threshold) _moving = true;
+            if (_moving && dt > 0f)
             {
-                _yaw = Mathf.LerpAngle(_yaw, headYaw, 1f - Mathf.Exp(-Speed * dt));
-                if (Mathf.Abs(Mathf.DeltaAngle(headYaw, _yaw)) < 2f) _moving = false;
+                _yaw = Mathf.SmoothDampAngle(_yaw, yaw, ref _yawVel, SmoothTime, Mathf.Infinity, dt);
+                _pitch = Mathf.SmoothDampAngle(_pitch, pitch, ref _pitchVel, SmoothTime, Mathf.Infinity, dt);
+                if (Vector3.Angle(Dir(_yaw, _pitch), Dir(yaw, pitch)) < Settled && Mathf.Abs(_yawVel) + Mathf.Abs(_pitchVel) < 5f)
+                {
+                    _moving = false; _yawVel = _pitchVel = 0f;
+                }
             }
-            // The position chases the target on the circle round the head (yaw-wise), never cutting through the user.
-            var target = Target(headPos);
-            var k = 1f - Mathf.Exp(-Speed * 1.5f * dt);
-            var from = _pos - headPos; var to = target - headPos;
-            var fromFlat = new Vector3(from.x, 0f, from.z); var toFlat = new Vector3(to.x, 0f, to.z);
-            var dir = Vector3.Slerp(fromFlat, toFlat, k);
-            _pos = headPos + new Vector3(dir.x, Mathf.Lerp(from.y, to.y, k), dir.z);
 
-            var face = _pos - headPos;
-            return new Pose(_pos, Quaternion.LookRotation(face.sqrMagnitude > 1e-6f ? face.normalized : Vector3.forward, Vector3.up));
+            var view = Quaternion.Euler(-_pitch, _yaw, 0f);
+            var up = FollowPitch ? view * Vector3.up : Vector3.up;
+            var pos = headPos + view * Vector3.forward * Distance + up * Height;
+            Quaternion rot;
+            if (FollowPitch) rot = view; // square to the line of sight
+            else
+            {
+                var face = pos - headPos;
+                rot = Quaternion.LookRotation(face.sqrMagnitude > 1e-6f ? face.normalized : Vector3.forward, Vector3.up);
+            }
+            return new Pose(pos, rot);
         }
 
-        Vector3 Target(Vector3 headPos) => headPos + Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward * Distance + Vector3.up * Height;
+        static Vector3 Dir(float yaw, float pitch) => Quaternion.Euler(-pitch, yaw, 0f) * Vector3.forward;
 
-        static float YawOf(Quaternion q)
+        static void Gaze(Quaternion q, out float yaw, out float pitch)
         {
             var f = q * Vector3.forward;
-            if (new Vector2(f.x, f.z).sqrMagnitude < 1e-6f) f = q * Vector3.up * -Mathf.Sign(f.y); // straight up/down: use the top of the head
-            return Mathf.Atan2(f.x, f.z) * Mathf.Rad2Deg;
+            var flat = new Vector2(f.x, f.z);
+            if (flat.sqrMagnitude < 1e-6f) { var u = q * Vector3.up * -Mathf.Sign(f.y); flat = new Vector2(u.x, u.z); } // straight up/down
+            yaw = Mathf.Atan2(flat.x, flat.y) * Mathf.Rad2Deg;
+            pitch = Mathf.Asin(Mathf.Clamp(f.y, -1f, 1f)) * Mathf.Rad2Deg;
         }
     }
 }

@@ -110,5 +110,34 @@ namespace HypaCore.Tests
             var p = Run(f, walked, Quaternion.identity, 300);
             Assert.That(Vector3.Distance(p.position, walked + Vector3.forward * f.Distance), Is.LessThan(0.01f));
         }
+
+        [Test] public void FollowPitch_LookingUp_StaysCentred_AndSquareToTheView()
+        {
+            var f = new HeadFollow { FollowPitch = true, Threshold = 6f };
+            f.Update(Head, Quaternion.identity, false, Dt);
+            var up = Quaternion.Euler(-35f, 20f, 0f); // looking up and a little right
+            var p = Run(f, Head, up, 300);
+            Assert.That(Vector3.Angle(up * Vector3.forward, p.position - Head), Is.LessThan(0.6f), "centred where the head points");
+            Assert.That(Vector3.Angle(up * Vector3.forward, p.rotation * Vector3.forward), Is.LessThan(0.6f), "reads as if looking straight at it");
+            Assert.AreEqual(f.Distance, Vector3.Distance(p.position, Head), 1e-3f);
+        }
+
+        [Test] public void FollowPitch_GlideEasesIn_NoKick()
+        {
+            var f = new HeadFollow { FollowPitch = true, Threshold = 6f };
+            var prev = f.Update(Head, Quaternion.identity, false, Dt);
+            var rot = Quaternion.Euler(-40f, 0f, 0f);
+            var steps = new float[12];
+            for (var i = 0; i < steps.Length; i++) { var p = f.Update(Head, rot, false, Dt); steps[i] = Vector3.Distance(p.position, prev.position); prev = p; }
+            Assert.That(steps[0], Is.LessThan(steps[5]), "speeds up gently instead of starting at full speed");
+        }
+
+        [Test] public void FollowPitch_IsClamped()
+        {
+            var f = new HeadFollow { FollowPitch = true, MaxPitch = 60f };
+            var p = f.Update(Head, Quaternion.Euler(-89f, 0f, 0f), false, Dt);
+            var dir = (p.position - Head).normalized;
+            Assert.AreEqual(60f, Mathf.Asin(dir.y) * Mathf.Rad2Deg, 0.2f);
+        }
     }
 }

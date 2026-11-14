@@ -243,7 +243,8 @@ namespace HypaCore
         }
 
         /// <summary>The label TextMesh of a button made by <see cref="Button"/> or <see cref="RoundButton"/>.</summary>
-        public static TextMesh LabelOf(PinchTarget button) => button.transform.parent.GetComponentInChildren<TextMesh>();
+        // includeInactive: a loading state hides the label, and ending it must find the label again to show it.
+        public static TextMesh LabelOf(PinchTarget button) => button.transform.parent.GetComponentInChildren<TextMesh>(true);
 
         /// <summary>Changes a button's label, re-fitting it to the button (shrink, then trim).</summary>
         public static void SetLabel(PinchTarget button, string label)

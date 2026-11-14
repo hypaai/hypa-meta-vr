@@ -327,6 +327,30 @@ namespace HypaLens.Tests
             Assert.IsNull(FrameEncoder.ToJpeg(new CapturedFrame { Width = 1280, Height = 960, Pixels = new Color32[0] }), "the simulator's frame has no pixels");
         }
 
+        // ---------- Results popup: chip layout ----------
+
+        [Test] public void LayoutChips_NewRowPerLine_WrapsLongLines_AndFits()
+        {
+            var lines = new List<IList<string>>
+            {
+                new List<string> { "Welcome", "to", "the", "market" },
+                new List<string> { "Fresh", "fish", "and", "rice" },
+            };
+            var slots = LensApp.LayoutChips(lines, 0.56f, 0.25f, out var scale);
+            Assert.AreEqual(8, slots.Count);
+            Assert.AreEqual(1f, scale, "two short lines fit at full size");
+            Assert.Greater(slots[4].Center.y, slots[3].Center.y, "each line of text starts a new row");
+            foreach (var c in slots) Assert.LessOrEqual(c.Center.x + c.Size.x / 2f, 0.56f + 1e-4f, "never wider than the popup");
+
+            var many = new List<IList<string>>();
+            for (var i = 0; i < 12; i++) many.Add(new List<string> { "Please", "pay", "at", "the", "counter", "every", "day" });
+            slots = LensApp.LayoutChips(many, 0.56f, 0.25f, out scale);
+            Assert.Less(scale, 1f, "lots of text shrinks to fit");
+            var bottom = 0f;
+            foreach (var c in slots) bottom = Mathf.Max(bottom, c.Center.y + c.Size.y / 2f);
+            Assert.That(bottom <= 0.25f + 1e-3f || scale <= 0.551f, "fits the space, or is at the smallest size");
+        }
+
         // ---------- Resolve ----------
 
         [Test] public void Resolve_Word_TranslationMeaningAudio()
