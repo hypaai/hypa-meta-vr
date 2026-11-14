@@ -12,6 +12,17 @@ namespace HypaStories
         [Tooltip("What you see beyond the place (the camera's clear colour) while you're here. The camp's comes back when you return.")]
         public Color Background = new Color(0.05f, 0.04f, 0.035f);
 
+        [Tooltip("Middle of the area you can walk in, from this entry (metres; +Z is the way you face on arrival).")]
+        public Vector3 WalkCenter = new Vector3(0f, 0f, 1f);
+        [Tooltip("How far from the middle you can walk (metres). Walls of the place should sit just outside it.")]
+        public float WalkRadius = 3.2f;
+
+        /// <summary>Every place can be walked in, like the camp (see <see cref="PlaceWalk"/>): added here so scenes built earlier get it too.</summary>
+        void Awake()
+        {
+            if (GetComponent<PlaceWalk>() == null) gameObject.AddComponent<PlaceWalk>();
+        }
+
         /// <summary>The way you face on arrival, flattened to the ground.</summary>
         public Vector3 Forward
         {

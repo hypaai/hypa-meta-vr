@@ -49,5 +49,26 @@ namespace HypaStories.Tests
             Assert.AreEqual("Back to the camp", StubPlace.DoorLabel(PlaceIds.Camp));
             Assert.AreEqual("To the hut", StubPlace.DoorLabel(PlaceIds.Hut));
         }
+
+        [Test] public void Walk_InsideTheArea_NothingMoves()
+        {
+            Assert.AreEqual(Vector3.zero, PlaceWalk.BoundsFix(new Vector3(1f, 1.6f, 2f), new Vector3(0f, 0f, 1f), 3.2f, 0.3f, 2.2f));
+        }
+
+        [Test] public void Walk_PastTheEdge_IsPulledBackToIt()
+        {
+            var center = new Vector3(0f, 0f, 1f);
+            var head = new Vector3(5f, 1.6f, 1f); // 5 m right of the middle; the edge is at 3.2 m
+            var fix = PlaceWalk.BoundsFix(head, center, 3.2f, 0.3f, 2.2f);
+            Assert.That(Vector3.Distance(fix, new Vector3(1.8f, 0f, 0f)), Is.LessThan(1e-4f), "the place moves 1.8 m toward the head");
+            var after = head - fix;
+            Assert.AreEqual(3.2f, new Vector2(after.x - center.x, after.z - center.z).magnitude, 1e-4f, "the head ends on the edge");
+        }
+
+        [Test] public void Walk_EyeHeight_StaysSensible()
+        {
+            Assert.AreEqual(0.8f, PlaceWalk.BoundsFix(new Vector3(0f, 3f, 1f), new Vector3(0f, 0f, 1f), 3.2f, 0.3f, 2.2f).y, 1e-4f, "too high");
+            Assert.AreEqual(-0.2f, PlaceWalk.BoundsFix(new Vector3(0f, 0.1f, 1f), new Vector3(0f, 0f, 1f), 3.2f, 0.3f, 2.2f).y, 1e-4f, "too low");
+        }
     }
 }

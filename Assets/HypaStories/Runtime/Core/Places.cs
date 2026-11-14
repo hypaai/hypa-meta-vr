@@ -168,7 +168,13 @@ namespace HypaStories
                 var entry = PlaceViewer(scene); // the camp places itself (StoryApp.Recenter)
                 if (entry != null && cam != null) cam.backgroundColor = entry.Background;
             }
-            else if (_campBackground != null && cam != null) { cam.backgroundColor = _campBackground.Value; _campBackground = null; }
+            else if (cam != null)
+            {
+                // Back at the camp. Started at another place (its scene played on its own), the camp's colour was never seen:
+                // use the one the campfire scene is built with.
+                cam.backgroundColor = _campBackground ?? CampWorld.FogColor;
+                _campBackground = null;
+            }
             Places._current = target;
             Places.RaiseArrived(target);
             yield return null; // let the place settle (recentre, panels snap) under the veil

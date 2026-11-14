@@ -39,6 +39,9 @@ Each place is its own scene: `HypaStory` (the camp), `HypaStoryHut`, `HypaStoryG
   additively and unload when you leave them.
 - **Where you stand:** each place scene has one `PlaceEntry` (position on the floor, blue arrow = the way you face). Arriving
   moves the place's roots so the entry is under your head, facing the way you face. The camera never moves.
+- **Walking:** inside a place you walk and turn as at the camp (left thumbstick / WASD, right thumbstick snap-turns).
+  `PlaceWalk` (added by the `PlaceEntry`) moves the place, never the camera, and keeps you within `WalkRadius` of
+  `WalkCenter` (set both on the entry to fit your room) at a sensible eye height.
 - **One rig, one audio listener:** a place scene's own rig (`StandaloneOnly`) is removed under the shell *or* when another
   rig is already running (the campfire's). Played on its own, a place keeps its rig alive across moves. If the shell unloads
   the camp, any place scenes go with it.
@@ -51,6 +54,7 @@ Each place is its own scene: `HypaStory` (the camp), `HypaStoryHut`, `HypaStoryG
 | Editor | Quest | Effect |
 |---|---|---|
 | **1** / **2** / **3** | | Camp / hut / gathering (while a story plays, 1-3 still pick a suggested question) |
+| WASD, right mouse drag | Left thumbstick, right thumbstick | Walk and turn inside the hut or the gathering, as at the camp |
 | | Pinch **Hut** / **Gathering** on the *Places (test)* panel (left of you at the camp) | Go there (until the 3L portal lands) |
 | | Pinch **Back to the camp** on a stub place's sign | Back to the camp, the story where you left it |
 
