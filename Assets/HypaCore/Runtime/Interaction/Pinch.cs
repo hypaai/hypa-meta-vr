@@ -80,6 +80,8 @@ namespace HypaCore
         /// pinch the launcher, slide onto an item, release). Off for things a drifting hand must not pick by accident.
         /// </summary>
         public bool AcceptsSlide;
+        /// <summary>Loading (see <see cref="Ui.SetBusy"/>): pinches are ignored until the work finishes.</summary>
+        public bool Busy;
 
         Renderer _r; Color _base; bool _baseSet;
         public void SetColor(Color? c)
@@ -233,7 +235,12 @@ namespace HypaCore
 
             var pinching = input.IsPinching;
             var kind = _router.Update(pinching, Time.realtimeSinceStartupAsDouble, hit, t => t.AcceptsSlide, out var target);
-            if (kind != PinchKind.None && target != null) target.OnPinch?.Invoke(kind);
+            if (kind != PinchKind.None && target != null && !target.Busy) target.OnPinch?.Invoke(kind);
+            if (Application.isEditor && pinching != _wasPinching)
+                Debug.Log($"[Hypa pinch] {(pinching ? "down" : "up")} via {input.GetType().Name}" +
+                          $"{(input is EditorXrInput e ? (e.HandRay ? " (hand ray)" : " (mouse ray)") : "")}, ray={hasRay}, " +
+                          $"over={(hit != null ? hit.transform.parent.name : hitSomething ? "collider without target" : "nothing")}" +
+                          $"{(kind != PinchKind.None ? $", gesture={kind} -> {(target != null ? target.transform.parent.name : "none")}" : "")}");
             _wasPinching = pinching;
         }
 

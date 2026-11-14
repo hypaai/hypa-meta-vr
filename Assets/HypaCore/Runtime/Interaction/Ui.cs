@@ -261,6 +261,45 @@ namespace HypaCore
         public static Texture2D Icon(string name) => Resources.Load<Texture2D>("Icons/" + name);
 
         /// <summary>
+        /// Loading state for any button made here: its icon (or label) is swapped for a spinning loader and pinches are
+        /// ignored until <paramref name="busy"/> is false again. Safe to call repeatedly and on destroyed buttons.
+        /// </summary>
+        public static void SetBusy(PinchTarget button, bool busy)
+        {
+            if (button == null) return;
+            button.Busy = busy;
+            var root = button.transform.parent;
+            var icon = root.Find("icon");
+            var label = LabelOf(button);
+            var spinner = root.Find("spinner");
+            if (busy && spinner == null)
+            {
+                var box = button.GetComponent<BoxCollider>();
+                var h = box != null ? box.size.y * button.transform.lossyScale.y / Mathf.Max(1e-4f, root.lossyScale.y) : 0.04f;
+                // A round button's collider is 1.6x its radius each side (3.2 across): the loader sits inside the disc.
+                var size = button.GetComponent<MeshFilter>() != null && button.GetComponent<MeshFilter>().sharedMesh == _disc ? h * 0.3f : h * 0.6f;
+                var tex = Icon("loader-circle");
+                var bgColor = button.GetComponent<Renderer>() != null ? button.GetComponent<Renderer>().material.color : Secondary;
+                var go = Quad("spinner", root, new Vector3(0, 0, -0.0015f), Vector2.one * size, TextColorFor(bgColor), false, rounded: false);
+                var r = go.GetComponent<Renderer>();
+                if (tex != null) r.material.mainTexture = tex;
+                r.sortingOrder = 2;
+                go.AddComponent<Spin>();
+                spinner = go.transform;
+            }
+            if (spinner != null) spinner.gameObject.SetActive(busy);
+            if (icon != null) icon.gameObject.SetActive(!busy);
+            if (label != null && icon == null) label.gameObject.SetActive(!busy); // text buttons: the loader replaces the label
+        }
+
+        /// <summary>Turns a loader icon steadily.</summary>
+        public sealed class Spin : MonoBehaviour
+        {
+            public float DegreesPerSecond = 360f;
+            void Update() => transform.Rotate(0f, 0f, -DegreesPerSecond * Time.unscaledDeltaTime, Space.Self);
+        }
+
+        /// <summary>
         /// A round icon button (x, camera, speaker...) with an optional small caption under it. Dark, like the mobile
         /// app's camera controls; <paramref name="onLongPress"/> is optional.
         /// </summary>

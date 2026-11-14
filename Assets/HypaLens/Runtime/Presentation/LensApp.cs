@@ -160,7 +160,7 @@ namespace HypaLens
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _cam, _hud, _world;
         TextMesh _status; GameObject _statusBg;
-        PinchTarget _sourceBtn, _targetBtn;
+        PinchTarget _sourceBtn, _targetBtn, _captureBtn, _captionBtn, _speakBtn;
         GameObject _onboarding, _card, _practice, _caption, _liveBadge;
         LanguagePicker _picker;
         PracticeDeck _deck; TextMesh _deckText;
@@ -192,10 +192,10 @@ namespace HypaLens
             };
 
             BuildHud();
-            _ = LoadLanguages();
+            _ = Loading(LoadLanguages, _sourceBtn, _targetBtn);
             if (AppRouter.Consume(AppRouter.LensSavedWords)) TogglePractice();
             else if (!LensPrefs.Onboarded) ShowOnboarding(true);
-            SetStatus("Point at text, then pinch Capture.");
+            SetStatus(DefaultHint);
         }
 
         LensPlatform BuildPlatform()
@@ -276,11 +276,11 @@ namespace HypaLens
             // Bottom row: Capture big in the middle (the shutter), the rest spread either side, each with a tooltip.
             const float r = LensTouch.IconRadius, pitch = 0.19f;
             Tooltip(Ui.IconButton("eraser", _hud, new Vector3(-2f * pitch, BottomY, 0), r, ClearAll, "Clear"), "Remove the labels and cards.");
-            Tooltip(Ui.IconButton("languages", _hud, new Vector3(-pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption"),
+            Tooltip(_captionBtn = Ui.IconButton("languages", _hud, new Vector3(-pitch, BottomY, 0), r, () => _ = CaptionAsync(), "Caption"),
                 "Sends a photo of your view to Hypa to read\nand translate it as a whole. Not stored.");
-            Tooltip(Ui.IconButton("camera", _hud, new Vector3(0f, BottomY, 0), LensTouch.ShutterRadius, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
+            Tooltip(_captureBtn = Ui.IconButton("camera", _hud, new Vector3(0f, BottomY, 0), LensTouch.ShutterRadius, () => _ = CaptureAsync(), "Capture", () => _ = CaptureAsync(), Ui.Primary),
                 "Reads the text in view on the headset.\nEach word becomes a label you can pinch.");
-            Tooltip(Ui.IconButton("volume-2", _hud, new Vector3(pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
+            Tooltip(_speakBtn = Ui.IconButton("volume-2", _hud, new Vector3(pitch, BottomY, 0), r, SpeakLast, "Speak"), "Hear the last translation.");
             Tooltip(Ui.IconButton("bookmark", _hud, new Vector3(2f * pitch, BottomY, 0), r, TogglePractice, "Saved"), "Your saved words, as practice cards.");
 
             // Live-mode badge (dev-only toggle for now; the mode itself is not in the UI yet).
@@ -360,8 +360,31 @@ namespace HypaLens
         const float StatusLineH = 0.016f, StatusPad = 0.014f;
         const int StatusWrap = 44;
 
+        const string DefaultHint = "Point at text, then pinch Capture.";
+        const float ErrorSeconds = 5f;
+        float _errorUntil = -1f;
+
+        /// <summary>An error or warning in the hint pill for <see cref="ErrorSeconds"/>, then back to the default hint.</summary>
+        void ShowError(string s)
+        {
+            SetStatus(s);
+            _errorUntil = Time.unscaledTime + ErrorSeconds;
+        }
+
+        /// <summary>
+        /// Runs work that calls Hypa or the camera with every given button in its loading state (spinner, pinches
+        /// ignored) until it finishes, whatever the outcome.
+        /// </summary>
+        static async Task Loading(Func<Task> work, params PinchTarget[] buttons)
+        {
+            foreach (var b in buttons) Ui.SetBusy(b, true);
+            try { await work(); }
+            finally { foreach (var b in buttons) Ui.SetBusy(b, false); }
+        }
+
         void SetStatus(string s)
         {
+            _errorUntil = -1f; // a new message replaces a pending error
             if (_status == null) return;
             var text = Ui.Wrap(s, StatusWrap);
             _status.text = text;
@@ -397,15 +420,15 @@ namespace HypaLens
         async Task LoadLanguages()
         {
             try { _langs = await _api.ListLanguagesAsync(_cts.Token); }
-            catch (Exception e) { SetStatus(LensException.From(e).UserMessage()); }
+            catch (Exception e) { ShowError(LensException.From(e).UserMessage()); }
         }
 
         void OpenPicker(bool source)
         {
             CloseCards();
-            if (_langs.Count == 0) { SetStatus("Loading languages... try again in a moment."); _ = LoadLanguages(); return; }
+            if (_langs.Count == 0) { SetStatus("Loading languages..."); _ = Loading(LoadLanguages, _sourceBtn, _targetBtn); return; }
             _picker = new LanguagePicker(_hud, new Vector3(0f, CardY, -0.01f), source ? "Translate from" : "Translate into",
-                _langs, source ? _lens.SourceLanguage : _lens.TargetLanguage, source, name => _ = SetLanguage(source, name));
+                _langs, source ? _lens.SourceLanguage : _lens.TargetLanguage, source, name => _ = Loading(() => SetLanguage(source, name), source ? _sourceBtn : _targetBtn));
         }
 
         async Task SetLanguage(bool source, string name)
@@ -431,9 +454,9 @@ namespace HypaLens
                     }
                     Apply(source, name);
                 }
-                SetStatus(new LensException(LensErrorKind.UnsupportedPair).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage));
+                ShowError(new LensException(LensErrorKind.UnsupportedPair).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage));
             }
-            catch (Exception e) { SetStatus(LensException.From(e).UserMessage()); }
+            catch (Exception e) { ShowError(LensException.From(e).UserMessage()); }
         }
 
         void Apply(bool source, string name)
@@ -473,7 +496,9 @@ namespace HypaLens
 
         // ---------- Capture (photo mode: pinchable labels, recognised on the headset) ----------
 
-        async Task CaptureAsync()
+        Task CaptureAsync() => _busy ? Task.CompletedTask : Loading(CaptureWorkAsync, _captureBtn, _captionBtn);
+
+        async Task CaptureWorkAsync()
         {
             if (_busy) return;
             _busy = true;
@@ -484,18 +509,19 @@ namespace HypaLens
             {
                 var ocr = await _lens.CaptureAsync(_cts.Token);
                 var placed = PlaceLabels(ocr);
-                SetStatus(placed == 0
-                    ? "Couldn't pin labels to a surface. Face a wall, sign or table and try again."
-                    : $"{placed} words. Pinch a word; hold the pinch for the sentence.");
+                if (placed == 0) ShowError("Couldn't pin labels to a surface. Face a wall, sign or table and try again.");
+                else SetStatus($"{placed} words. Pinch a word; hold the pinch for the sentence.");
             }
             catch (OperationCanceledException) { }
-            catch (Exception e) { SetStatus(LensException.From(e).UserMessage()); }
+            catch (Exception e) { ShowError(LensException.From(e).UserMessage()); }
             finally { _busy = false; }
         }
 
         // ---------- Caption (Hypa reads and translates the whole view; the photo leaves the headset, as the tooltip says) ----------
 
-        async Task CaptionAsync()
+        Task CaptionAsync() => _busy ? Task.CompletedTask : Loading(CaptionWorkAsync, _captionBtn, _captureBtn);
+
+        async Task CaptionWorkAsync()
         {
             if (_busy) return;
             _busy = true;
@@ -503,12 +529,14 @@ namespace HypaLens
             SetStatus("Sending the view to Hypa...");
             try
             {
-                var r = await _lens.CaptionAsync(f => FrameEncoder.ToJpeg(f), _cts.Token);
+                // The simulator's fake camera has no pixels: send a snapshot of the rendered view instead, so Caption
+                // can be tried end to end in the editor (it reads whatever text is in the virtual room).
+                var r = await _lens.CaptionAsync(f => FrameEncoder.ToJpeg(f) ?? (Application.isEditor ? FrameEncoder.ViewSnapshotJpeg(_hud) : null), _cts.Token);
                 ShowCaption(r);
                 SetStatus("Caption ready. Pinch Speak to hear it.");
             }
             catch (OperationCanceledException) { }
-            catch (Exception e) { SetStatus(LensException.From(e).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage)); }
+            catch (Exception e) { ShowError(LensException.From(e).UserMessage(_lens.SourceLanguage, _lens.TargetLanguage)); }
             finally { _busy = false; }
         }
 
@@ -522,7 +550,8 @@ namespace HypaLens
             var body = $"\"{r.Text}\"  ({r.Language ?? _lens.SourceLanguage ?? "source?"})\n\n→ {r.Translation}  ({_lens.TargetLanguage})";
             Ui.Text(_caption.transform, Ui.Wrap(body, 48), 0.017f, new Vector3(-0.23f, 0.02f, 0), Color.white, TextAnchor.MiddleLeft);
             _lastSpeech = null; _lastSpeechText = r.Translation; _lastSpeechLang = _lens.TargetLanguage;
-            Ui.Button("Speak", _caption.transform, new Vector3(-0.07f, -0.125f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Accent, SpeakLast);
+            PinchTarget speak = null;
+            speak = Ui.Button("Speak", _caption.transform, new Vector3(-0.07f, -0.125f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Accent, () => _ = Loading(SpeakLastAsync, speak, _speakBtn));
             var save = Ui.Button(_saved.Contains(r.Text, _lens.TargetLanguage) ? "Saved" : "Save", _caption.transform, new Vector3(0.07f, -0.125f, -0.001f), new Vector2(0.12f, 0.046f), Ui.Muted, null);
             save.OnPinch = k =>
             {
@@ -537,20 +566,22 @@ namespace HypaLens
         }
 
         /// <summary>Speak: the last translation heard (a pinched word's audio, or a caption, fetched fresh as audio links expire).</summary>
-        async void SpeakLast()
+        void SpeakLast() => _ = Loading(SpeakLastAsync, _speakBtn);
+
+        async Task SpeakLastAsync()
         {
-            if (_lastSpeech != null) { Play(_lastSpeech); return; }
-            if (string.IsNullOrEmpty(_lastSpeechText)) { SetStatus("Pinch a word or take a caption first, then Speak."); return; }
-            try { Play(await _api.SpeakAsync(_lastSpeechText, _lastSpeechLang, _cts.Token)); }
+            if (_lastSpeech != null) { await PlayAsync(_lastSpeech); return; }
+            if (string.IsNullOrEmpty(_lastSpeechText)) { ShowError("Pinch a word or take a caption first, then Speak."); return; }
+            try { await PlayAsync(await _api.SpeakAsync(_lastSpeechText, _lastSpeechLang, _cts.Token)); }
             catch (OperationCanceledException) { }
-            catch (Exception e) { SetStatus("Couldn't play audio: " + LensException.From(e).UserMessage()); }
+            catch (Exception e) { ShowError("Couldn't play audio: " + LensException.From(e).UserMessage()); }
         }
 
         void ClearAll()
         {
             ClearLabels(); CloseCard(); ShowCaption(null);
             _lastSpeech = null; _lastSpeechText = null;
-            SetStatus("Point at text, then pinch Capture.");
+            SetStatus(DefaultHint);
         }
 
         // ---------- Live mode (dev-only toggle for now: L in the editor) ----------
@@ -621,7 +652,7 @@ namespace HypaLens
             catch (Exception e)
             {
                 SetLive(false); // camera or permission trouble: stop rather than repeat the error every second
-                SetStatus(LensException.From(e).UserMessage());
+                ShowError(LensException.From(e).UserMessage());
             }
             finally { _busy = false; }
         }
@@ -790,8 +821,9 @@ namespace HypaLens
             var t = _card.transform;
             const float y = -0.12f, z = -0.001f;
             var w = new Vector2(0.10f, 0.045f);
-            if (r.SourceAudio != null) Ui.Button("Hear", t, new Vector3(-0.13f, y, z), w, Ui.Accent, () => Play(r.SourceAudio));
-            if (r.TargetAudio != null) Ui.Button("Hear →", t, new Vector3(0f, y, z), w, Ui.Accent, () => Play(r.TargetAudio));
+            PinchTarget hearSrc = null, hearTgt = null;
+            if (r.SourceAudio != null) hearSrc = Ui.Button("Hear", t, new Vector3(-0.13f, y, z), w, Ui.Accent, () => _ = Loading(() => PlayAsync(r.SourceAudio), hearSrc));
+            if (r.TargetAudio != null) hearTgt = Ui.Button("Hear →", t, new Vector3(0f, y, z), w, Ui.Accent, () => _ = Loading(() => PlayAsync(r.TargetAudio), hearTgt));
             var save = Ui.Button(_saved.Contains(r.Selection.Text, r.TargetLanguage) ? "Saved" : "Save", t, new Vector3(0.13f, y, z), w, Ui.Muted, null);
             save.OnPinch = k => { if (k == PinchKind.Short) { _saved.Add(r); Ui.SetLabel(save, "Saved"); } };
         }
@@ -802,12 +834,15 @@ namespace HypaLens
             _card = null;
         }
 
-        async void Play(HypaSpeech speech)
+        void Play(HypaSpeech speech) => _ = Loading(() => PlayAsync(speech), _speakBtn);
+
+        /// <summary>Downloads (if needed) and starts the audio; returns once it is playing.</summary>
+        async Task PlayAsync(HypaSpeech speech)
         {
             if (speech == null) return;
             try { await HypaAudioPlayer.Instance.PlayNowAsync(speech, _cts.Token); }
             catch (OperationCanceledException) { }
-            catch (Exception e) { SetStatus("Couldn't play audio: " + LensException.From(e).UserMessage()); }
+            catch (Exception e) { ShowError("Couldn't play audio: " + LensException.From(e).UserMessage()); }
         }
 
         // ---------- Practice: saved list as flip cards with audio ----------
@@ -823,7 +858,8 @@ namespace HypaLens
             _deckText = Ui.Text(_practice.transform, "", 0.024f, new Vector3(0f, 0.005f, 0), Color.white);
             var t = _practice.transform;
             Ui.Button("<", t, new Vector3(-0.15f, -0.11f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Muted, () => { _deck.Prev(); RefreshDeck(); });
-            Ui.Button("Hear", t, new Vector3(0f, -0.11f, -0.001f), new Vector2(0.10f, 0.045f), Ui.Accent, () => _ = PlayDeckAudio());
+            PinchTarget hear = null;
+            hear = Ui.Button("Hear", t, new Vector3(0f, -0.11f, -0.001f), new Vector2(0.10f, 0.045f), Ui.Accent, () => _ = Loading(PlayDeckAudio, hear));
             Ui.Button(">", t, new Vector3(0.15f, -0.11f, -0.001f), new Vector2(0.07f, 0.045f), Ui.Muted, () => { _deck.Next(); RefreshDeck(); });
             RefreshDeck();
         }
@@ -839,7 +875,7 @@ namespace HypaLens
         {
             if (_deck == null || _deck.IsEmpty) return;
             var lang = _deck.FaceLanguage ?? _lens.TargetLanguage;
-            try { Play(await _api.SpeakAsync(_deck.Face, lang, _cts.Token)); } // audio links expire, so fetch fresh
+            try { await PlayAsync(await _api.SpeakAsync(_deck.Face, lang, _cts.Token)); } // audio links expire, so fetch fresh
             catch (OperationCanceledException) { }
             catch (Exception e) { _deckText.text = LensException.From(e).UserMessage(); }
         }
@@ -858,6 +894,7 @@ namespace HypaLens
             var home = HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen;
             if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
             if (!home) FollowHead();
+            if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) SetStatus(DefaultHint);
             if (_live && !home) LiveTick();
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();
