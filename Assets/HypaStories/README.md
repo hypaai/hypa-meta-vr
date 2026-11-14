@@ -1,4 +1,4 @@
-# Hypa Story (tickets 3A-3C)
+# Hypa Story (tickets 3A-3C, 3F)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
 Same three screens, same two stories, same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
@@ -28,6 +28,35 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | **Q** (tap or hold), **Ask** (tap or hold) | Pinch Ask (hold = push-to-talk) | Ask; tap again = done talking / skip the line being said |
 | 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question (no microphone or no key) |
 | Esc, **Back** | Pinch Back | Cancel the question / back to the list / back to start |
+
+## Places (ticket 3F): camp, hut, gathering
+
+`Places.GoTo("camp" | "hut" | "gathering")` (`Runtime/Core/Places.cs`) fades through the warm veil, switches place and fades back.
+Each place is its own scene: `HypaStory` (the camp), `HypaStoryHut`, `HypaStoryGathering`.
+
+- **The camp is home.** It stays loaded but hidden while you're away (`Places.Leaving` / `Places.Arrived`): the story pauses
+  when you leave and picks up where it was when you come back; its sound stops and comes back with it. Other places load
+  additively and unload when you leave them.
+- **Where you stand:** each place scene has one `PlaceEntry` (position on the floor, blue arrow = the way you face). Arriving
+  moves the place's roots so the entry is under your head, facing the way you face. The camera never moves.
+- **One rig, one audio listener:** a place scene's own rig (`StandaloneOnly`) is removed under the shell *or* when another
+  rig is already running (the campfire's). Played on its own, a place keeps its rig alive across moves. If the shell unloads
+  the camp, any place scenes go with it.
+- **Build a place:** call `PlaceSceneBuilder.CreatePlaceScene(HypaScenes.StoryHut, root => { ... })` from your own menu item
+  (`Editor/PlaceSceneBuilder.cs`). It makes the rig, the `Place` root with the entry at the origin facing +Z, the one
+  real-time light (no shadows), saves the scene and adds it to Build Settings. Build the place around the entry under `root`.
+- **Stand-ins (3G/3H/3M start here):** **Hypa > Stories > Create Place Scenes (stubs)** makes `HypaStoryHut` and
+  `HypaStoryGathering` with a floor and a sign with pinchable doors back. **Hypa > Sync Build Settings** includes them.
+
+| Editor | Quest | Effect |
+|---|---|---|
+| **1** / **2** / **3** | | Camp / hut / gathering (while a story plays, 1-3 still pick a suggested question) |
+| | Pinch **Hut** / **Gathering** on the *Places (test)* panel (left of you at the camp) | Go there (until the 3L portal lands) |
+| | Pinch **Back to the camp** on a stub place's sign | Back to the camp, the story where you left it |
+
+Done: the `Places` and `PlaceEntry` API, the switcher with fade and pause/resume, one rig after any number of moves, stub
+scenes, the builder helper, editor keys, EditMode tests (`PlacesTests`). Not done: the real hut and gathering (3H, 3M), the
+portal (3L); the *Places (test)* panel goes when the portal lands (`testDoors` on `StoryApp`).
 
 ## What came across from the prototype
 

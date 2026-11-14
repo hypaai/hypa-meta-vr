@@ -54,7 +54,7 @@ namespace HypaCore.EditorTools
         [MenuItem("Hypa/Sync Build Settings")]
         public static void SyncBuildSettings()
         {
-            string[] order = { HypaScenes.Shell, HypaScenes.Lens, HypaScenes.Story, HypaScenes.CoreTest };
+            string[] order = { HypaScenes.Shell, HypaScenes.Lens, HypaScenes.Story, HypaScenes.StoryHut, HypaScenes.StoryGathering, HypaScenes.CoreTest };
             var found = AssetDatabase.FindAssets("t:Scene", new[] { "Assets" }).Select(AssetDatabase.GUIDToAssetPath).ToList();
             var scenes = order
                 .Select(n => found.FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == n))
