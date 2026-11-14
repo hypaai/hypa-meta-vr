@@ -11,7 +11,7 @@ namespace HypaCore
         // Once per install: English becomes the selected target (earlier builds defaulted to Annang). A later pick sticks.
         const string EnglishDefaultKey = "hypa.targetDefaultEnglish";
 
-        /// <summary>A Hypa language label, e.g. "Annang". Default Annang.</summary>
+        /// <summary>A Hypa language label, e.g. "Yoruba". Default English.</summary>
         public static string TargetLanguage
         {
             get

@@ -20,12 +20,15 @@ Derived only from **public** calls to Hypa's API (no private source). Re-check w
 | `text_to_speech` | `text` (1..5000), `language`, `voice?`, `model?`, `format?` (`url` default, `base64`) | `mime`, `audioUrl?` (valid ~1 h) or `audioBase64?`, `sampleRate?`, `voice?` | paid |
 | `translate_and_speak` | `text`, `targetLang`, `sourceLang?`, `voice?`, `format?` | `translatedText`, `mime`, `audioUrl?`... (speaks the translation only) | paid |
 | `look_up_term` | `word` (1..120), `language?` (omit = English) | `result` (open object), `provider?`, `model?` | paid |
+| `translate_image` | `image` (base64 with `imageType: "base64"`, or a URL), `targetLang`, `sourceLang?`, `model?`, `translationModel?` | `text`, `translation`, `language` (string or null), `noTextFound`, `provider?`, `model?` (text only, no positions) | paid |
 
 | `speech_to_text` | `audio` (base64, or a URL with `audioType: "url"`), `audioType?`, `sourceLang?` (label; omit = auto), `model?` | `transcript`, `provider?`, `model?` | paid |
 
 The `speech_to_text` row is from `tools/list` (2026-11-13); it has not been called with a key yet. Stories sends 16 kHz mono 16-bit WAV.
 
-Other tools listed: `translate_document`, `process_voice_message`, `extract_text_from_image`, `translate_image`, `list_voices`, `list_models`, `word_of_the_day` and general-purpose tools.
+The `translate_image` row is from `tools/list` (2026-11-14). `translate_message`, `text_to_speech` and `translate_image` take an optional `model`: omit or `"auto"` = best-scoring model for the language (with fallback), `"default"` = catalog default, or a `provider/model` id. The app always sends `"auto"`.
+
+Other tools listed: `translate_document`, `process_voice_message`, `extract_text_from_image`, `list_voices`, `list_models`, `word_of_the_day` and general-purpose tools.
 
 ## Not yet verified (needs a keyed call)
 
@@ -38,6 +41,7 @@ Other tools listed: `translate_document`, `process_voice_message`, `extract_text
 
 ## Rules that follow from it
 
-- `extract_text_from_image` returns text only, with **no positions** (output `text`, `provider?`, `model?`; re-checked via tools/list 2026-11-12), and needs an image upload. HYP-163 allows it only as a fallback that returns positions, and forbids uploading frames, so the Lens doesn't use it. On-headset recognition is Google ML Kit.
+- `extract_text_from_image` returns text only, with **no positions** (output `text`, `provider?`, `model?`; re-checked via tools/list 2026-11-12), and needs an image upload. The Lens doesn't use it. **Capture** (pinchable words) reads text on the headset with Google ML Kit and never uploads frames.
+- **Caption** is the one feature that uploads a frame: one JPEG of the view goes to `translate_image`, only after the user says yes on a one-time consent card (`LensPrefs.CaptionConsent`). The photo is not stored on the headset.
 - Keyless calls run on a shared, capped anonymous budget. Only the free tools are called without a key; paid tools require a key (or the judges' proxy via `baseUrl`).
 - Audio links expire after about an hour: play them, never save them. Saved words re-request audio.
