@@ -180,21 +180,23 @@ namespace HypaStories
     public sealed class KitGroup : MonoBehaviour
     {
         readonly List<IKitFade> _fades = new List<IKitFade>();
-        readonly List<(TMP_Text t, float a)> _texts = new List<(TMP_Text, float)>();
+        /// <summary>Each text's own alpha, taken the first time it is seen: a later Refresh while faded out must not read the faded value.</summary>
+        readonly Dictionary<TMP_Text, float> _texts = new Dictionary<TMP_Text, float>();
         public float Alpha { get; private set; } = 1f;
 
         public void Refresh()
         {
-            _fades.Clear(); _texts.Clear();
+            _fades.Clear();
             foreach (var f in GetComponentsInChildren<IKitFade>(true)) _fades.Add(f);
-            foreach (var t in GetComponentsInChildren<TMP_Text>(true)) _texts.Add((t, t.color.a));
+            foreach (var t in GetComponentsInChildren<TMP_Text>(true))
+                if (!_texts.ContainsKey(t)) _texts[t] = t.color.a;
         }
 
         public void Set(float a)
         {
             Alpha = a;
             foreach (var f in _fades) f.SetGroupAlpha(a);
-            foreach (var (t, baseA) in _texts) if (t != null) t.alpha = baseA * a;
+            foreach (var kv in _texts) if (kv.Key != null) kv.Key.alpha = kv.Value * a;
             gameObject.SetActive(a > 0.001f);
         }
     }

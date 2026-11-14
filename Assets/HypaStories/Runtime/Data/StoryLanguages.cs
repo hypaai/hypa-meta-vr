@@ -22,7 +22,8 @@ namespace HypaStories
 
     /// <summary>
     /// Languages offered for narration, questions and answers: the ones with speech-to-text, translation and text-to-speech
-    /// and a translated script (the prototype's public/languages.json). Add a language here and in each caption's Tr.
+    /// and a translated script (the prototype's public/languages.json). Add a language here and a {code}.json to each story
+    /// (see <see cref="StoryLibrary"/>).
     /// </summary>
     public static class StoryLanguages
     {
@@ -33,6 +34,10 @@ namespace HypaStories
             new StoryLanguage("en", "English", "English"),
             new StoryLanguage("fr", "Français", "French"),
             new StoryLanguage("es", "Español", "Spanish"),
+            new StoryLanguage("ha", "Hausa", "Hausa"),
+            new StoryLanguage("ig", "Igbo", "Igbo"),
+            new StoryLanguage("pcm", "Pidgin", "Pidgin"),
+            new StoryLanguage("yo", "Yorùbá", "Yoruba"),
         };
 
         public static StoryLanguage Find(string codeOrLabel)
@@ -64,6 +69,35 @@ namespace HypaStories
             Again = "Perdona, ¿puedes repetirlo?", Offline = "Sigamos con la historia.", Resume = "A ver, ¿por dónde iba…", You = "Preguntaste",
         };
 
-        public static QaLines Lines(string code) => code == "fr" ? Fr : code == "es" ? Es : En;
+        static readonly QaLines Ha = new QaLines
+        {
+            Listening = "Ina sauraro…", Thinking = "Ina tunani…", Filler = new[] { "Hmm, tambaya mai kyau…", "Bari in ɗan yi tunani a kai…" },
+            Again = "Yi haƙuri, za ka iya sake faɗa mini?", Offline = "Mu ci gaba da labarin.", Resume = "To, ina na tsaya ne…", You = "Ka tambaya",
+        };
+
+        static readonly QaLines Ig = new QaLines
+        {
+            Listening = "Ana m ege ntị…", Thinking = "Ana m eche echiche…", Filler = new[] { "Hmm, ọ bụ ezigbo ajụjụ…", "Ka m chee echiche banyere nke ahụ…" },
+            Again = "Ndo, ị nwere ike ikwu nke ahụ ọzọ?", Offline = "Ka anyị gaa n’ihu n’akụkọ ahụ.", Resume = "Ugbu a, olee ebe m kwụsịrị…", You = "Ị jụrụ",
+        };
+
+        static readonly QaLines Pcm = new QaLines
+        {
+            Listening = "I dey listen…", Thinking = "I dey think…", Filler = new[] { "Hmm, na good question be that…", "Make I think about that one…" },
+            Again = "Abeg, you fit talk am again?", Offline = "Make we continue the tori.", Resume = "Ehen, where I stop sef…", You = "You ask",
+        };
+
+        static readonly QaLines Yo = new QaLines
+        {
+            Listening = "Mò ń tẹ́tí sí ọ…", Thinking = "Mò ń ronú…", Filler = new[] { "Hmmm, ìbéèrè tó dára nìyẹn…", "Jẹ́ kí n ronú nípa ìyẹn…" },
+            Again = "Má bínú, ṣé o lè tún un sọ?", Offline = "Ẹ jẹ́ ká máa bá ìtàn wa lọ.", Resume = "Ó dáa, níbo ni mo dé nínú ìtàn náà…", You = "O béèrè",
+        };
+
+        static readonly System.Collections.Generic.Dictionary<string, QaLines> ByCode = new System.Collections.Generic.Dictionary<string, QaLines>
+        {
+            ["en"] = En, ["fr"] = Fr, ["es"] = Es, ["ha"] = Ha, ["ig"] = Ig, ["pcm"] = Pcm, ["yo"] = Yo,
+        };
+
+        public static QaLines Lines(string code) => code != null && ByCode.TryGetValue(code, out var l) ? l : En;
     }
 }

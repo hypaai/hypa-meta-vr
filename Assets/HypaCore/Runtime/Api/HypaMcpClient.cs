@@ -168,10 +168,13 @@ namespace HypaCore
         };
 
         /// <summary>Audio comes back as a signed URL (default) valid about an hour.</summary>
-        public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null)
+        /// <summary>voice only works with the model that lists it (list_voices), so pass both, e.g. "openai/gpt-4o-mini-tts" + "fable".
+        /// Neither = Auto picks for the language.</summary>
+        public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null, string model = null)
         {
             var args = new JObject { ["text"] = text, ["language"] = language, ["model"] = Model };
             if (!string.IsNullOrEmpty(voice)) args["voice"] = voice;
+            if (!string.IsNullOrEmpty(model)) args["model"] = model;
             var o = await CallToolAsync("text_to_speech", args, ct).ConfigureAwait(false);
             return ParseSpeech(o);
         }

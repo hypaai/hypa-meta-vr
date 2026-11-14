@@ -1,0 +1,27 @@
+{
+  "theme": 0,
+  "accent": "#FFB35C",
+  "eyebrow": "Folk tale · Prototype",
+  "title": "Kiko and the\nRemembering Fire",
+  "description": "A curious tortoise follows his questions into the forest, toward a fire that has never gone out.",
+  "model": "meta/muse-wonder-1.0",
+  "voices": [],
+  "lines": [
+    {"id": "village", "text": "Long ago, in a small village surrounded by forests,", "ask": ["Where is the village?"]},
+    {"id": "kiko", "text": "there lived a curious tortoise named Kiko.", "ask": ["Who is Kiko?"]},
+    {"id": "questions", "text": "Kiko was known throughout the village for asking too many questions.", "ask": ["Why does Kiko ask so many questions?"]},
+    {"id": "everything", "text": "He wanted to know everything:"},
+    {"id": "moon", "text": "why the moon followed travellers,", "ask": ["Why does the moon follow travellers?"]},
+    {"id": "birds", "text": "why birds sang before sunrise,", "ask": ["Why do birds sing before sunrise?"]},
+    {"id": "baobab", "text": "and why the old baobab tree never seemed to lose its leaves.", "ask": ["What is a baobab tree?"]},
+    {"id": "mystery", "text": "But there was one mystery nobody could explain.", "ask": ["What is the mystery?"]},
+    {"id": "night", "text": "Every night, deep inside the forest,"},
+    {"id": "fire", "text": "a fire could be seen burning beneath an ancient tree.", "ask": ["Who lit the fire?"], "wind": 0.1},
+    {"id": "never-out", "text": "It never went out.", "ask": ["Why does the fire never go out?"]},
+    {"id": "rain", "text": "Not when it rained.", "rain": 0.4, "wind": 0.5},
+    {"id": "wind", "text": "Not when the wind blew.", "rain": 0.8, "flashes": [0.9]},
+    {"id": "storm", "text": "Not even during the heaviest storms.", "ask": ["How can a fire survive a storm?"], "rain": 1, "wind": 1, "flashes": [0.4, 1.4]},
+    {"id": "name", "text": "The villagers called it the Remembering Fire.", "ask": ["Why is it called the Remembering Fire?"], "rain": 0.1, "wind": 0.15},
+    {"id": "memories", "text": "They believed it held the memories of everyone who had ever lived.", "ask": ["Can a fire really hold memories?"], "rain": 0, "wind": 0}
+  ]
+}

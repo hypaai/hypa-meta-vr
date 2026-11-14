@@ -12,7 +12,7 @@ namespace HypaStories
     ///  - mode select: you stand back from the fire; the fire is the portal (pinch it);
     ///  - story list: you sit by the fire; story cards to the right, the storyteller across the fire; pick a language;
     ///  - play: the storyteller tells the story (recorded narration or Hypa TTS line by line), with the script beside you, weather
-    ///    timed to the words, and raise a hand / Ask to interrupt with a question (Hypa speech-to-text, a Q&amp;A stand-in, TTS answers).
+    ///    timed to the words, and raise a hand / Ask to interrupt with a question (Hypa speech-to-text, the story's chat model, TTS answers).
     /// Transitions fade through a warm dark veil and move the world, never the camera. Uses HypaCore only; never references HypaLens.
     /// Editor: right mouse = look; Enter = choose; arrows = cards / lines; Space = pause; Q (hold) = ask; H = raise a hand;
     /// 1-3 = suggested question; Esc = back.
@@ -20,8 +20,8 @@ namespace HypaStories
     public sealed class StoryApp : MonoBehaviour
     {
         [SerializeField] StoryAssets assets;
-        [Tooltip("Q&A stand-in: stub, slow (~3 s to answer: exercises the second filler) or offline (every call fails).")]
-        [SerializeField] string qaMode = "stub";
+        [Tooltip("Answers: chat (the story's model through Hypa), or the stand-in: stub, slow (~3 s to answer: exercises the second filler) or offline (every call fails).")]
+        [SerializeField] string qaMode = "chat";
         [Tooltip("Eye height assumed for the scene's own camera when it has no rig (and for eye-level tracking origins).")]
         [SerializeField] float seatedEyeHeight = 1.2f;
         [Tooltip("Walking speed with the left thumbstick (or WASD in the editor), metres per second.")]
@@ -88,7 +88,7 @@ namespace HypaStories
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
                 AskTap, AskHold, ExitPlay, ToggleSound, q => _ask.SubmitText(q));
-            _ask = new AskFlow(_story, _voice, _mic, new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
+            _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
             _ask.Logged += e => Debug.Log("Hypa Stories " + e);
 
             var prep = new GameObject("Preparing").transform;
@@ -234,7 +234,7 @@ namespace HypaStories
             _busy = true; _active = i;
             var st = StoryLibrary.All[i];
             _audio.Tap();
-            _story.Load(st, assets.Voice(st.Voice));
+            _story.Load(st);
             _player.Load(st, _lang);
             _endNoted = false;
             MicListener.RequestPermission();
@@ -411,7 +411,7 @@ namespace HypaStories
                     for (var k = 0; k < 3; k++)
                         if (Input.GetKeyDown(KeyCode.Alpha1 + k))
                         {
-                            var qs = StubStoryQa.Suggestions(_story.StoryId, _lang.Code);
+                            var qs = _ask.Suggestions;
                             if (k < qs.Length) _ask.SubmitText(qs[k]);
                         }
                     if (Input.GetKeyDown(KeyCode.Escape))
