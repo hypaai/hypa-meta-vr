@@ -245,12 +245,25 @@ namespace HypaCore
             OpenOrResume(HypaScenes.Lens);
         }
 
-        /// <summary>Closes the Hypa app (stops Play Mode in the editor).</summary>
+        /// <summary>
+        /// Closes the Hypa app: on the headset the user is back in Horizon Home (stops Play Mode in the editor).
+        /// On Quest the Android task is finished and removed too, so the app leaves the recent-apps list rather than
+        /// lingering in the background; Application.Quit then ends the process.
+        /// </summary>
         public void QuitApp()
         {
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
+#if UNITY_ANDROID
+            try
+            {
+                using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = player.GetStatic<AndroidJavaObject>("currentActivity"))
+                    activity.Call("finishAndRemoveTask");
+            }
+            catch (System.Exception e) { Debug.LogWarning("Hypa: finishAndRemoveTask failed, quitting anyway. " + e.Message); }
+#endif
             Application.Quit();
 #endif
         }

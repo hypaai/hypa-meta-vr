@@ -81,6 +81,7 @@ namespace HypaLens
         PinchTarget _sourceBtn, _targetBtn, _captureBtn, _captionBtn, _speakBtn;
         GameObject _onboarding, _liveBadge;
         readonly List<GameObject> _bottomRow = new List<GameObject>();
+        readonly List<GameObject> _topBar = new List<GameObject>(); // X, languages, bookmark: hidden in Saved words
         LanguagePicker _picker;
         PracticeDeck _deck;
         readonly List<WordLabel> _labels = new List<WordLabel>();
@@ -112,7 +113,7 @@ namespace HypaLens
 
             BuildHud();
             _ = Loading(LoadLanguages, _targetBtn);
-            if (AppRouter.Consume(AppRouter.LensSavedWords)) ShowSaved();
+            if (AppRouter.Consume(AppRouter.LensSavedWords)) ShowSavedFromHome();
             else if (!LensPrefs.Onboarded) ShowOnboarding(true);
             SetStatus(DefaultHint);
         }
@@ -198,13 +199,16 @@ namespace HypaLens
             FollowHead(); // first placement: straight in front of the eyes
 
             // Top bar: X | Auto-detect → Target ▾ | Saved. The source is always auto-detected: its pill is a fixed label.
-            Tooltip(Ui.IconButton("x", _hud, new Vector3(-0.32f, TopY, 0), LensTouch.SmallIconRadius, GoHome), "Leave Lens", below: true);
+            var leave = Ui.IconButton("x", _hud, new Vector3(-0.32f, TopY, 0), LensTouch.SmallIconRadius, GoHome);
+            Tooltip(leave, "Leave Lens", below: true);
             _sourceBtn = Ui.Button("Auto-detect", _hud, new Vector3(-0.11f, TopY, 0), new Vector2(SourcePillW, LensTouch.PillH), Ui.Muted, null);
             Tooltip(_sourceBtn, "Hypa detects the language of the text.", below: true);
-            Ui.Text(_hud, "→", 0.02f, new Vector3(0.0f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
+            var arrow = Ui.Text(_hud, "→", 0.02f, new Vector3(0.0f, TopY, 0), new Color(1f, 1f, 1f, 0.7f));
             _targetBtn = LanguagePill(new Vector3(0.125f, TopY, 0), TargetPillW, () => OpenPicker(false));
             var savedBtn = Ui.IconButton("bookmark", _hud, new Vector3(0.32f, TopY, 0), LensTouch.SmallIconRadius, TogglePractice);
             Tooltip(savedBtn, "Your saved words, as practice cards.", below: true);
+            foreach (var b in new[] { leave, _sourceBtn, _targetBtn, savedBtn }) _topBar.Add(b.transform.parent.gameObject);
+            _topBar.Add(arrow.gameObject);
 
             // Hint pill (the status), centred under the top bar.
             _status = Ui.Text(_hud, "", StatusLineH, new Vector3(0f, HintY, 0), new Color(1f, 1f, 1f, 0.95f));
@@ -744,7 +748,7 @@ namespace HypaLens
                 Ui.Quad("bg", _popup.transform, new Vector3(0, 0, 0.003f), new Vector2(PopupW, PopupH), Ui.Panel, true).AddComponent<PinchTarget>();
                 _popupTitle = Ui.Text(_popup.transform, "", 0.022f, new Vector3(PopupLeft, PopupTop, 0), Color.white, TextAnchor.MiddleLeft);
                 // Inside the card's inner edge, level with the title: the corner was too tight before.
-                Ui.IconButton("x", _popup.transform, new Vector3(PopupW / 2f - PopupPad - 0.022f, PopupTop, -0.001f), 0.022f, ClosePopup);
+                Ui.IconButton("x", _popup.transform, new Vector3(PopupW / 2f - PopupPad - 0.022f, PopupTop, -0.001f), 0.022f, PopupX);
                 _popup.AddComponent<LabelPop>(); // eases in
                 SetPopupMode(true);
             }
@@ -756,9 +760,18 @@ namespace HypaLens
             return _popupContent;
         }
 
+        /// <summary>The popup's X: closes it; Saved words that Home opened goes back to Home instead.</summary>
+        void PopupX()
+        {
+            var backToHome = _savedFromHome;
+            ClosePopup();
+            if (backToHome && HypaShell.Instance != null) HypaShell.Instance.ExitToHome();
+        }
+
         void ClosePopup()
         {
             if (_popup == null) return;
+            _savedFromHome = false;
             ++_resultVersion; // a translation still in flight no longer has anywhere to go
             Destroy(_popup);
             _popup = null; _popupContent = null; _chips.Clear();
@@ -1039,13 +1052,24 @@ namespace HypaLens
             ShowSaved();
         }
 
+        /// <summary>Saved words opened from the Home menu: its X goes back to Home, not into Lens.</summary>
+        void ShowSavedFromHome()
+        {
+            ShowSaved();
+            _savedFromHome = true;
+        }
+
+        bool _savedFromHome; // set while Saved words is showing because Home opened it
+
         void ShowSaved(int index = 0, bool translation = false)
         {
+            var fromHome = _savedFromHome; // a Remove re-entering here keeps where Saved words came from
             CloseCards();
             _popupOcr = null;
             _deck = new PracticeDeck(_saved.Items, index);
             _deck.Show(translation);
             RenderSaved();
+            _savedFromHome = fromHome;
         }
 
         void RenderSaved()
@@ -1153,7 +1177,10 @@ namespace HypaLens
             if (_hud != null && _hud.gameObject.activeSelf == home) _hud.gameObject.SetActive(!home);
             if (_errorUntil > 0f && Time.unscaledTime >= _errorUntil) { SetStatus(DefaultHint); if (_popupNote != null) _popupNote.text = ""; }
             if (CardOpen != _modal) SetPopupMode(CardOpen);
-            if (!home && AppRouter.Consume(AppRouter.LensSavedWords)) ShowSaved(); // Home > Saved words
+            // Saved words has its own X and no use for the language row: the whole top bar steps aside while it shows.
+            var savedOpen = _popup != null && _popupTitle != null && _popupTitle.text == "Saved words";
+            if (_topBar.Count > 0 && _topBar[0].activeSelf == savedOpen) foreach (var go in _topBar) if (go != null) go.SetActive(!savedOpen);
+            if (!home && AppRouter.Consume(AppRouter.LensSavedWords)) ShowSavedFromHome(); // Home > Saved words
             if (_live && !home) LiveTick();
             if (!Application.isEditor) return;
             if (Input.GetKeyDown(KeyCode.Space)) _ = CaptureAsync();
