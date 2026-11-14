@@ -16,7 +16,12 @@ namespace HypaStories
         public readonly FollowView Follow;
         readonly Transform _brand;
 
-        public SplashView(Transform world, Transform uiRoot, Transform fire, Texture2D logo, Action enter, Action<bool> hover)
+        /// <summary>
+        /// <paramref name="back"/>, <paramref name="toHut"/> and <paramref name="toVillage"/> sit in a row with Gather round; null = that
+        /// button is left out (e.g. Back with no Hypa shell to go back to).
+        /// </summary>
+        public SplashView(Transform world, Transform uiRoot, Transform fire, Texture2D logo, Action enter, Action<bool> hover,
+            Action back = null, Action toHut = null, Action toVillage = null)
         {
             // the brand above the fire's ring, facing you
             _brand = new GameObject("Splash Brand").transform;
@@ -44,9 +49,10 @@ namespace HypaStories
             var near = new GameObject("Splash Prompt").transform;
             near.SetParent(uiRoot, false);
             Kit.Text(near, "Pinch the fire, or", 0.02f, new Vector3(0f, 0.058f, 0f), new Vector2(0.4f, 0.03f), KitTheme.Dim);
-            Kit.Button(near, Vector3.zero, new Vector2(0.24f, 0.064f), "Gather round", "flame", KitStyle.Primary, enter, null, 0.022f);
+            // Gather round is solid here: you are at the campfire, and it starts the stories.
+            PlaceButtons.Add(near, PlaceIds.Camp, back, enter, toHut, toVillage);
             Follow = near.gameObject.AddComponent<FollowView>();
-            Follow.Distance = 0.85f; Follow.Height = -0.34f;
+            Follow.Distance = 0.95f; Follow.Height = -0.34f; // a little further than before, so the whole row sits in view
             Prompt = near.gameObject.AddComponent<KitGroup>();
             Prompt.Refresh();
         }

@@ -77,6 +77,7 @@ namespace HypaCore
             _cam = cam != null ? cam.transform : null;
             PinchPointer.EnsureExists();
             _ = HypaAudioPlayer.Instance;
+            EnsureAudio(); // before any sound plays: never let a "volume 0" moment at launch switch the sound off
         }
 
         void Start()
@@ -99,6 +100,55 @@ namespace HypaCore
             if (Application.isEditor && Input.GetKeyDown(KeyCode.M)) ToggleMenu();
         }
 
+        // Sound after a build. Build and Run launches the app while the headset is asleep. Unity opens its sound stream right
+        // then, and the Quest marks that stream "muted (appOps)" and never lifts it, even once the headset is worn (seen in
+        // `adb shell dumpsys audio`: the app's AAudio player "state:started ... mutedState:appOps"). A headset restart only
+        // helped because the next launch opened a fresh stream. So: once the app has focus again after starting or being
+        // paused, wait a moment and reopen Unity's sound output (a fresh, unmuted stream), carrying on whatever was playing.
+        // Taking the headset off and on does the same, so a muted stream can't stick there either.
+        bool _reopenAudio = true; // the stream opened at launch may be muted: reopen it once the headset is in use
+
+        void OnApplicationPause(bool paused) { if (paused) _reopenAudio = true; }
+        void OnApplicationFocus(bool focus) { if (focus) ReopenAudioWhenWorn(); }
+
+        void ReopenAudioWhenWorn()
+        {
+            if (!_reopenAudio || Application.platform != RuntimePlatform.Android) return;
+            _reopenAudio = false;
+            StartCoroutine(ReopenAudioSoon());
+        }
+
+        System.Collections.IEnumerator ReopenAudioSoon()
+        {
+            yield return new WaitForSecondsRealtime(1f); // let the headset settle into focus first
+            if (!Application.isFocused) { _reopenAudio = true; yield break; } // lost focus again: try on the next focus
+            ReopenAudio();
+        }
+
+        /// <summary>Restarts Unity's audio output on a fresh device stream; sounds that were playing carry on where they were.</summary>
+        static void ReopenAudio()
+        {
+            var playing = new System.Collections.Generic.List<(AudioSource source, float time)>();
+            foreach (var s in FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+                if (s.isPlaying) playing.Add((s, s.time));
+            AudioSettings.Reset(AudioSettings.GetConfiguration());
+            foreach (var (s, t) in playing)
+            {
+                if (s == null) continue;
+                s.Play();
+                if (s.clip != null && t < s.clip.length) s.time = t;
+            }
+            Debug.Log($"Hypa shell: reopened the audio output (fresh stream), {playing.Count} sounds carried on.");
+        }
+
+        /// <summary>Keeps "output suspension" off (also off in Project Settings > Audio), so a volume-0 moment never stops the sound.</summary>
+        static void EnsureAudio()
+        {
+            if (Application.platform != RuntimePlatform.Android) return;
+            AudioSettings.Mobile.stopAudioOutputOnMute = false;
+            if (!AudioSettings.Mobile.audioOutputStarted) AudioSettings.Mobile.StartAudioOutput();
+        }
+
         // After the camera rig has taken this frame's head pose, so the UI doesn't trail it by a frame.
         void LateUpdate() => FollowHead();
 
@@ -107,7 +157,7 @@ namespace HypaCore
             if (_anchor == null || _cam == null) return;
             // The XR session starts a few frames in and lifts the camera to eye height: snap in front then.
             var xrActive = UnityEngine.XR.XRSettings.isDeviceActive;
-            if (xrActive && !_xrWasActive) _follow.Reset();
+            if (xrActive && !_xrWasActive) { _follow.Reset(); if (Application.isFocused) ReopenAudioWhenWorn(); }
             _xrWasActive = xrActive;
             var pose = _follow.Update(_cam.position, _cam.rotation, PointerOnShellUi, Time.unscaledDeltaTime);
             _anchor.SetPositionAndRotation(pose.position, pose.rotation);

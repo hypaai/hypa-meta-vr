@@ -32,8 +32,6 @@ namespace HypaStories
         [SerializeField] float walkRadius = 18f;
         [Tooltip("Highest your eyes can be above the ground, metres (no flying up out of the forest).")]
         [SerializeField] float maxEyeHeight = 2.2f;
-        [Tooltip("A small 'Places (test)' panel with doors to the hut and the gathering, until 3L's portal lands. Hidden during a story.")]
-        [SerializeField] bool testDoors = true;
 
         enum Screen { Splash, List, Play }
 
@@ -60,7 +58,6 @@ namespace HypaStories
         // Places (3F): away = at another place; the camp stays loaded, hidden and quiet, and picks up when you come back.
         bool _away, _wasPlaying;
         readonly System.Collections.Generic.List<AudioSource> _resumeLoops = new System.Collections.Generic.List<AudioSource>();
-        Transform _doors;
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
         void Start()
@@ -90,7 +87,11 @@ namespace HypaStories
             Recenter(CampWorld.SplashSeat);
             Kit.Init(assets);
             _ui = new GameObject("Hypa Stories UI").transform; // follows the viewer, not the world (you can walk about)
-            _splash = new SplashView(_world, _ui, _camp.Fire.Root, assets.logo, () => Go(Screen.List), on => _portalHover = on);
+            // Back (to the Hypa home menu: only under the shell), Hut, Gather round, Village: one row in front of you at the start.
+            _splash = new SplashView(_world, _ui, _camp.Fire.Root, assets.logo, () => Go(Screen.List), on => _portalHover = on,
+                HypaShell.Instance != null ? (System.Action)(() => HypaShell.Instance.ExitToHome()) : null,
+                () => Places.GoTo(PlaceIds.Hut), () => Places.GoTo(PlaceIds.Gathering));
+            HypaShell.Instance?.SetMenuButtonVisible(false); // Back replaces the shell's floating Home button here
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
                 AskTap, AskHold, ExitPlay, ToggleSound, q => _ask.SubmitText(q));
@@ -114,7 +115,6 @@ namespace HypaStories
             Places.Leaving += OnLeavingPlace;
             Places.Arrived += OnArrivedPlace;
             Places.NumberKeysTaken = NumberKeysTaken; // 1-3 pick a suggested question while a story plays
-            if (testDoors) BuildTestDoors();
             StartCoroutine(Intro());
         }
 
@@ -151,7 +151,6 @@ namespace HypaStories
             if (_screen == Screen.Splash) _splash.Follow.Snap();
             else if (_screen == Screen.List) _list.Follow.Snap();
             else _player.Follow.Snap();
-            if (_doors != null) _doors.GetComponent<FollowView>().Snap();
             _audio.enabled = true;
             foreach (var src in _resumeLoops)
             {
@@ -163,22 +162,6 @@ namespace HypaStories
             if (_wasPlaying && _story.Paused) _story.TogglePause();
             _wasPlaying = false;
             Places.NumberKeysTaken = NumberKeysTaken;
-        }
-
-        /// <summary>
-        /// Test doors to the other places, off to the left (a pinch on a Quest, 2 / 3 in the editor), until the portal (3L) lands.
-        /// Hidden while a story plays.
-        /// </summary>
-        void BuildTestDoors()
-        {
-            _doors = new GameObject("Places (test)").transform;
-            _doors.SetParent(_ui, false);
-            Kit.Glass(_doors, "bg", Vector3.zero, new Vector2(0.34f, 0.13f), 0.03f);
-            Kit.Text(_doors, "Places (test)", 0.014f, new Vector3(0f, 0.036f, 0f), new Vector2(0.3f, 0.03f), KitTheme.Dim);
-            Kit.Button(_doors, new Vector3(-0.078f, -0.02f, 0f), new Vector2(0.14f, 0.05f), "Hut", null, KitStyle.Ghost, () => Places.GoTo(PlaceIds.Hut));
-            Kit.Button(_doors, new Vector3(0.078f, -0.02f, 0f), new Vector2(0.14f, 0.05f), "Gathering", null, KitStyle.Ghost, () => Places.GoTo(PlaceIds.Gathering));
-            var f = _doors.gameObject.AddComponent<FollowView>();
-            f.Distance = 1.0f; f.Height = -0.34f; f.YawOffset = -34f; f.Threshold = 40f;
         }
 
         // ---------- placement ----------
@@ -425,7 +408,6 @@ namespace HypaStories
         void Update()
         {
             if (_away) return; // at another place: the camp waits, hidden
-            if (_doors != null && _doors.gameObject.activeSelf == (_screen == Screen.Play)) _doors.gameObject.SetActive(_screen != Screen.Play);
             var dt = Time.deltaTime;
             _hover = Approach(_hover, _portalHover && _screen == Screen.Splash && !_busy ? 1f : 0f, 5f, dt);
             _camp.Boost = _boost * (1f + 0.3f * _hover);
@@ -510,6 +492,7 @@ namespace HypaStories
             Places.Leaving -= OnLeavingPlace;
             Places.Arrived -= OnArrivedPlace;
             if (Places.NumberKeysTaken == (System.Func<bool>)NumberKeysTaken) Places.NumberKeysTaken = null;
+            HypaShell.Instance?.SetMenuButtonVisible(true); // leaving Stories: the shell's Home button is back
             _cts.Cancel();
             _cts.Dispose();
             _ask?.Cancel();

@@ -48,6 +48,24 @@ namespace HypaStories.Tests
         {
             Assert.AreEqual("Back to the camp", StubPlace.DoorLabel(PlaceIds.Camp));
             Assert.AreEqual("To the hut", StubPlace.DoorLabel(PlaceIds.Hut));
+            Assert.AreEqual("To the village", StubPlace.DoorLabel(PlaceIds.Gathering), "the gathering is called the village on screen");
+        }
+
+        [Test] public void PlaceRow_TheOneYouAreInIsInTheMiddle()
+        {
+            Assert.AreEqual((PlaceIds.Hut, PlaceIds.Gathering), PlaceButtons.Sides(PlaceIds.Camp), "camp: Hut, [Gather round], Village");
+            Assert.AreEqual((PlaceIds.Camp, PlaceIds.Gathering), PlaceButtons.Sides(PlaceIds.Hut), "hut: Campfire, [Hut], Village");
+            Assert.AreEqual((PlaceIds.Hut, PlaceIds.Camp), PlaceButtons.Sides(PlaceIds.Gathering), "village: Hut, [Village], Campfire");
+        }
+
+        [Test] public void PlaceRow_Labels()
+        {
+            Assert.AreEqual("Gather round", PlaceButtons.Label(PlaceIds.Camp, true));
+            Assert.AreEqual("Campfire", PlaceButtons.Label(PlaceIds.Camp, false));
+            Assert.AreEqual("Step inside", PlaceButtons.Label(PlaceIds.Hut, true));
+            Assert.AreEqual("Hut", PlaceButtons.Label(PlaceIds.Hut, false));
+            Assert.AreEqual("Meet the locals", PlaceButtons.Label(PlaceIds.Gathering, true));
+            Assert.AreEqual("Village", PlaceButtons.Label(PlaceIds.Gathering, false));
         }
 
         [Test] public void Walk_InsideTheArea_NothingMoves()

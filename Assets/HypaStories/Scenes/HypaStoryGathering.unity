@@ -181,8 +181,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3edda47ad4c944ac8a62d232be82424f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HypaStories.Runtime::HypaStories.StubPlace
-  Title: The gathering
-  Note: Stand-in until 3M builds the gathering.
+  Title: The village
+  Note: Stand-in until 3M builds the village.
   Doors:
   - camp
   - hut

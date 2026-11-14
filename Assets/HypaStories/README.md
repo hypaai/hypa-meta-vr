@@ -55,12 +55,11 @@ Each place is its own scene: `HypaStory` (the camp), `HypaStoryHut`, `HypaStoryG
 |---|---|---|
 | **1** / **2** / **3** | | Camp / hut / gathering (while a story plays, 1-3 still pick a suggested question) |
 | WASD, right mouse drag | Left thumbstick, right thumbstick | Walk and turn inside the hut or the gathering, as at the camp |
-| | Pinch **Hut** / **Gathering** on the *Places (test)* panel (left of you at the camp) | Go there (until the 3L portal lands) |
-| | Pinch **Back to the camp** on a stub place's sign | Back to the camp, the story where you left it |
+| Click a light button | Pinch a light button | Same row in the camp, the hut, and the village. The solid button is the place you are in. A light button takes you there. **Back** returns to the Hypa home menu. |
 
 Done: the `Places` and `PlaceEntry` API, the switcher with fade and pause/resume, one rig after any number of moves, stub
 scenes, the builder helper, editor keys, EditMode tests (`PlacesTests`). Not done: the real hut and gathering (3H, 3M), the
-portal (3L); the *Places (test)* panel goes when the portal lands (`testDoors` on `StoryApp`).
+portal (3L).
 
 ## What came across from the prototype
 
