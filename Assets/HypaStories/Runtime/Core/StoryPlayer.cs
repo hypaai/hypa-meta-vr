@@ -175,6 +175,7 @@ namespace HypaStories
         public int LineIndex => Mathf.Max(CaptionIndex, 0);
         public string StoryId => Story?.Id;
         public string StorySoFar => string.Join(" ", Caps.Take(LineIndex + 1).Select(c => c.TextFor(_lang().Code)));
+        public string[] Suggestions => Story?.Suggestions(LineIndex, _lang().Code) ?? new string[0];
 
         public void Interrupt()
         {

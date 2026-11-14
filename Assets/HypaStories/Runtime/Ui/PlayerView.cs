@@ -27,6 +27,7 @@ namespace HypaStories
         readonly Action<string> _pick;
         StoryInfo _story;
         StoryLanguage _lang;
+        string[] _asks = new string[0];
         string _pauseState;
         int _shownWords = -1, _shownLine = -2;
         static readonly Color Unlit = new Color(1f, 0.97f, 0.92f, 0.55f);
@@ -71,6 +72,12 @@ namespace HypaStories
                 KitButton b = null;
                 b = Kit.Button(_qa, new Vector3((i - 1) * 0.212f, -0.012f, 0f), new Vector2(0.204f, 0.048f), "…", null, KitStyle.Ghost,
                     () => { if (!string.IsNullOrEmpty(b.Label.text)) _pick(b.Label.text); }, null, 0.0122f);
+                // questions run long (French, Spanish): two lines, shrinking if they still don't fit
+                b.Label.textWrappingMode = TextWrappingModes.Normal;
+                b.Label.enableAutoSizing = true;
+                b.Label.fontSizeMax = b.Label.fontSize;
+                b.Label.fontSizeMin = b.Label.fontSize * 0.75f;
+                b.Label.lineSpacing = -20f;
                 _suggestions.Add(b);
             }
 
@@ -170,7 +177,7 @@ namespace HypaStories
             _state.text = text ?? "";
             var listening = state == AskState.Listening || state == AskState.Interrupt;
             _level.gameObject.SetActive(state == AskState.Listening);
-            var qs = listening && _story != null ? StubStoryQa.Suggestions(_story.Id, _lang?.Code) : new string[0];
+            var qs = listening ? _asks : new string[0];
             for (var i = 0; i < _suggestions.Count; i++)
             {
                 var on = i < qs.Length;
@@ -191,5 +198,6 @@ namespace HypaStories
 
         public void SetQuestion(string text) => _question.text = text;
         public void SetAnswer(string text) => _answer.text = text;
+        public void SetSuggestions(string[] questions) => _asks = questions ?? new string[0];
     }
 }

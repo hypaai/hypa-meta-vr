@@ -79,6 +79,38 @@ namespace HypaStories.Tests
             Assert.AreEqual(0.2f, d.Sample(caps[1].At).Rain, 1e-4);
             Assert.AreEqual(1f, d.Sample(caps[1].Until).Rain, 1e-4);
             Assert.AreEqual(caps[1].At + 0.5f, st.Timeline.Flashes[0], 1e-4);
+            Assert.AreEqual(StoryLibrary.DefaultModel, st.Model);
+        }
+
+        [Test] public void Suggestions_AreFromLinesToldSoFar_NewestFirst_InTheLanguage()
+        {
+            const string story = @"{ ""model"": ""meta/m"", ""lines"": [
+                { ""id"": ""a"", ""text"": ""one"", ""ask"": [""A?""] },
+                { ""id"": ""b"", ""text"": ""two"" },
+                { ""id"": ""c"", ""text"": ""three"", ""ask"": [""C?"", ""C2?""] },
+                { ""id"": ""d"", ""text"": ""four"", ""ask"": [""D?""] } ] }";
+            var st = StoryLibrary.Parse("t", story, new Dictionary<string, string> { ["fr"] = @"{ ""c.ask"": [""C fr ?""] }" });
+            Assert.AreEqual("meta/m", st.Model);
+            CollectionAssert.AreEqual(new[] { "A?" }, st.Suggestions(1, "en"));
+            CollectionAssert.AreEqual(new[] { "C?", "C2?", "A?" }, st.Suggestions(2, "en"));
+            CollectionAssert.AreEqual(new[] { "D?", "C?", "C2?" }, st.Suggestions(3, "en"));
+            CollectionAssert.AreEqual(new[] { "C fr ?", "A?" }, st.Suggestions(2, "fr"));
+        }
+
+        [Test] public void EveryStory_SuggestsFromTheStart_InEveryLanguage()
+        {
+            foreach (var st in StoryLibrary.All)
+            {
+                StringAssert.Contains("/", st.Model, st.Id);
+                foreach (var lang in StoryLanguages.All)
+                    Assert.IsNotEmpty(st.Suggestions(0, lang.Code), $"{st.Id} {lang.Code}");
+                foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))
+                    foreach (var lang in new[] { "fr", "es" })
+                        Assert.AreEqual(c.Ask.Length, c.AskFor(lang).Length, $"{st.Id} {c.Id} {lang}");
+                foreach (var c in st.Timeline.Captions.Where(c => c.Ask.Length > 0))
+                    foreach (var lang in new[] { "fr", "es" })
+                        CollectionAssert.AreNotEqual(c.Ask, c.AskFor(lang), $"{st.Id} {c.Id} {lang}: untranslated question");
+            }
         }
 
         [Test] public void EveryLine_IsTranslated_AndFallsBackToEnglish()
@@ -115,14 +147,36 @@ namespace HypaStories.Tests
             Assert.AreEqual("Nia is the detective on the case.", StubStoryQa.AnswerFor("who is nia", 3, "fr", "marlow-street")[0]);
         }
 
-        [Test] public void Qa_SuggestionsAreAnsweredOnceTold()
+        [Test] public void Chat_PromptHasTheStorySoFar_TheQuestion_AndTheLanguage()
         {
-            foreach (var st in StoryLibrary.All)
-                foreach (var q in StubStoryQa.Suggestions(st.Id, "en"))
-                    Assert.AreNotEqual("That is a good question.", StubStoryQa.AnswerFor(q, st.Timeline.Captions.Length - 1, "en", st.Id)[0], q);
+            var m = ChatStoryQa.Messages(new QaRequest
+            {
+                Question = "qui est Kiko ?", StorySoFar = "Il y a bien longtemps…", Language = StoryLanguages.Find("fr"),
+            }, "Kiko and the\nRemembering Fire");
+            Assert.AreEqual("system", (string)m[0]["role"]);
+            StringAssert.Contains("“Kiko and the Remembering Fire”", (string)m[0]["content"]);
+            StringAssert.Contains("Answer in French", (string)m[0]["content"]);
+            StringAssert.Contains("Il y a bien longtemps…", (string)m[1]["content"]);
+            StringAssert.EndsWith("qui est Kiko ?", (string)m[1]["content"]);
+        }
+
+        [Test] public void Chat_SplitsTheReplyIntoSpokenSentences()
+        {
+            CollectionAssert.AreEqual(new[] { "Well, Kiko is curious.", "“Why?” he asks!", "¿Y tú?" },
+                ChatStoryQa.Sentences("**Well**, Kiko is curious. “Why?” he asks!\n¿Y tú?"));
+            Assert.AreEqual(4, ChatStoryQa.Sentences("A. B. C. D. E.").Count);
+            Assert.IsEmpty(ChatStoryQa.Sentences("  "));
         }
 
         // ---------- Listening / gestures ----------
+
+        [Test] public void Mic_SkipsVirtualInputs()
+        {
+            Assert.AreEqual("MacBook Pro Microphone",
+                MicListener.Device(new[] { "AlteredVirtualAudio Device", "BlackHole 2ch", "MacBook Pro Microphone", "ZoomAudioDevice" }));
+            Assert.AreEqual("Android audio input", MicListener.Device(new[] { "Android audio input" }));
+            Assert.IsNull(MicListener.Device(new[] { "BlackHole 2ch" }));
+        }
 
         [Test] public void Silence_EndsAfterSpeechThenQuiet()
         {
@@ -228,6 +282,7 @@ namespace HypaStories.Tests
             public int LineIndex => 12;
             public string StoryId => "kiko";
             public string StorySoFar => "Long ago…";
+            public string[] Suggestions => new[] { "Who is Kiko?" };
             public void Interrupt() => Interrupted = true;
             public void Resume(int lineIndex) => ResumedAt = lineIndex;
         }
@@ -240,6 +295,8 @@ namespace HypaStories.Tests
             public void SetLevel(float level01) { }
             public void SetQuestion(string text) => Question = text;
             public void SetAnswer(string text) { if (!string.IsNullOrEmpty(text)) Answer = text; }
+            public string[] Suggestions;
+            public void SetSuggestions(string[] questions) => Suggestions = questions;
         }
 
         FakeSpeech _speech; FakeListener _mic; FakeQa _qa; FakeNarration _story; FakeView _view; AskFlow _ask;
@@ -269,6 +326,7 @@ namespace HypaStories.Tests
             Assert.AreEqual(AskState.Idle, _ask.State);
             CollectionAssert.AreEqual(new[] { true, false }, _asking);
             Assert.AreEqual("Long ago…", _qa.Last.StorySoFar);
+            CollectionAssert.AreEqual(new[] { "Who is Kiko?" }, _view.Suggestions);
             var log = _ask.Log.Single();
             Assert.IsTrue(log.Ok);
             Assert.AreEqual(100, log.Filler);

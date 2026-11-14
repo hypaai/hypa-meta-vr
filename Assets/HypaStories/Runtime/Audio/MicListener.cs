@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HypaCore;
@@ -14,10 +15,14 @@ namespace HypaStories
     /// Microphone + speech-to-text (the prototype's listen()): records at 16 kHz until the user goes quiet
     /// (<see cref="SilenceDetector"/>) or <see cref="IListenSession.Stop"/> is called, then sends the WAV to Hypa speech_to_text.
     /// If nothing louder than the noise floor was heard, no call is made and the transcript is empty ("could you say that again?").
+    /// Records from the system's default input unless that is a virtual device (see <see cref="Device"/>).
     /// </summary>
     public sealed class MicListener : MonoBehaviour, IListener
     {
         const int Rate = 16000, ClipSeconds = 14;
+
+        /// <summary>Virtual inputs (loopback, voice changers, meeting apps) give silence unless something is routed into them.</summary>
+        static readonly string[] VirtualInputs = { "virtual", "blackhole", "loopback", "soundflower", "aggregate", "zoom", "teams", "altered", "krisp" };
 
         /// <summary>Speech to text. Default: Hypa's speech_to_text tool with the story language as the source.</summary>
         public Func<byte[], StoryLanguage, CancellationToken, Task<string>> Transcribe;
@@ -33,6 +38,13 @@ namespace HypaStories
 #endif
         }
 
+        /// <summary>
+        /// The microphone to record from: the first real one, else the default (null). Unity can't tell which input the system
+        /// uses by default, so a virtual one set as the default (common on Macs) would record silence.
+        /// </summary>
+        public static string Device(string[] devices)
+            => devices.FirstOrDefault(d => !VirtualInputs.Any(v => d.IndexOf(v, StringComparison.OrdinalIgnoreCase) >= 0));
+
         public IListenSession Start(StoryLanguage language, Action<float> onLevel)
         {
             if (!HypaConfig.Current.HasKey)
@@ -47,9 +59,10 @@ namespace HypaStories
             if (Microphone.devices.Length == 0) throw new InvalidOperationException("No microphone.");
             _active?.Cancel();
             var transcribe = Transcribe ?? ((wav, lang, ct) => new HypaMcpClient().SpeechToTextAsync(wav, lang.HypaLabel, ct));
-            var clip = Microphone.Start(null, true, ClipSeconds, Rate);
+            var device = Device(Microphone.devices);
+            var clip = Microphone.Start(device, true, ClipSeconds, Rate);
             if (clip == null) throw new InvalidOperationException("Microphone could not start.");
-            return _active = new Session(clip, language, onLevel, transcribe, _life.Token);
+            return _active = new Session(device, clip, language, onLevel, transcribe, _life.Token);
         }
 
         void Update() => _active?.Tick(Time.unscaledDeltaTime);
@@ -63,6 +76,7 @@ namespace HypaStories
 
         sealed class Session : IListenSession
         {
+            readonly string _device;
             readonly AudioClip _clip;
             readonly StoryLanguage _lang;
             readonly Action<float> _onLevel;
@@ -72,22 +86,25 @@ namespace HypaStories
             readonly SilenceDetector _silence = new SilenceDetector();
             readonly List<float> _samples = new List<float>(Rate * 6);
             int _read;
+            float _peak;
             bool _done;
 
             public Task<ListenResult> Result => _result.Task;
 
-            public Session(AudioClip clip, StoryLanguage lang, Action<float> onLevel,
+            public Session(string device, AudioClip clip, StoryLanguage lang, Action<float> onLevel,
                 Func<byte[], StoryLanguage, CancellationToken, Task<string>> transcribe, CancellationToken ct)
             {
-                _clip = clip; _lang = lang; _onLevel = onLevel; _transcribe = transcribe; _ct = ct;
+                _device = device; _clip = clip; _lang = lang; _onLevel = onLevel; _transcribe = transcribe; _ct = ct;
             }
+
+            string Name => _device ?? "default input";
 
             static double Now => Time.realtimeSinceStartupAsDouble * 1000.0;
 
             public void Tick(float dt)
             {
                 if (_done) return;
-                var pos = Microphone.GetPosition(null);
+                var pos = Microphone.GetPosition(_device);
                 if (pos < 0) return;
                 var n = (pos - _read + _clip.samples) % _clip.samples;
                 if (n == 0) return;
@@ -97,6 +114,7 @@ namespace HypaStories
                 var sum = 0f;
                 for (var i = 0; i < n; i++) { _samples.Add(buf[i]); sum += buf[i] * buf[i]; }
                 var rms = Mathf.Sqrt(sum / n);
+                _peak = Mathf.Max(_peak, rms);
                 _onLevel?.Invoke(Mathf.Min(1f, rms * 6f));
                 if (_silence.Update(rms, n * 1000f / Rate)) Stop();
             }
@@ -106,9 +124,15 @@ namespace HypaStories
                 if (_done) return;
                 _done = true;
                 var tEnd = Now;
-                Microphone.End(null);
+                Microphone.End(_device);
                 _onLevel?.Invoke(0f);
-                if (!_silence.Spoke) { _result.TrySetResult(new ListenResult { TEnd = tEnd, TTranscript = tEnd }); return; }
+                if (!_silence.Spoke)
+                {
+                    Debug.LogWarning($"Hypa Stories: heard nothing from {Name} ({_samples.Count / (float)Rate:0.0} s, loudest {_peak:0.000}, " +
+                                     $"speech starts at {_silence.Threshold}). Is it the right input, and does Unity have microphone access?");
+                    _result.TrySetResult(new ListenResult { TEnd = tEnd, TTranscript = tEnd });
+                    return;
+                }
                 _ = TranscribeAsync(tEnd);
             }
 
@@ -118,6 +142,7 @@ namespace HypaStories
                 {
                     var wav = WavEncoder.Encode16(_samples.ToArray(), _samples.Count, 1, Rate);
                     var text = await _transcribe(wav, _lang, _ct);
+                    Debug.Log($"Hypa Stories: heard “{text}” from {Name} ({_samples.Count / (float)Rate:0.0} s, {Now - tEnd:0} ms to transcribe)");
                     _result.TrySetResult(new ListenResult { Transcript = text ?? "", TEnd = tEnd, TTranscript = Now, Spoke = true });
                 }
                 catch (Exception e) { _result.TrySetException(e); }
@@ -128,7 +153,7 @@ namespace HypaStories
             {
                 if (_done) return;
                 _done = true;
-                Microphone.End(null);
+                Microphone.End(_device);
                 _onLevel?.Invoke(0f);
             }
         }

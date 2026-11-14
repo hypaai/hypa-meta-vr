@@ -19,6 +19,8 @@ namespace HypaStories
         string StoryId { get; }
         /// <summary>The script up to and including the interrupted line, in the current language (the answer's context).</summary>
         string StorySoFar { get; }
+        /// <summary>Questions to suggest at the interrupted line, in the current language: only about what has been told.</summary>
+        string[] Suggestions { get; }
         /// <summary>Stop the line being read and pause the clock.</summary>
         void Interrupt();
         void Resume(int lineIndex);
@@ -49,6 +51,8 @@ namespace HypaStories
         void SetLevel(float level01);
         void SetQuestion(string text);
         void SetAnswer(string text);
+        /// <summary>The questions to offer while listening (set when a question starts).</summary>
+        void SetSuggestions(string[] questions);
     }
 
     /// <summary>Timing for one question, in ms from the end of the question. Targets: filler under 300, playback under 3000.</summary>
@@ -89,6 +93,8 @@ namespace HypaStories
         public readonly List<QaLogEntry> Log = new List<QaLogEntry>();
         public event Action<QaLogEntry> Logged;
         public AskState State { get; private set; }
+        /// <summary>The questions offered for the current question (see <see cref="INarration.Suggestions"/>).</summary>
+        public string[] Suggestions { get; private set; } = new string[0];
         public float SecondFillerSeconds = 2f;
 
         sealed class Session
@@ -150,6 +156,7 @@ namespace HypaStories
         {
             if (State != AskState.Idle || !_narration.CanAsk) return;
             var s = _s = new Session { Line = _narration.LineIndex, Context = _narration.StorySoFar };
+            _view.SetSuggestions(Suggestions = _narration.Suggestions ?? new string[0]);
             Set(AskState.Interrupt, L.Listening);
             _onAsking?.Invoke(true);
             _view.SetQuestion(""); _view.SetAnswer("");

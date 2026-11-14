@@ -255,7 +255,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HypaStories.Runtime::HypaStories.StoryApp
   assets: {fileID: 11400000, guid: fdc6600317adb469382fef4cdb191726, type: 2}
-  qaMode: stub
+  qaMode: chat
   seatedEyeHeight: 1.2
   moveSpeed: 1.4
   snapTurn: 30

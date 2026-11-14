@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace HypaStories
@@ -13,8 +14,15 @@ namespace HypaStories
         /// <summary>Translated line per language code ("fr", "es"). Missing = the English line.</summary>
         public Dictionary<string, string> Tr = new Dictionary<string, string>();
 
+        /// <summary>Questions a listener may ask once this line has been told (English), and their translations per language code.</summary>
+        public string[] Ask = new string[0];
+        public Dictionary<string, string[]> AskTr = new Dictionary<string, string[]>();
+
         public string TextFor(string lang)
             => lang != "en" && Tr != null && Tr.TryGetValue(lang, out var s) && !string.IsNullOrEmpty(s) ? s : Text;
+
+        public string[] AskFor(string lang)
+            => lang != "en" && AskTr != null && AskTr.TryGetValue(lang, out var a) && a.Length > 0 ? a : Ask;
     }
 
     /// <summary>
@@ -31,7 +39,8 @@ namespace HypaStories
     }
 
     /// <summary>
-    /// A story card. Theme picks the card art (0 = lantern in the pines, 1 = noir crime scene). The storyteller reads the lines with TTS.
+    /// A story card. Theme picks the card art (0 = lantern in the pines, 1 = noir crime scene). The storyteller reads the lines with TTS
+    /// and answers questions with <see cref="Model"/>.
     /// </summary>
     public sealed class StoryInfo
     {
@@ -39,6 +48,15 @@ namespace HypaStories
         public int Theme;
         public Color Accent;
         public string Eyebrow, Title, Desc;
+        /// <summary>The chat model that answers questions, "provider/model" (e.g. "meta/muse-wonder-1.0").</summary>
+        public string Model;
         public StoryTimeline Timeline;
+
+        /// <summary>
+        /// Questions to suggest when the listener stops at <paramref name="lineIndex"/>: those of the lines told so far, newest first,
+        /// so they follow the story and never ask about what hasn't happened yet. Pure.
+        /// </summary>
+        public string[] Suggestions(int lineIndex, string lang, int max = 3)
+            => Timeline.Captions.Take(lineIndex + 1).Reverse().SelectMany(c => c.AskFor(lang)).Distinct().Take(max).ToArray();
     }
 }

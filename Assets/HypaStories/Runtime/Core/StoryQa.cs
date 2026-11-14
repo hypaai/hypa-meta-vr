@@ -27,10 +27,9 @@ namespace HypaStories
     }
 
     /// <summary>
-    /// Stand-in for the Hypa chat step (canned, spoiler-guarded answers with simulated latency), ported from the prototype's
-    /// qa.js. It proves the interaction loop and gives the timing log real numbers for the local parts. Hypa's MCP endpoint has
-    /// no chat tool yet; when the REST chat endpoint is confirmed, implement <see cref="IStoryQa"/> on it and swap it in.
-    /// Modes: "stub", "slow" (about 3 s to the first sentence: exercises the second filler) and "offline" (every call fails).
+    /// Stand-in for <see cref="ChatStoryQa"/> (canned, spoiler-guarded answers with simulated latency), ported from the prototype's
+    /// qa.js: tests the interaction loop without the network. Pick it with StoryApp's qaMode: "stub", "slow" (about 3 s to the first
+    /// sentence: exercises the second filler) or "offline" (every call fails).
     /// </summary>
     public sealed class StubStoryQa : IStoryQa
     {
@@ -130,18 +129,6 @@ namespace HypaStories
             if (hit == null) return For(Default, lang);
             if (hit.Min > lineIndex) return For(Spoiler, lang);
             return For(hit.A, lang);
-        }
-
-        /// <summary>Suggested questions shown while listening (the VR stand-in for the prototype's typed fallback).</summary>
-        public static string[] Suggestions(string storyId, string lang)
-        {
-            if (storyId == "marlow-street") return new[] { "Who is Nia?", "Who is the witness?", "What is wrong with the streetlight?" };
-            switch (lang)
-            {
-                case "fr": return new[] { "Qui est Kiko ?", "Où se passe l’histoire ?", "Pourquoi le feu ne s’éteint-il pas ?" };
-                case "es": return new[] { "¿Quién es Kiko?", "¿Dónde ocurre la historia?", "¿Por qué el fuego no se apaga?" };
-                default: return new[] { "Who is Kiko?", "Where does it happen?", "Why does the fire never go out?" };
-            }
         }
 
         public async Task AnswerAsync(QaRequest req, Action<string, int, bool> onSentence, CancellationToken ct)

@@ -26,7 +26,7 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | Space, ← → | Pause, `<<` `>>` | Pause / resume / replay, previous / next line |
 | **H** | Raise a hand above your head | Interrupt and ask |
 | **Q** (tap or hold), **Ask** (tap or hold) | Pinch Ask (hold = push-to-talk) | Ask; tap again = done talking / skip the line being said |
-| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question (no microphone or no key) |
+| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question (about the lines told so far) |
 | Esc, **Back** | Pinch Back | Cancel the question / back to the list / back to start |
 
 ## What came across from the prototype
@@ -47,7 +47,7 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | `audio.js` | `Audio/StoryAudio` (beds per scene, spatial fire, ducking under the voice, random wolves and crickets, storm, thunder, chime, tap) and `Audio/ProceduralClips` (the synthesised sounds, filtered offline). |
 | `ask.js` | `Core/AskFlow`: interrupt → listen → filler (second after 2 s) → answer sentence by sentence → "Now, where was I…" → restart the interrupted line. Same edge cases and timing log. |
 | `speech.js` `listen()` / `speak()` | `Audio/MicListener` (mic, silence detection, **Hypa `speech_to_text`**) and `Audio/StoryVoice` (**Hypa `text_to_speech`**, cached, prefetched, from the storyteller's mouth). |
-| `qa.js` | `Core/StoryQa`: `IStoryQa` seam + the same spoiler-guarded stub. |
+| `qa.js` | `Core/ChatStoryQa` (the story's chat model) behind the `IStoryQa` seam in `Core/StoryQa`, which keeps the spoiler-guarded stub for tests and offline runs. |
 | `public/languages.json` | `Data/StoryLanguages`. |
 | Swipe up / `H` to raise a hand | `Core/RaiseHand` + `Quest/QuestStoryInput` (tracked hand or controller above the head, held 0.35 s; thumbsticks walk and snap-turn). |
 
@@ -55,11 +55,14 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 
 Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `StoryLibrary.Ids`:
 
-- `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the starting `rain` / `wind` (0..1), and the English
-  `lines`, each `{ "id", "text" }` with optional cues: `rain` / `wind` (reached by the end of that line) and `flashes` (lightning,
-  seconds after the line starts).
-- `{code}.json` per translation (`fr.json`, `es.json`): `{ "line id": "text" }`. A missing file or line is told in English, and a
-  test lists every untranslated line of the offered languages.
+- `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `model` that answers questions
+  (`"provider/model"`, default `meta/muse-wonder-1.0`), the starting `rain` / `wind` (0..1), and the English `lines`, each
+  `{ "id", "text" }` with optional `ask` (questions to suggest once the line is told) and cues: `rain` / `wind` (reached by the end
+  of that line) and `flashes` (lightning, seconds after the line starts).
+- `{code}.json` per translation (`fr.json`, `es.json`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing file or line
+  is told in English, and a test lists every untranslated line of the offered languages.
+
+When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
 Lines have no times: the storyteller's TTS paces the story, so each line's slot is estimated from its English word count. To add a
 language, add it to `StoryLanguages.All` and a `{code}.json` to each story. Keep line ids stable when editing a script: they are what
@@ -70,9 +73,12 @@ the translations are matched on.
 - **TTS** (`text_to_speech`, verified schema): every line the storyteller says: the narration of both stories in every language,
   fillers, answers. Lines are cached for the session and the next line is fetched while the current one plays.
 - **ASR** (`speech_to_text`, schema read from `tools/list` on 2026-11-13, not yet called with a key): 16 kHz mono WAV, the story
-  language as `sourceLang`. Nothing is sent if nothing louder than the noise floor was heard.
-- **Chat:** Hypa's MCP endpoint has no chat tool, and the REST `chat` endpoint is unverified, so answers still come from
-  `StubStoryQa` (as in the prototype). Implement `IStoryQa` on the real endpoint and pass it to `AskFlow` in `StoryApp`.
+  language as `sourceLang`, model picked by Hypa's auto-router. Nothing is sent if nothing louder than the noise floor was heard.
+- **Chat** (REST `/v2/developer/chat`, `HypaRestClient.ChatAsync`, not streamed): `ChatStoryQa` sends the storyteller persona, the
+  story so far up to the interrupted line (in the listener's language) and the question to the story's `model`, which answers in that
+  language in 2-3 sentences without spoilers. The reply is spoken sentence by sentence; over 12 s counts as offline. Muse Wonder
+  took 2.6-4.2 s in English and French (it reasons before answering, even with `thinking: false`). StoryApp's `qaMode` switches to
+  the stub (`stub`, `slow`, `offline`).
 - Without a key, the story still runs: lines are "spoken" silently for about their length (subtitles keep time), and questions
   use the suggestion buttons.
 

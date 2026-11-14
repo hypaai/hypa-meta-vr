@@ -7,9 +7,9 @@ using UnityEngine;
 namespace HypaStories
 {
     /// <summary>
-    /// The stories, loaded from Resources/Stories/{id}/: story.json (the English script, card text and weather cues) and one
-    /// {language code}.json per translation ({ line id: text }). Adding a language = adding a file per story; a line it doesn't
-    /// translate is told in English. See README > Stories.
+    /// The stories, loaded from Resources/Stories/{id}/: story.json (the English script, card text, answer model, suggested
+    /// questions and weather cues) and one {language code}.json per translation ({ line id: text, "line id.ask": [questions] }).
+    /// Adding a language = adding a file per story; a line it doesn't translate is told in English. See README > Stories.
     ///
     /// Lines carry no times: the storyteller's TTS paces the story, so each line gets an estimate from its English word count
     /// (<see cref="WordsPerSecond"/>), and weather cues reach their value by the end of their line.
@@ -20,6 +20,9 @@ namespace HypaStories
         static readonly string[] Ids = { "kiko", "marlow-street" };
 
         const float WordsPerSecond = 2.6f, Start = 0.4f, Gap = 0.45f, Tail = 1.5f;
+
+        /// <summary>Answers questions when a story.json names no model.</summary>
+        public const string DefaultModel = "meta/muse-wonder-1.0";
 
         public static readonly StoryInfo[] All = Ids.Select(Load).ToArray();
 
@@ -54,9 +57,17 @@ namespace HypaStories
             {
                 var lineId = (string)line["id"];
                 var text = (string)line["text"];
-                var c = new Caption { Id = lineId, At = Round2(t), Until = Round2(t + text.Split(' ').Length / WordsPerSecond), Text = text };
+                var c = new Caption
+                {
+                    Id = lineId, At = Round2(t), Until = Round2(t + text.Split(' ').Length / WordsPerSecond), Text = text,
+                    Ask = Strings(line["ask"]),
+                };
                 foreach (var kv in tr)
+                {
                     if (kv.Value[lineId] is JValue v && !string.IsNullOrEmpty((string)v)) c.Tr[kv.Key] = (string)v;
+                    var ask = Strings(kv.Value[lineId + ".ask"]);
+                    if (ask.Length > 0) c.AskTr[kv.Key] = ask;
+                }
                 caps.Add(c);
                 rain.Cue(line, c);
                 wind.Cue(line, c);
@@ -68,6 +79,7 @@ namespace HypaStories
             {
                 Id = id, Theme = (int?)o["theme"] ?? 0, Accent = accent,
                 Eyebrow = (string)o["eyebrow"] ?? "", Title = (string)o["title"] ?? id, Desc = (string)o["description"] ?? "",
+                Model = (string)o["model"] ?? DefaultModel,
                 Timeline = new StoryTimeline
                 {
                     Duration = Mathf.Ceil(t - Gap + Tail),
@@ -97,6 +109,9 @@ namespace HypaStories
                 _value = v.Value;
             }
         }
+
+        static string[] Strings(JToken t)
+            => (t as JArray)?.Select(x => (string)x).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray() ?? new string[0];
 
         static CueTrack Track(string name, JObject story) => new CueTrack(name, (float?)story[name] ?? 0f);
 
