@@ -45,7 +45,7 @@ namespace HypaStories
         public static string Device(string[] devices)
             => devices.FirstOrDefault(d => !VirtualInputs.Any(v => d.IndexOf(v, StringComparison.OrdinalIgnoreCase) >= 0));
 
-        public IListenSession Start(StoryLanguage language, Action<float> onLevel)
+        public IListenSession Listen(StoryLanguage language, Action<float> onLevel)
         {
             if (!HypaConfig.Current.HasKey)
                 throw new HypaException(HypaErrorKind.MissingKey, "speech_to_text needs a Hypa API key.");

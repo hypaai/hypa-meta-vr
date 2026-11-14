@@ -291,7 +291,7 @@ namespace HypaStories.Tests
             public readonly Queue<string> Heard = new Queue<string>();
             public bool NoMic;
             public int Starts;
-            public IListenSession Start(StoryLanguage language, Action<float> onLevel)
+            public IListenSession Listen(StoryLanguage language, Action<float> onLevel)
             {
                 Starts++;
                 if (NoMic) throw new InvalidOperationException("No microphone.");

@@ -84,8 +84,13 @@ namespace HypaStories
 
         public void SetIcon(Texture2D tex)
         {
-            if (tex != null) _m.SetTexture(TexId, tex);
             _r.enabled = tex != null;
+            if (tex == null) return;
+            // A texture set only on a shared material's property block stays blank on the Quest,
+            // so each icon keeps its own material with the PNG on it.
+            var mat = _r.material;
+            mat.mainTexture = tex;
+            _m.SetTexture(TexId, tex);
             Apply();
         }
 
@@ -362,7 +367,7 @@ namespace HypaStories
             var ink = style == KitStyle.Primary ? KitTheme.Ink : KitTheme.Paper;
             KitIcon ic = null;
             TextMeshPro lb = null;
-            var iconSize = size.y * 0.46f;
+            var iconSize = size.y * (round ? 0.62f : 0.5f);
             if (round) ic = Icon(go.transform, icon, Vector3.zero, iconSize, ink);
             else
             {

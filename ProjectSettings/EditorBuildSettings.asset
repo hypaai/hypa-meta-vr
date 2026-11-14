@@ -18,6 +18,5 @@ EditorBuildSettings:
     path: Assets/HypaCore/Scenes/HypaCoreTest.unity
     guid: 90ce47044fcfa43e3ad1c3dc22df131f
   m_configObjects:
-    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 23fb07a1495574c8ba057e1b3fb599d1, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 48d385bd27b014b698d3284ebd38e594, type: 2}
