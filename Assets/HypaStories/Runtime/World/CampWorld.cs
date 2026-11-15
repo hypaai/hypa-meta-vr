@@ -26,6 +26,9 @@ namespace HypaStories
         public Transform PortalRing { get; private set; }
         /// <summary>The trail to the hut (3G): signpost, trail, hut, owl and wolf.</summary>
         public HutTrail Trail { get; private set; }
+        /// <summary>The trail to the village and the village itself (3M).</summary>
+        public VillageTrail VillageTrail { get; private set; }
+        public Village Village { get; private set; }
 
         StoryAssets _a;
         Material _sky, _pool, _fireflies, _motes, _embers, _rain, _ringMat, _ringDashMat;
@@ -158,7 +161,8 @@ namespace HypaStories
                 var d = 24f + R() * 10f;
                 var h = 13f + R() * 6f;
                 var x = Mathf.Sin(ang) * d; var z = Mathf.Cos(ang) * d;
-                if (HutTrailLayout.NearPath(x, z, 5f) || HutTrailLayout.NearHut(x, z, 4f)) d += 16f; // the long trail passes through the old ring
+                if (VillageLayout.NearVillage(x, z, 6f) || VillageLayout.NearPath(x, z, 5f)) d += 34f; // behind the village, its backdrop
+                else if (HutTrailLayout.NearPath(x, z, 5f) || HutTrailLayout.NearHut(x, z, 4f)) d += 16f; // the long trail passes through the old ring
                 var t = Child("Far Pine", cardMesh, cards[i % cards.Length]);
                 t.localPosition = new Vector3(Mathf.Sin(ang) * d, -0.1f, Mathf.Cos(ang) * d);
                 t.localRotation = Quaternion.LookRotation(t.localPosition.normalized);
@@ -181,13 +185,15 @@ namespace HypaStories
                 var d = 7f + R() * 13f;
                 float x = Mathf.Sin(ang) * d, z = Mathf.Cos(ang) * d;
                 if (z > 2f && Mathf.Abs(x) < 2.2f) continue; // keep a gap behind the storyteller so the fire has a backdrop
-                if (HutTrailLayout.NearPath(x, z, 3.15f) || HutTrailLayout.NearHut(x, z, 3.2f)) continue; // the trail stays open; pine boughs stay off the hut
+                if (Grounds.KeepClear(x, z, 3.15f, 3.2f)) continue; // the trails stay open; pine boughs stay off the hut and the village
+                var fromSeat = new Vector2(x, z - SplashSeat.z).magnitude;
+                if (fromSeat < 4.5f || (x > 2f && fromSeat < 6f)) continue; // no pine on top of the seat; the village trail's mouth shows from it
                 Pine(x, z, 7f + R() * 5f);
                 placed++;
             }
             float[,] near = { { -4.75f, -1.5f, 10f }, { 4.25f, -1f, 9f }, { -7.5f, 1.5f, 12f }, { 7f, 2f, 11f }, { -3.6f, -4.6f, 7.5f }, { 3.9f, -4.9f, 7f } };
             for (var i = 0; i < near.GetLength(0); i++)
-                if (!HutTrailLayout.NearPath(near[i, 0], near[i, 1], 3.15f)) Pine(near[i, 0], near[i, 1], near[i, 2]);
+                if (!Grounds.KeepClear(near[i, 0], near[i, 1], 3.15f, 3.2f)) Pine(near[i, 0], near[i, 1], near[i, 2]);
 
             // pines along the trail, past the clearing, and round the hut (a gap left in front of its door)
             for (var placed = 0; placed < 52;)
@@ -195,7 +201,7 @@ namespace HypaStories
                 var (p, dir) = HutTrailLayout.Along(0.1f + R() * 0.84f);
                 var at = p + new Vector2(-dir.y, dir.x) * ((R() < 0.5f ? 1f : -1f) * (4.4f + R() * 7f));
                 if (at.magnitude < 14f) continue;
-                if (HutTrailLayout.NearPath(at.x, at.y, 3.15f) || HutTrailLayout.NearHut(at.x, at.y, 3.2f)) continue;
+                if (Grounds.KeepClear(at.x, at.y, 3.15f, 3.2f)) continue;
                 if (Vector2.Distance(at, HutTrailLayout.FrontOfDoor) < 4f) continue;
                 Pine(at.x, at.y, 8f + R() * 6f);
                 placed++;
@@ -205,6 +211,33 @@ namespace HypaStories
             var gap = new Vector2(-mouth.dir.y, mouth.dir.x) * 3.7f;
             Pine(mouth.point.x + gap.x, mouth.point.y + gap.y, 11f);
             Pine(mouth.point.x - gap.x, mouth.point.y - gap.y, 9.5f);
+
+            // the same along the village trail, and a ring of forest round the village beyond its huts
+            for (var placed = 0; placed < 46;)
+            {
+                var (p, dir) = VillageLayout.Along(0.1f + R() * 0.84f);
+                var at = p + new Vector2(-dir.y, dir.x) * ((R() < 0.5f ? 1f : -1f) * (4.4f + R() * 7f));
+                if (at.magnitude < 14f || Grounds.KeepClear(at.x, at.y, 3.15f, 3.2f)) continue;
+                var (sp, _) = VillageLayout.Stream;
+                if (Vector2.Distance(at, sp) < 2.5f || Vector2.Distance(at, VillageLayout.BushbabyTrees) < 5.5f) continue;
+                Pine(at.x, at.y, 8f + R() * 6f);
+                placed++;
+            }
+            for (var placed = 0; placed < 40;)
+            {
+                var ang = R() * Mathf.PI * 2f;
+                var at = VillageLayout.Plaza + new Vector2(Mathf.Sin(ang), Mathf.Cos(ang)) * (VillageLayout.HutRing + VillageLayout.HutRadius + 2.5f + R() * 8f);
+                if (VillageLayout.NearPath(at.x, at.y, 3.6f) || HutTrailLayout.NearPath(at.x, at.y, 3.15f)) continue;
+                Pine(at.x, at.y, 9f + R() * 7f);
+                placed++;
+            }
+            // (the near side of the mouth stays open: a pine there would stand beside the seat)
+            var vmouth = VillageLayout.Along(0.09f);
+            var vgap = new Vector2(-vmouth.dir.y, vmouth.dir.x) * 3.7f;
+            Pine(vmouth.point.x + vgap.x, vmouth.point.y + vgap.y, 10.5f);
+            var vmouth2 = VillageLayout.Along(0.2f);
+            var vgap2 = new Vector2(-vmouth2.dir.y, vmouth2.dir.x) * 3.9f;
+            Pine(vmouth2.point.x - vgap2.x, vmouth2.point.y - vgap2.y, 9f);
         }
 
         GameObject Spawn(GameObject prefab, float size, Vector3 pos, float rotY, bool byWidth, float sway = 0f)
@@ -238,7 +271,8 @@ namespace HypaStories
             if (ang > -8f && ang < 52f && new Vector2(dx, dz).magnitude < 4.5f) return false; // the cards and the player panel
             return new Vector2(dx, dz).magnitude > 1.1f && new Vector2(x - 0.55f, z - 2.05f).magnitude > 1.1f
                    && new Vector2(x, z).magnitude > 1.5f && !(Mathf.Abs(x) < 0.8f && z < StorySeat.z && z > SplashSeat.z - 0.8f)
-                   && !HutTrailLayout.NearPath(x, z, 1.2f) && Vector2.Distance(new Vector2(x, z), HutTrailLayout.Sign) > 0.9f;
+                   && !HutTrailLayout.NearPath(x, z, 1.2f) && Vector2.Distance(new Vector2(x, z), HutTrailLayout.Sign) > 0.9f
+                   && !VillageLayout.NearPath(x, z, 1.2f) && Vector2.Distance(new Vector2(x, z), VillageLayout.Sign) > 0.9f;
         }
 
         void BuildProps()
@@ -283,12 +317,30 @@ namespace HypaStories
             go.transform.SetParent(transform, false);
             Trail = go.AddComponent<HutTrail>();
             Trail.Build(_a, glow);
+            var vt = new GameObject("Village Trail");
+            vt.transform.SetParent(transform, false);
+            VillageTrail = vt.AddComponent<VillageTrail>();
+            VillageTrail.Build(_a, glow);
+            var vg = new GameObject("Village");
+            vg.transform.SetParent(transform, false);
+            Village = vg.AddComponent<Village>();
+            Village.Build(_a, glow);
             for (var i = 0; i < 48; i++)
             {
                 var (p, dir) = HutTrailLayout.Along(0.04f + i / 48f * 0.9f + R() * 0.02f);
                 var side = new Vector2(-dir.y, dir.x) * ((i % 2 == 0 ? 1f : -1f) * (HutTrailLayout.PathHalf + 0.45f + R() * 1.1f));
                 var at = p + side;
                 if (HutTrailLayout.NearHut(at.x, at.y, 0.4f) || Vector2.Distance(at, HutTrailLayout.Sign) < 0.8f) continue;
+                if (i % 3 == 2 && _a.rocks.Length > 0) Spawn(_a.rocks[i % _a.rocks.Length], 0.35f + R() * 0.5f, new Vector3(at.x, -0.05f, at.y), R() * 360f, true);
+                else Spawn(_a.fern, 0.6f + R() * 0.7f, new Vector3(at.x, -0.05f, at.y), R() * 360f, true, 0.01f);
+            }
+            var (stream, _) = VillageLayout.Stream;
+            for (var i = 0; i < 44; i++)
+            {
+                var (p, dir) = VillageLayout.Along(0.04f + i / 44f * 0.9f + R() * 0.02f);
+                var side = new Vector2(-dir.y, dir.x) * ((i % 2 == 0 ? 1f : -1f) * (VillageLayout.PathHalf + 0.45f + R() * 1.1f));
+                var at = p + side;
+                if (Vector2.Distance(at, stream) < 2.6f || Vector2.Distance(at, VillageLayout.Sign) < 0.8f || VillageLayout.NearVillage(at.x, at.y, -8f)) continue;
                 if (i % 3 == 2 && _a.rocks.Length > 0) Spawn(_a.rocks[i % _a.rocks.Length], 0.35f + R() * 0.5f, new Vector3(at.x, -0.05f, at.y), R() * 360f, true);
                 else Spawn(_a.fern, 0.6f + R() * 0.7f, new Vector3(at.x, -0.05f, at.y), R() * 360f, true, 0.01f);
             }

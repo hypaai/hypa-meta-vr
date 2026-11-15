@@ -65,11 +65,49 @@ namespace HypaStories
         /// <summary>Starts the place runner (the veil and the editor keys). Places call it on start; GoTo does too.</summary>
         public static void EnsureRunner() { var _ = PlaceRunner.Instance; }
 
+        /// <summary>
+        /// The camp holds some places in its own world (the hut and the village at the ends of their trails): it says which
+        /// here, and <see cref="TravelInCamp"/> takes you to one without loading a scene. Null when no camp is running.
+        /// </summary>
+        public static Func<string, bool> InCamp;
+        /// <summary>Takes you to a place inside the camp's world (the fire, the hut's door, the village gate). Set by the camp.</summary>
+        public static Action<string> TravelInCamp;
+
+        /// <summary>Where to stand once back at the camp (a place it holds in its world), or null for the seat by the fire.</summary>
+        public static string TakeCampSpot() { var s = _campSpot; _campSpot = null; return s; }
+        internal static string _campSpot;
+
+        public enum Route { Ignore, InCampWorld, CampThenSpot, LoadScene }
+
+        /// <summary>
+        /// How a GoTo is done. A place the camp holds in its world: walked to there when you're at the camp, else the camp loads
+        /// and puts you at it. Any other place: its own scene. Unknown ids and the place you're in: ignored. Pure, unit tested.
+        /// </summary>
+        public static Route RouteFor(string placeId, string current, bool campHoldsIt)
+        {
+            if (SceneFor(placeId) == null) return Route.Ignore;
+            if (campHoldsIt) return current == PlaceIds.Camp ? Route.InCampWorld : Route.CampThenSpot;
+            return placeId == current ? Route.Ignore : Route.LoadScene;
+        }
+
+        /// <summary>
+        /// The hut and the village are built in the camp's world (the trails), so a button for them never opens the old
+        /// stand-in scene. True even when that scene is played on its own and the camp has not registered yet. Pure, unit tested.
+        /// </summary>
+        public static bool CampWorldPlace(string placeId) => placeId == PlaceIds.Hut || placeId == PlaceIds.Gathering;
+
         /// <summary>Goes to a place with the fade. Unknown ids, the current place, or a move already under way: ignored.</summary>
         public static void GoTo(string placeId)
         {
-            if (IsMoving || SceneFor(placeId) == null || placeId == Current) return;
-            PlaceRunner.Instance.Begin(placeId);
+            if (IsMoving) return;
+            // The camp says which places it holds. The hut and the village are held even if you opened a stand-in on its own.
+            var holds = CampWorldPlace(placeId) || (InCamp != null && InCamp(placeId));
+            switch (RouteFor(placeId, Current, holds))
+            {
+                case Route.InCampWorld: TravelInCamp?.Invoke(placeId); break;
+                case Route.CampThenSpot: _campSpot = placeId == PlaceIds.Camp ? null : placeId; PlaceRunner.Instance.Begin(PlaceIds.Camp); break;
+                case Route.LoadScene: PlaceRunner.Instance.Begin(placeId); break;
+            }
         }
 
         /// <summary>
