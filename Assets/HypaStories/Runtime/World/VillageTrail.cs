@@ -86,6 +86,9 @@ namespace HypaStories
             Signpost("VILLAGE", VillageLayout.Sign, (VillageLayout.Path[1] - VillageLayout.Path[0]).normalized, 1.55f, 1.02f, 4f);
             LanternPosts(new[] { 0.12f, 0.24f, 0.5f, 0.62f, 0.75f, 0.88f }, VillageLayout.Along, VillageLayout.PathHalf);
             BuildStream();
+            Undergrowth("Village Trail Undergrowth", VillageLayout.Along, VillageLayout.PathHalf,
+                p => p.magnitude < 5.5f || Vector2.Distance(p, _streamAt) < 2.4f || Vector2.Distance(p, VillageLayout.Sign) < 0.5f || VillageLayout.NearVillage(p.x, p.y, -7f));
+            TrailMist(VillageLayout.Along, 6, VillageLayout.PathHalf);
             BuildMushrooms();
             BuildFrogs();
             BuildBats();

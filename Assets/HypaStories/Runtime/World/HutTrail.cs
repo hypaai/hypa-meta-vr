@@ -47,6 +47,9 @@ namespace HypaStories
                 new Color(0.17f, 0.135f, 0.1f), new Color(0.11f, 0.095f, 0.075f));
             Signpost("HUT", HutTrailLayout.Sign, (HutTrailLayout.Path[1] - HutTrailLayout.Path[0]).normalized, 0.78f, 1.5f);
             LanternPosts(new[] { 0.12f, 0.26f, 0.40f, 0.52f, 0.64f, 0.76f, 0.88f }, HutTrailLayout.Along, HutTrailLayout.PathHalf);
+            Undergrowth("Trail Undergrowth", HutTrailLayout.Along, HutTrailLayout.PathHalf,
+                p => HutTrailLayout.NearHut(p.x, p.y, 0.3f) || p.magnitude < 5.5f || Vector2.Distance(p, HutTrailLayout.Sign) < 0.5f);
+            TrailMist(HutTrailLayout.Along, 6, HutTrailLayout.PathHalf);
             BuildHut();
             BuildFireflies();
             BuildOwl();
@@ -169,37 +172,55 @@ namespace HypaStories
             _wolf.localPosition = _wolfHome;
             var fur = new Color(0.24f, 0.23f, 0.22f);
             var furLight = new Color(0.4f, 0.38f, 0.34f);
+            var id = Quaternion.identity;
+            var dark = new Color(0.05f, 0.05f, 0.05f);
             var mk = new MeshKit();
-            // body along local +Z (its head end), shoulder about 0.75 m
-            mk.Box(new Vector3(0f, 0.68f, 0f), new Vector3(0.34f, 0.36f, 0.95f), Quaternion.identity, fur);                     // trunk
-            mk.Box(new Vector3(0f, 0.72f, 0.36f), new Vector3(0.4f, 0.44f, 0.36f), Quaternion.Euler(-6f, 0f, 0f), fur * 1.05f);  // chest and ruff
-            mk.Box(new Vector3(0f, 0.6f, 0.38f), new Vector3(0.24f, 0.2f, 0.26f), Quaternion.identity, furLight);               // pale throat
-            mk.Box(new Vector3(0f, 0.7f, -0.42f), new Vector3(0.3f, 0.3f, 0.24f), Quaternion.identity, fur * 0.95f);            // haunch
-            mk.Box(new Vector3(0f, 0.62f, -0.72f), new Vector3(0.1f, 0.1f, 0.48f), Quaternion.Euler(28f, 0f, 0f), fur * 0.9f); // tail, low
+            // a lean body along local +Z (its head end), shoulder about 0.75 m: deep chest, tucked belly, narrow hips
+            mk.Ellipsoid(new Vector3(0f, 0.67f, 0.22f), new Vector3(0.145f, 0.19f, 0.27f), Quaternion.Euler(-6f, 0f, 0f), fur, 12, 8);       // ribcage
+            mk.Ellipsoid(new Vector3(0f, 0.69f, -0.13f), new Vector3(0.11f, 0.13f, 0.24f), id, fur * 0.97f, 12, 8);                         // waist
+            mk.Ellipsoid(new Vector3(0f, 0.67f, -0.38f), new Vector3(0.125f, 0.16f, 0.17f), id, fur * 0.95f, 12, 8);                        // haunches
+            mk.Ellipsoid(new Vector3(0f, 0.78f, 0.42f), new Vector3(0.165f, 0.18f, 0.15f), Quaternion.Euler(-20f, 0f, 0f), fur * 1.06f, 12, 8); // the ruff
+            mk.Ellipsoid(new Vector3(0f, 0.6f, 0.36f), new Vector3(0.1f, 0.12f, 0.12f), id, furLight, 10, 6);                               // pale throat
+            mk.Limb(new Vector3(0f, 0.76f, 0.4f), new Vector3(0f, 0.86f, 0.56f), 0.11f, 0.085f, fur, 10);                                   // neck
+            mk.Limb(new Vector3(0f, 0.72f, -0.5f), new Vector3(0f, 0.5f, -0.76f), 0.055f, 0.06f, fur * 0.92f, 8);                           // tail, low
+            mk.Ellipsoid(new Vector3(0f, 0.44f, -0.83f), new Vector3(0.065f, 0.07f, 0.13f), Quaternion.Euler(40f, 0f, 0f), fur * 0.85f, 10, 6); // its bushy end
             MeshNode("Wolf Body", mk.Build("Wolf Body"), _vc, _wolf);
 
             _wolfHead = Node("Wolf Head", _wolf);
             _wolfHead.localPosition = new Vector3(0f, 0.86f, 0.58f);
             var hk = new MeshKit();
-            hk.Box(Vector3.zero, new Vector3(0.22f, 0.2f, 0.22f), Quaternion.identity, fur);
-            hk.Box(new Vector3(0f, -0.04f, 0.17f), new Vector3(0.11f, 0.1f, 0.2f), Quaternion.Euler(8f, 0f, 0f), furLight * 0.9f); // muzzle
-            hk.Box(new Vector3(0f, -0.01f, 0.27f), new Vector3(0.05f, 0.04f, 0.03f), Quaternion.identity, new Color(0.05f, 0.05f, 0.05f)); // nose
-            hk.Box(new Vector3(-0.07f, 0.14f, -0.02f), new Vector3(0.06f, 0.11f, 0.04f), Quaternion.Euler(0f, 0f, 12f), fur * 0.9f);    // ears
-            hk.Box(new Vector3(0.07f, 0.14f, -0.02f), new Vector3(0.06f, 0.11f, 0.04f), Quaternion.Euler(0f, 0f, -12f), fur * 0.9f);
+            hk.Ellipsoid(Vector3.zero, new Vector3(0.1f, 0.09f, 0.11f), id, fur, 12, 8);                                                  // skull
+            hk.Ellipsoid(new Vector3(0f, -0.025f, -0.03f), new Vector3(0.125f, 0.09f, 0.08f), id, fur * 1.05f, 12, 7);                     // cheek fur
+            hk.Limb(new Vector3(0f, -0.025f, 0.07f), new Vector3(0f, -0.045f, 0.245f), 0.056f, 0.028f, furLight * 0.9f, 10);               // long muzzle
+            hk.Ellipsoid(new Vector3(0f, -0.075f, 0.14f), new Vector3(0.04f, 0.02f, 0.08f), id, furLight * 0.75f, 8, 5);                   // jaw
+            hk.Ellipsoid(new Vector3(0f, -0.035f, 0.262f), new Vector3(0.022f, 0.018f, 0.016f), id, dark, 8, 5);                           // nose
+            foreach (var k in new[] { -1f, 1f })
+                hk.Limb(new Vector3(k * 0.055f, 0.06f, -0.01f), new Vector3(k * 0.075f, 0.17f, -0.03f), 0.035f, 0.006f, fur * 0.9f, 6, null, false); // pointed ears
             MeshNode("Wolf Head", hk.Build("Wolf Head"), _vc, _wolfHead);
             _wolfEyes = GlowMat(new Color(1f, 0.78f, 0.28f), 0.95f);
-            GlowCard("Wolf Eye", new Vector3(-0.055f, 0.035f, 0.115f), 0.09f, _wolfEyes, _wolfHead);
-            GlowCard("Wolf Eye", new Vector3(0.055f, 0.035f, 0.115f), 0.09f, _wolfEyes, _wolfHead);
+            GlowCard("Wolf Eye", new Vector3(-0.05f, 0.02f, 0.1f), 0.085f, _wolfEyes, _wolfHead);
+            GlowCard("Wolf Eye", new Vector3(0.05f, 0.02f, 0.1f), 0.085f, _wolfEyes, _wolfHead);
 
-            // four legs, each pivoting at the top
-            Vector3[] hips = { new Vector3(-0.11f, 0.56f, 0.32f), new Vector3(0.11f, 0.56f, 0.32f), new Vector3(-0.11f, 0.56f, -0.4f), new Vector3(0.11f, 0.56f, -0.4f) };
+            // four long legs, each pivoting at the top: straight forelegs, hind legs with a hock
+            Vector3[] hips = { new Vector3(-0.09f, 0.58f, 0.3f), new Vector3(0.09f, 0.58f, 0.3f), new Vector3(-0.09f, 0.6f, -0.4f), new Vector3(0.09f, 0.6f, -0.4f) };
             for (var i = 0; i < 4; i++)
             {
                 _legs[i] = Node("Wolf Leg", _wolf);
                 _legs[i].localPosition = hips[i];
                 var lk = new MeshKit();
-                lk.Box(new Vector3(0f, -0.27f, 0f), new Vector3(0.08f, 0.56f, 0.09f), Quaternion.identity, fur * 0.9f);
-                lk.Box(new Vector3(0f, -0.54f, 0.03f), new Vector3(0.09f, 0.04f, 0.12f), Quaternion.identity, fur * 0.7f); // paw
+                var c = fur * 0.9f; c.a = 1f;
+                if (i < 2)
+                {
+                    lk.Limb(Vector3.zero, new Vector3(0f, -0.28f, 0.02f), 0.058f, 0.034f, c, 8);
+                    lk.Limb(new Vector3(0f, -0.28f, 0.02f), new Vector3(0f, -0.55f, 0f), 0.032f, 0.026f, c, 8);
+                }
+                else
+                {
+                    lk.Limb(Vector3.zero, new Vector3(0f, -0.22f, -0.08f), 0.078f, 0.04f, c, 8);
+                    lk.Limb(new Vector3(0f, -0.22f, -0.08f), new Vector3(0f, -0.38f, -0.03f), 0.036f, 0.028f, c, 8);
+                    lk.Limb(new Vector3(0f, -0.38f, -0.03f), new Vector3(0f, -0.57f, 0f), 0.028f, 0.025f, c, 8);
+                }
+                lk.Ellipsoid(new Vector3(0f, i < 2 ? -0.565f : -0.585f, 0.03f), new Vector3(0.035f, 0.022f, 0.052f), id, fur * 0.7f, 8, 5); // paw
                 MeshNode("Wolf Leg", lk.Build("Wolf Leg"), _vc, _legs[i]);
             }
             _growl = ProceduralClips.Clip("growl", ProceduralClips.GrowlSamples(51));

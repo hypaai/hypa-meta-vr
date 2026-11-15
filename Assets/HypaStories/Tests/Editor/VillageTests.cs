@@ -106,5 +106,20 @@ namespace HypaStories.Tests
             }
             Assert.IsTrue(seen[0] && seen[1] && seen[2]);
         }
+
+        [Test] public void WaxPrints_TilesStayInsideTheirOwnSquare_AwayFromThePlainOne()
+        {
+            var plain = new Rect(0f, 0f, 0.25f, 1f / 3f);
+            for (var k = 1; k <= WaxPrints.Count; k++)
+            {
+                var t = WaxPrints.Tile(k);
+                Assert.IsFalse(t.Overlaps(plain), $"print {k} keeps off the plain tile (skin samples it)");
+                Assert.GreaterOrEqual(t.xMin, 0f); Assert.LessOrEqual(t.xMax, 1f);
+                Assert.GreaterOrEqual(t.yMin, 0f); Assert.LessOrEqual(t.yMax, 1f);
+                for (var j = k + 1; j <= WaxPrints.Count; j++) Assert.IsFalse(t.Overlaps(WaxPrints.Tile(j)), $"prints {k} and {j}");
+            }
+            Assert.AreEqual(WaxPrints.Tile(1), WaxPrints.Tile(1 + WaxPrints.Count), "numbers past the last wrap round");
+            Assert.IsTrue(plain.Contains(TrailBuilder.MeshKit.Plain), "untextured shapes sample the plain tile");
+        }
     }
 }

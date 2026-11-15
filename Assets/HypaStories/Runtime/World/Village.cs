@@ -26,7 +26,7 @@ namespace HypaStories
 
         sealed class Figure
         {
-            public Transform Root, Torso, Head, ArmL, ArmR;
+            public Transform Root, Torso, Head, ArmL, ArmR, ForeL, ForeR, EyeL, EyeR, Mouth;
             public float Ph;
             public Vector3 Home;
         }
@@ -75,6 +75,7 @@ namespace HypaStories
         public void Build(StoryAssets a, Texture2D glow)
         {
             Init(a, glow, 57, "Village");
+            _vc.mainTexture = WaxPrints.Atlas; // the villagers' cloth
             _root = Node("Village (seen)");
             _pattern = ProceduralClips.DrumPattern();
             BuildGround();
@@ -136,6 +137,7 @@ namespace HypaStories
             mk.Box(X0Z(g, 2.88f), new Vector3(3.3f, 0.2f, 0.26f), rot, Jitter(wood, 0.06f));
             mk.Box(X0Z(g, 3.05f), new Vector3(2.4f, 0.14f, 0.2f), rot, paint[0]);
             MeshNode("Gate", mk.Build("Gate"), _vc, _root);
+            HangCloth(g);
             foreach (var k in new[] { -1f, 1f })
                 Lantern(X0Z(g + right * k * 1.35f - VillageLayout.Into * 0.25f, 2.35f), 1.05f, k + 2f, k > 0f ? 7f : 0f, _root);
             GroundPool(g, 4.5f, 4.5f, new Color(1f, 0.56f, 0.2f), 0.16f, 1f, _root);
@@ -152,16 +154,85 @@ namespace HypaStories
                 hut.localRotation = Quaternion.LookRotation(Face(VillageLayout.Plaza - at));
                 var s = 0.85f + R() * 0.25f;
                 var mud = muds[i % muds.Length];
+                var rOut = VillageLayout.HutRadius * s;
                 RoundHut(hut, new HutShape
                 {
-                    RIn = VillageLayout.HutRadius * s - 0.25f, ROut = VillageLayout.HutRadius * s, WallH = 2f, DoorH = 1.75f, DoorHalfAngle = 15f,
-                    Eave = VillageLayout.HutRadius * s + 0.6f, EaveY = 1.8f, ApexY = 3.9f + R() * 0.6f,
+                    RIn = rOut - 0.25f, ROut = rOut, WallH = 2f, DoorH = 1.75f, DoorHalfAngle = 15f,
+                    Eave = rOut + 0.6f, EaveY = 1.8f, ApexY = 3.9f + R() * 0.6f,
                     Mud = mud, MudDark = mud * 0.62f, Thatch = Jitter(new Color(0.7f, 0.52f, 0.28f), 0.1f), Floor = false,
                 }, 32);
+                PaintHut(hut, rOut, i);
                 // warm light inside the doorway: someone's home
                 var inside = GlowMat(new Color(1f, 0.55f, 0.22f), 0.55f);
                 GlowCard("Doorway Glow", hut.localPosition + hut.localRotation * new Vector3(0f, 0.9f, VillageLayout.HutRadius * s - 0.6f), 1.5f, inside, _root);
                 _flicker.Add((inside, 0.55f, i * 2.1f));
+            }
+        }
+
+        /// <summary>A pale wash and two thin rings on a hut wall, with a few dots. The door stays clear. One mesh.</summary>
+        void PaintHut(Transform hut, float r, int which)
+        {
+            Color wash, band, dot;
+            if (which % 3 == 0) { wash = new Color(0.93f, 0.88f, 0.76f); band = new Color(0.72f, 0.12f, 0.1f); dot = new Color(0.1f, 0.14f, 0.42f); }
+            else if (which % 3 == 1) { wash = new Color(0.9f, 0.68f, 0.16f); band = new Color(0.1f, 0.38f, 0.18f); dot = new Color(0.08f, 0.06f, 0.05f); }
+            else { wash = new Color(0.94f, 0.92f, 0.86f); band = new Color(0.14f, 0.32f, 0.58f); dot = new Color(0.82f, 0.32f, 0.1f); }
+            var mk = new MeshKit();
+            WallBand(mk, r + 0.015f, 0.12f, 0.48f, wash);
+            WallBand(mk, r + 0.03f, 1.02f, 0.07f, band);
+            WallBand(mk, r + 0.03f, 1.16f, 0.04f, dot);
+            const int n = 20;
+            for (var s = 0; s < n; s++)
+            {
+                if ((s + which) % 2 != 0) continue;
+                var ang = (s + 0.5f) / n * Mathf.PI * 2f;
+                if (Mathf.Abs(Mathf.DeltaAngle(0f, ang * Mathf.Rad2Deg)) < 22f) continue;
+                mk.Box(new Vector3(Mathf.Sin(ang) * (r + 0.04f), 0.36f, Mathf.Cos(ang) * (r + 0.04f)), new Vector3(0.055f, 0.055f, 0.02f),
+                    Quaternion.LookRotation(new Vector3(Mathf.Sin(ang), 0f, Mathf.Cos(ang))), band);
+            }
+            MeshNode("Hut Paint", mk.Build("Hut Paint"), _vc, hut);
+        }
+
+        static void WallBand(MeshKit mk, float r, float y, float h, Color col)
+        {
+            const int seg = 32;
+            for (var i = 0; i < seg; i++)
+            {
+                float a0 = i / (float)seg * Mathf.PI * 2f, a1 = (i + 1) / (float)seg * Mathf.PI * 2f;
+                if (Mathf.Abs(Mathf.DeltaAngle(0f, (a0 + a1) * 0.5f * Mathf.Rad2Deg)) < 18f) continue;
+                Vector3 P(float a, float yy) => new Vector3(Mathf.Sin(a) * r, yy, Mathf.Cos(a) * r);
+                mk.Quad(P(a0, y), P(a0, y + h), P(a1, y + h), P(a1, y), col);
+            }
+        }
+
+        /// <summary>A short run of printed cloths under the gate beam, toward the path.</summary>
+        void HangCloth(Vector2 gate)
+        {
+            var mk = new MeshKit();
+            var n = Face(VillageLayout.Into);
+            var right = Face(VillageLayout.Right);
+            for (var i = 0; i < 4; i++)
+            {
+                var across = (-1.5f + i) * 0.72f;
+                var w = 0.42f;
+                var drop = 0.55f + (i % 2) * 0.12f;
+                var top = X0Z(gate, 2.62f) + right * across + n * 0.18f;
+                var a = top - right * w * 0.5f;
+                var b = top + right * w * 0.5f;
+                var sag = n * 0.06f;
+                mk.Cloth(a, b, b - Vector3.up * drop + sag, a - Vector3.up * drop + sag, WaxPrints.Tile(i % 2 == 0 ? 9 : 2), Color.white);
+            }
+            MeshNode("Gate Cloth", mk.Build("Gate Cloth"), _vc, _root);
+        }
+
+        /// <summary>A short strand of beads at the neck: coral for the women, gold for the elder. Part of the body mesh.</summary>
+        static void Beads(MeshKit body, bool coral)
+        {
+            var bead = coral ? new Color(0.84f, 0.22f, 0.14f) : new Color(0.9f, 0.74f, 0.28f);
+            var pale = coral ? new Color(0.95f, 0.55f, 0.35f) : new Color(0.98f, 0.9f, 0.55f);
+            for (var i = 0; i < 7; i++)
+            {
+                var a = Mathf.Lerp(-0.7f, 0.7f, i / 6f);
+                body.Ellipsoid(new Vector3(Mathf.Sin(a) * 0.075f, 0.57f, 0.055f + Mathf.Cos(a) * 0.04f), Vector3.one * 0.011f, Quaternion.identity, i % 2 == 0 ? bead : pale, 6, 4);
             }
         }
 
@@ -240,9 +311,12 @@ namespace HypaStories
 
         struct Look
         {
-            public Color Skin, Top, Wrap, Hat;
-            public int Headwear; // 0 none, 1 a tall head wrap (gele), 2 a soft cap (fila)
-            public bool Robe;    // a long robe to the ground
+            public Color Skin, Top, Wrap, Hat, Hair;
+            /// <summary>Wax prints (<see cref="WaxPrints"/> tiles, 0 = plain colour) for the top, the wrapper or trousers, the head wrap or cap.</summary>
+            public int TopPrint, WrapPrint, HatPrint;
+            public int Headwear;  // 0 short hair, 1 a tall head wrap (gele), 2 a soft cap (fila)
+            public bool Wrapper;  // a wrapper or robe to the ankles (else trousers)
+            public bool Woman, Elder;
         }
 
         static readonly Color[] Cloth =
@@ -251,21 +325,34 @@ namespace HypaStories
             new Color(0.55f, 0.18f, 0.45f), new Color(0.92f, 0.85f, 0.7f), new Color(0.85f, 0.4f, 0.12f), new Color(0.2f, 0.55f, 0.6f),
         };
 
+        Color AnyCloth() => Cloth[(int)(R() * Cloth.Length) % Cloth.Length];
+        int AnyPrint() => 1 + (int)(R() * WaxPrints.Count) % WaxPrints.Count;
+
         Look RandomLook(bool woman)
         {
-            var skin = Jitter(new Color(0.3f, 0.19f, 0.12f), 0.18f);
+            var wrapPrint = AnyPrint();
             return new Look
             {
-                Skin = skin,
-                Top = Cloth[(int)(R() * Cloth.Length) % Cloth.Length],
-                Wrap = Cloth[(int)(R() * Cloth.Length) % Cloth.Length],
-                Hat = Cloth[(int)(R() * Cloth.Length) % Cloth.Length],
-                Headwear = woman ? 1 : (R() < 0.6f ? 2 : 0),
-                Robe = woman && R() < 0.5f,
+                Skin = Jitter(new Color(0.3f, 0.19f, 0.12f), 0.18f),
+                Top = AnyCloth(), Wrap = AnyCloth(), Hat = AnyCloth(), Hair = new Color(0.04f, 0.035f, 0.03f),
+                TopPrint = R() < 0.75f ? AnyPrint() : 0,
+                WrapPrint = woman || R() < 0.55f ? wrapPrint : 0,
+                HatPrint = woman ? (R() < 0.5f ? wrapPrint : AnyPrint()) : (R() < 0.7f ? AnyPrint() : 0),
+                Headwear = woman ? 1 : (R() < 0.7f ? 2 : 0),
+                Wrapper = woman || R() < 0.4f, Woman = woman,
             };
         }
 
-        /// <summary>A person of a few boxes: legs (or a wrapper, or a robe), a torso that bends at the hips, a head, two arms from the shoulders.</summary>
+        /// <summary>Cloth: white under a print (the print carries the colour), else the plain colour.</summary>
+        static Color ClothColour(int print, Color plain) => print > 0 ? new Color(0.93f, 0.93f, 0.93f) : plain;
+        static Rect? PrintTile(int print) => print > 0 ? WaxPrints.Tile(print) : (Rect?)null;
+
+        /// <summary>
+        /// A person of smooth rounded parts: legs in trousers (or a wrapper, a robe), feet; a torso with shoulders that bends at
+        /// the hips; a neck and a head with a face (eyes, brows, nose, lips, ears) and hair, a head wrap or a cap; arms that
+        /// bend at the shoulder and the elbow, and hands. Six meshes, so a crowd stays cheap. <paramref name="ownHead"/> gives
+        /// the head (and its eyes and mouth) their own transforms, to turn, blink and, later, talk.
+        /// </summary>
         Figure Person(string name, Vector2 at, Vector2 facing, Look look, float scale = 1f, bool seated = false, bool ownHead = false)
         {
             var f = new Figure { Ph = R() * 6.28f };
@@ -274,68 +361,156 @@ namespace HypaStories
             f.Root.localRotation = Quaternion.LookRotation(Face(facing));
             f.Root.localScale = Vector3.one * scale;
             f.Home = f.Root.localPosition;
-            var hipY = seated ? 0.48f : 0.86f;
+            var hipY = seated ? 0.5f : 0.9f;
+            var id = Quaternion.identity;
+            var skin = look.Skin;
+            var sole = skin * 0.7f; sole.a = 1f;
+            var wrap = ClothColour(look.WrapPrint, look.Wrap); var wrapTile = PrintTile(look.WrapPrint);
+            var top = ClothColour(look.TopPrint, look.Top); var topTile = PrintTile(look.TopPrint);
 
+            // ---- legs, wrapper or robe, feet (and the stool) ----
             var legs = new MeshKit();
             if (seated)
             {
                 foreach (var k in new[] { -1f, 1f })
                 {
-                    legs.Box(new Vector3(k * 0.1f, 0.47f, 0.2f), new Vector3(0.13f, 0.13f, 0.42f), Quaternion.identity, look.Wrap);
-                    legs.Box(new Vector3(k * 0.1f, 0.22f, 0.4f), new Vector3(0.11f, 0.46f, 0.11f), Quaternion.identity, look.Wrap * 0.9f);
-                    legs.Box(new Vector3(k * 0.1f, 0.02f, 0.45f), new Vector3(0.1f, 0.04f, 0.2f), Quaternion.identity, look.Skin * 0.8f);
+                    legs.Limb(new Vector3(k * 0.1f, 0.5f, 0f), new Vector3(k * 0.11f, 0.49f, 0.4f), 0.088f, 0.066f, wrap, 8, wrapTile);
+                    legs.Limb(new Vector3(k * 0.11f, 0.47f, 0.42f), new Vector3(k * 0.11f, 0.09f, 0.45f), 0.062f, 0.046f, wrap, 8, wrapTile);
+                    legs.Ellipsoid(new Vector3(k * 0.11f, 0.04f, 0.5f), new Vector3(0.046f, 0.035f, 0.09f), id, sole, 8, 5);
                 }
-                legs.Cylinder(new Vector3(0f, 0f, -0.02f), 0.16f, 0.15f, 0.42f, new Color(0.3f, 0.2f, 0.12f), new Color(0.36f, 0.25f, 0.15f), 8); // the stool
+                legs.Cylinder(new Vector3(0f, 0f, -0.02f), 0.17f, 0.16f, 0.42f, new Color(0.3f, 0.2f, 0.12f), new Color(0.36f, 0.25f, 0.15f), 10);
             }
-            else if (look.Robe)
-                legs.Cylinder(Vector3.zero, 0.27f, 0.2f, hipY + 0.05f, look.Wrap, look.Wrap, 8);
+            else if (look.Wrapper)
+            {
+                var hem = look.Elder ? 0.27f : 0.235f;
+                legs.Lathe(Vector3.zero, id, new[]
+                {
+                    (hipY + 0.08f, 0.165f, 0.125f), (hipY - 0.15f, 0.195f, 0.15f), (0.5f, 0.215f, 0.17f), (0.15f, hem - 0.005f, 0.185f), (0.04f, hem, 0.19f),
+                }, wrap, 16, wrapTile);
+                foreach (var k in new[] { -1f, 1f }) legs.Ellipsoid(new Vector3(k * 0.08f, 0.035f, 0.11f), new Vector3(0.045f, 0.035f, 0.085f), id, sole, 8, 5);
+            }
             else
                 foreach (var k in new[] { -1f, 1f })
                 {
-                    legs.Box(new Vector3(k * 0.09f, hipY * 0.5f, 0f), new Vector3(0.12f, hipY, 0.13f), Quaternion.identity, look.Wrap);
-                    legs.Box(new Vector3(k * 0.09f, 0.025f, 0.04f), new Vector3(0.1f, 0.05f, 0.2f), Quaternion.identity, look.Skin * 0.8f);
+                    legs.Limb(new Vector3(k * 0.095f, hipY, 0f), new Vector3(k * 0.1f, 0.48f, 0.01f), 0.088f, 0.062f, wrap, 8, wrapTile);
+                    legs.Limb(new Vector3(k * 0.1f, 0.48f, 0.01f), new Vector3(k * 0.1f, 0.09f, -0.005f), 0.062f, 0.046f, wrap, 8, wrapTile);
+                    legs.Ellipsoid(new Vector3(k * 0.1f, 0.04f, 0.05f), new Vector3(0.046f, 0.04f, 0.1f), id, sole, 8, 5);
                 }
             MeshNode(name + " Legs", legs.Build("Legs"), _vc, f.Root);
 
+            // ---- the torso: shoulders, chest, waist; a neck ----
             f.Torso = Node(name + " Torso", f.Root);
             f.Torso.localPosition = new Vector3(0f, hipY, 0f);
             var body = new MeshKit();
-            body.Box(new Vector3(0f, 0.27f, 0f), new Vector3(0.36f, 0.56f, 0.21f), Quaternion.identity, look.Top);
-            body.Box(new Vector3(0f, 0.03f, 0f), new Vector3(0.38f, 0.08f, 0.23f), Quaternion.identity, look.Wrap * 0.85f); // a sash
-            body.Box(new Vector3(0f, 0.59f, 0f), new Vector3(0.1f, 0.08f, 0.1f), Quaternion.identity, look.Skin);            // neck
-            var headMk = ownHead ? new MeshKit() : body;
-            var hc = ownHead ? Vector3.zero : new Vector3(0f, 0.74f, 0f);
-            headMk.Box(hc, new Vector3(0.19f, 0.23f, 0.21f), Quaternion.identity, look.Skin);
-            headMk.Box(hc + new Vector3(0f, -0.02f, 0.105f), new Vector3(0.05f, 0.05f, 0.03f), Quaternion.identity, look.Skin * 0.85f); // nose
-            if (look.Headwear == 1)
+            var w = look.Elder ? 1.12f : look.Woman ? 0.94f : 1f;
+            body.Lathe(Vector3.zero, id, new[]
             {
-                headMk.Box(hc + new Vector3(0f, 0.15f, -0.01f), new Vector3(0.26f, 0.12f, 0.25f), Quaternion.Euler(-8f, 0f, 0f), look.Hat);
-                headMk.Box(hc + new Vector3(0.05f, 0.24f, -0.03f), new Vector3(0.3f, 0.12f, 0.18f), Quaternion.Euler(-15f, 20f, 18f), look.Hat * 1.1f);
-            }
-            else if (look.Headwear == 2)
-                headMk.Box(hc + new Vector3(0.02f, 0.14f, -0.02f), new Vector3(0.21f, 0.1f, 0.22f), Quaternion.Euler(-10f, 0f, -12f), look.Hat);
-            else
-                headMk.Box(hc + new Vector3(0f, 0.115f, -0.01f), new Vector3(0.2f, 0.03f, 0.21f), Quaternion.identity, new Color(0.05f, 0.04f, 0.04f)); // short hair
-            MeshNode(name + " Body", body.Build("Body"), _vc, f.Torso);
+                (0.6f, 0.055f, 0.05f), (0.56f, 0.13f * w, 0.085f), (0.5f, 0.205f * w, 0.112f), (0.42f, 0.21f * w, 0.125f),
+                (0.31f, 0.19f * w, look.Woman ? 0.142f : 0.125f), (0.17f, 0.162f * w, 0.115f), (0.05f, 0.17f * w, 0.12f), (-0.06f, 0.18f * w, 0.125f),
+            }, top, 14, topTile);
+            foreach (var k in new[] { -1f, 1f }) body.Ellipsoid(new Vector3(k * 0.2f * w, 0.46f, 0f), new Vector3(0.072f, 0.066f, 0.075f), id, top, 10, 6, topTile);
+            if (look.Elder) body.Ellipsoid(new Vector3(0f, 0.44f, 0.105f), new Vector3(0.075f, 0.12f, 0.03f), Quaternion.Euler(-8f, 0f, 0f), new Color(0.85f, 0.65f, 0.25f), 10, 6, WaxPrints.Tile(7)); // embroidery
+            if (look.Woman || look.Elder) Beads(body, look.Woman);
+            body.Limb(new Vector3(0f, 0.54f, 0f), new Vector3(0f, 0.68f, 0.008f), 0.049f, 0.046f, skin, 10);
+            var hc = new Vector3(0f, 0.78f, 0.012f);
             if (ownHead)
             {
                 f.Head = Node(name + " Head", f.Torso);
-                f.Head.localPosition = new Vector3(0f, 0.74f, 0f);
-                MeshNode(name + " Head", headMk.Build("Head"), _vc, f.Head);
+                f.Head.localPosition = hc;
+                var head = new MeshKit();
+                HeadMesh(head, Vector3.zero, look, false);
+                MeshNode(name + " Head", head.Build("Head"), _vc, f.Head);
+                Transform Eye(float k)
+                {
+                    var eye = Node(name + " Eye", f.Head);
+                    eye.localPosition = new Vector3(k * 0.035f, 0.018f, 0.084f);
+                    var em = new MeshKit();
+                    em.Ellipsoid(Vector3.zero, new Vector3(0.018f, 0.011f, 0.012f), id, new Color(0.86f, 0.83f, 0.76f), 8, 5);
+                    em.Ellipsoid(new Vector3(0f, 0f, 0.009f), new Vector3(0.0085f, 0.0085f, 0.004f), id, new Color(0.07f, 0.045f, 0.035f), 8, 4);
+                    MeshNode(name + " Eye", em.Build("Eye"), _vc, eye);
+                    return eye;
+                }
+                f.EyeL = Eye(-1f); f.EyeR = Eye(1f);
+                f.Mouth = Node(name + " Mouth", f.Head);
+                f.Mouth.localPosition = new Vector3(0f, -0.06f, 0.087f);
+                var mm = new MeshKit();
+                mm.Ellipsoid(Vector3.zero, new Vector3(0.023f, 0.006f, 0.008f), id, new Color(0.12f, 0.04f, 0.04f), 8, 4);
+                MeshNode(name + " Mouth", mm.Build("Mouth"), _vc, f.Mouth);
             }
-            Transform Arm(float k)
+            else HeadMesh(body, hc, look, true);
+            MeshNode(name + " Body", body.Build("Body"), _vc, f.Torso);
+
+            // ---- arms: shoulder, elbow, hand ----
+            Transform Arm(float k, out Transform fore)
             {
                 var arm = Node(name + " Arm", f.Torso);
-                arm.localPosition = new Vector3(k * 0.23f, 0.5f, 0f);
+                arm.localPosition = new Vector3(k * 0.215f * w, 0.455f, 0f);
                 var am = new MeshKit();
-                am.Box(new Vector3(0f, -0.15f, 0f), new Vector3(0.1f, 0.32f, 0.11f), Quaternion.identity, look.Top);
-                am.Box(new Vector3(0f, -0.43f, 0f), new Vector3(0.08f, 0.26f, 0.09f), Quaternion.identity, look.Skin);
-                am.Box(new Vector3(0f, -0.6f, 0.01f), new Vector3(0.08f, 0.09f, 0.05f), Quaternion.identity, look.Skin * 0.9f);
+                if (look.Elder)
+                    am.Lathe(Vector3.zero, id, new[] { (0.02f, 0.06f, 0.06f), (-0.15f, 0.08f, 0.08f), (-0.3f, 0.115f, 0.1f) }, top, 10, topTile); // a wide sleeve
+                else
+                    am.Limb(Vector3.zero, new Vector3(0f, -0.27f, 0f), 0.054f, 0.044f, top, 8, topTile);
                 MeshNode(name + " Arm", am.Build("Arm"), _vc, arm);
+                fore = Node(name + " Forearm", arm);
+                fore.localPosition = new Vector3(0f, -0.27f, 0f);
+                var fm = new MeshKit();
+                fm.Limb(Vector3.zero, new Vector3(0f, -0.23f, 0f), 0.041f, 0.032f, skin, 8);
+                fm.Ellipsoid(new Vector3(0f, -0.285f, 0.004f), new Vector3(0.028f, 0.047f, 0.016f), id, skin, 8, 5);            // palm
+                fm.Ellipsoid(new Vector3(0f, -0.33f, 0.002f), new Vector3(0.024f, 0.024f, 0.012f), id, skin * 0.95f, 8, 4);    // fingers
+                fm.Limb(new Vector3(-k * 0.012f, -0.255f, 0.015f), new Vector3(-k * 0.018f, -0.295f, 0.032f), 0.011f, 0.009f, skin, 6); // thumb
+                MeshNode(name + " Forearm", fm.Build("Forearm"), _vc, fore);
+                fore.localRotation = Quaternion.Euler(-12f, 0f, 0f);
                 return arm;
             }
-            f.ArmL = Arm(-1f); f.ArmR = Arm(1f);
+            f.ArmL = Arm(-1f, out f.ForeL); f.ArmR = Arm(1f, out f.ForeR);
             return f;
+        }
+
+        /// <summary>A head at <paramref name="c"/>: skull and jaw, ears, nose, lips, brows, (eyes), and hair, a head wrap or a cap.</summary>
+        void HeadMesh(MeshKit m, Vector3 c, Look look, bool eyes)
+        {
+            var id = Quaternion.identity;
+            var skin = look.Skin;
+            var shade = skin * 0.9f; shade.a = 1f;
+            var lip = new Color(skin.r * 1.05f + 0.04f, skin.g * 0.8f, skin.b * 0.8f);
+            m.Ellipsoid(c + new Vector3(0f, 0.012f, 0f), new Vector3(0.092f, 0.108f, 0.1f), id, skin, 14, 9);
+            m.Ellipsoid(c + new Vector3(0f, -0.05f, 0.02f), new Vector3(0.074f, 0.06f, 0.075f), id, skin, 12, 7);      // jaw and chin
+            foreach (var k in new[] { -1f, 1f })
+            {
+                m.Ellipsoid(c + new Vector3(k * 0.09f, -0.004f, -0.006f), new Vector3(0.016f, 0.03f, 0.022f), id, shade, 8, 5); // ears
+                m.Ellipsoid(c + new Vector3(k * 0.036f, 0.044f, 0.088f), new Vector3(0.023f, 0.0055f, 0.009f), Quaternion.Euler(0f, 0f, k * -8f), look.Elder ? new Color(0.5f, 0.48f, 0.45f) : look.Hair, 8, 4); // brows
+                if (eyes)
+                {
+                    m.Ellipsoid(c + new Vector3(k * 0.035f, 0.018f, 0.084f), new Vector3(0.018f, 0.011f, 0.012f), id, new Color(0.86f, 0.83f, 0.76f), 8, 5);
+                    m.Ellipsoid(c + new Vector3(k * 0.035f, 0.018f, 0.093f), new Vector3(0.0085f, 0.0085f, 0.004f), id, new Color(0.07f, 0.045f, 0.035f), 8, 4);
+                }
+            }
+            m.Ellipsoid(c + new Vector3(0f, -0.012f, 0.097f), new Vector3(0.019f, 0.027f, 0.022f), Quaternion.Euler(-10f, 0f, 0f), skin, 8, 5); // nose
+            m.Ellipsoid(c + new Vector3(0f, -0.032f, 0.094f), new Vector3(0.031f, 0.013f, 0.018f), id, shade, 8, 5);                                 // its wings
+            m.Ellipsoid(c + new Vector3(0f, -0.051f, 0.09f), new Vector3(0.03f, 0.008f, 0.012f), id, lip, 8, 4);                                      // lips
+            m.Ellipsoid(c + new Vector3(0f, -0.067f, 0.086f), new Vector3(0.027f, 0.009f, 0.012f), id, lip * 0.95f, 8, 4);
+
+            var hair = look.Elder ? new Color(0.55f, 0.53f, 0.5f) : look.Hair;
+            var hat = ClothColour(look.HatPrint, look.Hat); var hatTile = PrintTile(look.HatPrint);
+            if (look.Elder)
+            {
+                m.Ellipsoid(c + new Vector3(0f, -0.078f, 0.05f), new Vector3(0.062f, 0.05f, 0.05f), id, hair, 10, 6);            // a short grey beard
+                m.Ellipsoid(c + new Vector3(0f, -0.043f, 0.094f), new Vector3(0.033f, 0.008f, 0.01f), id, hair, 8, 4);           // moustache
+            }
+            if (look.Headwear == 1)
+            {
+                // a gele: the wrap round the head, and its tall fan
+                m.Ellipsoid(c + new Vector3(0f, 0.035f, -0.012f), new Vector3(0.108f, 0.112f, 0.114f), Quaternion.Euler(-20f, 0f, 0f), hat, 14, 7, hatTile, 98f);
+                m.Ellipsoid(c + new Vector3(0f, 0.13f, -0.04f), new Vector3(0.165f, 0.075f, 0.1f), Quaternion.Euler(-32f, 0f, 0f), hat, 14, 7, hatTile);
+                m.Ellipsoid(c + new Vector3(0.06f, 0.165f, 0.015f), new Vector3(0.095f, 0.045f, 0.06f), Quaternion.Euler(-20f, 0f, 32f), hat, 12, 6, hatTile);
+            }
+            else if (look.Headwear == 2)
+            {
+                m.Ellipsoid(c + new Vector3(0f, 0.02f, -0.01f), new Vector3(0.096f, 0.104f, 0.103f), Quaternion.Euler(-28f, 0f, 0f), hair, 12, 5, null, 80f);
+                m.Ellipsoid(c + new Vector3(0.012f, 0.06f, -0.012f), new Vector3(0.1f, 0.085f, 0.106f), Quaternion.Euler(-12f, 0f, -16f), hat, 12, 6, hatTile, 96f); // a fila, slouched to one side
+            }
+            else
+                m.Ellipsoid(c + new Vector3(0f, 0.02f, -0.01f), new Vector3(0.097f, 0.106f, 0.104f), Quaternion.Euler(-28f, 0f, 0f), hair, 12, 5, null, 82f);
         }
 
         void BuildCrowd()
@@ -347,8 +522,8 @@ namespace HypaStories
             {
                 var a = R() * Mathf.PI * 2f; var rr = Mathf.Sqrt(R()) * 0.85f;
                 var y = (0.85f - rr) * 0.55f * R() + 0.06f;
-                pile.Box(X0Z(VillageLayout.YamPile + new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * rr, y), new Vector3(0.1f, 0.1f, 0.32f + R() * 0.15f),
-                    Quaternion.Euler((R() - 0.5f) * 30f, R() * 360f, (R() - 0.5f) * 30f), Jitter(yam, 0.2f));
+                pile.Ellipsoid(X0Z(VillageLayout.YamPile + new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * rr, y), new Vector3(0.055f, 0.05f, 0.17f + R() * 0.07f),
+                    Quaternion.Euler((R() - 0.5f) * 30f, R() * 360f, (R() - 0.5f) * 30f), Jitter(yam, 0.2f), 7, 5);
             }
             for (var b = 0; b < 4; b++)
             {
@@ -379,7 +554,10 @@ namespace HypaStories
             // a tall wooden mortar between two women with long pestles
             var at = VillageLayout.At(3.2f, 2.1f);
             var mk = new MeshKit();
-            mk.Cylinder(X0Z(at), 0.24f, 0.3f, 0.62f, new Color(0.34f, 0.22f, 0.13f), new Color(0.88f, 0.84f, 0.7f), 10); // pounded yam, white, in the bowl
+            // a carved mortar, waisted like an hourglass, with white pounded yam in its bowl
+            mk.Lathe(X0Z(at), Quaternion.identity, new[] { (0.62f, 0.27f, 0.27f), (0.5f, 0.24f, 0.24f), (0.33f, 0.15f, 0.15f), (0.15f, 0.2f, 0.2f), (0f, 0.25f, 0.25f) },
+                new Color(0.45f, 0.3f, 0.18f), 14);
+            mk.Ellipsoid(X0Z(at, 0.6f), new Vector3(0.23f, 0.05f, 0.23f), Quaternion.identity, new Color(0.9f, 0.87f, 0.76f), 12, 5);
             MeshNode("Mortar", mk.Build("Mortar"), _vc, _root);
             var across = VillageLayout.Right;
             for (var i = 0; i < 2; i++)
@@ -390,7 +568,7 @@ namespace HypaStories
                 p.Ph = i * Mathf.PI;
                 _pounders.Add(p);
                 var pestle = new MeshKit();
-                pestle.Box(new Vector3(0f, 0f, 0f), new Vector3(0.07f, 1.7f, 0.07f), Quaternion.identity, new Color(0.5f, 0.38f, 0.24f));
+                pestle.Limb(new Vector3(0f, -0.85f, 0f), new Vector3(0f, 0.85f, 0f), 0.05f, 0.04f, new Color(0.62f, 0.48f, 0.3f), 8);
                 var t = MeshNode("Pestle", pestle.Build("Pestle"), _vc, _root);
                 _pestles.Add(t);
             }
@@ -412,6 +590,7 @@ namespace HypaStories
                 var r = i == 2 ? 0.26f : i == 1 ? 0.15f : 0.22f;
                 drum.Cylinder(front, r * 0.7f, r, h, drumCol[i], new Color(0.82f, 0.72f, 0.55f), 10);
                 drum.Box(front + Vector3.up * h * 0.55f, new Vector3(r * 2.05f, 0.04f, r * 2.05f), Quaternion.identity, new Color(0.7f, 0.15f, 0.1f)); // a red band
+                drum.Box(front + Vector3.up * h * 0.28f, new Vector3(r * 1.7f, 0.03f, r * 1.7f), Quaternion.identity, new Color(0.9f, 0.72f, 0.16f));  // a gold band
                 MeshNode("Drum", drum.Build("Drum"), _vc, _root);
             }
             // two dancers between the drummers and the fire
@@ -433,18 +612,24 @@ namespace HypaStories
             _masqV = new Vector3[Strips * 8];
             _masqC = new Color[Strips * 8];
             var tris = new int[Strips * 12];
-            var palette = new[] { new Color(0.85f, 0.15f, 0.1f), new Color(0.95f, 0.75f, 0.15f), new Color(0.1f, 0.45f, 0.25f), new Color(0.92f, 0.9f, 0.82f), new Color(0.15f, 0.2f, 0.55f), new Color(0.9f, 0.4f, 0.1f) };
+            var uv = new Vector2[Strips * 8];
             for (var i = 0; i < Strips; i++)
             {
-                var c = palette[i % palette.Length];
-                var back = c * 0.6f; back.a = 1f;
+                // each strip a different wax print, a slice of its tile running down the strip
+                var c = new Color(0.95f, 0.95f, 0.95f);
+                var back = new Color(0.6f, 0.6f, 0.6f);
                 for (var k = 0; k < 4; k++) { _masqC[i * 8 + k] = c; _masqC[i * 8 + 4 + k] = back; }
+                var tile = WaxPrints.Tile(1 + i % WaxPrints.Count);
+                float u0 = tile.x + tile.width * ((i * 0.37f) % 0.75f), u1 = u0 + tile.width * 0.25f;
+                Vector2[] corners = { new Vector2(u0, tile.yMax), new Vector2(u1, tile.yMax), new Vector2(u1, tile.y), new Vector2(u0, tile.y) };
+                for (var k = 0; k < 4; k++) { uv[i * 8 + k] = corners[k]; uv[i * 8 + 4 + k] = corners[k]; }
                 var v = i * 8; var t = i * 12;
                 tris[t] = v; tris[t + 1] = v + 1; tris[t + 2] = v + 2; tris[t + 3] = v; tris[t + 4] = v + 2; tris[t + 5] = v + 3;
                 tris[t + 6] = v + 4; tris[t + 7] = v + 6; tris[t + 8] = v + 5; tris[t + 9] = v + 4; tris[t + 10] = v + 7; tris[t + 11] = v + 6;
             }
             UpdateMasqueradeMesh(0f);
             _masqMesh.colors = _masqC;
+            _masqMesh.uv = uv;
             _masqMesh.triangles = tris;
             _masqMesh.RecalculateNormals();
             _masqMesh.bounds = new Bounds(new Vector3(0f, 1.3f, 0f), Vector3.one * 4f);
@@ -485,14 +670,16 @@ namespace HypaStories
             var look = new Look
             {
                 Skin = new Color(0.27f, 0.17f, 0.11f), Top = new Color(0.86f, 0.82f, 0.72f), Wrap = new Color(0.86f, 0.82f, 0.72f),
-                Hat = new Color(0.45f, 0.12f, 0.15f), Headwear = 2, Robe = true,
+                Hat = new Color(0.45f, 0.12f, 0.15f), Hair = new Color(0.04f, 0.035f, 0.03f), HatPrint = 2, Headwear = 2, Wrapper = true, Elder = true,
             };
             _local = Person("The Local", VillageLayout.Local, VillageLayout.FrontOfGate - VillageLayout.Local, look, 1.02f, false, true);
             // a walking stick in the left hand
             var stick = new MeshKit();
-            stick.Box(new Vector3(-0.32f, 0.62f, 0.12f), new Vector3(0.045f, 1.25f, 0.045f), Quaternion.Euler(0f, 0f, -4f), new Color(0.3f, 0.2f, 0.11f));
+            stick.Limb(new Vector3(-0.35f, 0.01f, 0.37f), new Vector3(-0.32f, 0.99f, 0.35f), 0.02f, 0.017f, new Color(0.3f, 0.2f, 0.11f), 6);
+            stick.Ellipsoid(new Vector3(-0.32f, 1.01f, 0.35f), new Vector3(0.035f, 0.03f, 0.035f), Quaternion.identity, new Color(0.25f, 0.16f, 0.09f), 8, 5); // a carved knob
             MeshNode("Walking Stick", stick.Build("Walking Stick"), _vc, _local.Root);
-            _local.ArmL.localRotation = Quaternion.Euler(-12f, 0f, -8f);
+            _local.ArmL.localRotation = Quaternion.Euler(-22f, 0f, -14f); // the hand on the stick's knob
+            _local.ForeL.localRotation = Quaternion.Euler(-50f, 0f, 0f);
             // a lantern on a post beside them, so their face shows
             var post = VillageLayout.Local + VillageLayout.Right * -0.85f - VillageLayout.Into * 0.75f;
             var mk = new MeshKit();
@@ -648,9 +835,12 @@ namespace HypaStories
                 var strike = Mathf.Exp(-since * 14f);
                 var lift = 1f - strike;
                 var right = idx % 2 == 0;
-                float Rest(bool striking) => striking ? -55f + 30f * strike - 25f * Mathf.Clamp01(lift) : -60f;
-                d.ArmR.localRotation = Quaternion.Euler(Rest(right), 0f, 8f);
-                d.ArmL.localRotation = Quaternion.Euler(Rest(!right), 0f, -8f);
+                // the upper arm lifts a little, the forearm a lot: the hand comes down flat on the skin
+                float Lift(bool striking) => striking ? Mathf.Clamp01(lift) : 0.35f;
+                d.ArmR.localRotation = Quaternion.Euler(-28f - Lift(right) * 14f, 0f, 10f);
+                d.ArmL.localRotation = Quaternion.Euler(-28f - Lift(!right) * 14f, 0f, -10f);
+                d.ForeR.localRotation = Quaternion.Euler(-58f - Lift(right) * 50f, 0f, 0f);
+                d.ForeL.localRotation = Quaternion.Euler(-58f - Lift(!right) * 50f, 0f, 0f);
                 d.Torso.localRotation = Quaternion.Euler(14f + strike * 5f, Mathf.Sin(_t * 1.6f + d.Ph) * 6f, 0f);
             }
         }
@@ -666,6 +856,7 @@ namespace HypaStories
                 var up = Mathf.Sin(Mathf.Clamp01(phase / 0.75f) * Mathf.PI * 0.5f); // lifted slowly, dropped fast
                 if (phase > 0.75f) up = 1f - (phase - 0.75f) / 0.25f;
                 p.ArmR.localRotation = p.ArmL.localRotation = Quaternion.Euler(-95f - up * 70f, 0f, 0f);
+                p.ForeR.localRotation = p.ForeL.localRotation = Quaternion.Euler(-25f + up * 15f, 0f, 0f);
                 p.Torso.localRotation = Quaternion.Euler(8f - up * 6f, 0f, 0f);
                 // the pestle stands upright in the mortar, leaning a little toward her, and rises with her arms
                 var bowl = X0Z(VillageLayout.At(3.2f, 2.1f), 0.62f);
@@ -692,6 +883,9 @@ namespace HypaStories
                 f.Torso.localRotation = Quaternion.Euler(10f + bend * 45f, Mathf.Sin(c * Mathf.PI * 2f + 1f) * 25f, 0f);
                 f.ArmR.localRotation = Quaternion.Euler(-20f - bend * 45f, 0f, 5f);
                 f.ArmL.localRotation = Quaternion.Euler(-10f - bend * 30f + Mathf.Sin(_t * 1.3f + f.Ph) * 10f, 0f, -5f);
+                f.ForeR.localRotation = Quaternion.Euler(-20f - (1f - bend) * 60f, 0f, 0f); // reaching down, then the yam held up to look at
+                f.ForeL.localRotation = Quaternion.Euler(-15f - bend * 20f, 0f, 0f);
+                f.Root.localRotation = Quaternion.LookRotation(Face(VillageLayout.YamPile - new Vector2(f.Home.x, f.Home.z))) * Quaternion.Euler(0f, 0f, Mathf.Sin(_t * 0.5f + f.Ph) * 1.5f); // weight shifts
             }
             for (var i = 0; i < _kids.Count; i++)
             {
@@ -704,6 +898,7 @@ namespace HypaStories
                 var swing = Mathf.Sin(_t * 9f + i) * 45f;
                 k.ArmL.localRotation = Quaternion.Euler(swing, 0f, -10f);
                 k.ArmR.localRotation = Quaternion.Euler(-swing, 0f, 10f);
+                k.ForeL.localRotation = k.ForeR.localRotation = Quaternion.Euler(-75f, 0f, 0f);
                 k.Torso.localRotation = Quaternion.Euler(12f, 0f, 0f);
             }
         }
@@ -717,6 +912,8 @@ namespace HypaStories
                 d.Torso.localRotation = Quaternion.Euler(18f + Mathf.Sin(beat + d.Ph) * 10f, Mathf.Sin(beat * 0.5f + d.Ph) * 20f, Mathf.Sin(beat * 0.5f) * 8f);
                 d.ArmL.localRotation = Quaternion.Euler(-120f + Mathf.Sin(beat + d.Ph) * 35f, 0f, -25f);
                 d.ArmR.localRotation = Quaternion.Euler(-120f - Mathf.Sin(beat + d.Ph) * 35f, 0f, 25f);
+                d.ForeL.localRotation = Quaternion.Euler(-30f + Mathf.Sin(beat * 2f + d.Ph) * 30f, 0f, 0f);
+                d.ForeR.localRotation = Quaternion.Euler(-30f - Mathf.Sin(beat * 2f + d.Ph) * 30f, 0f, 0f);
             }
         }
 
@@ -745,14 +942,19 @@ namespace HypaStories
             var want = near ? Quaternion.Euler(pitch, yaw, 0f) : Quaternion.Euler(0f, Mathf.Sin(_t * 0.3f) * 25f, 0f);
             _local.Head.localRotation = Quaternion.Slerp(_local.Head.localRotation, want, 1f - Mathf.Exp(-3f * dt));
             _local.Torso.localRotation = Quaternion.Euler(4f + Mathf.Sin(_t * 1.1f) * 1.2f, yaw * 0.25f, 0f);
+            // blink now and then
+            var blink = Mathf.Repeat(_t + 1.3f, 3.7f) < 0.13f;
+            var lid = new Vector3(1f, blink ? 0.12f : 1f, 1f);
+            _local.EyeL.localScale = _local.EyeR.localScale = lid;
             // a wave, the first time you come near
             if (!_waved && flat.magnitude < 5.5f) { _waved = true; _waveT = 0f; }
             if (_waveT >= 0f)
             {
                 _waveT += dt;
                 var up = Mathf.Clamp01(Mathf.Min(_waveT * 3f, (2.6f - _waveT) * 3f));
-                _local.ArmR.localRotation = Quaternion.Euler(-150f * up, 0f, 20f * up + Mathf.Sin(_waveT * 10f) * 18f * up);
-                if (_waveT > 2.6f) { _waveT = -1f; _local.ArmR.localRotation = Quaternion.identity; }
+                _local.ArmR.localRotation = Quaternion.Euler(-70f * up, 0f, 38f * up);                          // the elbow out to the side
+                _local.ForeR.localRotation = Quaternion.Euler(-95f * up - 12f * (1f - up), 0f, Mathf.Sin(_waveT * 9f) * 28f * up); // the hand up, waving
+                if (_waveT > 2.6f) { _waveT = -1f; _local.ArmR.localRotation = Quaternion.identity; _local.ForeR.localRotation = Quaternion.Euler(-12f, 0f, 0f); }
             }
         }
 

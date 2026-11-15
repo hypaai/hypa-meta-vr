@@ -71,16 +71,41 @@ namespace HypaStories
             public readonly List<Vector3> V = new List<Vector3>();
             public readonly List<Color> C = new List<Color>();
             public readonly List<int> T = new List<int>();
+            /// <summary>Texture coordinates: (0, 0), the pattern atlas' plain white corner, unless a shape says otherwise.</summary>
+            public readonly List<Vector2> U = new List<Vector2>();
+
+            /// <summary>Where untextured shapes sample the pattern atlas: its plain white tile.</summary>
+            public static readonly Vector2 Plain = new Vector2(0.02f, 0.02f);
 
             public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color ca, Color cb, Color cc, Color cd)
             {
                 var i = V.Count;
                 V.Add(a); V.Add(b); V.Add(c); V.Add(d);
+                U.Add(Plain); U.Add(Plain); U.Add(Plain); U.Add(Plain);
                 C.Add(ca); C.Add(cb); C.Add(cc); C.Add(cd);
                 T.Add(i); T.Add(i + 1); T.Add(i + 2); T.Add(i); T.Add(i + 2); T.Add(i + 3);
             }
 
             public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color col) => Quad(a, b, c, d, col, col, col, col);
+
+            /// <summary>A quad mapped across one print tile, drawn from both sides (a hanging cloth).</summary>
+            public void Cloth(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Rect tile, Color col)
+            {
+                void Face(Vector3 p, Vector3 q, Vector3 r, Vector3 s, Color tint)
+                {
+                    var i = V.Count;
+                    V.Add(p); V.Add(q); V.Add(r); V.Add(s);
+                    C.Add(tint); C.Add(tint); C.Add(tint); C.Add(tint);
+                    U.Add(new Vector2(tile.xMin, tile.yMax));
+                    U.Add(new Vector2(tile.xMax, tile.yMax));
+                    U.Add(new Vector2(tile.xMax, tile.yMin));
+                    U.Add(new Vector2(tile.xMin, tile.yMin));
+                    T.Add(i); T.Add(i + 1); T.Add(i + 2); T.Add(i); T.Add(i + 2); T.Add(i + 3);
+                }
+                Face(a, b, c, d, col);
+                var back = col * 0.75f; back.a = 1f;
+                Face(d, c, b, a, back);
+            }
 
             /// <summary>A quad seen from both sides (cloth, leaves, wings).</summary>
             public void Quad2(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color col)
@@ -94,6 +119,7 @@ namespace HypaStories
             {
                 var i = V.Count;
                 V.Add(a); V.Add(b); V.Add(c); C.Add(ca); C.Add(cb); C.Add(cc);
+                U.Add(Plain); U.Add(Plain); U.Add(Plain);
                 T.Add(i); T.Add(i + 1); T.Add(i + 2);
             }
 
@@ -129,10 +155,76 @@ namespace HypaStories
                 }
             }
 
+            // ---------- smooth shapes (shared vertices, so they shade round): people, animals ----------
+
+            /// <summary>
+            /// A smooth grid of rows x cols vertices round a shape; <paramref name="at"/> gives each one's position and its
+            /// place (0..1, 0..1) on the texture tile <paramref name="tile"/> (null: plain). Rows run top to bottom, columns
+            /// round the way that keeps the outside facing out.
+            /// </summary>
+            public void Grid(int rows, int cols, System.Func<int, int, Vector3> at, Color col, Rect? tile = null)
+            {
+                var start = V.Count;
+                for (var i = 0; i <= rows; i++)
+                    for (var j = 0; j <= cols; j++)
+                    {
+                        V.Add(at(i, j)); C.Add(col);
+                        U.Add(tile is Rect r ? new Vector2(r.x + r.width * j / cols, r.y + r.height * (1f - i / (float)rows)) : Plain);
+                    }
+                for (var i = 0; i < rows; i++)
+                    for (var j = 0; j < cols; j++)
+                    {
+                        int a = start + i * (cols + 1) + j, b = a + 1, c = a + cols + 1, d = c + 1;
+                        T.Add(a); T.Add(b); T.Add(c);
+                        T.Add(b); T.Add(d); T.Add(c);
+                    }
+            }
+
+            /// <summary>
+            /// An ellipsoid (a head, a shoulder, a hand) with radii <paramref name="r"/>, turned by <paramref name="rot"/>.
+            /// <paramref name="capDegrees"/> below 180 keeps only the top (a cap of hair, a head wrap).
+            /// </summary>
+            public void Ellipsoid(Vector3 c, Vector3 r, Quaternion rot, Color col, int seg = 10, int rings = 7, Rect? tile = null, float capDegrees = 180f)
+            {
+                var cap = capDegrees * Mathf.Deg2Rad;
+                Grid(rings, seg, (i, j) =>
+                {
+                    float th = cap * i / rings, ph = Mathf.PI * 2f * j / seg;
+                    return c + rot * new Vector3(Mathf.Sin(th) * Mathf.Cos(ph) * r.x, Mathf.Cos(th) * r.y, Mathf.Sin(th) * Mathf.Sin(ph) * r.z);
+                }, col, tile);
+            }
+
+            /// <summary>
+            /// A smooth body of revolution about local up: <paramref name="profile"/> gives (height, half-width, half-depth) from
+            /// top to bottom (a torso, a wrapper, a robe), at <paramref name="origin"/>, turned by <paramref name="rot"/>.
+            /// </summary>
+            public void Lathe(Vector3 origin, Quaternion rot, (float y, float rx, float rz)[] profile, Color col, int seg = 12, Rect? tile = null)
+            {
+                Grid(profile.Length - 1, seg, (i, j) =>
+                {
+                    var (y, rx, rz) = profile[i];
+                    var ph = Mathf.PI * 2f * j / seg;
+                    return origin + rot * new Vector3(Mathf.Cos(ph) * rx, y, Mathf.Sin(ph) * rz);
+                }, col, tile);
+            }
+
+            /// <summary>A tapered round limb from <paramref name="a"/> (radius <paramref name="ra"/>) to <paramref name="b"/> (radius <paramref name="rb"/>), round at both ends.</summary>
+            public void Limb(Vector3 a, Vector3 b, float ra, float rb, Color col, int seg = 8, Rect? tile = null, bool roundEnds = true)
+            {
+                var d = b - a;
+                var rot = Quaternion.FromToRotation(Vector3.up, d.sqrMagnitude > 1e-8f ? d.normalized : Vector3.up);
+                var len = d.magnitude;
+                Lathe(a, rot, new[] { (len, rb, rb), (len * 0.5f, (ra + rb) * 0.5f, (ra + rb) * 0.5f), (0f, ra, ra) }, col, seg, tile);
+                if (!roundEnds) return;
+                Ellipsoid(a, Vector3.one * ra, rot, col, seg, 4, tile);
+                Ellipsoid(b, Vector3.one * rb, rot, col, seg, 4, tile);
+            }
+
             public Mesh Build(string name)
             {
                 var m = new Mesh { name = name, indexFormat = V.Count > 65000 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
                 m.SetVertices(V); m.SetColors(C); m.SetTriangles(T, 0);
+                if (U.Count == V.Count) m.SetUVs(0, U);
                 m.RecalculateNormals(); m.RecalculateBounds();
                 return m;
             }
@@ -266,6 +358,79 @@ namespace HypaStories
                 }
             }
             MeshNode(name, mk.Build(name), _vc);
+        }
+
+        // ---------- the ground along a trail: grass, fallen leaves, low mist ----------
+
+        /// <summary>
+        /// Grass tufts and fallen leaves along the trail's edges (and a few leaves on it), all in one mesh, so it costs one draw.
+        /// <paramref name="skip"/> keeps them off places (a hut's floor, the stream).
+        /// </summary>
+        protected void Undergrowth(string name, System.Func<float, (Vector2 point, Vector2 dir)> along, float pathHalf, System.Func<Vector2, bool> skip, int tufts = 150, int leaves = 520)
+        {
+            var mk = new MeshKit();
+            Color[] greens = { new Color(0.16f, 0.24f, 0.1f), new Color(0.2f, 0.27f, 0.11f), new Color(0.24f, 0.25f, 0.12f), new Color(0.28f, 0.26f, 0.14f) };
+            Color[] browns = { new Color(0.36f, 0.2f, 0.09f), new Color(0.45f, 0.3f, 0.12f), new Color(0.3f, 0.17f, 0.08f), new Color(0.5f, 0.36f, 0.16f), new Color(0.25f, 0.2f, 0.12f) };
+            Vector2 Spot(float minOff, float maxOff, out Vector2 dir)
+            {
+                var (p, d) = along(0.03f + R() * 0.94f);
+                dir = d;
+                var side = new Vector2(-d.y, d.x) * (R() < 0.5f ? 1f : -1f);
+                return p + side * Mathf.Lerp(minOff, maxOff, R() * R()) + d * (R() - 0.5f) * 0.8f;
+            }
+            for (var i = 0; i < tufts; i++)
+            {
+                var at = Spot(pathHalf * 0.85f, pathHalf + 2.2f, out _);
+                if (skip != null && skip(at)) continue;
+                var blades = 5 + (int)(R() * 5f);
+                var h0 = 0.18f + R() * 0.22f;
+                for (var b = 0; b < blades; b++)
+                {
+                    var a = R() * Mathf.PI * 2f;
+                    var lean = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (0.05f + R() * 0.1f);
+                    var foot = X0Z(at + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * R() * 0.07f, 0f);
+                    var across = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a)) * 0.012f;
+                    var h = h0 * (0.6f + R() * 0.5f);
+                    var g = greens[(int)(R() * greens.Length) % greens.Length];
+                    var tip = g * 1.35f; tip.a = 1f;
+                    var root = g * 0.55f; root.a = 1f;
+                    mk.Tri(foot - across, foot + Vector3.up * h + lean, foot + across, root, tip, root);
+                    mk.Tri(foot + across, foot + Vector3.up * h + lean, foot - across, root, tip, root); // both sides
+                }
+            }
+            for (var i = 0; i < leaves; i++)
+            {
+                var onPath = i % 6 == 0;
+                var at = onPath ? Spot(0f, pathHalf * 0.9f, out _) : Spot(pathHalf * 0.7f, pathHalf + 2.6f, out _);
+                if (skip != null && skip(at)) continue;
+                var c = browns[(int)(R() * browns.Length) % browns.Length];
+                var rot = Quaternion.Euler((R() - 0.5f) * 30f, R() * 360f, (R() - 0.5f) * 30f);
+                var l = 0.05f + R() * 0.05f; var w = l * (0.35f + R() * 0.25f);
+                var o = X0Z(at, 0.02f + R() * 0.01f);
+                // a leaf: two triangles
+                Vector3 tipF = o + rot * new Vector3(0f, 0f, l), tipB = o + rot * new Vector3(0f, 0f, -l);
+                mk.Tri(tipB, o + rot * new Vector3(-w, 0f, 0f), tipF, c, c * 0.9f, c);
+                mk.Tri(tipB, tipF, o + rot * new Vector3(w, 0f, 0f), c * 0.95f, c, c * 0.85f);
+                if (i % 23 == 0) mk.Beam(o, o + rot * new Vector3(0f, 0.01f, 0.25f + R() * 0.2f), 0.012f, new Color(0.22f, 0.15f, 0.09f)); // a twig
+            }
+            MeshNode(name, mk.Build(name), _vc);
+        }
+
+        /// <summary>Soft low mist lying between the trees beside the trail, a few banks of it, never on the trail itself.</summary>
+        protected void TrailMist(System.Func<float, (Vector2 point, Vector2 dir)> along, int banks, float pathHalf)
+        {
+            for (var i = 0; i < banks; i++)
+            {
+                var u = (i + 0.5f) / banks;
+                var (p, d) = along(u);
+                var side = new Vector2(-d.y, d.x) * (i % 2 == 0 ? 1f : -1f);
+                var at = p + side * (pathHalf + 2.6f + R() * 1.6f);
+                var m = new Material(_a.mist) { color = new Color(0.36f, 0.5f, 0.56f) };
+                m.SetFloat("_Alpha", 0.13f); m.SetFloat("_Seed", 3f + i * 1.7f);
+                var t = MeshNode("Trail Mist", StoryMeshes.Quad(7f + R() * 3f, 1.3f), m);
+                t.localPosition = X0Z(at, 0.5f);
+                t.localRotation = Quaternion.LookRotation(X0Z(side)); // faces the trail, lying along it
+            }
         }
 
         // ---------- the signpost ----------
