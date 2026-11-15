@@ -22,7 +22,17 @@ namespace HypaStories
         const float WordsPerSecond = 2.6f, Start = 0.4f, Gap = 0.45f, Tail = 1.5f;
 
         /// <summary>Answers questions when a story.json names no model.</summary>
-        public const string DefaultModel = "meta/muse-wonder-1.0";
+        /// <summary>
+        /// Who answers questions when a story doesn't say: Meta's open Muse Spark first, then Gemini Flash (fast and steady), then
+        /// Meta's Muse Glimmer (about 3–5 s), then Meta's Muse Wonder (last: on 2026-11-15 the service answered "model not found"
+        /// for it, so it couldn't be timed; a "not found" costs under a second and the app then skips it for the session).
+        /// </summary>
+        public static readonly string[] DefaultModels =
+        {
+            "meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra",
+            "meta/muse-wonder-1.0",
+        };
+        public static string DefaultModel => DefaultModels[0];
 
         public static readonly StoryInfo[] All = Ids.Select(Load).ToArray();
 
@@ -90,7 +100,9 @@ namespace HypaStories
             {
                 Id = id, Theme = (int?)o["theme"] ?? 0, Accent = accent,
                 Eyebrow = (string)o["eyebrow"] ?? "", Title = (string)o["title"] ?? id, Desc = (string)o["description"] ?? "",
-                Model = (string)o["model"] ?? DefaultModel,
+                // "models": a list in order of preference; an older story's single "model" still works
+                Models = o["models"] is JArray ms && ms.Count > 0 ? ms.Select(m => (string)m).Where(m => !string.IsNullOrEmpty(m)).ToArray()
+                    : (string)o["model"] is string one && one.Length > 0 ? new[] { one } : DefaultModels,
                 Voices = ((o["voices"] as JArray) ?? new JArray()).OfType<JObject>().Select(Voice)
                     .Where(v => !string.IsNullOrEmpty(v.Model) && (!string.IsNullOrEmpty(v.Voice) || v.ByLanguage.Count > 0)).ToArray(),
                 Timeline = new StoryTimeline

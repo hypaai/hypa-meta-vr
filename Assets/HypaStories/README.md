@@ -87,8 +87,12 @@ portal (3L).
 
 Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `StoryLibrary.Ids`:
 
-- `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `model` that answers questions
-  (`"provider/model"`, default `meta/muse-wonder-1.0`), the storyteller's `voices` (`[{ "model", "voice" }]`, as Hypa
+- `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `models` that answer questions
+  (`"provider/model"`, in order: every question starts with the first, and a model that fails hands the same question to the
+  next at once, within the 12 s the storyteller waits; one the service says it doesn't have is skipped for the session. All three
+  stories use Meta's `meta/meta-models/Muse-Spark-Open-816B-A42B:baseten`, then `google/gemini-3.5-flash`, then
+  `meta/meta-models/Muse-Glimmer-30B:deepinfra`, then `meta/muse-wonder-1.0` (last until the service can reach it again); an older single
+  `model` still works), the storyteller's `voices` (`[{ "model", "voice" }]`, as Hypa
   `list_voices` names them; `voice` is one name for every language or `{ "language code": name }`, since Hypa's voices are per
   language; each language uses the first entry with a voice for it, and the next ones are its fallbacks; empty = Hypa's Auto
   routing, which both stories use for now), the starting `rain` /
