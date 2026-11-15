@@ -52,40 +52,48 @@ namespace HypaStories
             return new Intent { Re = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant), Min = min, A = a };
         }
 
-        static readonly Intent[] Kiko =
+        static readonly Intent[] SevenStones =
         {
-            I("kiko|tortoise|tortue|tortuga|who is", 1,
-                new[] { "Kiko is a curious tortoise from a small village.", "He is known for asking too many questions." },
-                new[] { "Kiko est une tortue curieuse d’un petit village.", "Il est connu pour poser trop de questions." },
-                new[] { "Kiko es una tortuga curiosa de un pequeño pueblo.", "Es famoso por hacer demasiadas preguntas." }),
-            I("village|where|where does|où|dónde|donde", 0,
-                new[] { "It all happens long ago, in a small village.", "The village is surrounded by forests." },
-                new[] { "Tout se passe il y a longtemps, dans un petit village.", "Le village est entouré de forêts." },
-                new[] { "Todo ocurre hace mucho tiempo, en un pequeño pueblo.", "El pueblo está rodeado de bosques." }),
-            I("moon|lune|luna", 4,
-                new[] { "Kiko wonders why the moon seems to follow travellers.", "It is one of the many things he wants to understand." },
-                new[] { "Kiko se demande pourquoi la lune semble suivre les voyageurs.", "C’est l’une des nombreuses choses qu’il veut comprendre." },
-                new[] { "Kiko se pregunta por qué la luna parece seguir a los viajeros.", "Es una de las muchas cosas que quiere entender." }),
-            I("bird|oiseau|pájaro|pajaro|sunrise", 5,
-                new[] { "Kiko also wonders why birds sing before sunrise." },
-                new[] { "Kiko se demande aussi pourquoi les oiseaux chantent avant le lever du soleil." },
-                new[] { "Kiko también se pregunta por qué los pájaros cantan antes del amanecer." }),
-            I("baobab|tree|arbre|árbol|arbol|leaves", 6,
-                new[] { "The old baobab tree never seems to lose its leaves.", "Kiko cannot work out why." },
-                new[] { "Le vieux baobab ne perd jamais ses feuilles.", "Kiko ne comprend pas pourquoi." },
-                new[] { "El viejo baobab nunca parece perder sus hojas.", "Kiko no entiende por qué." }),
-            I("fire|feu|fuego|burning", 9,
-                new[] { "Deep in the forest, a fire burns beneath an ancient tree.", "Nobody in the village can explain it." },
-                new[] { "Au fond de la forêt, un feu brûle sous un arbre ancien.", "Personne au village ne peut l’expliquer." },
-                new[] { "En lo profundo del bosque, un fuego arde bajo un árbol antiguo.", "Nadie en el pueblo puede explicarlo." }),
-            I("rain|wind|storm|pluie|vent|lluvia|viento|tormenta|go out|never", 11,
-                new[] { "That fire never goes out.", "Not in the rain, not in the wind, not even in the heaviest storms." },
-                new[] { "Ce feu ne s’éteint jamais.", "Ni sous la pluie, ni dans le vent, pas même dans les pires tempêtes." },
-                new[] { "Ese fuego nunca se apaga.", "Ni con lluvia, ni con viento, ni siquiera en las peores tormentas." }),
-            I("remember|memor|mémoire|souvenir|recuerdo|name|called", 14,
-                new[] { "The villagers call it the Remembering Fire.", "They believe it holds the memories of everyone who ever lived." },
-                new[] { "Les villageois l’appellent le Feu du Souvenir.", "Ils croient qu’il garde les souvenirs de tous ceux qui ont vécu." },
-                new[] { "Los aldeanos lo llaman el Fuego del Recuerdo.", "Creen que guarda los recuerdos de todos los que han vivido." }),
+            I("hausa|town|where|ville|où|pueblo|ciudad|dónde|donde", 0,
+                new[] { "It all happens long ago, in a town in Hausaland.", "By day, the town is full of life." },
+                new[] { "Tout se passe il y a longtemps, dans une ville du pays haoussa.", "Le jour, la ville déborde de vie." },
+                new[] { "Todo ocurre hace mucho tiempo, en un pueblo del país hausa.", "De día, el pueblo rebosa de vida." }),
+            I("dodo|creature|monster|créature|monstre|criatura|monstruo", 3,
+                new[] { "Dodo is a creature the whole town fears.", "Nobody dares to challenge it." },
+                new[] { "Dodo est une créature que toute la ville craint.", "Personne n’ose la défier." },
+                new[] { "Dodo es una criatura que todo el pueblo teme.", "Nadie se atreve a desafiarla." }),
+            I("fight|answer|afraid|scared|hide|combat|répond|peur|pelea|respond|miedo", 7,
+                new[] { "Dodo calls out, asking who in the town can fight it.", "Everyone is too frightened to answer." },
+                new[] { "Dodo crie pour demander qui, dans la ville, peut se battre contre lui.", "Tout le monde a trop peur pour répondre." },
+                new[] { "Dodo grita preguntando quién en el pueblo puede pelear con él.", "Todos tienen demasiado miedo para responder." }),
+            I("auta|boy|garçon|niño|nino|old woman|vieille|anciana", 16,
+                new[] { "Auta is a young boy, a stranger in the town.", "He is staying with an old woman." },
+                new[] { "Auta est un jeune garçon, un étranger dans la ville.", "Il loge chez une vieille femme." },
+                new[] { "Auta es un niño, un forastero en el pueblo.", "Vive con una anciana." }),
+            I("stone|hot|fire|pierre|feu|piedra|fuego", 26,
+                new[] { "Auta heats seven stones in the fire until they are very hot.", "He has a plan for them." },
+                new[] { "Auta chauffe sept pierres dans le feu jusqu’à ce qu’elles soient brûlantes.", "Il a un plan." },
+                new[] { "Auta calienta siete piedras en el fuego hasta que arden.", "Tiene un plan." }),
+            I("mouth|swallow|throw|bouche|gueule|avale|boca|traga", 31,
+                new[] { "When Dodo bends down at the doorway, Auta throws a hot stone into its mouth.", "Dodo swallows it." },
+                new[] { "Quand Dodo se baisse à la porte, Auta lui lance une pierre brûlante dans la gueule.", "Dodo l’avale." },
+                new[] { "Cuando Dodo se agacha en la puerta, Auta le lanza una piedra caliente a la boca.", "Dodo se la traga." }),
+            I("dead|die|defeat|kill|mort|vaincu|tué|muerto|vencido|mató", 48,
+                new[] { "After swallowing all seven hot stones, Dodo could not go on.", "By morning, it was dead." },
+                new[] { "Après avoir avalé les sept pierres brûlantes, Dodo ne put plus continuer.", "Au matin, il était mort." },
+                new[] { "Después de tragarse las siete piedras calientes, Dodo ya no pudo seguir.", "Por la mañana, estaba muerto." }),
+            I("horse|cheval|chevaux|caballo", 54,
+                new[] { "The horses refuse to go near Dodo's body.", "Even dead, it frightens them." },
+                new[] { "Les chevaux refusent de s’approcher du corps de Dodo.", "Même mort, il les effraie." },
+                new[] { "Los caballos se niegan a acercarse al cuerpo de Dodo.", "Incluso muerto, los asusta." }),
+            I("tail|proof|queue|preuve|cola|prueba", 58,
+                new[] { "Auta took Dodo's tail in the night.", "He shows it as proof that he killed the creature." },
+                new[] { "Auta a pris la queue de Dodo pendant la nuit.", "Il la montre comme preuve qu’il a tué la créature." },
+                new[] { "Auta le quitó la cola a Dodo durante la noche.", "La muestra como prueba de que él mató a la criatura." }),
+            I("king|reward|roi|récompense|rey|premio|recompensa", 61,
+                new[] { "The king rewards Auta for his bravery." },
+                new[] { "Le roi récompense Auta pour son courage." },
+                new[] { "El rey recompensa a Auta por su valentía." }),
         };
 
         // Marlow Street: English answers; other languages fall back to English until the translation step covers answers.
@@ -119,12 +127,12 @@ namespace HypaStories
         static string[] For(Dictionary<string, string[]> d, string lang) => d.TryGetValue(lang ?? "en", out var a) ? a : d["en"];
 
         /// <summary>
-        /// The most advanced matching topic wins, so "why does the fire never go out?" hits the spoiler guard until the story
+        /// The most advanced matching topic wins, so "how did the stones defeat Dodo?" hits the spoiler guard until the story
         /// has said it. Pure.
         /// </summary>
         public static string[] AnswerFor(string question, int lineIndex, string lang, string storyId)
         {
-            var intents = storyId == "marlow-street" ? Marlow : Kiko;
+            var intents = storyId == "marlow-street" ? Marlow : SevenStones;
             var hit = intents.Where(i => i.Re.IsMatch(question ?? "")).OrderByDescending(i => i.Min).FirstOrDefault();
             if (hit == null) return For(Default, lang);
             if (hit.Min > lineIndex) return For(Spoiler, lang);

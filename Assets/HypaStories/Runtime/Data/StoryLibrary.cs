@@ -17,7 +17,7 @@ namespace HypaStories
     public static class StoryLibrary
     {
         /// <summary>Card order. Each id is a folder under Resources/Stories.</summary>
-        static readonly string[] Ids = { "kiko", "marlow-street" };
+        static readonly string[] Ids = { "seven-hot-stones", "marlow-street" };
 
         const float WordsPerSecond = 2.6f, Start = 0.4f, Gap = 0.45f, Tail = 1.5f;
 
