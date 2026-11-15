@@ -21,30 +21,32 @@ namespace HypaStories.Tests
             Assert.AreEqual(1f, StoryDirector.Track(k, 99f));
         }
 
-        static StoryTimeline Kiko => StoryLibrary.Find("kiko").Timeline;
+        static StoryTimeline Stones => StoryLibrary.Find("seven-hot-stones").Timeline;
         static Caption Line(StoryTimeline tl, string id) => tl.Captions.First(c => c.Id == id);
 
-        [Test] public void Director_Kiko_RainBuildsFromNotWhenItRained()
+        [Test] public void Director_SevenStones_WindRisesWhenDodoComes()
         {
-            var d = new StoryDirector(Kiko);
+            var d = new StoryDirector(Stones);
             Assert.AreEqual(-1, d.Sample(0f).Index);
-            Assert.AreEqual(0f, d.Sample(Line(Kiko, "rain").At).Rain);
-            Assert.AreEqual(0.4f, d.Sample(Line(Kiko, "rain").Until).Rain, 1e-4);
-            var s = d.Sample(Line(Kiko, "storm").Until);
-            Assert.AreEqual(1f, s.Rain, 1e-4);
-            Assert.AreEqual("Not even during the heaviest storms.", Kiko.Captions[s.Index].Text);
-            var flash = Line(Kiko, "wind").At + 0.9f;
+            Assert.AreEqual(0.1f, d.Sample(Line(Stones, "came").At).Wind, 1e-4);
+            Assert.AreEqual(0.45f, d.Sample(Line(Stones, "came").Until).Wind, 1e-4);
+            var s = d.Sample(Line(Stones, "approached").Until);
+            Assert.AreEqual(0.85f, s.Wind, 1e-4);
+            Assert.AreEqual("Before long, Dodo approached the house.", Stones.Captions[s.Index].Text);
+            Assert.AreEqual(0f, d.Sample(Line(Stones, "dawn").Until).Wind, 1e-4);
+            Assert.AreEqual(0f, d.Sample(Stones.Duration).Rain);
+            var flash = Line(Stones, "challenge").At + 0.5f;
             Assert.AreEqual(0f, d.Sample(flash - 0.4f).Flash);
             Assert.Greater(d.Sample(flash + 0.05f).Flash, 0.3f);
         }
 
         [Test] public void Director_ThunderFollowsEachFlash_Once()
         {
-            var d = new StoryDirector(Kiko);
-            var flash = Line(Kiko, "wind").At + 0.9f;
+            var d = new StoryDirector(Stones);
+            var flash = Line(Stones, "challenge").At + 0.5f;
             Assert.AreEqual(0, d.ThunderBetween(flash - 0.4f, flash + 0.3f));
             Assert.AreEqual(1, d.ThunderBetween(flash + 0.3f, flash + 0.4f));
-            Assert.AreEqual(3, d.ThunderBetween(0f, Kiko.Duration));
+            Assert.AreEqual(4, d.ThunderBetween(0f, Stones.Duration));
         }
 
         [Test] public void WordsShown_LightUpWithTheVoice()
@@ -136,7 +138,7 @@ namespace HypaStories.Tests
                 foreach (var c in st.Timeline.Captions)
                     foreach (var lang in Translated)
                         Assert.IsFalse(string.IsNullOrEmpty(c.TextFor(lang)) || c.TextFor(lang) == c.Text, $"{st.Id} {lang}: {c.Text}");
-            Assert.AreEqual("It never went out.", Line(Kiko, "never-out").TextFor("sw")); // not offered: English
+            Assert.AreEqual("One stone.", Line(Stones, "one-stone").TextFor("sw")); // not offered: English
         }
 
         [Test] public void Languages_FindByCodeOrHypaLabel()
@@ -154,16 +156,16 @@ namespace HypaStories.Tests
 
         [Test] public void Qa_NoSpoilers_PastTheInterruptedLine()
         {
-            var early = StubStoryQa.AnswerFor("Why does the fire never go out?", 3, "en", "kiko");
+            var early = StubStoryQa.AnswerFor("How did the stones defeat Dodo?", 3, "en", "seven-hot-stones");
             StringAssert.StartsWith("Hmm, I cannot tell you that just yet.", early[0]);
-            var late = StubStoryQa.AnswerFor("Why does the fire never go out?", 12, "en", "kiko");
-            Assert.AreEqual("That fire never goes out.", late[0]);
+            var late = StubStoryQa.AnswerFor("How did the stones defeat Dodo?", 50, "en", "seven-hot-stones");
+            Assert.AreEqual("After swallowing all seven hot stones, Dodo could not go on.", late[0]);
         }
 
         [Test] public void Qa_AnswersInTheLanguage_AndDefaults()
         {
-            Assert.AreEqual("Kiko est une tortue curieuse d’un petit village.", StubStoryQa.AnswerFor("qui est la tortue ?", 2, "fr", "kiko")[0]);
-            Assert.AreEqual("That is a good question.", StubStoryQa.AnswerFor("What colour is the sky?", 5, "en", "kiko")[0]);
+            Assert.AreEqual("Dodo est une créature que toute la ville craint.", StubStoryQa.AnswerFor("qui est la créature ?", 4, "fr", "seven-hot-stones")[0]);
+            Assert.AreEqual("That is a good question.", StubStoryQa.AnswerFor("What colour is the sky?", 5, "en", "seven-hot-stones")[0]);
             // Marlow has English answers only for now
             Assert.AreEqual("Nia is the detective on the case.", StubStoryQa.AnswerFor("who is nia", 3, "fr", "marlow-street")[0]);
         }
@@ -172,19 +174,19 @@ namespace HypaStories.Tests
         {
             var m = ChatStoryQa.Messages(new QaRequest
             {
-                Question = "qui est Kiko ?", StorySoFar = "Il y a bien longtemps…", Language = StoryLanguages.Find("fr"),
-            }, "Kiko and the\nRemembering Fire");
+                Question = "qui est Auta ?", StorySoFar = "Il y a bien longtemps…", Language = StoryLanguages.Find("fr"),
+            }, "Seven Hot Stones:\nThe Night Dodo Came");
             Assert.AreEqual("system", (string)m[0]["role"]);
-            StringAssert.Contains("“Kiko and the Remembering Fire”", (string)m[0]["content"]);
+            StringAssert.Contains("“Seven Hot Stones: The Night Dodo Came”", (string)m[0]["content"]);
             StringAssert.Contains("Answer in French", (string)m[0]["content"]);
             StringAssert.Contains("Il y a bien longtemps…", (string)m[1]["content"]);
-            StringAssert.EndsWith("qui est Kiko ?", (string)m[1]["content"]);
+            StringAssert.EndsWith("qui est Auta ?", (string)m[1]["content"]);
         }
 
         [Test] public void Chat_SplitsTheReplyIntoSpokenSentences()
         {
-            CollectionAssert.AreEqual(new[] { "Well, Kiko is curious.", "“Why?” he asks!", "¿Y tú?" },
-                ChatStoryQa.Sentences("**Well**, Kiko is curious. “Why?” he asks!\n¿Y tú?"));
+            CollectionAssert.AreEqual(new[] { "Well, Auta is brave.", "“Why?” he asks!", "¿Y tú?" },
+                ChatStoryQa.Sentences("**Well**, Auta is brave. “Why?” he asks!\n¿Y tú?"));
             Assert.AreEqual(4, ChatStoryQa.Sentences("A. B. C. D. E.").Count);
             Assert.IsEmpty(ChatStoryQa.Sentences("  "));
         }
@@ -321,9 +323,9 @@ namespace HypaStories.Tests
             public int ResumedAt = -1;
             public bool CanAsk => true;
             public int LineIndex => 12;
-            public string StoryId => "kiko";
+            public string StoryId => "seven-hot-stones";
             public string StorySoFar => "Long ago…";
-            public string[] Suggestions => new[] { "Who is Kiko?" };
+            public string[] Suggestions => new[] { "What is Dodo?" };
             public void Interrupt() => Interrupted = true;
             public void Resume(int lineIndex) => ResumedAt = lineIndex;
         }
@@ -358,16 +360,16 @@ namespace HypaStories.Tests
 
         [Test] public void Ask_InterruptsAnswersAndResumesTheSameLine()
         {
-            _mic.Heard.Enqueue("Why does the fire never go out?");
+            _mic.Heard.Enqueue("Why did nobody answer?");
             var t = _ask.BeginAsync();
             Assert.IsTrue(t.IsCompleted);
             Assert.IsTrue(_story.Interrupted);
-            CollectionAssert.AreEqual(new[] { "Hmm, good question…", "That fire never goes out.", "Not in the rain, not in the wind, not even in the heaviest storms.", "Now, where was I…" }, _speech.Spoken);
+            CollectionAssert.AreEqual(new[] { "Hmm, good question…", "Dodo calls out, asking who in the town can fight it.", "Everyone is too frightened to answer.", "Now, where was I…" }, _speech.Spoken);
             Assert.AreEqual(12, _story.ResumedAt);
             Assert.AreEqual(AskState.Idle, _ask.State);
             CollectionAssert.AreEqual(new[] { true, false }, _asking);
             Assert.AreEqual("Long ago…", _qa.Last.StorySoFar);
-            CollectionAssert.AreEqual(new[] { "Who is Kiko?" }, _view.Suggestions);
+            CollectionAssert.AreEqual(new[] { "What is Dodo?" }, _view.Suggestions);
             var log = _ask.Log.Single();
             Assert.IsTrue(log.Ok);
             Assert.AreEqual(100, log.Filler);
@@ -388,7 +390,7 @@ namespace HypaStories.Tests
         [Test] public void Ask_ServiceOffline_KeepsGoingAndLogsTheError()
         {
             _qa.Offline = true;
-            _mic.Heard.Enqueue("who is kiko");
+            _mic.Heard.Enqueue("who is auta");
             _ask.BeginAsync();
             CollectionAssert.AreEqual(new[] { "Hmm, good question…", "Let's keep going with the story." }, _speech.Spoken);
             Assert.AreEqual(12, _story.ResumedAt);
@@ -402,9 +404,9 @@ namespace HypaStories.Tests
             Assert.IsFalse(t.IsCompleted);
             Assert.AreEqual(AskState.Listening, _ask.State);
             StringAssert.Contains("pick a question", _view.Text);
-            _ask.SubmitText("Who is Kiko?");
+            _ask.SubmitText("What is Dodo?");
             Assert.IsTrue(t.IsCompleted);
-            Assert.AreEqual("Kiko is a curious tortoise from a small village.", _speech.Spoken[1]);
+            Assert.AreEqual("Dodo is a creature the whole town fears.", _speech.Spoken[1]);
             Assert.IsTrue(_ask.Log.Single().Typed);
         }
 

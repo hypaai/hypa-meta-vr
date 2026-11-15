@@ -1,7 +1,7 @@
 # Hypa Story (tickets 3A-3C)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
-Same three screens, same two stories, same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
+Same three screens, two stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
 moves, pinch instead of click. Uses HypaCore only and never references HypaLens.
 
 ## Run it
@@ -41,7 +41,7 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | `rain.js` | `Shaders/StoryRain`: camera-following streaks (quads, not 1 px lines). |
 | `card.js` | `Shaders/StoryCard` + `Ui/StoryListView`: same art (lantern pines, noir alley), ripples from the pinch ray's hit point, tilt, press burst, reveal, dim. Text is real TextMesh on the card. |
 | `director.js` | `Core/StoryDirector`: pure function of the story clock (captions, rain, wind, lightning, thunder). |
-| `stories.js`, `story-kiko.js`, `story-marlow.js` | `Resources/Stories/` data files, loaded by `Data/StoryLibrary` (same text and translations; see Stories). |
+| `stories.js`, `story-kiko.js`, `story-marlow.js` | `Resources/Stories/` data files, loaded by `Data/StoryLibrary` (Marlow: same text and translations; Kiko replaced by `seven-hot-stones`; see Stories). |
 | Story player panel | `Ui/PlayerView`: script with the current line's words lighting up with the voice, progress, `<<` / Pause / `>>`, Ask. |
 | `storyteller.js` | `World/Storyteller`: seated pose, breathing, talking gestures, head to the fire / to you on interrupt, `mouthOpen` lip sync from the voice. Stand-in figure without the model. |
 | `audio.js` | `Audio/StoryAudio` (beds per scene, spatial fire, ducking under the voice, random wolves and crickets, storm, thunder, chime, tap) and `Audio/ProceduralClips` (the synthesised sounds, filtered offline). |
@@ -66,7 +66,9 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
 - `{code}.json` per translation (`fr`, `es`, `ha`, `ig`, `pcm`, `yo`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing
   file or line is told in English, and a test lists every untranslated line of the offered languages. **The Hausa, Igbo, Pidgin and
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
-  story): have a native speaker check them before release.**
+  story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
+  (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
+  (Claude) and need the same check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
