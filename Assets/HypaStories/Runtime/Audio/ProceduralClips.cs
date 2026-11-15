@@ -211,6 +211,124 @@ namespace HypaStories
             return d;
         }
 
+        // ---------- The trail to the hut (3G): animals and footsteps ----------
+
+        /// <summary>A wolf's howl: a breathy tone that rises, holds with a slow waver and falls away (about 4 s).</summary>
+        public static float[] HowlSamples(int seed)
+        {
+            var r = new System.Random(seed);
+            var n = (int)(Rate * 4.2f);
+            var d = new float[n];
+            var breath = Filter(White(n, seed + 1), Biquad.BandPass(900f, 1.2f));
+            float f0 = 330f + (float)r.NextDouble() * 60f, peak = f0 * (1.55f + (float)r.NextDouble() * 0.15f), ph = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                // glide up over 0.9 s, hold with vibrato, sag at the end
+                var u = t < 0.9f ? Mathf.SmoothStep(0f, 1f, t / 0.9f) : t > 3.1f ? 1f - 0.18f * (t - 3.1f) / 1.1f : 1f;
+                var f = Mathf.Lerp(f0, peak, u) * (1f + 0.012f * Mathf.Sin(2f * Mathf.PI * 5.3f * t));
+                ph += 2f * Mathf.PI * f / Rate;
+                var env = t < 0.35f ? t / 0.35f : t > 3.2f ? Mathf.Max(0f, 1f - (t - 3.2f) / 1.0f) : 1f;
+                d[i] = (Mathf.Sin(ph) * 0.7f + Mathf.Sin(2f * ph) * 0.18f + Mathf.Sin(3f * ph) * 0.07f + breath[i] * 0.12f) * env;
+            }
+            return Normalize(d, 0.8f);
+        }
+
+        /// <summary>A low growl: a rough, throbbing rumble around 110 Hz (about 1.6 s).</summary>
+        public static float[] GrowlSamples(int seed)
+        {
+            var n = (int)(Rate * 1.6f);
+            var rough = Filter(Brown(n, seed), Biquad.LowPass(480f));
+            Normalize(rough, 1f);
+            var d = new float[n];
+            var ph = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                ph += 2f * Mathf.PI * (105f + 12f * Mathf.Sin(2f * Mathf.PI * 1.3f * t)) / Rate;
+                var saw = (ph / Mathf.PI % 2f) - 1f;
+                var throb = 0.55f + 0.45f * Mathf.Sin(2f * Mathf.PI * 23f * t);
+                var env = t < 0.25f ? t / 0.25f : t > 1.2f ? Mathf.Max(0f, 1f - (t - 1.2f) / 0.4f) : 1f;
+                d[i] = (saw * 0.35f + rough[i] * 0.65f) * throb * env;
+            }
+            return Normalize(Filter(d, Biquad.LowPass(700f)), 0.8f);
+        }
+
+        /// <summary>An owl: "hoo... hoo-hoo", soft low tones with a breathy edge (about 2 s).</summary>
+        public static float[] HootSamples(int seed)
+        {
+            var r = new System.Random(seed);
+            var n = (int)(Rate * 2.1f);
+            var d = new float[n];
+            var air = Filter(White(n, seed + 2), Biquad.BandPass(700f, 2f));
+            var f = 360f + (float)r.NextDouble() * 40f;
+            (float at, float len, float hz)[] notes = { (0f, 0.55f, f), (0.85f, 0.28f, f * 0.94f), (1.25f, 0.6f, f * 0.9f) };
+            foreach (var (at, len, hz) in notes)
+            {
+                var start = (int)(at * Rate);
+                for (var i = 0; i < (int)(len * Rate) && start + i < n; i++)
+                {
+                    var t = (float)i / Rate;
+                    var env = Mathf.Sin(Mathf.PI * Mathf.Clamp01(t / len)); env *= env;
+                    var bend = 1f - 0.04f * t / len;
+                    d[start + i] += (Mathf.Sin(2f * Mathf.PI * hz * bend * t) + 0.12f * Mathf.Sin(4f * Mathf.PI * hz * bend * t) + air[start + i] * 0.08f) * env;
+                }
+            }
+            return Normalize(d, 0.7f);
+        }
+
+        /// <summary>A twig snapping underfoot: a sharp crack and two small splinters.</summary>
+        public static float[] SnapSamples(int seed)
+        {
+            var n = (int)(Rate * 0.35f);
+            var w = White(n, seed);
+            var d = new float[n];
+            var r = new System.Random(seed);
+            foreach (var (at, gain, hz) in new[] { (0f, 1f, 2600f), (0.05f + (float)r.NextDouble() * 0.04f, 0.5f, 3400f), (0.13f + (float)r.NextDouble() * 0.05f, 0.3f, 2000f) })
+            {
+                var bp = Biquad.BandPass(hz, 1.4f);
+                var start = (int)(at * Rate);
+                for (var i = 0; i < (int)(0.04f * Rate) && start + i < n; i++)
+                    d[start + i] += bp.Process(w[start + i]) * gain * Mathf.Exp(-60f * i / Rate);
+            }
+            return Normalize(d, 0.9f);
+        }
+
+        /// <summary>Something running off through the undergrowth: fluttering leafy noise that fades into the distance (about 1.8 s).</summary>
+        public static float[] RustleSamples(int seed)
+        {
+            var n = (int)(Rate * 1.8f);
+            var d = Filter(White(n, seed), Biquad.HighPass(1200f), Biquad.LowPass(6500f));
+            var r = new System.Random(seed + 3);
+            var g = 0.5f;
+            for (var i = 0; i < n; i++)
+            {
+                if (i % 220 == 0) g = 0.2f + (float)r.NextDouble() * 0.8f; // leaves brushing past, in bursts
+                var t = (float)i / Rate;
+                var stride = 0.5f + 0.5f * Mathf.Sin(2f * Mathf.PI * 5.5f * t); // the gallop
+                d[i] *= g * stride * Mathf.Exp(-1.6f * t);
+            }
+            return Normalize(d, 0.8f);
+        }
+
+        /// <summary>One footstep on a dirt trail: a soft thud and a crunch of grit and leaves (about 0.2 s).</summary>
+        public static float[] StepSamples(int seed)
+        {
+            var n = (int)(Rate * 0.22f);
+            var thud = Filter(Brown(n, seed), Biquad.LowPass(220f));
+            var crunch = Filter(White(n, seed + 5), Biquad.BandPass(1500f + seed % 5 * 180f, 0.9f));
+            Normalize(thud, 1f); Normalize(crunch, 1f);
+            var r = new System.Random(seed);
+            var d = new float[n];
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                var grit = r.NextDouble() < 0.02 ? 1.6f : 1f;
+                d[i] = thud[i] * 0.6f * Mathf.Exp(-28f * t) + crunch[i] * 0.4f * grit * Mathf.Exp(-16f * t) * Mathf.Clamp01(t / 0.01f);
+            }
+            return Normalize(d, 0.8f);
+        }
+
         public static AudioClip Clip(string name, float[] samples)
         {
             var c = AudioClip.Create(name, samples.Length, 1, Rate, false);
