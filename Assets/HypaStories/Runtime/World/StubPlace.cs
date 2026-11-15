@@ -6,8 +6,8 @@ namespace HypaStories
 {
     /// <summary>
     /// A stand-in place until its owner builds it: the same button row as the campfire. The place you are in is the solid
-    /// button (the start). The others are light and take you there. The hut and village starts are not built yet, so the
-    /// solid press stays put.
+    /// button (the start). The others are light and take you there. Hut and Village go to the camp's world (the real hut
+    /// and the village at the ends of their trails), not these stand-in scenes.
     /// </summary>
     public sealed class StubPlace : MonoBehaviour
     {

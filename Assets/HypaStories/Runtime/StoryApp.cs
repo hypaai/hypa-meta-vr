@@ -41,9 +41,9 @@ namespace HypaStories
         float _boost = 1f, _hover, _gather, _gatherTarget, _restoreReach, _restoreFar;
         Transform _cam, _world, _ui;
         KitGroup _prep;
-        Transform _hutDoor;          // the place row at the hut's door (3G)
-        KitGroup _hutDoorGroup;
-        float _hutDoorShown;
+        /// <summary>A place row out in the camp's world: at the hut's door (3G), at the village gate (3M).</summary>
+        sealed class DoorRow { public Transform Row; public KitGroup Group; public float Shown; public System.Func<Vector2, bool> At; }
+        readonly System.Collections.Generic.List<DoorRow> _doorRows = new System.Collections.Generic.List<DoorRow>();
         bool _turnArmed = true;
         Material _veil;
         Renderer _veilR;
@@ -93,7 +93,7 @@ namespace HypaStories
             // Back (to the Hypa home menu: only under the shell), Hut, Gather round, Village: one row in front of you at the start.
             _splash = new SplashView(_world, _ui, _camp.Fire.Root, assets.logo, () => Go(Screen.List), on => _portalHover = on,
                 HypaShell.Instance != null ? (System.Action)(() => HypaShell.Instance.ExitToHome()) : null,
-                ToTheHut, () => Places.GoTo(PlaceIds.Gathering));
+                () => Places.GoTo(PlaceIds.Hut), () => Places.GoTo(PlaceIds.Gathering));
             HypaShell.Instance?.SetMenuButtonVisible(false); // Back replaces the shell's floating Home button here
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
@@ -114,12 +114,17 @@ namespace HypaStories
             _player.Root.gameObject.SetActive(false);
             _camp.Teller.gameObject.SetActive(false);
             BuildVeil();
-            BuildHutDoor();
+            BuildDoorRows();
             Places.EnsureRunner();
             Places.Leaving += OnLeavingPlace;
             Places.Arrived += OnArrivedPlace;
             Places.NumberKeysTaken = NumberKeysTaken; // 1-3 pick a suggested question while a story plays
-            StartCoroutine(Intro());
+            Places.InCamp = HoldsPlace;
+            Places.TravelInCamp = TravelInCamp;
+            // Opened from a stand-in (its Hut or Village button): the camp just loaded so you can stand at that place.
+            // The places veil is still up, so skip the campfire's own intro.
+            if (ApplyCampSpot()) { SetVeil(0f); _splash.SetAlpha(0f); }
+            else StartCoroutine(Intro());
         }
 
         // ---------- places (3F) ----------
@@ -142,7 +147,7 @@ namespace HypaStories
             _away = true;
             _world.gameObject.SetActive(false);
             _ui.gameObject.SetActive(false);
-            if (_hutDoor != null) { _hutDoor.gameObject.SetActive(false); _hutDoorShown = 0f; }
+            foreach (var d in _doorRows) { d.Row.gameObject.SetActive(false); d.Shown = 0f; }
         }
 
         /// <summary>Back at the camp: show it where you stand, panels in front of you, sound back, story picking up where it was.</summary>
@@ -153,9 +158,8 @@ namespace HypaStories
             _world.gameObject.SetActive(true);
             _ui.gameObject.SetActive(true);
             Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
-            if (_screen == Screen.Splash) _splash.Follow.Snap();
-            else if (_screen == Screen.List) _list.Follow.Snap();
-            else _player.Follow.Snap();
+            ApplyCampSpot(); // came back for the hut or the village (a button in another place): straight there
+            SnapPanels();
             _audio.enabled = true;
             foreach (var src in _resumeLoops)
             {
@@ -497,6 +501,7 @@ namespace HypaStories
         {
             Places.Leaving -= OnLeavingPlace;
             Places.Arrived -= OnArrivedPlace;
+            if (Places.InCamp == (System.Func<string, bool>)HoldsPlace) { Places.InCamp = null; Places.TravelInCamp = null; }
             if (Places.NumberKeysTaken == (System.Func<bool>)NumberKeysTaken) Places.NumberKeysTaken = null;
             HypaShell.Instance?.SetMenuButtonVisible(true); // leaving Stories: the shell's Home button is back
             _cts.Cancel();
@@ -558,7 +563,7 @@ namespace HypaStories
             else if (local.y < 0.3f) _world.position -= Vector3.up * (0.3f - local.y);
             // the clearing (out of the fire), the trail to the hut, its doorway and the inside; never through the hut's walls
             var p = new Vector2(local.x, local.z);
-            var q = HutTrailLayout.Clamp(p, walkRadius);
+            var q = Grounds.Clamp(p, walkRadius);
             if ((q - p).sqrMagnitude < 1e-8f) return;
             _world.position += _world.TransformVector(new Vector3(p.x - q.x, 0f, p.y - q.y));
         }
@@ -566,30 +571,49 @@ namespace HypaStories
         // ---------- the trail to the hut (3G) ----------
 
         /// <summary>
-        /// Out on the trail the campfire's panels step aside (they belong to the fire). At the hut's door the place row shows,
-        /// the way Gather round greets you at the fire: Back, Campfire (back to the fire), Step inside, Village.
+        /// Out on a trail the campfire's panels step aside (they belong to the fire). At the hut's door and the village gate the
+        /// place row shows, the way Gather round greets you at the fire: Back, the other places, and the one you're at in the middle.
         /// </summary>
-        void BuildHutDoor()
+        void BuildDoorRows()
         {
-            _hutDoor = new GameObject("Hut Door Buttons").transform;
-            _hutDoor.SetParent(transform, false);
-            Kit.Text(_hutDoor, "The hut", 0.02f, new Vector3(0f, 0.058f, 0f), new Vector2(0.5f, 0.03f), KitTheme.Dim);
-            PlaceButtons.Add(_hutDoor, PlaceIds.Hut,
-                HypaShell.Instance != null ? (System.Action)(() => HypaShell.Instance.ExitToHome()) : null,
-                BackToTheFire, StepInside, () => Places.GoTo(PlaceIds.Gathering));
-            var f = _hutDoor.gameObject.AddComponent<FollowView>();
-            f.Distance = 0.95f; f.Height = -0.34f;
-            _hutDoorGroup = _hutDoor.gameObject.AddComponent<KitGroup>();
-            _hutDoorGroup.Refresh();
-            _hutDoorGroup.Set(0f);
-            _hutDoor.gameObject.SetActive(false);
+            System.Action back = HypaShell.Instance != null ? (System.Action)(() => HypaShell.Instance.ExitToHome()) : null;
+            AddDoorRow("Hut Door Buttons", "The hut", HutTrailLayout.AtDoor, row =>
+                PlaceButtons.Add(row, PlaceIds.Hut, back, BackToTheFire, StepInside, () => Places.GoTo(PlaceIds.Gathering)));
+            AddDoorRow("Village Gate Buttons", "The village", VillageLayout.AtGate, row =>
+                PlaceButtons.Add(row, PlaceIds.Gathering, back, BackToTheFire, () => Places.GoTo(PlaceIds.Hut), MeetTheLocals));
         }
 
-        /// <summary>Hut, from the campfire: through the veil, to the hut's door, facing it. The same hut the path walks to.</summary>
-        void ToTheHut() => TravelTo(HutTrailLayout.FrontOfDoor, HutTrailLayout.Hut);
+        void AddDoorRow(string name, string title, System.Func<Vector2, bool> at, System.Action<Transform> buttons)
+        {
+            var row = new GameObject(name).transform;
+            row.SetParent(transform, false);
+            Kit.Text(row, title, 0.02f, new Vector3(0f, 0.058f, 0f), new Vector2(0.5f, 0.03f), KitTheme.Dim);
+            buttons(row);
+            var f = row.gameObject.AddComponent<FollowView>();
+            f.Distance = 0.95f; f.Height = -0.34f;
+            var g = row.gameObject.AddComponent<KitGroup>();
+            g.Refresh();
+            g.Set(0f);
+            row.gameObject.SetActive(false);
+            _doorRows.Add(new DoorRow { Row = row, Group = g, At = at });
+        }
+
+        /// <summary>The places the camp holds in its own world: the fire, the hut and the village, at the ends of their trails.</summary>
+        static bool HoldsPlace(string id) => id == PlaceIds.Camp || id == PlaceIds.Hut || id == PlaceIds.Gathering;
+
+        /// <summary>A place button pressed while you're in the camp's world: through the veil to the fire, the hut's door or the village gate.</summary>
+        void TravelInCamp(string id)
+        {
+            if (id == PlaceIds.Hut) TravelTo(HutTrailLayout.FrontOfDoor, HutTrailLayout.Hut);
+            else if (id == PlaceIds.Gathering) TravelTo(VillageLayout.FrontOfGate, VillageLayout.Plaza);
+            else BackToTheFire();
+        }
 
         /// <summary>Step inside, at the door: a step into the empty room. The hut's visit is not built yet.</summary>
         void StepInside() => TravelTo(HutTrailLayout.Hut + HutTrailLayout.DoorDir * 1.15f, HutTrailLayout.Hut - HutTrailLayout.DoorDir);
+
+        /// <summary>Meet the locals, at the gate: in front of the elder by the fence. Talking to them comes later.</summary>
+        void MeetTheLocals() => TravelTo(VillageLayout.MeetSpot, VillageLayout.Local);
 
         /// <summary>Through the veil, stand at <paramref name="at"/> looking toward <paramref name="look"/> (camp ground, x and z).</summary>
         void TravelTo(Vector2 at, Vector2 look)
@@ -598,15 +622,29 @@ namespace HypaStories
             _busy = true;
             _audio.Tap();
             Run(0f, 0.45f, u => SetVeil(u), In);
-            At(0.5f, () =>
-            {
-                StandAt(at, look);
-                if (_screen == Screen.Splash) _splash.Follow.Snap();
-                else if (_screen == Screen.List) _list.Follow.Snap();
-                else _player.Follow.Snap();
-            });
+            At(0.5f, () => { StandAt(at, look); SnapPanels(); });
             Run(0.55f, 0.6f, u => SetVeil(1f - u), Out);
             At(1.2f, () => _busy = false);
+        }
+
+        void SnapPanels()
+        {
+            if (_screen == Screen.Splash) _splash.Follow.Snap();
+            else if (_screen == Screen.List) _list.Follow.Snap();
+            else _player.Follow.Snap();
+            foreach (var d in _doorRows) if (d.Row.gameObject.activeSelf) d.Row.GetComponent<FollowView>().Snap();
+        }
+
+        /// <summary>
+        /// A button in another place asked for the hut or the village: stand there. Returns true when a spot was waiting.
+        /// The camp's own arrival (the seat by the fire) leaves it false.
+        /// </summary>
+        bool ApplyCampSpot()
+        {
+            var spot = Places.TakeCampSpot();
+            if (spot == PlaceIds.Hut) { StandAt(HutTrailLayout.FrontOfDoor, HutTrailLayout.Hut); return true; }
+            if (spot == PlaceIds.Gathering) { StandAt(VillageLayout.FrontOfGate, VillageLayout.Plaza); return true; }
+            return false;
         }
 
         /// <summary>Put the head at <paramref name="at"/> on the camp ground, looking toward <paramref name="look"/>. The world moves, not the rig.</summary>
@@ -623,7 +661,7 @@ namespace HypaStories
             _world.SetPositionAndRotation(new Vector3(head.x, floor, head.z) - worldRot * new Vector3(at.x, 0f, at.y), worldRot);
         }
 
-        /// <summary>Campfire, from the hut's door: through the veil, back to your spot facing the fire.</summary>
+        /// <summary>Campfire, from the hut's door or the village gate: through the veil, back to your spot facing the fire.</summary>
         void BackToTheFire()
         {
             if (_busy) return;
@@ -633,9 +671,7 @@ namespace HypaStories
             At(0.5f, () =>
             {
                 Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
-                if (_screen == Screen.Splash) _splash.Follow.Snap();
-                else if (_screen == Screen.List) _list.Follow.Snap();
-                else _player.Follow.Snap();
+                SnapPanels();
             });
             Run(0.55f, 0.6f, u => SetVeil(1f - u), Out);
             At(1.2f, () => _busy = false);
@@ -644,29 +680,25 @@ namespace HypaStories
         void TrailPanels(float dt)
         {
             var v = _camp.Trail != null ? _camp.Trail.Viewer : Vector2.zero;
-            // the fire's panels: shown in the clearing, put away out on the trail
+            // the fire's panels: shown in the clearing, put away out on the trails
             var far = v.magnitude > 9f;
             if (_ui.gameObject.activeSelf == far)
             {
                 _ui.gameObject.SetActive(!far);
-                if (!far)
-                {
-                    if (_screen == Screen.Splash) _splash.Follow.Snap();
-                    else if (_screen == Screen.List) _list.Follow.Snap();
-                    else _player.Follow.Snap();
-                }
+                if (!far) SnapPanels();
             }
-            // the hut's row, at its door
-            if (_hutDoor == null) return;
-            var want = HutTrailLayout.AtDoor(v) ? 1f : 0f;
-            _hutDoorShown = Approach(_hutDoorShown, want, 6f, dt);
-            var on = _hutDoorShown > 0.01f;
-            if (_hutDoor.gameObject.activeSelf != on)
+            // a place's row, at its door
+            foreach (var d in _doorRows)
             {
-                _hutDoor.gameObject.SetActive(on);
-                if (on) _hutDoor.GetComponent<FollowView>().Snap();
+                d.Shown = Approach(d.Shown, d.At(v) ? 1f : 0f, 6f, dt);
+                var on = d.Shown > 0.01f;
+                if (d.Row.gameObject.activeSelf != on)
+                {
+                    d.Row.gameObject.SetActive(on);
+                    if (on) d.Row.GetComponent<FollowView>().Snap();
+                }
+                if (on) d.Group.Set(d.Shown);
             }
-            if (on) _hutDoorGroup.Set(_hutDoorShown);
         }
     }
 }
