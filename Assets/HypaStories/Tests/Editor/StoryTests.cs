@@ -65,7 +65,11 @@ namespace HypaStories.Tests
             Assert.AreEqual(0.4f, caps[0].At, 1e-4);
             for (var i = 1; i < caps.Length; i++) Assert.Greater(caps[i].At, caps[i - 1].Until);
             Assert.GreaterOrEqual(marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
-            Assert.AreEqual(4, marlow.Flashes.Length);
+            Assert.AreEqual(5, marlow.Flashes.Length);
+            var d = new StoryDirector(marlow);
+            Assert.AreEqual(0.12f, d.Sample(caps[0].At).Rain, 1e-4);
+            Assert.AreEqual(0.72f, d.Sample(caps[0].Until).Rain, 1e-4);
+            Assert.AreEqual(0.18f, d.Sample(Line(marlow, "truth").Until).Rain, 1e-4);
         }
 
         [Test] public void Parse_TranslatesById_FallsBackToEnglish_AndEasesCuesOverTheirLine()
@@ -83,6 +87,79 @@ namespace HypaStories.Tests
             Assert.AreEqual(caps[1].At + 0.5f, st.Timeline.Flashes[0], 1e-4);
             Assert.AreEqual(StoryLibrary.DefaultModel, st.Model);
             Assert.IsEmpty(st.VoicesFor("en")); // no voices: Auto
+        }
+
+        [Test] public void Parse_FireDarkDawnPolice_EaseOverTheirLine_AndSoundsLandInTheLine()
+        {
+            const string story = @"{ ""dawn"": 0.2, ""lines"": [
+                { ""id"": ""a"", ""text"": ""one two three four five"", ""fire"": 1.8, ""dark"": 0.5, ""sounds"": { ""roar"": [0.5], ""door"": [0.1, 1.2] } },
+                { ""id"": ""b"", ""text"": ""six seven"", ""dawn"": 1, ""police"": 0.7 } ] }";
+            var tl = StoryLibrary.Parse("t", story, new Dictionary<string, string>()).Timeline;
+            var d = new StoryDirector(tl);
+            var a = Line(tl, "a"); var b = Line(tl, "b");
+            Assert.AreEqual(1f, d.Sample(0f).Fire, 1e-4f, "the fire is as it is until a cue");
+            Assert.AreEqual(1.8f, d.Sample(a.Until).Fire, 1e-4f);
+            Assert.AreEqual(0.5f, d.Sample(b.Until).Dark, 1e-4f, "held after its line");
+            Assert.AreEqual(0.2f, d.Sample(0f).Dawn, 1e-4f, "the story's starting value");
+            Assert.AreEqual(1f, d.Sample(b.Until).Dawn, 1e-4f);
+            Assert.AreEqual(0.7f, d.Sample(b.Until).Police, 1e-4f);
+            CollectionAssert.AreEqual(new[] { "door", "roar", "door" }, tl.Sounds.Select(x => x.Name).ToArray(), "in time order");
+            Assert.AreEqual(a.At + 0.5f, tl.Sounds[1].T, 1e-4f);
+            var heard = new List<string>();
+            d.SoundsBetween(a.At, a.At + 0.6f, heard);
+            CollectionAssert.AreEqual(new[] { "door", "roar" }, heard);
+            heard.Clear();
+            d.SoundsBetween(a.At + 0.6f, a.At + 0.6f, heard);
+            Assert.IsEmpty(heard, "never twice for the same moment");
+        }
+
+        [Test] public void Eshu_IsTheThirdCard_HisLightTurnsWithTheHat_AndHeLaughsLast()
+        {
+            Assert.AreEqual("eshu-crossroads", StoryLibrary.All[2].Id);
+            var tl = StoryLibrary.Find("eshu-crossroads").Timeline;
+            var d = new StoryDirector(tl);
+            Assert.AreEqual(0f, d.Sample(Line(tl, "road").Until).Spirit, 1e-4f, "no god's light before Eshu");
+            Assert.AreEqual(1f, d.Sample(Line(tl, "turned").Until).Spirit, 1e-4f, "full as he turns the hat");
+            Assert.AreEqual(0f, d.Sample(Line(tl, "same-road").Until).Spirit, 1e-4f, "gone once the lesson is told");
+            Assert.AreEqual("laugh", tl.Sounds[tl.Sounds.Length - 1].Name, "the last sound is Eshu's laugh");
+        }
+
+        [Test] public void Director_WithoutAFireTrack_KeepsTheFireAsItIs()
+        {
+            var d = new StoryDirector(new StoryTimeline { Fire = new Vector2[0] });
+            Assert.AreEqual(1f, d.Sample(3f).Fire);
+        }
+
+        [Test] public void EveryStorySound_IsOneTheCampCanPlay()
+        {
+            foreach (var st in StoryLibrary.All)
+                foreach (var c in st.Timeline.Sounds)
+                {
+                    Assert.IsTrue(StoryAudio.Effects.ContainsKey(c.Name), $"{st.Id}: no sound called '{c.Name}'");
+                    Assert.LessOrEqual(c.T, st.Timeline.Duration, $"{st.Id}: '{c.Name}' after the story ends");
+                }
+            Assert.IsNotEmpty(StoryLibrary.Find("seven-hot-stones").Timeline.Sounds, "Seven Hot Stones has its sounds");
+            var eshu = StoryLibrary.Find("eshu-crossroads").Timeline;
+            var ed = new StoryDirector(eshu);
+            Assert.AreEqual(0f, ed.Sample(eshu.Duration).Rain, 1e-4);
+            Assert.Greater(ed.Sample(Line(eshu, "between").Until).Wind, 0.5f);
+            Assert.Greater(ed.Sample(Line(eshu, "between").At + 0.7f).Flash, 0.3f);
+            Assert.Greater(ed.Sample(Line(eshu, "morning").Until).Dawn, 0.4f);
+            Assert.IsNotEmpty(eshu.Sounds);
+        }
+
+        [Test] public void StorySounds_AreMadeCleanly()
+        {
+            foreach (var kv in StoryAudio.Effects)
+            {
+                var d = kv.Value.make();
+                Assert.Greater(d.Length, 0, kv.Key);
+                Assert.LessOrEqual(d.Length, ProceduralClips.Rate * 10, $"{kv.Key} is short");
+                var peak = 0f;
+                foreach (var v in d) { Assert.IsFalse(float.IsNaN(v) || float.IsInfinity(v), kv.Key); peak = Mathf.Max(peak, Mathf.Abs(v)); }
+                Assert.Greater(peak, 0.1f, $"{kv.Key} is heard");
+                Assert.LessOrEqual(peak, 1f, $"{kv.Key} doesn't clip");
+            }
         }
 
         [Test] public void Parse_Voices_PerLanguage_FirstThatHasOneWins()

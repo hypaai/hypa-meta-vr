@@ -622,6 +622,401 @@ namespace HypaStories
             return Normalize(d, 0.85f);
         }
 
+        // ---------- story sound cues (Seven Hot Stones, Marlow Street) ----------
+
+        static float Env(float t, float attack, float len) => Mathf.Clamp01(t / Mathf.Max(attack, 1e-4f)) * Mathf.Clamp01((len - t) / Mathf.Max(len * 0.35f, 1e-3f));
+
+        /// <summary>Adds a fainter copy of the sound later on, like a call echoing down the streets.</summary>
+        static float[] Echo(float[] d, float delay, float gain)
+        {
+            var k = (int)(delay * Rate);
+            var o = new float[d.Length + k * 2];
+            for (var i = 0; i < d.Length; i++) { o[i] += d[i]; o[i + k] += d[i] * gain; o[i + k * 2] += d[i] * gain * gain; }
+            return o;
+        }
+
+        /// <summary>A huge creature's call: a deep rough voice that swells and falls, echoing (about 3 s). <paramref name="weak"/>: a dying groan.</summary>
+        public static float[] RoarSamples(int seed, bool weak = false)
+        {
+            var r = new System.Random(seed);
+            var len = weak ? 2.8f : 2.2f;
+            var n = (int)(Rate * len);
+            var d = new float[n];
+            var noise = Filter(White(n, seed + 1), Biquad.BandPass(650f, 1.2f));
+            var ph = 0f;
+            var lo = 58f + (float)r.NextDouble() * 10f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate; var u = t / len;
+                var f0 = weak ? Mathf.Lerp(lo + 12f, lo - 22f, u) : lo + 38f * Mathf.Sin(Mathf.PI * Mathf.Min(1f, u * 1.3f));
+                f0 *= 1f + 0.03f * Mathf.Sin(t * 2f * Mathf.PI * 5.5f);
+                ph += 2f * Mathf.PI * f0 / Rate;
+                var v = 0f;
+                for (var h = 1; h <= 14; h++) v += Mathf.Sin(h * ph) / h;
+                var rough = 0.65f + 0.35f * Mathf.Sin(t * 2f * Mathf.PI * 27f);
+                d[i] = (v * rough + noise[i] * 1.6f) * Env(t, weak ? 0.5f : 0.22f, len) * (weak ? 0.6f : 1f);
+            }
+            d = Filter(d, Biquad.LowPass(1600f));
+            var f = Filter(d, Biquad.BandPass(420f, 1.1f)); var g = Filter(d, Biquad.BandPass(950f, 1.6f));
+            for (var i = 0; i < n; i++) d[i] = d[i] * 0.4f + f[i] * 1.2f + g[i] * 0.8f;
+            return Normalize(Echo(d, 0.33f, 0.32f), 0.9f);
+        }
+
+        /// <summary>A giant's footstep: a deep thud that shakes the ground, a little debris after (about 1.4 s). <paramref name="big"/>: a body falling.</summary>
+        public static float[] StompSamples(int seed, bool big = false)
+        {
+            var len = big ? 2.6f : 1.4f;
+            var n = (int)(Rate * len);
+            var rumble = Filter(Brown(n, seed), Biquad.LowPass(110f)); Normalize(rumble, 1f);
+            var grit = Filter(White(n, seed + 3), Biquad.BandPass(2400f, 1f)); Normalize(grit, 1f);
+            var d = new float[n]; var ph = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                ph += 2f * Mathf.PI * Mathf.Lerp(34f, 62f, Mathf.Exp(-t * 14f)) / Rate;
+                d[i] = Mathf.Sin(ph) * Mathf.Exp(-t * (big ? 2.4f : 4.5f)) + rumble[i] * 0.55f * Mathf.Exp(-t * (big ? 1.4f : 3f))
+                       + grit[i] * 0.08f * Mathf.Exp(-Mathf.Abs(t - 0.09f) * 25f);
+            }
+            return Normalize(d, 0.95f);
+        }
+
+        /// <summary>A wooden door slammed shut, and its latch rattling (about 0.7 s).</summary>
+        public static float[] DoorSamples(int seed)
+        {
+            var n = (int)(Rate * 0.7f);
+            var w = White(n, seed); var r = new System.Random(seed);
+            var bp = Biquad.BandPass(480f, 1.4f); var d = new float[n]; var ph = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                ph += 2f * Mathf.PI * 95f / Rate;
+                d[i] = bp.Process(w[i]) * 2.2f * Mathf.Exp(-t * 26f) + Mathf.Sin(ph) * Mathf.Exp(-t * 16f);
+            }
+            for (var k = 0; k < 4; k++)
+            {
+                var at = (int)((0.09f + k * 0.045f + (float)r.NextDouble() * 0.02f) * Rate);
+                var click = Biquad.BandPass(2600f, 3f);
+                for (var i = 0; i < 300 && at + i < n; i++) d[at + i] += click.Process(w[(at + i * 3) % n]) * 0.6f * Mathf.Exp(-i / 60f) / (k + 1);
+            }
+            return Normalize(d, 0.85f);
+        }
+
+        /// <summary>A hot stone hissing: steam and crackle that fade (about 1.8 s).</summary>
+        public static float[] SizzleSamples(int seed)
+        {
+            var n = (int)(Rate * 1.8f);
+            var d = Filter(White(n, seed), Biquad.HighPass(2600f), Biquad.LowPass(9000f));
+            var r = new System.Random(seed + 1); var g = 1f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                if (i % 180 == 0) g = 0.55f + (float)r.NextDouble() * 0.45f;
+                d[i] *= g * Mathf.Clamp01(t / 0.03f) * Mathf.Exp(-t * 1.6f);
+                if (r.NextDouble() < 0.0015) for (var k = 0; k < 40 && i + k < n; k++) d[i + k] += (k % 2 == 0 ? 1f : -1f) * 0.5f * Mathf.Exp(-k / 8f) * Mathf.Exp(-t);
+            }
+            return Normalize(d, 0.75f);
+        }
+
+        /// <summary>A stone thrown hard: a short whoosh through the air (about 0.45 s).</summary>
+        public static float[] ThrowSamples(int seed)
+        {
+            var n = (int)(Rate * 0.45f);
+            var w = White(n, seed); var bp = Biquad.BandPass(500f, 2f); var d = new float[n];
+            for (var i = 0; i < n; i++)
+            {
+                var u = (float)i / n;
+                bp.RetuneBandPass(Mathf.Lerp(400f, 1900f, Mathf.Sin(Mathf.PI * u * 0.8f)), 2f);
+                d[i] = bp.Process(w[i]) * Mathf.Sin(Mathf.PI * u);
+            }
+            return Normalize(d, 0.7f);
+        }
+
+        /// <summary>A big swallow: two low wet gulps (about 0.6 s).</summary>
+        public static float[] GulpSamples(int seed)
+        {
+            var n = (int)(Rate * 0.6f);
+            var d = new float[n];
+            foreach (var (at, f0, f1) in new[] { (0f, 190f, 85f), (0.24f, 150f, 65f) })
+            {
+                var start = (int)(at * Rate); var len = (int)(0.2f * Rate); var ph = 0f;
+                for (var i = 0; i < len && start + i < n; i++)
+                {
+                    var u = (float)i / len;
+                    ph += 2f * Mathf.PI * Mathf.Lerp(f0, f1, u) / Rate;
+                    d[start + i] += (Mathf.Sin(ph) + 0.3f * Mathf.Sin(2f * ph)) * Mathf.Sin(Mathf.PI * u);
+                }
+            }
+            return Normalize(Filter(d, Biquad.LowPass(900f)), 0.85f);
+        }
+
+        /// <summary>A horse whinnying: a high trill falling away, then a snort (about 1.6 s).</summary>
+        public static float[] NeighSamples(int seed)
+        {
+            var r = new System.Random(seed);
+            var n = (int)(Rate * 1.6f);
+            var d = new float[n]; var ph = 0f;
+            var top = 820f + (float)r.NextDouble() * 120f;
+            for (var i = 0; i < (int)(Rate * 1.25f); i++)
+            {
+                var t = (float)i / Rate; var u = t / 1.25f;
+                var f0 = Mathf.Lerp(top, 380f, u * u) * (1f + 0.07f * Mathf.Sin(t * 2f * Mathf.PI * 13f));
+                ph += 2f * Mathf.PI * f0 / Rate;
+                var v = 0f;
+                for (var h = 1; h <= 6; h++) v += Mathf.Sin(h * ph) / (h * 0.8f);
+                d[i] = v * Env(t, 0.05f, 1.25f);
+            }
+            var snort = Filter(White(n, seed + 1), Biquad.LowPass(700f));
+            for (var i = (int)(Rate * 1.3f); i < n; i++) { var t = (float)i / Rate - 1.3f; d[i] += snort[i] * 2.5f * Mathf.Exp(-t * 14f); }
+            var a = Filter(d, Biquad.BandPass(1150f, 1.4f)); var b = Filter(d, Biquad.BandPass(2500f, 2f));
+            for (var i = 0; i < n; i++) d[i] = a[i] + b[i] * 0.6f + d[i] * 0.15f;
+            return Normalize(d, 0.75f);
+        }
+
+        /// <summary>A rooster greeting the dawn: "cock-a-doodle-doo" (about 1.6 s).</summary>
+        public static float[] RoosterSamples(int seed)
+        {
+            var n = (int)(Rate * 1.6f);
+            var d = new float[n];
+            (float at, float len, float f0, float f1)[] syl = { (0f, 0.13f, 520f, 640f), (0.17f, 0.12f, 600f, 700f), (0.33f, 0.14f, 660f, 740f), (0.52f, 0.85f, 760f, 560f) };
+            foreach (var (at, len, f0, f1) in syl)
+            {
+                var start = (int)(at * Rate); var ph = 0f;
+                for (var i = 0; i < (int)(len * Rate) && start + i < n; i++)
+                {
+                    var t = (float)i / Rate; var u = t / len;
+                    var f = (u < 0.3f ? Mathf.Lerp(f0, f1, u / 0.3f) : Mathf.Lerp(f1, f0, (u - 0.3f) / 0.7f)) * (1f + 0.01f * Mathf.Sin(t * 377f));
+                    ph += 2f * Mathf.PI * f / Rate;
+                    var v = Mathf.Sin(ph) + 0.8f * Mathf.Sin(2f * ph) + 0.6f * Mathf.Sin(3f * ph) + 0.3f * Mathf.Sin(4f * ph);
+                    d[start + i] += v * Env(t, 0.02f, len) * (0.75f + 0.25f * Mathf.Sin(t * 2f * Mathf.PI * 70f));
+                }
+            }
+            return Normalize(Filter(d, Biquad.BandPass(1500f, 0.8f)), 0.7f);
+        }
+
+        /// <summary>A heartbeat: lub-dub (about 0.8 s).</summary>
+        public static float[] HeartbeatSamples()
+        {
+            var n = (int)(Rate * 0.8f);
+            var d = new float[n];
+            foreach (var (at, gain) in new[] { (0f, 1f), (0.26f, 0.7f) })
+            {
+                var start = (int)(at * Rate); var ph = 0f;
+                for (var i = 0; i < (int)(0.22f * Rate) && start + i < n; i++)
+                {
+                    var t = (float)i / Rate;
+                    ph += 2f * Mathf.PI * Mathf.Lerp(48f, 72f, Mathf.Exp(-t * 30f)) / Rate;
+                    d[start + i] += Mathf.Sin(ph) * gain * Mathf.Exp(-t * 18f) * Mathf.Clamp01(t / 0.008f);
+                }
+            }
+            return Normalize(d, 0.9f);
+        }
+
+        /// <summary>Horses coming at a canter: hooves in threes (about 2 s).</summary>
+        public static float[] GallopSamples(int seed)
+        {
+            var n = (int)(Rate * 2f);
+            var d = new float[n]; var w = White(n, seed);
+            for (var stride = 0; stride < 5; stride++)
+                for (var k = 0; k < 3; k++)
+                {
+                    var start = (int)((stride * 0.38f + k * 0.085f) * Rate);
+                    var bp = Biquad.BandPass(700f + k * 150f, 1.5f); var ph = 0f;
+                    for (var i = 0; i < (int)(0.08f * Rate) && start + i < n; i++)
+                    {
+                        var t = (float)i / Rate;
+                        ph += 2f * Mathf.PI * 120f / Rate;
+                        d[start + i] += (bp.Process(w[start + i]) * 2f + Mathf.Sin(ph)) * Mathf.Exp(-t * 45f) * (0.4f + 0.15f * stride);
+                    }
+                }
+            return Normalize(d, 0.8f);
+        }
+
+        /// <summary>A town cheering and clapping (about 3.5 s).</summary>
+        public static float[] CheerSamples(int seed)
+        {
+            var n = (int)(Rate * 3.5f);
+            var d = new float[n];
+            var r = new System.Random(seed);
+            for (var v = 0; v < 12; v++)
+            {
+                var f0 = (v % 2 == 0 ? 150f : 260f) * (0.9f + (float)r.NextDouble() * 0.3f);
+                var start = (int)((float)r.NextDouble() * 0.4f * Rate);
+                var len = (int)((1.6f + (float)r.NextDouble() * 1.4f) * Rate);
+                var ph = 0f;
+                for (var i = 0; i < len && start + i < n; i++)
+                {
+                    var t = (float)i / Rate; var u = (float)i / len;
+                    ph += 2f * Mathf.PI * f0 * (1f + 0.25f * Mathf.Sin(Mathf.PI * Mathf.Min(1f, u * 2f))) / Rate;
+                    d[start + i] += ((ph % (2f * Mathf.PI)) / Mathf.PI - 1f) * Env(t, 0.15f, len / (float)Rate) * 0.3f;
+                }
+            }
+            d = Filter(d, Biquad.BandPass(800f, 0.7f));
+            var w = White(n, seed + 7);
+            for (var c = 0; c < 70; c++)
+            {
+                var at = (int)((0.5f + (float)r.NextDouble() * 2.8f) * Rate);
+                var bp = Biquad.BandPass(1300f + (float)r.NextDouble() * 900f, 1.2f);
+                for (var i = 0; i < 260 && at + i < n; i++) d[at + i] += bp.Process(w[at + i]) * 1.4f * Mathf.Exp(-i / 50f);
+            }
+            for (var i = 0; i < n; i++) d[i] *= Mathf.Clamp01((3.5f - (float)i / Rate) / 0.8f);
+            return Normalize(d, 0.75f);
+        }
+
+        /// <summary>A police siren far off across the city: a wailing two-tone sweep, muffled by distance (about 6 s).</summary>
+        public static float[] SirenSamples()
+        {
+            var n = Rate * 6;
+            var d = new float[n]; var ph = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                var f = 950f + 330f * Mathf.Sin(2f * Mathf.PI * t / 2.6f);
+                ph += 2f * Mathf.PI * f / Rate;
+                d[i] = (Mathf.Sin(ph) + Mathf.Sin(3f * ph) / 3f + Mathf.Sin(5f * ph) / 5f) * Env(t, 1.2f, 6f);
+            }
+            return Normalize(Filter(d, Biquad.LowPass(1700f)), 0.6f);
+        }
+
+        /// <summary>A small brass key: a bright metallic clink and a bounce (about 0.9 s).</summary>
+        public static float[] ClinkSamples()
+        {
+            var n = (int)(Rate * 0.9f);
+            var d = new float[n];
+            foreach (var (at, gain) in new[] { (0f, 1f), (0.13f, 0.45f) })
+            {
+                var start = (int)(at * Rate);
+                for (var i = 0; start + i < n; i++)
+                {
+                    var t = (float)i / Rate;
+                    d[start + i] += gain * (Mathf.Sin(2f * Mathf.PI * 2350f * t) * Mathf.Exp(-t * 7f) + 0.6f * Mathf.Sin(2f * Mathf.PI * 3870f * t) * Mathf.Exp(-t * 11f)
+                                            + 0.4f * Mathf.Sin(2f * Mathf.PI * 5310f * t) * Mathf.Exp(-t * 16f));
+                }
+            }
+            return Normalize(d, 0.55f);
+        }
+
+        /// <summary>Old bricks pried loose and crumbling (about 1.4 s).</summary>
+        public static float[] BricksSamples(int seed)
+        {
+            var n = (int)(Rate * 1.4f);
+            var d = new float[n]; var r = new System.Random(seed); var w = White(n, seed);
+            var scrape = Filter(White(n, seed + 1), Biquad.BandPass(900f, 0.8f));
+            for (var i = 0; i < n; i++) d[i] = scrape[i] * 0.3f * Mathf.Clamp01((0.5f - (float)i / Rate) * 3f);
+            for (var k = 0; k < 16; k++)
+            {
+                var at = (int)((0.35f + (float)r.NextDouble() * 0.9f) * Rate);
+                var bp = Biquad.BandPass(300f + (float)r.NextDouble() * 900f, 1.5f);
+                var g = 0.4f + (float)r.NextDouble() * 0.8f;
+                for (var i = 0; i < 900 && at + i < n; i++) d[at + i] += bp.Process(w[at + i]) * g * Mathf.Exp(-i / 160f);
+            }
+            return Normalize(d, 0.8f);
+        }
+
+        /// <summary>Footsteps on a wet street: four steps, each a soft heel and a splash (about 2 s).</summary>
+        public static float[] WetStepsSamples(int seed)
+        {
+            var n = Rate * 2;
+            var d = new float[n];
+            for (var k = 0; k < 4; k++)
+            {
+                var step = StepSamples(seed + k);
+                var splash = Filter(White(step.Length, seed + 20 + k), Biquad.HighPass(2600f));
+                var start = (int)((0.1f + k * 0.48f) * Rate);
+                for (var i = 0; i < step.Length && start + i < n; i++)
+                    d[start + i] += step[i] * 0.8f + splash[i] * 0.25f * Mathf.Exp(-(float)i / Rate * 20f) * (1f - 0.15f * k);
+            }
+            return Normalize(d, 0.6f);
+        }
+
+        /// <summary>The fire spitting sparks: a quick run of pops (about 0.7 s).</summary>
+        public static float[] SparksSamples(int seed)
+        {
+            var n = (int)(Rate * 0.7f);
+            var d = new float[n]; var r = new System.Random(seed); var w = White(n, seed);
+            for (var k = 0; k < 9; k++)
+            {
+                var at = (int)((float)r.NextDouble() * 0.55f * Rate);
+                var bp = Biquad.BandPass(1800f + (float)r.NextDouble() * 3000f, 2f);
+                for (var i = 0; i < 400 && at + i < n; i++) d[at + i] += bp.Process(w[at + i]) * Mathf.Exp(-i / 70f);
+            }
+            return Normalize(d, 0.7f);
+        }
+
+        /// <summary>A trickster god laughing: a run of "ha"s that tumbles down, warm and a little wild, echoing (about 2.6 s).</summary>
+        public static float[] LaughSamples(int seed)
+        {
+            var r = new System.Random(seed);
+            var n = (int)(Rate * 2.2f);
+            var d = new float[n];
+            var noise = White(n, seed + 1);
+            var a = Biquad.BandPass(750f, 2.5f); var b = Biquad.BandPass(1250f, 3f);
+            var t0 = 0f; var f0 = 210f; var ph = 0f;
+            for (var k = 0; k < 9; k++)
+            {
+                var len = 0.11f + (float)r.NextDouble() * 0.05f;
+                var start = (int)(t0 * Rate);
+                for (var i = 0; i < (int)(len * Rate) && start + i < n; i++)
+                {
+                    var t = (float)i / Rate; var u = t / len;
+                    ph += 2f * Mathf.PI * f0 * (1f + 0.08f * (1f - u)) / Rate;
+                    var src = (ph % (2f * Mathf.PI)) / Mathf.PI - 1f + noise[start + i] * 0.6f * Mathf.Exp(-t * 40f); // the "h" then the voice
+                    d[start + i] += (a.Process(src) + 0.7f * b.Process(src)) * Mathf.Sin(Mathf.PI * u) * (1f - k * 0.06f);
+                }
+                t0 += len + 0.06f + (float)r.NextDouble() * 0.03f;
+                f0 *= 0.965f; // each "ha" a little lower
+            }
+            return Normalize(Echo(d, 0.27f, 0.3f), 0.8f);
+        }
+
+        /// <summary>A shekere: a gourd rattle of beads, shaken in a walking rhythm (about 1.8 s).</summary>
+        public static float[] RattleSamples(int seed)
+        {
+            var n = (int)(Rate * 1.8f);
+            var d = new float[n];
+            var w = Filter(White(n, seed), Biquad.HighPass(3200f), Biquad.LowPass(9500f));
+            for (var k = 0; k < 6; k++)
+            {
+                var start = (int)((k * 0.28f + (k % 2) * 0.03f) * Rate);
+                var accent = k % 2 == 0 ? 1f : 0.6f;
+                for (var i = 0; i < (int)(0.16f * Rate) && start + i < n; i++)
+                {
+                    var t = (float)i / Rate;
+                    d[start + i] += w[start + i] * accent * Mathf.Clamp01(t / 0.01f) * Mathf.Exp(-t * 26f);
+                }
+            }
+            return Normalize(d, 0.7f);
+        }
+
+        /// <summary>Birds waking at dawn: whistles, trills and chirps from several birds (loops, about 6 s).</summary>
+        public static float[] BirdsSamples(int seed)
+        {
+            var n = Rate * 6;
+            var d = new float[n];
+            var r = new System.Random(seed);
+            for (var call = 0; call < 26; call++)
+            {
+                var start = (int)((float)r.NextDouble() * 5.4f * Rate);
+                var kind = r.Next(3);
+                var f0 = 2200f + (float)r.NextDouble() * 2200f;
+                var len = kind == 0 ? 0.08f : kind == 1 ? 0.35f : 0.22f;
+                var notes = kind == 1 ? 1 : 2 + r.Next(3);
+                var gain = 0.3f + (float)r.NextDouble() * 0.7f;
+                var ph = 0f;
+                for (var k = 0; k < notes; k++)
+                {
+                    var s0 = start + (int)(k * (len + 0.05f) * Rate);
+                    for (var i = 0; i < (int)(len * Rate) && s0 + i < n; i++)
+                    {
+                        var u = i / (len * Rate);
+                        var f = kind == 0 ? f0 * (1.3f - 0.5f * u) : kind == 1 ? f0 * (1f + 0.12f * Mathf.Sin(u * Mathf.PI * 2f * 9f)) : f0 * (0.8f + 0.5f * u);
+                        ph += 2f * Mathf.PI * f / Rate;
+                        d[s0 + i] += Mathf.Sin(ph) * Mathf.Sin(Mathf.PI * u) * gain;
+                    }
+                }
+            }
+            return Normalize(d, 0.5f);
+        }
+
         public static AudioClip Clip(string name, float[] samples)
         {
             var c = AudioClip.Create(name, samples.Length, 1, Rate, false);

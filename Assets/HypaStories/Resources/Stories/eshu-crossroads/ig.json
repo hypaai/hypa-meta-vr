@@ -1,0 +1,58 @@
+{
+  "road": "N'oge ochie, otu ụzọ na-acha uhie uhie gbara n'etiti ogige abụọ, onye ọ bụla jiri ya na-agafekwa n'ụzọ mgbakọ.",
+  "road.ask": [
+    "Ebee ka ụzọ mgbakọ ahụ dị?"
+  ],
+  "friends": "N'akụkụ ụzọ ahụ ka ndị enyi abụọ bi, ndị na-akọ ugbo n'akụkụ ibe ha, na-agakwa ahịa dịka otu.",
+  "friends.ask": [
+    "Ole ndị bụ ndị enyi abụọ ahụ?"
+  ],
+  "walk": "N'ụtụtụ ụbọchị ahịa ọ bụla, ha na-eso n'ụzọ ahụ gaa, na-akparịta ụka n'ụzọ niile.",
+  "oath": "Ha ṅụrụ iyi na ọ dịghị ihe ọ bụla n'ụwa nwere ike ịbata n'etiti ha. Ọ bụghị esemokwu. Ọ bụghịdị chi.",
+  "oath.ask": [
+    "Gịnị ka ndị enyi ahụ ṅụrụ iyi?"
+  ],
+  "day": "Otu ụbọchị mara mma, ha pụrụ dịka ọ dị na mbụ, onye ọ bụla n'akụkụ nke ya n'ụzọ ahụ.",
+  "waiting": "N'ebe mgbasa ụzọ, otu onye nọ na-eche.",
+  "eshu": "Ọ bụ Eshu, bụ obere chi, onye ahụ na-ebu ozi na aghụghọ n'etiti eluigwe na ala.",
+  "eshu.ask": [
+    "Onye bụ Eshu?"
+  ],
+  "hat": "Okpu toro ogologo dị ya n'isi. Otu akụkụ ya bụ ọbara ọbara. Akụkụ nke ọzọ bụ ọcha.",
+  "hat.ask": [
+    "Gịnị pụrụ iche banyere okpu ahụ?"
+  ],
+  "between": "Ọ rịgoro n'okporo ụzọ wee gaa kpọmkwem n'etiti ndị enyi abụọ ahụ.",
+  "passed": "O nweghị onye ọ kene n'ime ha. O nweghị ebe o guzoro. Ọ gara n'ihu, uzuzu wee mechie n'azụ ya.",
+  "red": "Enyi ahụ nọ n'aka ekpe sịrị, lee ka okpu ọbara ọbara ahụ siri maa mma.",
+  "there.ask": [
+    "Gịnị mere Eshu ji na-achị ọchị?"
+  ],
+  "turned": "O weliri okpu ahụ ma jiri nwayọọ nwayọọ tụgharịa ya, otu ugboro, ka onye ọ bụla n'ime ha nwere ike ịhụ.",
+  "laughed": "Ndị enyi abụọ ahụ lere okpu ahụ anya, lechaa onwe ha anya, ha achịọ ọchị ruo mgbe ha nọdụrụ ala.",
+  "morning": "Chi bọrọ, ha adịkwala n'ụzọ ọzọ, na-eje ije dị ka otu.",
+  "offering": "Ọ bụ ya mere, n'ebe ụzọ gbara alaka, ndị mmadụ ka ji ahapụrụ Eshu obere ihe.",
+  "offering.ask": [
+    "Gịnị ka ndị mmadụ na-ahapụrụ Eshu?"
+  ],
+  "white": "Enyi nke nọ n'aka nri kwụsịrị. Ọ sịrị na okpu ahụ dị ọcha.",
+  "white.ask": [
+    "Gịnị mere ndị enyi ahụ na-ekwekọrịghị?"
+  ],
+  "quarrel": "Ha guzoro n'okporo ụzọ na-arụ ụka, onye ọ bụla n'ime ha ji n'aka na ibe ya akpụọla ìsì.",
+  "market": "Tupu ha eruo n'ahịa, esemokwu ahụ emela mkpọtụ nke na obodo dum nụrụ ya.",
+  "fight": "Okwu ghọrọ mkpu, mkpu wee ghọọ ọgụ n'ime ájá.",
+  "watch": "Ndị mmadụ hapụrụ ebe ha na-ere ihe ka ha kirie ndị enyi abụọ na-alụ ọgụ iji gosi agba nke ziri ezi.",
+  "evening": "Na mgbede ahụ, ndị obodo kpọgara ha n'ụlọ arụsị ka e wee kpezie okwu ahụ.",
+  "there": "Eshu anọrọlarị ebe ahụ, ọ nọ n'akụkụ ọkụ na-achị ọchị.",
+  "both": "Ọbara ọbara n'otu akụkụ. Ọcha n'akụkụ nke ọzọ. Enyi abụọ ahụ kwuru eziokwu.",
+  "both.ask": [
+    "Kedu ka okpu ahụ ga-esi nwee agba abụọ ahụ?"
+  ],
+  "teaching": "Eshu sịrị, M jere n'agbata unu, onye ọ bụla n'ime unu hụrụ naanị akụkụ e nyere ya.",
+  "teaching.ask": [
+    "Gịnị ka Eshu na-akụziri ha?"
+  ],
+  "same-road": "Unu chefuru na unu ka nọ n'otu ụzọ ahụ.",
+  "calabash": "O dọrọ oba mmanya nkwu n'etiti ha."
+}

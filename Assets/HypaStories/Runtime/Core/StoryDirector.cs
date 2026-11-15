@@ -6,6 +6,8 @@ namespace HypaStories
     public struct StorySample
     {
         public float T, Rain, Wind, Flash;
+        /// <summary>The campfire's strength (1 as it is), how much darker the night is, daybreak, police lights. See <see cref="StoryTimeline"/>.</summary>
+        public float Fire, Dark, Dawn, Police, Spirit;
         /// <summary>The line being (or last) spoken; -1 before the first line.</summary>
         public int Index;
     }
@@ -52,6 +54,8 @@ namespace HypaStories
             return new StorySample
             {
                 T = T, Rain = Track(_tl.Rain, T), Wind = Track(_tl.Wind, T), Flash = Mathf.Min(flash, 1f),
+                Fire = _tl.Fire == null || _tl.Fire.Length == 0 ? 1f : Track(_tl.Fire, T),
+                Dark = Track(_tl.Dark, T), Dawn = Track(_tl.Dawn, T), Police = Track(_tl.Police, T), Spirit = Track(_tl.Spirit, T),
                 Index = IndexAt(_tl.Captions, T),
             };
         }
@@ -70,6 +74,13 @@ namespace HypaStories
             var n = 0;
             foreach (var f in _tl.Flashes) if (f + ThunderDelay > a && f + ThunderDelay <= b) n++;
             return n;
+        }
+
+        /// <summary>The sounds whose time falls in (a, b]: between two clock readings, in order.</summary>
+        public void SoundsBetween(float a, float b, System.Collections.Generic.List<string> into)
+        {
+            if (_tl.Sounds == null) return;
+            foreach (var s in _tl.Sounds) if (s.T > a && s.T <= b) into.Add(s.Name);
         }
 
         /// <summary>How many of a line's <paramref name="words"/> are lit at T: they switch on in step with the voice.</summary>
