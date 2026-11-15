@@ -34,6 +34,9 @@ namespace HypaStories
 
         /// <summary>Thunder claps to play this frame (lightning flashes crossed by the clock).</summary>
         public event Action Thunder;
+        /// <summary>Story sounds to play this frame (a roar, a door, a hiss...), by name: cues crossed by the clock.</summary>
+        public event Action<string> Sound;
+        readonly System.Collections.Generic.List<string> _sounds = new System.Collections.Generic.List<string>();
 
         public StoryPlayer(StoryVoice voice, Func<StoryLanguage> language) { _voice = voice; _lang = language; }
 
@@ -166,6 +169,9 @@ namespace HypaStories
                 T = Mathf.Min(T + dt, _hold);
                 if (Duration > 0f && T >= Duration) { T = Duration; Ended = true; }
                 for (var k = Director.ThunderBetween(_lastT, T); k > 0; k--) Thunder?.Invoke();
+                _sounds.Clear();
+                if (T - _lastT < 1f) Director.SoundsBetween(_lastT, T, _sounds); // not on a seek: jumping a line skips its sounds
+                foreach (var name in _sounds) Sound?.Invoke(name);
                 _lastT = T;
             }
             var s = Director.Sample(T);

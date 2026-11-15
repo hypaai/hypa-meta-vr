@@ -86,6 +86,7 @@ namespace HypaStories
             _mic = gameObject.AddComponent<MicListener>();
             _story = new StoryPlayer(_voice, () => _lang);
             _story.Thunder += _audio.Thunder;
+            _story.Sound += name => { _audio.Effect(name); _camp.Effect(name); };
 
             Recenter(CampWorld.SplashSeat);
             Kit.Init(assets);
@@ -301,6 +302,7 @@ namespace HypaStories
             var st = StoryLibrary.All[i];
             _audio.Tap();
             _story.Load(st);
+            _audio.Prepare(System.Linq.Enumerable.Select(st.Timeline.Sounds, c => c.Name)); // the story's sounds, made now, not mid-story
             _player.Load(st, _lang);
             _endNoted = false;
             MicListener.RequestPermission();

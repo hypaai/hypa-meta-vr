@@ -17,7 +17,7 @@ namespace HypaStories
     public static class StoryLibrary
     {
         /// <summary>Card order. Each id is a folder under Resources/Stories.</summary>
-        static readonly string[] Ids = { "seven-hot-stones", "marlow-street" };
+        static readonly string[] Ids = { "seven-hot-stones", "marlow-street", "eshu-crossroads" };
 
         const float WordsPerSecond = 2.6f, Start = 0.4f, Gap = 0.45f, Tail = 1.5f;
 
@@ -52,6 +52,12 @@ namespace HypaStories
             var flashes = new List<float>();
             var rain = Track("rain", o);
             var wind = Track("wind", o);
+            var fire = new CueTrack("fire", (float?)o["fire"] ?? 1f);
+            var dark = Track("dark", o);
+            var dawn = Track("dawn", o);
+            var police = Track("police", o);
+            var spirit = Track("spirit", o);
+            var sounds = new List<SoundCue>();
             var t = Start;
             foreach (var line in (JArray)o["lines"])
             {
@@ -71,6 +77,11 @@ namespace HypaStories
                 caps.Add(c);
                 rain.Cue(line, c);
                 wind.Cue(line, c);
+                fire.Cue(line, c); dark.Cue(line, c); dawn.Cue(line, c); police.Cue(line, c); spirit.Cue(line, c);
+                // "sounds": { "roar": [0.4], "door": [0.2, 0.9] }: seconds into the line, like flashes
+                if (line["sounds"] is JObject cues)
+                    foreach (var kv in cues)
+                        foreach (var at in (kv.Value as JArray) ?? new JArray()) sounds.Add(new SoundCue { T = c.At + (float)at, Name = kv.Key });
                 foreach (var f in (line["flashes"] as JArray) ?? new JArray()) flashes.Add(c.At + (float)f);
                 t = c.Until + Gap;
             }
@@ -89,6 +100,8 @@ namespace HypaStories
                     Flashes = flashes.ToArray(),
                     Rain = rain.Keys.ToArray(),
                     Wind = wind.Keys.ToArray(),
+                    Fire = fire.Keys.ToArray(), Dark = dark.Keys.ToArray(), Dawn = dawn.Keys.ToArray(), Police = police.Keys.ToArray(), Spirit = spirit.Keys.ToArray(),
+                    Sounds = sounds.OrderBy(x => x.T).ToArray(),
                 },
             };
         }

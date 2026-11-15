@@ -6,6 +6,9 @@ Shader "HypaStories/Sky"
     {
         _MoonDir ("Moon direction", Vector) = (0.25, 0.45, 1, 0)
         _Flash ("Lightning", Range(0, 1)) = 0
+        _Dark ("Deeper night", Range(0, 1)) = 0
+        _Dawn ("Daybreak", Range(0, 1)) = 0
+        _Tint ("Added light (police)", Color) = (0, 0, 0, 0)
     }
     SubShader
     {
@@ -21,7 +24,8 @@ Shader "HypaStories/Sky"
             #include "HypaStoriesCommon.cginc"
 
             float4 _MoonDir;
-            float _Flash;
+            float _Flash, _Dark, _Dawn;
+            float4 _Tint;
 
             struct appdata { float4 vertex : POSITION; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct v2f { float4 pos : SV_POSITION; float3 dir : TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
@@ -51,7 +55,13 @@ Shader "HypaStories/Sky"
                 float rnd = h31(id);
                 float star = step(0.985, rnd) * smoothstep(0.42, 0.0, length(frac(sp) - 0.5));
                 star *= 0.5 + 0.5 * sin(_Time.y * (1.0 + rnd * 3.0) + rnd * 60.0);
-                c += star * smoothstep(0.08, 0.35, d.y) * float3(0.8, 0.9, 1.0);
+                c += star * smoothstep(0.08, 0.35, d.y) * float3(0.8, 0.9, 1.0) * (1.0 - _Dawn);
+
+                // a deeper night, then daybreak: warm at the horizon, pale blue above, the stars gone
+                c *= 1.0 - _Dark * 0.55;
+                float3 day = lerp(float3(0.95, 0.55, 0.32), float3(0.32, 0.45, 0.62), smoothstep(-0.05, 0.5, d.y));
+                c = lerp(c, day, _Dawn * 0.85);
+                c += _Tint.rgb * (0.6 + 0.4 * (1.0 - t));
 
                 c += float3(0.55, 0.65, 1.0) * _Flash * (0.35 + 0.65 * t);
                 return fixed4(ToOutput(c), 1.0);

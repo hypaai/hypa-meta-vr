@@ -1,7 +1,7 @@
 # Hypa Story (tickets 3A-3C, 3F)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
-Same three screens, two stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
+Same three screens, three stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, and *Eshu at the Crossroads* is a third card), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
 moves, pinch instead of click. Uses HypaCore only and never references HypaLens.
 
 ## Run it
@@ -94,13 +94,19 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
   routing, which both stories use for now), the starting `rain` /
   `wind` (0..1), and the English `lines`, each
   `{ "id", "text" }` with optional `ask` (questions to suggest once the line is told) and cues: `rain` / `wind` (reached by the end
-  of that line) and `flashes` (lightning, seconds after the line starts).
+  of that line) and `flashes` (lightning, seconds after the line starts). Also reached by the end of their line: `fire` (the
+  campfire's strength, 1 as it is: below shrinks and gutters, above roars up), `dark` (a deeper night), `dawn` (daybreak: the sky
+  warms, the stars fade) `police` (red and blue lights) and `spirit` (a god's light: the fire's glow swings from deep red to pale white). And `sounds`: `{ "roar": [0.4], "door": [0.2, 0.9] }`, seconds after the
+  line starts, by name from `StoryAudio.Effects` (roar, groan, stomp, fall, door, sizzle, sparks, throw, gulp, neigh, gallop,
+  rooster, heartbeat, cheer, drums, siren, clink, bricks, steps, laugh, rattle, birds), all made in code; a hot stone, sparks or a throw also flare the
+  fire, a roar, stomp or slammed door makes it gutter. When the night gets deep (`dark` above about 0.4), pairs of eyes open one by one
+  in the trees round the clearing, blink and watch you, and close as it lifts. A test checks every name a story uses.
 - `{code}.json` per translation (`fr`, `es`, `ha`, `ig`, `pcm`, `yo`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing
   file or line is told in English, and a test lists every untranslated line of the offered languages. **The Hausa, Igbo, Pidgin and
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
   story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
   (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
-  (Claude) and need the same check.
+  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
