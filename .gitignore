@@ -52,6 +52,10 @@ crashlytics-buildid.txt
 # Empty folder Unity recreates; its lone .meta would warn on fresh clones
 /[Aa]ssets/StreamingAssets.meta
 /[Aa]ssets/StreamingAssets/
+# Android Gradle/CMake native build intermediates (AGP prefab/externalNativeBuild)
+.gradle/
+.cxx/
+.externalNativeBuild/
 # Hypa Stories: media this public repo may not redistribute (Epidemic Sound beds, narration of unconfirmed origin,
 # placeholder avatar). Kept locally only; the app falls back without them. See Assets/HypaStories/README.md.
 /[Aa]ssets/HypaStories/Local/

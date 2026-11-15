@@ -29,7 +29,7 @@ namespace HypaLens
 
         /// <summary>Hypa language label, or null = auto-detect.</summary>
         public string SourceLanguage { get; set; }
-        public string TargetLanguage { get; set; } = "English";
+        public string TargetLanguage { get; set; } = HypaSettings.DefaultTarget; // English
 
         /// <summary>Pose and intrinsics of the last capture, for placing labels. Pixels are already gone.</summary>
         public CapturedFrame LastFrameMeta { get; private set; }
@@ -41,14 +41,25 @@ namespace HypaLens
             _isOnline = isOnline ?? (() => true);
         }
 
-        /// <summary>Capture one frame and recognise text. Throws LensException (NoTextFound, PermissionDenied, ...).</summary>
-        public async Task<OcrResult> CaptureAsync(CancellationToken ct)
+        /// <summary>
+        /// Capture one frame and recognise text. With a <paramref name="region"/> (live mode) only that part of the
+        /// frame is recognised, and the boxes come back in full-frame pixels. Throws LensException (NoTextFound,
+        /// PermissionDenied, ...).
+        /// </summary>
+        public async Task<OcrResult> CaptureAsync(CancellationToken ct, FrameRect? region = null)
         {
             CapturedFrame frame = null;
             try
             {
                 frame = await _frames.CaptureAsync(ct);
-                var ocr = await Task.Run(() => _recognizer.RecognizeAsync(frame, ct), ct);
+                var toRead = frame;
+                if (region != null && frame.Width > 0)
+                {
+                    toRead = FrameCrop.Crop(frame, region.Value);
+                    if (toRead == null) throw new LensException(LensErrorKind.NoTextFound);
+                }
+                var ocr = await Task.Run(() => _recognizer.RecognizeAsync(toRead, ct), ct);
+                if (toRead != frame) FrameCrop.OffsetBack(ocr, toRead);
                 if (ocr == null || ocr.IsEmpty) throw new LensException(LensErrorKind.NoTextFound);
 
                 LastFrameMeta = new CapturedFrame
@@ -62,6 +73,29 @@ namespace HypaLens
             catch (OperationCanceledException) { throw; }
             catch (LensException) { throw; }
             catch (Exception e) { throw new LensException(LensErrorKind.Recognition, e.Message, e); }
+            finally { frame?.Dispose(); }
+        }
+
+        /// <summary>
+        /// Caption: one frame, read and translated by Hypa as a whole (translate_image; the picture leaves the
+        /// headset, so the caller has asked the user first). <paramref name="encode"/> turns the frame into JPEG on
+        /// the main thread. Throws LensException (Offline, NoTextFound, Api, ...).
+        /// </summary>
+        public async Task<HypaImageTranslation> CaptionAsync(Func<CapturedFrame, byte[]> encode, CancellationToken ct)
+        {
+            if (!_isOnline()) throw new LensException(LensErrorKind.Offline);
+            CapturedFrame frame = null;
+            try
+            {
+                frame = await _frames.CaptureAsync(ct);
+                var jpeg = encode(frame);
+                var r = await _api.TranslateImageAsync(jpeg, SourceLanguage, TargetLanguage, ct);
+                if (r == null || r.NoTextFound || string.IsNullOrWhiteSpace(r.Translation)) throw new LensException(LensErrorKind.NoTextFound);
+                return r;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (LensException) { throw; }
+            catch (Exception e) { throw LensException.From(e); }
             finally { frame?.Dispose(); }
         }
 
@@ -79,6 +113,41 @@ namespace HypaLens
             ok = await _api.CheckPairAsync(source, target, ct);
             _pairs[key] = ok;
             return ok;
+        }
+
+        /// <summary>All the text a capture found, one line per line of text, as Hypa reads it. Pure, unit tested.</summary>
+        public static string AllText(OcrResult ocr)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var l in ocr.Lines)
+            {
+                var line = !string.IsNullOrWhiteSpace(l.Text) ? l.Text : string.Join(" ", l.Words.ConvertAll(w => w.Text));
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(line.Trim());
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Translates everything a capture found in one call (the source auto-detected), for the popup. Throws
+        /// LensException (Offline, UnsupportedPair, Api). No audio or meaning: those are per word.
+        /// </summary>
+        public async Task<HypaTranslation> TranslateAllAsync(OcrResult ocr, CancellationToken ct)
+        {
+            if (!_isOnline()) throw new LensException(LensErrorKind.Offline);
+            var text = AllText(ocr);
+            if (string.IsNullOrWhiteSpace(text)) throw new LensException(LensErrorKind.NoTextFound);
+            try
+            {
+                if (!await IsPairSupportedAsync(SourceLanguage, TargetLanguage, ct))
+                    throw new LensException(LensErrorKind.UnsupportedPair, $"{SourceLanguage ?? "auto"}->{TargetLanguage}");
+                var tr = await _api.TranslateAsync(text, SourceLanguage, TargetLanguage, ct);
+                if (tr == null || string.IsNullOrWhiteSpace(tr.Text)) throw new LensException(LensErrorKind.Api, "Hypa returned an empty translation.");
+                return tr;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e) { throw LensException.From(e); }
         }
 
         /// <summary>
@@ -127,9 +196,11 @@ namespace HypaLens
                     if (audio != null) onTargetAudio?.Invoke(audio);
                     return audio;
                 });
+                // The source is always auto-detected: with no detected language there is simply no meaning to show.
+                var noSource = meaningTask == null && detected == null;
                 meaningTask = meaningTask ?? (detected != null
                     ? Meaning(sel, detected, ct)
-                    : Task.FromResult<(string, string)>((null, "Couldn't tell the source language. Pick it with \"From\" to see a meaning.")));
+                    : Task.FromResult<(string, string)>((null, null)));
                 sourceAudioTask = sourceAudioTask ?? (detected != null
                     ? SoftAudio(() => _api.SpeakAsync(sel.Text, detected, ct))
                     : Task.FromResult<(HypaSpeech, string)>((null, null)));
@@ -137,7 +208,7 @@ namespace HypaLens
                 await Task.WhenAll(meaningTask, sourceAudioTask, targetAudioTask);
 
                 (result.Meaning, result.MeaningNote) = meaningTask.Result;
-                if (result.Meaning == null && result.MeaningNote == null) result.MeaningNote = "No dictionary entry found.";
+                if (result.Meaning == null && result.MeaningNote == null && !noSource) result.MeaningNote = "No dictionary entry found.";
                 result.SourceAudio = sourceAudioTask.Result.Item1;
                 result.TargetAudio = targetAudioTask.Result.Item1;
                 if (result.SourceAudio == null && result.TargetAudio == null)

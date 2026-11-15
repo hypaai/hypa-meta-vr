@@ -262,6 +262,8 @@ namespace HypaStories
         static Material _panelMat, _iconMat;
         static Mesh _quad;
 
+        public static bool Ready => _a != null;
+
         public static void Init(StoryAssets a)
         {
             _a = a;
