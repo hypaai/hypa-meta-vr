@@ -191,6 +191,42 @@ namespace HypaStories.Tests
             CollectionAssert.AreEqual(new[] { "C fr ?", "A?" }, st.Suggestions(2, "fr"));
         }
 
+        [Test] public void Parse_Models_AListInOrder_OrTheOldSingleModel_OrTheDefaults()
+        {
+            const string lines = @"""lines"": [ { ""id"": ""a"", ""text"": ""one"" } ]";
+            var list = StoryLibrary.Parse("t", "{ \"models\": [\"meta/a\", \"google/b\"], " + lines + " }", new Dictionary<string, string>());
+            CollectionAssert.AreEqual(new[] { "meta/a", "google/b" }, list.Models);
+            Assert.AreEqual("meta/a", list.Model);
+            var one = StoryLibrary.Parse("t", "{ \"model\": \"meta/m\", " + lines + " }", new Dictionary<string, string>());
+            CollectionAssert.AreEqual(new[] { "meta/m" }, one.Models);
+            var none = StoryLibrary.Parse("t", "{ " + lines + " }", new Dictionary<string, string>());
+            CollectionAssert.AreEqual(StoryLibrary.DefaultModels, none.Models);
+        }
+
+        [Test] public void Chat_TriesModelsInOrder_SkippingOnesTheServiceDoesntHave()
+        {
+            var models = new[] { "meta/spark", "google/flash", "meta/glimmer" };
+            CollectionAssert.AreEqual(models, ChatStoryQa.Order(models, new HashSet<string>()));
+            CollectionAssert.AreEqual(new[] { "google/flash", "meta/glimmer" }, ChatStoryQa.Order(models, new HashSet<string> { "meta/spark" }));
+            CollectionAssert.AreEqual(new[] { "meta/spark" }, ChatStoryQa.Order(models, new HashSet<string>(models)), "all missing: still try the first");
+            Assert.IsTrue(ChatStoryQa.IsMissingModel("chat: Your request could not be processed. Provider details: The requested model was not found. It may not exist"));
+            Assert.IsFalse(ChatStoryQa.IsMissingModel("chat: meta/spark reached its output-token limit before completing the response."), "a one-off failure: still tried next time");
+        }
+
+        [Test] public void Chat_NeverSpeaksAModelsThinking()
+        {
+            CollectionAssert.AreEqual(new[] { "They swore an oath." }, ChatStoryQa.Sentences("<think>The user asks about the oath…</think>They swore an oath."));
+        }
+
+        [Test] public void EveryStory_HasMetaFirst_AndAFastFallback()
+        {
+            foreach (var st in StoryLibrary.All)
+            {
+                StringAssert.StartsWith("meta/", st.Models[0], st.Id);
+                Assert.Contains("google/gemini-3.5-flash", st.Models, st.Id);
+            }
+        }
+
         [Test] public void EveryStory_SuggestsFromTheStart_InEveryLanguage()
         {
             foreach (var st in StoryLibrary.All)

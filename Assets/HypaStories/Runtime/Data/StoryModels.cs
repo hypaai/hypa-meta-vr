@@ -82,8 +82,12 @@ namespace HypaStories
         public int Theme;
         public Color Accent;
         public string Eyebrow, Title, Desc;
-        /// <summary>The chat model that answers questions, "provider/model" (e.g. "meta/muse-wonder-1.0").</summary>
-        public string Model;
+        /// <summary>
+        /// The chat models that answer questions, "provider/model", in order: the first that answers wins (see <c>ChatStoryQa</c>).
+        /// </summary>
+        public string[] Models = new string[0];
+        /// <summary>The first choice of <see cref="Models"/>.</summary>
+        public string Model => Models.Length > 0 ? Models[0] : StoryLibrary.DefaultModel;
         /// <summary>The storyteller's voices for this story, in order of preference.</summary>
         public VoiceOption[] Voices = new VoiceOption[0];
 

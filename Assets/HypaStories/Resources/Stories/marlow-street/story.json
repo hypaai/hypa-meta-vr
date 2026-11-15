@@ -4,7 +4,7 @@
   "eyebrow": "Crime story",
   "title": "The Last Light\non Marlow Street",
   "description": "Rain, a taped-off alley, and one witness who saw nothing, until the streetlight started to flicker.",
-  "model": "meta/muse-wonder-1.0",
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
   "voices": [],
   "rain": 0.12,
   "wind": 0.1,

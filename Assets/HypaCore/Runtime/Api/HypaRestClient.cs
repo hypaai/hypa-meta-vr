@@ -35,8 +35,14 @@ namespace HypaCore
             var raw = await HypaHttp.PostAsync(_cfg, BasePath + endpoint, body.ToString(Formatting.None), ct).ConfigureAwait(false);
             var payloads = HypaHttp.JsonPayloads(raw);
             if (payloads.Count == 0) throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: empty response.");
-            try { return JToken.Parse(payloads[payloads.Count - 1]); }
-            catch (JsonException e) { throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: {e.Message}", 0, null, e); }
+            var last = payloads[payloads.Count - 1];
+            try { return JToken.Parse(last); }
+            catch (JsonException e)
+            {
+                // an error event carries plain text ("Your request could not be processed... model was not found"): say that
+                var text = last.Length > 300 ? last.Substring(0, 300) + "…" : last;
+                throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: {text}", 0, null, e);
+            }
         }
 
         /// <summary>
