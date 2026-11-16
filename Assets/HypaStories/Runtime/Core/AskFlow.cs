@@ -89,6 +89,7 @@ namespace HypaStories
         readonly Func<StoryLanguage> _language;
         readonly Action<bool> _onAsking;
         readonly Func<double> _clockMs;
+        readonly Func<int, int> _pick;
 
         public readonly List<QaLogEntry> Log = new List<QaLogEntry>();
         public event Action<QaLogEntry> Logged;
@@ -110,17 +111,38 @@ namespace HypaStories
 
         Session _s;
         Task _queue = Task.CompletedTask;
+        string _lastFiller, _lastResume;
 
         /// <param name="onAsking">true when a question starts (duck the ambience, fireflies gather, storyteller turns), false when it ends.</param>
         public AskFlow(INarration narration, IStorySpeech speech, IListener listener, IStoryQa qa, IAskView view,
-            Func<StoryLanguage> language, Action<bool> onAsking, Func<double> clockMs = null)
+            Func<StoryLanguage> language, Action<bool> onAsking, Func<double> clockMs = null, Func<int, int> pick = null)
         {
             _narration = narration; _speech = speech; _listener = listener; _qa = qa; _view = view;
             _language = language; _onAsking = onAsking;
             _clockMs = clockMs ?? (() => Time.realtimeSinceStartupAsDouble * 1000.0);
+            _pick = pick ?? (n => UnityEngine.Random.Range(0, n));
         }
 
         QaLines L => StoryLanguages.Lines(_language().Code);
+
+        /// <summary>One line from the set, skipping any just spoken, including on the question before.</summary>
+        string Pick(string[] lines, params string[] avoid)
+        {
+            if (lines == null || lines.Length == 0) return "";
+            var i = _pick(lines.Length);
+            if (i < 0 || i >= lines.Length) i = 0;
+            if (lines.Length == 1) return lines[0];
+            for (var n = 0; n < lines.Length; n++)
+            {
+                var s = lines[(i + n) % lines.Length];
+                var skip = false;
+                if (avoid != null)
+                    for (var a = 0; a < avoid.Length; a++)
+                        if (avoid[a] != null && avoid[a] == s) { skip = true; break; }
+                if (!skip) return s;
+            }
+            return lines[i];
+        }
 
         void Set(AskState s, string text = "")
         {
@@ -216,17 +238,21 @@ namespace HypaStories
             Set(AskState.Thinking, L.Thinking);
             var answered = false;
             // The filler starts at once, before any network work (its speech is cached when the story starts).
-            _ = Say(s, L.Filler[0], t => entry.Filler = t - r.TEnd);
+            var filler = Pick(L.Filler, _lastFiller);
+            _lastFiller = filler;
+            _ = Say(s, filler, t => entry.Filler = t - r.TEnd);
             var timer = CancellationTokenSource.CreateLinkedTokenSource(s.Cts.Token);
             _ = SecondFiller();
 
-            async Task SecondFiller() // still nothing after ~2 s → "Let me think about that…"
+            async Task SecondFiller() // still nothing after ~2 s → another "let me think"
             {
                 try { await Task.Delay(TimeSpan.FromSeconds(SecondFillerSeconds), timer.Token); }
                 catch (OperationCanceledException) { return; }
                 if (answered || s.Cancelled) return;
                 entry.Filler2 = true;
-                _ = Say(s, L.Filler[1]);
+                var again = Pick(L.Filler, filler);
+                _lastFiller = again;
+                _ = Say(s, again);
             }
 
             try
@@ -266,7 +292,9 @@ namespace HypaStories
         {
             if (s.Cancelled) return;
             Set(AskState.Resuming);
-            await Say(s, failed ? L.Offline : L.Resume);
+            var back = L.Offline;
+            if (!failed) { back = Pick(L.Resume, _lastResume); _lastResume = back; }
+            await Say(s, back);
             if (s.Cancelled) return;
             Cleanup();
             _narration.Resume(s.Line);
