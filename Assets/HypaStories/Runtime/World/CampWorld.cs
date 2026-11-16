@@ -30,7 +30,16 @@ namespace HypaStories
         public VillageTrail VillageTrail { get; private set; }
         public Village Village { get; private set; }
 
+        /// <summary>Ticket 3K: the camp is in your real room (passthrough): no sky, trees, ground, trails, mist or rain; the fire and the storyteller stay.</summary>
+        public bool Room { get; private set; }
+
         StoryAssets _a;
+        readonly List<GameObject> _scenery = new List<GameObject>();   // everything that goes away in the room
+        readonly List<GameObject> _hidden = new List<GameObject>();    // the part of it that was showing
+        readonly Dictionary<Renderer, Material[]> _litOriginal = new Dictionary<Renderer, Material[]>();
+        readonly Dictionary<Material, Material> _litMade = new Dictionary<Material, Material>();
+        Transform _firePool, _ringHolder;
+        bool _fogWas;
         Material _sky, _pool, _fireflies, _motes, _embers, _rain, _ringMat, _ringDashMat;
         Transform _rainT, _ringDash;
         Light _moon, _flash;
@@ -67,6 +76,7 @@ namespace HypaStories
             sky.transform.SetParent(transform, false);
             sky.transform.localScale = Vector3.one * 180f;
             Plain(sky.GetComponent<Renderer>(), _sky);
+            _scenery.Add(sky);
 
             // forest floor
             var ground = Child("Ground", StoryMeshes.Quad(140f, 140f), a.ground != null ? a.ground : Tinted(new Color(0.12f, 0.1f, 0.08f)));
@@ -75,7 +85,8 @@ namespace HypaStories
 
             // light pools on the ground: warm under the fire, cool where the moon falls
             _pool = Glow(glow, new Color(1f, 0.48f, 0.13f), 0.09f);
-            var pool = Child("Fire Pool", StoryMeshes.Quad(7f, 5f), _pool);
+            var pool = Child("Fire Pool", StoryMeshes.Quad(7f, 5f), _pool, null, false);
+            _firePool = pool;
             pool.localPosition = new Vector3(0, 0.02f, -0.3f);
             pool.localScale = Vector3.one * 1.3f;
             pool.localRotation = Quaternion.Euler(90f, 0f, 0f);
@@ -110,10 +121,12 @@ namespace HypaStories
 
         // ---------- builders ----------
 
-        Transform Child(string name, Mesh mesh, Material mat, Transform parent = null)
+        /// <summary>A mesh child. Anything put straight under the camp is scenery (gone in the room) unless <paramref name="scenery"/> is false.</summary>
+        Transform Child(string name, Mesh mesh, Material mat, Transform parent = null, bool scenery = true)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent != null ? parent : transform, false);
+            if (parent == null && scenery) _scenery.Add(go);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             Plain(go.AddComponent<MeshRenderer>(), mat);
             return go.transform;
@@ -241,11 +254,12 @@ namespace HypaStories
             Pine(vmouth2.point.x - vgap2.x, vmouth2.point.y - vgap2.y, 9f);
         }
 
-        GameObject Spawn(GameObject prefab, float size, Vector3 pos, float rotY, bool byWidth, float sway = 0f)
+        GameObject Spawn(GameObject prefab, float size, Vector3 pos, float rotY, bool byWidth, float sway = 0f, bool scenery = true)
         {
             if (prefab == null) return null;
             var holder = new GameObject(prefab.name);
             holder.transform.SetParent(transform, false);
+            if (scenery) _scenery.Add(holder);
             var inner = Instantiate(prefab, holder.transform);
             inner.transform.localPosition = Vector3.zero; inner.transform.localRotation = Quaternion.identity; inner.transform.localScale = Vector3.one;
             var rs = inner.GetComponentsInChildren<Renderer>();
@@ -278,7 +292,7 @@ namespace HypaStories
 
         void BuildProps()
         {
-            if (_a.campFire != null) Spawn(_a.campFire, 2.0f, Vector3.zero, 0f, true); // the stone ring round the bonfire
+            if (_a.campFire != null) _ringHolder = Spawn(_a.campFire, 2.0f, Vector3.zero, 0f, true, 0f, false)?.transform; // the stone ring round the bonfire (stays in the room)
             else FallbackFirePit();
             Spawn(_a.deadTrunk, 2.5f, new Vector3(HutTrailLayout.Log.x, 0f, HutTrailLayout.Log.y), 20f, true);
             Spawn(_a.stump, 0.75f, new Vector3(-2.1f, 0f, 1.7f), 57f, false); // clear of the cards and the player panel (right of the seat)
@@ -325,6 +339,7 @@ namespace HypaStories
         {
             _eyesRoot = new GameObject("Eyes in the Dark").transform;
             _eyesRoot.SetParent(transform, false);
+            _scenery.Add(_eyesRoot.gameObject);
             var r = new System.Random(19);
             float Rr() => (float)r.NextDouble();
             for (var i = 0; i < 7; i++)
@@ -377,14 +392,17 @@ namespace HypaStories
         {
             var go = new GameObject("Hut Trail");
             go.transform.SetParent(transform, false);
+            _scenery.Add(go);
             Trail = go.AddComponent<HutTrail>();
             Trail.Build(_a, glow);
             var vt = new GameObject("Village Trail");
             vt.transform.SetParent(transform, false);
+            _scenery.Add(vt);
             VillageTrail = vt.AddComponent<VillageTrail>();
             VillageTrail.Build(_a, glow);
             var vg = new GameObject("Village");
             vg.transform.SetParent(transform, false);
+            _scenery.Add(vg);
             Village = vg.AddComponent<Village>();
             Village.Build(_a, glow);
             for (var i = 0; i < 48; i++)
@@ -438,6 +456,7 @@ namespace HypaStories
             rock.transform.localScale = new Vector3(size, size * 0.6f, size * 0.85f);
             rock.transform.localRotation = Quaternion.Euler(0f, R() * 360f, 0f);
             Plain(rock.GetComponent<Renderer>(), m ?? Tinted(new Color(0.2f, 0.21f, 0.2f)));
+            if (m == null) _scenery.Add(rock); // the fire pit's own stones pass their material; the rocks round the camp don't
         }
 
         void BuildMist()
@@ -458,7 +477,7 @@ namespace HypaStories
             var m = new Material(_a.particles) { name = name, color = c };
             m.SetFloat("_Size", size); m.SetFloat("_Alpha", alpha); m.SetFloat("_Speed", speed);
             m.SetFloat("_Blink", blink ? 1f : 0f); m.SetFloat("_Ember", ember ? 1f : 0f);
-            Child(name, mesh, m);
+            Child(name, mesh, m, null, !ember); // the embers rise from the fire in the room too; fireflies and motes would drift through your walls
             return m;
         }
 
@@ -521,6 +540,107 @@ namespace HypaStories
             }
         }
 
+        // ---------- in your room (3K) ----------
+
+        /// <summary>
+        /// Into your room (<paramref name="on"/>) or back to the forest. In the room the sky, the ground, the trees, the trails, the
+        /// village, the props, the mist, the rain, the fog and the moon are gone: the passthrough shows your room, with the fire (its
+        /// stones, logs, flames, light, sound and embers) and the storyteller in it. The story is not touched.
+        /// </summary>
+        public void SetRoom(bool on)
+        {
+            if (on == Room) return;
+            Room = on;
+            if (on)
+            {
+                _hidden.Clear();
+                foreach (var go in _scenery)
+                    if (go != null && go.activeSelf) { _hidden.Add(go); go.SetActive(false); }
+                _fogWas = RenderSettings.fog;
+                RenderSettings.fog = false;
+                _rainT.gameObject.SetActive(false);
+            }
+            else
+            {
+                foreach (var go in _hidden) if (go != null) go.SetActive(true);
+                _hidden.Clear();
+                RenderSettings.fog = _fogWas;
+                ResetTeller();
+            }
+            SwapLit(on);
+        }
+
+        /// <summary>In the room the storyteller sits straight across the fire from you, <paramref name="gap"/> metres from it (the world's +Z is away from you).</summary>
+        public void SetTellerGap(float gap) => Teller.transform.localPosition = new Vector3(0f, 0f, gap);
+
+        /// <summary>Turns the storyteller to face <paramref name="worldPoint"/> (you), level.</summary>
+        public void FaceTeller(Vector3 worldPoint)
+        {
+            var d = worldPoint - Teller.transform.position; d.y = 0f;
+            if (d.sqrMagnitude > 1e-4f) Teller.transform.rotation = Quaternion.LookRotation(d);
+        }
+
+        /// <summary>Back to the forest: across the fire from the seats, as built.</summary>
+        void ResetTeller()
+        {
+            Teller.transform.localPosition = new Vector3(0.55f, 0f, 2.05f);
+            Teller.transform.localRotation = Quaternion.Euler(0f, 188f, 0f);
+        }
+
+        /// <summary>
+        /// The storyteller and the fire's stones and logs draw with Meta's depth-occlusion shader while you are in the room, so a
+        /// real table, sofa or body in front of them hides them. (The flames, glow and embers carry the same test in their own shaders.)
+        /// With no depth shader in the assets they simply stay as they are.
+        /// </summary>
+        void SwapLit(bool on)
+        {
+            if (!on)
+            {
+                foreach (var kv in _litOriginal) if (kv.Key != null) kv.Key.sharedMaterials = kv.Value;
+                _litOriginal.Clear();
+                return;
+            }
+            if (_a == null || _a.depthLit == null) return;
+            foreach (var root in new[] { Teller != null ? Teller.transform : null, _ringHolder, Fire != null ? Fire.Root : null })
+            {
+                if (root == null) continue;
+                foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+                {
+                    var src = r.sharedMaterials;
+                    var swap = false;
+                    foreach (var m in src) if (m != null && !m.shader.name.StartsWith("HypaStories/")) swap = true;
+                    if (!swap || _litOriginal.ContainsKey(r)) continue;
+                    _litOriginal[r] = src;
+                    r.sharedMaterials = System.Array.ConvertAll(src, Occluding);
+                }
+            }
+        }
+
+        // a lit material's look carried onto the depth-occlusion shader (Standard and glTF material property names)
+        Material Occluding(Material src)
+        {
+            if (src == null || src.shader.name.StartsWith("HypaStories/")) return src;
+            if (_litMade.TryGetValue(src, out var made)) return made;
+            made = new Material(_a.depthLit) { name = src.name + " (room)" };
+            Texture tex = src.HasProperty("_MainTex") ? src.GetTexture("_MainTex") : src.HasProperty("baseColorTexture") ? src.GetTexture("baseColorTexture") : null;
+            made.mainTexture = tex;
+            if (src.HasProperty("_MainTex")) { made.mainTextureScale = src.mainTextureScale; made.mainTextureOffset = src.mainTextureOffset; }
+            made.color = src.HasProperty("_Color") ? src.GetColor("_Color") : src.HasProperty("baseColorFactor") ? src.GetColor("baseColorFactor") : Color.white;
+            var gloss = src.HasProperty("_Glossiness") ? src.GetFloat("_Glossiness") : src.HasProperty("roughnessFactor") ? (1f - src.GetFloat("roughnessFactor")) * 0.6f : 0.1f;
+            var metal = src.HasProperty("_Metallic") ? src.GetFloat("_Metallic") : src.HasProperty("metallicFactor") ? src.GetFloat("metallicFactor") : 0f;
+            made.SetFloat("_Glossiness", gloss);
+            made.SetFloat("_Metallic", src.HasProperty("metallicRoughnessTexture") && src.GetTexture("metallicRoughnessTexture") != null ? 0f : metal);
+            made.SetFloat("_EnvironmentDepthBias", 0.04f);
+            _litMade[src] = made;
+            return made;
+        }
+
+        void OnDestroy()
+        {
+            if (Room) RenderSettings.fog = _fogWas;
+            foreach (var m in _litMade.Values) if (m != null) Destroy(m);
+        }
+
         public bool RainVisible => _rainT != null && _rainT.gameObject.activeSelf;
 
         void Update()
@@ -539,9 +659,10 @@ namespace HypaStories
             Fire.Update(cam, t, k / (1f - Dim * 0.35f)); // the flame itself isn't dimmed
             Fire.Light.intensity = StoryFire.LightIntensity * k;
             _pool.SetFloat(OpacityId, 0.09f * k);
+            if (_firePool != null) _firePool.localScale = Vector3.one * Mathf.Lerp(_firePool.localScale.x, Room ? 0.42f : 1.3f, 1f - Mathf.Exp(-6f * dt)); // the glow on the floor stays inside the room
 
             // story weather: rain, wind in the trees, lightning. The fire stays steady.
-            float rain = _story?.Rain ?? 0f, wind = _story?.Wind ?? 0f, flash = _story?.Flash ?? 0f;
+            float rain = Room ? 0f : _story?.Rain ?? 0f, wind = _story?.Wind ?? 0f, flash = _story?.Flash ?? 0f; // no rain falling in your room
             _rainT.gameObject.SetActive(rain > 0.01f);
             if (rain > 0.01f && cam != null)
             {
@@ -564,7 +685,7 @@ namespace HypaStories
             _sky.SetColor(TintId, policeCol * 0.3f);
             _flash.color = flash > 0.02f ? new Color(0.71f, 0.78f, 1f) : (redSide ? new Color(1f, 0.15f, 0.12f) : new Color(0.2f, 0.35f, 1f));
             _flash.intensity = flash * 1.6f + pulse * 1.3f;
-            _moon.intensity = 0.3f * (1f - dark * 0.7f) + dawn * 0.55f;
+            _moon.intensity = Room ? 0f : 0.3f * (1f - dark * 0.7f) + dawn * 0.55f; // the room has no moon: the fire is the light
             _moon.color = Color.Lerp(new Color(0.62f, 0.79f, 0.88f), new Color(1f, 0.78f, 0.6f), dawn);
             RenderSettings.fogColor = Color.Lerp(FogColor, DawnFog, dawn);
             var fill = (1f - Dim * 0.3f) * (1f + flash * 1.2f) * (1f - dark * 0.55f) * (1f + dawn * 1.4f);
@@ -584,7 +705,7 @@ namespace HypaStories
                 Fire.Light.color = Color.Lerp(Fire.Light.color, spiritCol, spirit * 0.85f);
                 RenderSettings.ambientEquatorColor += spiritCol * spirit * 0.08f;
             }
-            Eyes(dark, t, cam);
+            Eyes(Room ? 0f : dark, t, cam);
             _fireflies.SetFloat(GatherId, Gather);
 
             // portal ring: breathes while idle, brightens on hover, faces the viewer

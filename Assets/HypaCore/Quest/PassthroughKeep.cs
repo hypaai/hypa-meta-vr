@@ -8,8 +8,14 @@ namespace HypaCore.Quest
     /// headset showed a black room while menus (drawn by the camera) still appeared. This makes a fresh
     /// passthrough layer after every scene load and keeps the camera clear color see-through.
     /// </summary>
-    static class PassthroughKeep
+    public static class PassthroughKeep
     {
+        /// <summary>
+        /// True once the see-through view is running under the app (Hypa Stories' "In my room" draws the real room by taking its own
+        /// sky, ground and trees away, so it needs this underneath).
+        /// </summary>
+        public static bool Active { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Hook()
         {
@@ -20,6 +26,7 @@ namespace HypaCore.Quest
         static void Ensure()
         {
             var manager = Object.FindAnyObjectByType<OVRManager>();
+            Active = false;
             if (manager == null) return;
             manager.isInsightPassthroughEnabled = true;
 
@@ -42,6 +49,7 @@ namespace HypaCore.Quest
                 color.a = 0f;
                 cam.backgroundColor = color;
             }
+            Active = true;
         }
     }
 }

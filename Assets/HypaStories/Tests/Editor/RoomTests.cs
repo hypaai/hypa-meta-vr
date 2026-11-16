@@ -1,0 +1,121 @@
+using System;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace HypaStories.Tests
+{
+    /// <summary>Ticket 3K: finding an open spot in the room for the fire and the storyteller (pure maths; the scan itself is the headset's).</summary>
+    public class RoomTests
+    {
+        // a rectangular room from (0,0) to (w,d) with boxes of furniture: clearance = metres to the nearest wall or box, 0 or less outside or inside
+        static Func<Vector2, float> Room(float w, float d, params Rect[] boxes) => p =>
+        {
+            var c = Mathf.Min(Mathf.Min(p.x, w - p.x), Mathf.Min(p.y, d - p.y));
+            foreach (var b in boxes)
+            {
+                if (b.Contains(p)) return 0f;
+                var dx = Mathf.Max(b.xMin - p.x, 0f, p.x - b.xMax);
+                var dy = Mathf.Max(b.yMin - p.y, 0f, p.y - b.yMax);
+                c = Mathf.Min(c, Mathf.Sqrt(dx * dx + dy * dy));
+            }
+            return c;
+        };
+
+        static void AssertFits(RoomSpotPlan s, Func<Vector2, float> room)
+        {
+            Assert.GreaterOrEqual(room(s.Fire), RoomSpot.FireClear, "the fire has room round it");
+            Assert.GreaterOrEqual(room(s.Teller), RoomSpot.TellerClear, "the storyteller has room round it");
+            Assert.GreaterOrEqual(s.Gap, RoomSpot.MinGap - 1e-3f);
+            Assert.LessOrEqual(s.Gap, RoomSpot.WoodsGap + 1e-3f);
+            Assert.AreEqual(1f, s.Away.magnitude, 1e-4f, "Away is a direction");
+            Assert.IsTrue(s.Scanned);
+        }
+
+        [Test] public void OpenRoom_PutsTheFireAheadOfYou_WithTheWoodsGap()
+        {
+            var room = Room(6f, 5f);
+            var s = RoomSpot.Find(new Vector2(3f, 0.8f), Vector2.up, room).Value;
+            AssertFits(s, room);
+            Assert.Greater(s.Away.y, 0.9f, "the fire is out in front of you, not off to a side");
+            Assert.AreEqual(RoomSpot.WoodsGap, s.Gap, 0.01f, "plenty of room: the same gap as in the forest");
+            var between = Vector2.Distance(new Vector2(3f, 0.8f), s.Fire);
+            Assert.That(between, Is.InRange(1.5f, 3.3f), "a comfortable distance to the fire");
+        }
+
+        [Test] public void SmallRoom_ShrinksTheGapBetweenTheFireAndTheStoryteller()
+        {
+            var room = Room(4.5f, 3f);
+            var s = RoomSpot.Find(new Vector2(0.6f, 1.5f), Vector2.right, room).Value;
+            AssertFits(s, room);
+            Assert.Less(s.Gap, RoomSpot.WoodsGap - 0.2f, "the storyteller moves in toward the fire to stay inside the room");
+        }
+
+        [Test] public void FurnitureIsKeptClearOf_AndYouAreNotSeatedOnTheWayThroughIt()
+        {
+            // a sofa and a table across the middle of the room
+            var room = Room(7f, 5f, new Rect(2.5f, 1.8f, 2f, 0.9f), new Rect(0.4f, 3.8f, 1f, 1f));
+            var user = new Vector2(3.5f, 0.7f);
+            var s = RoomSpot.Find(user, Vector2.up, room).Value;
+            AssertFits(s, room);
+            for (var i = 0; i <= 10; i++) Assert.Greater(room(Vector2.Lerp(user, s.Fire, i / 10f)), 0f, "the way to the fire is open");
+        }
+
+        [Test] public void NoOpenSpot_ReturnsNull_AndTheFallbackIsInFront()
+        {
+            var tiny = Room(2.5f, 2.5f);
+            Assert.IsNull(RoomSpot.Find(new Vector2(1.2f, 1.2f), Vector2.up, tiny));
+            Assert.IsNull(RoomSpot.Find(Vector2.zero, Vector2.up, null), "no scan, no spot");
+
+            var s = RoomSpot.InFront(new Vector2(1f, 2f), new Vector2(0f, 2f));
+            Assert.AreEqual(new Vector2(1f, 2f + RoomSpot.InFrontDistance), s.Fire, "2 m straight ahead (forward need not be a unit vector)");
+            Assert.AreEqual(Vector2.up, s.Away);
+            Assert.AreEqual(RoomSpot.InFrontGap, s.Gap, 1e-4f);
+            Assert.IsFalse(s.Scanned);
+            Assert.AreEqual(RoomSpot.MinGap, RoomSpot.InFront(Vector2.zero, Vector2.up, 0.2f).Gap, 1e-4f, "never closer than the minimum gap");
+            Assert.AreEqual(Vector2.up, RoomSpot.InFront(Vector2.zero, Vector2.zero).Away, "no facing: a default, never NaN");
+        }
+
+        [Test] public void CornerRoom_FindsTheSpotBehindYouWhenAheadIsAWall()
+        {
+            var room = Room(5f, 4f);
+            // facing the near wall: the open floor is behind
+            var s = RoomSpot.Find(new Vector2(2.5f, 0.5f), Vector2.down, room).Value;
+            AssertFits(s, room);
+            Assert.Greater(s.Away.y, 0.5f, "turned around to where the room is");
+        }
+
+        [Test] public void BedInFrontAndNoRoomNearby_StillFindsOpenFloorElsewhere_NeverOnTheBed()
+        {
+            // a 4 x 3.2 room with a big bed across the middle and a wardrobe by you: nothing open within the usual few metres
+            var room = Room(4f, 3.2f, new Rect(1.4f, 0.2f, 2.4f, 1.9f), new Rect(0.1f, 2.2f, 1.4f, 0.9f));
+            var user = new Vector2(0.5f, 1.2f);
+            var near = RoomSpot.Find(user, Vector2.right, room);
+            var s = RoomSpot.Find(user, Vector2.right, room, new Rect(0f, 0f, 4f, 3.2f));
+            if (near.HasValue) Assert.GreaterOrEqual(room(near.Value.Fire), 0.4f);
+            Assert.IsTrue(s.HasValue || !near.HasValue);
+            if (s.HasValue) { Assert.Greater(room(s.Value.Fire), 0.3f, "never on the bed"); Assert.Greater(room(s.Value.Teller), 0.2f); }
+        }
+
+        [Test] public void NoComfortableSpot_ButTheWholeFloorHasOne()
+        {
+            // 3.4 x 3: nothing with the usual room round the fire and the storyteller...
+            var room = Room(3.4f, 3f);
+            var user = new Vector2(0.7f, 1.5f);
+            Assert.IsNull(RoomSpot.Find(user, Vector2.right, room));
+            // ...but searching the whole floor, with less room round them, finds one
+            var s = RoomSpot.Find(user, Vector2.right, room, new Rect(0f, 0f, 3.4f, 3f)).Value;
+            Assert.GreaterOrEqual(room(s.Fire), 0.4f);
+            Assert.GreaterOrEqual(room(s.Teller), 0.25f);
+        }
+
+        [Test] public void SameRoom_SameSpot()
+        {
+            var room = Room(6f, 5f, new Rect(2f, 2f, 1f, 1f));
+            var a = RoomSpot.Find(new Vector2(1f, 1f), new Vector2(1f, 1f), room).Value;
+            var b = RoomSpot.Find(new Vector2(1f, 1f), new Vector2(1f, 1f), room).Value;
+            Assert.AreEqual(a.Fire, b.Fire);
+            Assert.AreEqual(a.Away, b.Away);
+            Assert.AreEqual(a.Gap, b.Gap);
+        }
+    }
+}

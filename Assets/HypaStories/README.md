@@ -1,4 +1,4 @@
-# Hypa Story (tickets 3A-3C, 3F)
+# Hypa Story (tickets 3A-3C, 3F, 3K)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
 Same three screens, three stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, and *Eshu at the Crossroads* is a third card), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
@@ -60,6 +60,40 @@ Each place is its own scene: `HypaStory` (the camp), `HypaStoryHut`, `HypaStoryG
 Done: the `Places` and `PlaceEntry` API, the switcher with fade and pause/resume, one rig after any number of moves, stub
 scenes, the builder helper, editor keys, EditMode tests (`PlacesTests`). Not done: the real hut and gathering (3H, 3M), the
 portal (3L).
+
+## In my room (ticket 3K): the campfire in your real room
+
+On a Quest 3, the fire and the storyteller come into your own room. While a story plays, pinch **In my room** (under the player
+panel; editor key **R**). The sky, trees, ground, trails, mist, rain and fog fade out through the warm veil, the headset's
+passthrough shows your room, and the fire (its stones, flames, light, sound and embers) and the storyteller stand on your real
+floor. Pinch **Back to the forest** (or **R**) to return. The story, the voice and the fire's sound carry on through both: only
+the world around the fire changes.
+
+- **Where the fire goes (Scene API / MRUK):** `Quest/Mruk/QuestRoomScan` reads your scanned room: the floor height, and for any
+  floor point how far it is from the nearest wall or furniture (checked at knee, table and head height). `Core/RoomSpot` (pure
+  maths, tested) picks an open spot a few metres ahead of you with room round the fire (0.65 m) and the storyteller (0.5 m), you,
+  the fire and the storyteller in a line as at the camp. **Small rooms:** the gap between the fire and the storyteller shrinks from
+  2.1 m (the forest) down to 1.1 m before a spot is rejected.
+- **No room scan:** Meta's own room set-up flow is started (you scan, then come back) and the app waits. If you don't, or you
+  decline the room permission, or nothing in the room is open, the fire goes 2 m straight in front of you, with a line saying why.
+- **Real things hide it (Depth API):** `Quest/QuestRoom` turns on `EnvironmentDepthManager` (soft occlusion, Quest 3 and later). The
+  flame, glow and ember shaders (`StoryFlame`, `StoryAdditive`, `StoryParticles`) carry Meta's `HARD/SOFT_OCCLUSION` test, and in
+  the room the storyteller, the stones and the logs draw with Meta's `OcclusionSurfaceLit` (`StoryAssets.depthLit`). A real chair,
+  table, sofa or you in front of them hides them. Outside the room mode nothing changes (no keyword, no depth). The panels are never
+  hidden.
+- **The mood stays:** the fire's light, the fire and story sound, the thunder and the embers stay. Rain (falling and its sound),
+  mist, fog, the moon, fireflies and motes go (they would drift through your walls).
+- **You walk for yourself:** in the room the thumbsticks don't move the fire, the walk limits are off, and the trail panels stay.
+  A place button (the hut, the village) puts the forest back first; leaving the camp does too.
+- **Seams:** `Core/StoryRoom` holds the headset hooks (`Scan`, `Depth`, `Passthrough`), set by `HypaStories.Quest` (Depth,
+  `HypaCore.Quest/PassthroughKeep.Active`) and `HypaStories.Quest.Mruk` (needs the MR Utility Kit). Without them the camp still
+  goes into the room, fire in front, no hiding. `CampWorld.SetRoom` is the scene side.
+- **Needs** a Quest 3 with the room permission (`USE_SCENE`; the manifest has it) and passthrough (kept on by `PassthroughKeep`).
+  Re-run **Hypa > Stories > Create Story Scene** once if the **StoryAssets** asset doesn't show `depthLit`.
+
+Tested: the spot finder (`RoomTests`: open room, small room, furniture, no spot, deterministic) and the scene side (hiding,
+restoring, material swap) in the editor. **Not tried on a headset** (none here): the scan, the depth hiding and the passthrough look
+need a Quest 3 pass.
 
 ## What came across from the prototype
 

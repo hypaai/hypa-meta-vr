@@ -33,7 +33,7 @@ namespace HypaStories
         static readonly Color Unlit = new Color(1f, 0.97f, 0.92f, 0.55f);
 
         public PlayerView(Transform uiRoot, Action prev, Action pause, Action next, Action askTap, Action askHold,
-            Action back, Action toggleSound, Action<string> pickQuestion)
+            Action back, Action toggleSound, Action<string> pickQuestion, Action toggleRoom = null)
         {
             _pick = pickQuestion;
             Root = new GameObject("Player").transform;
@@ -97,6 +97,10 @@ namespace HypaStories
             _hintIcon = Kit.Icon(Root, "hand", new Vector3(-W / 2f + 0.05f, cy, 0f), 0.024f, KitTheme.Dim);
             _hint = Kit.Text(Root, "", 0.0145f, new Vector3(-W / 2f + 0.145f, cy, 0f), new Vector2(0.16f, 0.05f), KitTheme.Dim, TextAlignmentOptions.Left);
 
+            // 3K: below the panel, so it never crowds the transport. "In my room" brings the fire into your real room; again, back to the forest.
+            if (toggleRoom != null)
+                _room = Kit.Button(Root, new Vector3(0f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), InMyRoom, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+
             Fade = Root.gameObject.AddComponent<KitGroup>();
             SetState(AskState.Idle, "");
             Fade.Refresh();
@@ -159,6 +163,18 @@ namespace HypaStories
         }
 
         public void SetSound(bool muted) => _sound.SetIcon(muted ? "volume-x" : "volume-2");
+
+        const string InMyRoom = "In my room", BackToForest = "Back to the forest";
+        KitButton _room;
+
+        /// <summary>The room button shows where you are: lit and "Back to the forest" while the camp is in your room.</summary>
+        public void SetRoom(bool inRoom)
+        {
+            if (_room == null) return;
+            _room.SetLabel(inRoom ? BackToForest : InMyRoom);
+            _room.Style = inRoom ? KitStyle.Primary : KitStyle.Ghost; // solid ember in the room: a ghost button vanishes against the fire's glow
+            _room.Selected = inRoom;
+        }
 
         /// <summary>The hint beside the transport (default: raise a hand to ask). Empty restores the default.</summary>
         public void SetNote(string s)
