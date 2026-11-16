@@ -1017,6 +1017,33 @@ namespace HypaStories
             return Normalize(d, 0.5f);
         }
 
+        /// <summary>An angry shout across the road: "Hey! Ha!", a raised voice, no words (about 0.8 s).</summary>
+        public static float[] ShoutSamples(int seed)
+        {
+            var r = new System.Random(seed);
+            var n = (int)(Rate * 0.8f);
+            var d = new float[n];
+            var noise = White(n, seed + 1);
+            var a = Biquad.BandPass(820f, 2.4f); var b = Biquad.BandPass(1350f, 3f);
+            var t0 = 0f; var ph = 0f;
+            var f0 = 190f + (float)r.NextDouble() * 50f;
+            foreach (var len in new[] { 0.24f, 0.32f })
+            {
+                var start = (int)(t0 * Rate);
+                for (var i = 0; i < (int)(len * Rate) && start + i < n; i++)
+                {
+                    var t = (float)i / Rate; var u = t / len;
+                    ph += 2f * Mathf.PI * f0 * (1.05f + 0.18f * Mathf.Sin(Mathf.PI * u)) / Rate;
+                    var src = (ph % (2f * Mathf.PI)) / Mathf.PI - 1f + noise[start + i] * 0.8f * Mathf.Exp(-t * 30f);
+                    var env = Mathf.Clamp01(u * 12f) * Mathf.Clamp01((1f - u) * 5f);
+                    d[start + i] += (a.Process(src) + 0.8f * b.Process(src)) * env;
+                }
+                t0 += len + 0.08f;
+                f0 *= 0.92f;
+            }
+            return Normalize(d, 0.8f);
+        }
+
         public static AudioClip Clip(string name, float[] samples)
         {
             var c = AudioClip.Create(name, samples.Length, 1, Rate, false);
