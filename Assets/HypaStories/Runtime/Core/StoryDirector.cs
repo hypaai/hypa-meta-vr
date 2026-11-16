@@ -8,6 +8,8 @@ namespace HypaStories
         public float T, Rain, Wind, Flash;
         /// <summary>The campfire's strength (1 as it is), how much darker the night is, daybreak, police lights. See <see cref="StoryTimeline"/>.</summary>
         public float Fire, Dark, Dawn, Police, Spirit;
+        /// <summary>A blood-red night (0..1): the Dodo game. Set by the game, not by a story's cues.</summary>
+        public float Danger;
         /// <summary>The line being (or last) spoken; -1 before the first line.</summary>
         public int Index;
     }
