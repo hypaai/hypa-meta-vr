@@ -51,6 +51,10 @@ namespace HypaStories
 
         [Header("Brand and UI")]
         public Texture2D logo;
+
+        [Header("Locals (3I)")]
+        [Tooltip("The test local seated by the camp (Hypa > Stories > Create Test Local).")]
+        public LocalPersona testLocal;
         [Tooltip("Outfit (UI) and Cormorant Garamond (story text), as TextMeshPro font assets.")]
         public TMPro.TMP_FontAsset uiFont;
         public TMPro.TMP_FontAsset uiFontBold;

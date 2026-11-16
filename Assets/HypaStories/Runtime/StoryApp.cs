@@ -32,6 +32,8 @@ namespace HypaStories
         [SerializeField] float walkRadius = 18f;
         [Tooltip("Highest your eyes can be above the ground, metres (no flying up out of the forest).")]
         [SerializeField] float maxEyeHeight = 2.2f;
+        [Tooltip("Seat the test local (3I) by the camp, left of where you start: talk to them with a raised hand, Talk or T.")]
+        [SerializeField] bool testLocal = true;
 
         enum Screen { Splash, List, Play }
 
@@ -117,6 +119,7 @@ namespace HypaStories
             _list.Root.gameObject.SetActive(false);
             _player.Root.gameObject.SetActive(false);
             _camp.Teller.gameObject.SetActive(false);
+            if (testLocal && assets.testLocal != null) BuildTestLocal();
             BuildVeil();
             BuildDoorRows();
             BuildDodoGame();
@@ -177,6 +180,39 @@ namespace HypaStories
             if (_wasPlaying && _story.Paused) _story.TogglePause();
             _wasPlaying = false;
             Places.NumberKeysTaken = NumberKeysTaken;
+        }
+
+        // ---------- the test local (3I) ----------
+
+        /// <summary>
+        /// Where the test local sits: in the firelight, front-left of the starting spot (about 20° off, 2.9 m), far enough from the
+        /// pine beside the seats that it doesn't hide her panel, facing the starting spot.
+        /// </summary>
+        static readonly Vector3 TestLocalSpot = new Vector3(-0.95f, 0f, -3.45f);
+
+        void BuildTestLocal()
+        {
+            var go = new GameObject("Test Local");
+            go.transform.SetParent(_world, false);
+            go.transform.localPosition = TestLocalSpot;
+            var face = CampWorld.SplashSeat - TestLocalSpot; face.y = 0f;
+            go.transform.localRotation = Quaternion.LookRotation(face.normalized);
+            var figure = go.AddComponent<Storyteller>();
+            figure.Build(null, assets.lit); // the seated stand-in figure on a log
+            // The stand-in is the storyteller's dark brown: dress Ama in indigo with a faint glow so she reads in the night.
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                Color? c = r.name == "Skull" ? new Color(0.62f, 0.42f, 0.3f) : r.name == "Body" || r.name == "Thighs" || r.name == "Shins" ? new Color(0.2f, 0.27f, 0.62f) : (Color?)null;
+                if (c == null) continue;
+                var m = new Material(r.sharedMaterial) { color = c.Value };
+                m.EnableKeyword("_EMISSION");
+                m.SetColor("_EmissionColor", c.Value * 0.18f);
+                r.sharedMaterial = m;
+            }
+            var local = go.AddComponent<Local>();
+            local.Persona = assets.testLocal;
+            local.Assets = assets;
+            local.Figure = figure;
         }
 
         // ---------- placement ----------
@@ -517,7 +553,8 @@ namespace HypaStories
             _camp.Teller.Attend = _ask.State != AskState.Idle ? 1f : 0f;
 
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
-            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && _ask.State == AskState.Idle && !(_game != null && _game.Active)) _ = _ask.BeginAsync();
+            // A raised hand goes to a local you're facing (3I) before the storyteller.
+            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && _ask.State == AskState.Idle && !(_game != null && _game.Active) && Local.Focused == null) _ = _ask.BeginAsync();
             if (_holdToTalk && !HypaInput.Current.IsPinching)
             {
                 _holdToTalk = false;

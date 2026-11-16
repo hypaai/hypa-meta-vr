@@ -61,6 +61,45 @@ Done: the `Places` and `PlaceEntry` API, the switcher with fade and pause/resume
 scenes, the builder helper, editor keys, EditMode tests (`PlacesTests`). Not done: the real hut and gathering (3H, 3M), the
 portal (3L).
 
+## Locals: talk to someone who lives here (ticket 3I)
+
+A `Local` (`Runtime/Core/Local.cs`) is anyone you can talk to. Come close and look at them: they greet you. **Raise a hand**
+(or pinch **Talk**, or **T** in the editor) → they listen (Hypa `speech_to_text`) → think (Hypa chat, in character) → answer
+sentence by sentence (Hypa `text_to_speech`) with lip sync and subtitles, looking at you. A filler line starts at once and a second
+one after about 2 s while they think. They remember the last 4 exchanges of the visit; walk away and the visit ends.
+
+- **Try it:** the camp seats a test local, **Ama the weaver** (`Locals/Ama.asset`, from Kiko's village), in the firelight
+  front-left of where you start; an ember ring glows under her when you can talk to her. Without a microphone or key, pinch one
+  of her suggested questions.
+- **Knowing she hears you:** a soft ding, her panel glows ember with *Listening… speak now*, and a voice meter bounces with your
+  voice (if it doesn't move, the microphone isn't hearing you). When you stop: a lower ding and *You said: "…"* with exactly
+  what she heard. Nothing heard: *I didn't hear anything. Is your microphone on?* While she listens, the world's sound drops to
+  15% (the camp's wind and fire from the speakers otherwise reach the microphone and drown you out); the listening cue is
+  ignored by the microphone for its first 0.35 s. The console says which microphone she uses. **In the editor on a Mac**, allow
+  Unity in System Settings > Privacy & Security > Microphone.
+- **Add a local to your place (3H, 3M):** add a `Local` to the character, give it a `LocalPersona` (Assets > Create > Hypa >
+  Stories > Local Persona: name, role, home, what they know and don't know, voice, greeting, 3 suggested questions, offline
+  answers) and `StoryAssets`. Optional: `Figure` (a Storyteller: lip sync and head turn), or `Head` and `Mouth`.
+- **The brain (one setting, no code change):** **Hypa > Stories > Local Brain**: Muse (default, `meta/muse-spark-1.3`), OpenAI
+  (`openai/gpt-5.6-luna`), Gemini, Hypa, or offline answers. In code, `LocalBrains.Model`; per local, its `Brain` field. Any
+  `provider/model` id Hypa's chat serves works. Calls use the dev key or the judges' proxy (`baseUrl`); no key in the app.
+- **Never stalls:** no key → the persona's canned answers (`StubLocalBrain`); chat fails or is busy → the canned answers take over
+  for that question (`FallbackBrain`; the log shows `meta/muse-spark-1.3→stub`). Out-of-world questions get an in-character "I
+  wouldn't know".
+- **Timing log:** each question logs `Hypa Stories local Ama Q&A …` with the filler, ASR, first sentence, first audio and playback
+  times (same as the campfire's `AskFlow`).
+
+**Measured** (picked question, so no speech-to-text; in the editor): filler 8–39 ms; Muse's first sentence 2.2–4.3 s; first
+audio **5.0–6.3 s** with the faster speech settings (8.2 s with Hypa's defaults). Speaking adds speech-to-text: ~1.5 s with
+`openai/gpt-4o-mini-transcribe` (the `Local` default; Hypa's default took ~3.5 s). So a spoken question gets its answer in about
+6.5–8 s with Muse, and about 2 s sooner with the OpenAI brain. **The ticket's ~3 s isn't reachable with today's API timings**: the
+filler covers the wait. Details in `docs/api-contract.md`.
+
+Done: real chat call documented, `Local`, `LocalPersona`, `ILocalBrain` (chat, stub, fallback), the brain setting and menu,
+in-character prompt with visit memory, faster speech models, the test local, EditMode tests (`LocalTests`, `ChatTests`).
+Not done: the 3 s target (see above); answers stream sentence by sentence only after the whole reply arrives (chat streaming
+saved ~0.4 s at best); canned offline answers are English; the wake word (stretch).
+
 ## What came across from the prototype
 
 | Prototype (`Ideation/src`) | Here |
@@ -134,7 +173,7 @@ the translations are matched on.
   story so far up to the interrupted line (in the listener's language) and the question to the story's `model`, which answers in that
   language in 2-3 sentences without spoilers. The reply is spoken sentence by sentence; over 12 s counts as offline. Muse Wonder
   took 2.6-4.2 s in English and French (it reasons before answering, even with `thinking: false`). StoryApp's `qaMode` switches to
-  the stub (`stub`, `slow`, `offline`).
+  the stub (`stub`, `slow`, `offline`). Locals (3I) use the same chat call with their own brain setting.
 - Without a key, the story still runs: lines are "spoken" silently for about their length (subtitles keep time), and questions
   use the suggestion buttons.
 

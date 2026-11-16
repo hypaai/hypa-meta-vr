@@ -262,6 +262,7 @@ namespace HypaStories
         static Material _panelMat, _iconMat;
         static Mesh _quad;
 
+        /// <summary>True once <see cref="Init"/> has run (a Local outside the camp initialises the kit itself).</summary>
         public static bool Ready => _a != null;
 
         public static void Init(StoryAssets a)

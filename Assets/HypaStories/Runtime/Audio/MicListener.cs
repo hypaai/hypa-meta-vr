@@ -26,6 +26,15 @@ namespace HypaStories
 
         /// <summary>Speech to text. Default: Hypa's speech_to_text tool with the story language as the source.</summary>
         public Func<byte[], StoryLanguage, CancellationToken, Task<string>> Transcribe;
+        /// <summary>Hypa transcription model (provider/model) for the default Transcribe; empty = Hypa picks. Locals use a fast one.</summary>
+        public string TranscribeModel;
+        /// <summary>
+        /// The first milliseconds of each recording are dropped: a "listening" cue from the speakers must never count as you speaking
+        /// (the transcriber then invents words from it). 0 = keep everything.
+        /// </summary>
+        public float IgnoreFirstMs;
+        /// <summary>Stop listening this soon if no voice is heard at all (0 = wait the full recording).</summary>
+        public float NoSpeechMs;
 
         readonly CancellationTokenSource _life = new CancellationTokenSource();
         Session _active;
@@ -47,7 +56,7 @@ namespace HypaStories
 
         public IListenSession Listen(StoryLanguage language, Action<float> onLevel)
         {
-            if (!HypaConfig.Current.HasKey)
+            if (!HypaConfig.Current.CanCallPaidTools)
                 throw new HypaException(HypaErrorKind.MissingKey, "speech_to_text needs a Hypa API key.");
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
@@ -58,11 +67,14 @@ namespace HypaStories
 #endif
             if (Microphone.devices.Length == 0) throw new InvalidOperationException("No microphone.");
             _active?.Cancel();
-            var transcribe = Transcribe ?? ((wav, lang, ct) => new HypaMcpClient().SpeechToTextAsync(wav, lang.HypaLabel, ct));
+            var model = TranscribeModel;
+            var transcribe = Transcribe ?? ((wav, lang, ct) => new HypaMcpClient().SpeechToTextAsync(wav, lang.HypaLabel, ct, model));
             var device = Device(Microphone.devices);
             var clip = Microphone.Start(device, true, ClipSeconds, Rate);
             if (clip == null) throw new InvalidOperationException("Microphone could not start.");
-            return _active = new Session(device, clip, language, onLevel, transcribe, _life.Token);
+            var session = new Session(device, clip, language, onLevel, transcribe, _life.Token, IgnoreFirstMs);
+            if (NoSpeechMs > 0f) session.NoSpeechMs = NoSpeechMs;
+            return _active = session;
         }
 
         void Update() => _active?.Tick(Time.unscaledDeltaTime);
@@ -88,13 +100,15 @@ namespace HypaStories
             int _read;
             float _peak;
             bool _done;
+            float _ignoreMs;
+            public float NoSpeechMs { set => _silence.NoSpeechMs = value; }
 
             public Task<ListenResult> Result => _result.Task;
 
             public Session(string device, AudioClip clip, StoryLanguage lang, Action<float> onLevel,
-                Func<byte[], StoryLanguage, CancellationToken, Task<string>> transcribe, CancellationToken ct)
+                Func<byte[], StoryLanguage, CancellationToken, Task<string>> transcribe, CancellationToken ct, float ignoreMs = 0f)
             {
-                _device = device; _clip = clip; _lang = lang; _onLevel = onLevel; _transcribe = transcribe; _ct = ct;
+                _device = device; _clip = clip; _lang = lang; _onLevel = onLevel; _transcribe = transcribe; _ct = ct; _ignoreMs = ignoreMs;
             }
 
             string Name => _device ?? "default input";
@@ -111,6 +125,7 @@ namespace HypaStories
                 var buf = new float[n]; // GetData reads exactly buf.Length samples
                 _clip.GetData(buf, _read); // wraps around the looping clip
                 _read = pos;
+                if (_ignoreMs > 0f) { _ignoreMs -= n * 1000f / Rate; return; } // the cue's moment: not part of the question
                 var sum = 0f;
                 for (var i = 0; i < n; i++) { _samples.Add(buf[i]); sum += buf[i] * buf[i]; }
                 var rms = Mathf.Sqrt(sum / n);

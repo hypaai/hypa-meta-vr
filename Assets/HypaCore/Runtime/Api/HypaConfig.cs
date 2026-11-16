@@ -25,6 +25,10 @@ namespace HypaCore
         public string ApiKey { get; }
         public string BaseUrl { get; }
         public bool HasKey => !string.IsNullOrEmpty(ApiKey);
+        /// <summary>baseUrl points somewhere other than Hypa itself: the judges' proxy, which adds the key server-side.</summary>
+        public bool UsesProxy => BaseUrl != DefaultBaseUrl;
+        /// <summary>Paid tools (chat, speech, translation) can be called: with the dev key, or through the proxy with no key in the app.</summary>
+        public bool CanCallPaidTools => HasKey || UsesProxy;
 
         public HypaConfig(string apiKey, string baseUrl = null)
         {

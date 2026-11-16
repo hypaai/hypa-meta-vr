@@ -44,6 +44,7 @@ MonoBehaviour:
   fireNear: {fileID: 8300000, guid: 88257300349d54285a6c1de2ab0914f8, type: 3}
   wolf: {fileID: 8300000, guid: f17bba97f4d8947da8732d75868ca91e, type: 3}
   logo: {fileID: 2800000, guid: a8024c25ad9ce412cab6fd1a6fc7134e, type: 3}
+  testLocal: {fileID: 11400000, guid: b9f87b700d03a488db240a1512e60d65, type: 2}
   uiFont: {fileID: 11400000, guid: 8f1bdf25458bb4741853665d8ba3e20d, type: 2}
   uiFontBold: {fileID: 11400000, guid: 9b295c222c83c4f82b64bb407c58f8de, type: 2}
   serifFont: {fileID: 11400000, guid: 62e7d7c9a52e44fc29b1238030124a92, type: 2}

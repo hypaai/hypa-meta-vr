@@ -169,6 +169,7 @@ namespace HypaStories.EditorTools
             a.ambienceSplash = C("amb-1.mp3"); a.ambienceStory = C("amb-2.mp3");
             a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3");
             a.logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Art}/hypa-reality.png");
+            a.testLocal = LocalTools.CreateTestPersona(); // 3I: the test local seated by the camp
 
             EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();

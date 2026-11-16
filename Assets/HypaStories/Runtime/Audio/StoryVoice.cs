@@ -30,9 +30,15 @@ namespace HypaStories
         /// <summary>Loudness of whatever the storyteller is saying, 0..1.</summary>
         public float Level { get; private set; }
         public bool IsSpeaking => _fake || (_speech != null && _speech.isPlaying);
-        public bool TtsAvailable => HypaConfig.Current.HasKey;
+        public bool TtsAvailable => HypaConfig.Current.CanCallPaidTools; // the dev key, or the judges' proxy
         /// <summary>The story's voices for a language code, best first (see <see cref="StoryInfo.VoicesFor"/>). Null or empty = Auto.</summary>
         public Func<string, VoiceOption[]> Voices { get; set; }
+        /// <summary>Hypa voice for this speaker (a local's persona sets it), tried before <see cref="Voices"/>; empty = none.</summary>
+        public string Voice;
+        /// <summary>Hypa speech model (provider/model) for <see cref="Voice"/>; empty = Hypa picks. Locals use a fast one.</summary>
+        public string SpeechModel;
+        /// <summary>Audio in the reply instead of a link to download: about a second sooner.</summary>
+        public bool InlineAudio;
 
         public void Init(Transform mouth)
         {
@@ -74,6 +80,8 @@ namespace HypaStories
         Task<AudioClip> Fetch(string text, StoryLanguage language)
         {
             var voices = Voices?.Invoke(language.Code) ?? new VoiceOption[0];
+            if (!string.IsNullOrEmpty(Voice) || !string.IsNullOrEmpty(SpeechModel))
+                voices = new[] { new VoiceOption { Voice = Voice, Model = SpeechModel } }.Concat(voices).ToArray();
             var key = voices.FirstOrDefault() + "|" + language.HypaLabel + "|" + text;
             if (_cache.TryGetValue(key, out var t) && !t.IsFaulted && !t.IsCanceled) return t;
             return _cache[key] = FetchAsync(text, language.HypaLabel, voices);
@@ -84,15 +92,17 @@ namespace HypaStories
             HypaSpeech speech = null;
             foreach (var voice in voices)
             {
-                try { speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, voice.Voice, voice.Model); break; }
+                try { speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, NullIfEmpty(voice.Voice), NullIfEmpty(voice.Model), InlineAudio); break; }
                 catch (HypaException e) when (e.Kind != HypaErrorKind.MissingKey && e.Kind != HypaErrorKind.Unauthorized)
                 {
                     Warn($"voice {voice} failed for {label} ({e.Message}); trying the next voice.");
                 }
             }
-            if (speech == null) speech = await _mcp.TextToSpeechAsync(text, label, _life.Token); // Auto
+            if (speech == null) speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, inline: InlineAudio); // Auto
             return await HypaAudioPlayer.LoadClipAsync(speech, _life.Token); // main thread: we were called from it
         }
+
+        static string NullIfEmpty(string s) => string.IsNullOrEmpty(s) ? null : s;
 
         /// <summary>A line with no audio, "spoken" for about as long as it would take to say.</summary>
         public static SpeechLine Silent(string text) => new SpeechLine { Text = text, Seconds = 0.25f + text.Length * 0.028f };

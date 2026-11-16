@@ -38,7 +38,7 @@ namespace HypaCore
 
         public async Task<JObject> CallToolAsync(string tool, JObject args, CancellationToken ct)
         {
-            if (!_cfg.HasKey && !FreeTools.Contains(tool))
+            if (!_cfg.CanCallPaidTools && !FreeTools.Contains(tool))
                 throw new HypaException(HypaErrorKind.MissingKey, $"'{tool}' needs a Hypa API key.");
             var req = new JObject
             {
@@ -170,11 +170,13 @@ namespace HypaCore
         /// <summary>Audio comes back as a signed URL (default) valid about an hour.</summary>
         /// <summary>voice only works with the model that lists it (list_voices), so pass both, e.g. "openai/gpt-4o-mini-tts" + "fable".
         /// Neither = Auto picks for the language.</summary>
-        public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null, string model = null)
+        /// <param name="inline">Return the audio in the response (base64) instead of a link: saves the second download, about 1 s.</param>
+        public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null, string model = null, bool inline = false)
         {
             var args = new JObject { ["text"] = text, ["language"] = language, ["model"] = Model };
             if (!string.IsNullOrEmpty(voice)) args["voice"] = voice;
             if (!string.IsNullOrEmpty(model)) args["model"] = model;
+            if (inline) args["format"] = "base64";
             var o = await CallToolAsync("text_to_speech", args, ct).ConfigureAwait(false);
             return ParseSpeech(o);
         }
@@ -187,12 +189,14 @@ namespace HypaCore
 
         /// <summary>
         /// Speech to text. <paramref name="audio"/> is a whole file (e.g. WAV from <see cref="WavEncoder"/>), sent as base64.
-        /// sourceLang null = auto-detect. Schema from tools/list (2026-11-13); not yet called with a key.
+        /// sourceLang null = auto-detect. Verified with a key 2026-11-14 (reply: transcript, provider, model).
         /// </summary>
-        public async Task<string> SpeechToTextAsync(byte[] audio, string sourceLang, CancellationToken ct)
+        /// <param name="model">Optional provider/model, e.g. "openai/gpt-4o-mini-transcribe" (about 1.5 s; the default took about 3.5 s).</param>
+        public async Task<string> SpeechToTextAsync(byte[] audio, string sourceLang, CancellationToken ct, string model = null)
         {
             var args = new JObject { ["audio"] = System.Convert.ToBase64String(audio), ["audioType"] = "base64" };
             if (!string.IsNullOrEmpty(sourceLang)) args["sourceLang"] = sourceLang;
+            if (!string.IsNullOrEmpty(model)) args["model"] = model;
             var o = await CallToolAsync("speech_to_text", args, ct).ConfigureAwait(false);
             return (string)o["transcript"] ?? "";
         }

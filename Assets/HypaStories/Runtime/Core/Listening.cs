@@ -35,6 +35,8 @@ namespace HypaStories
     public sealed class SilenceDetector
     {
         public float SilenceMs = 1300f, MinSpeechMs = 350f, MaxMs = 12000f, Threshold = 0.02f;
+        /// <summary>Give up this soon when nothing above the threshold has been heard at all (default: wait the full MaxMs).</summary>
+        public float NoSpeechMs = float.MaxValue;
         public bool Spoke { get; private set; }
         float _speechMs, _quietMs, _elapsedMs;
 
@@ -44,7 +46,7 @@ namespace HypaStories
             _elapsedMs += dtMs;
             if (rms > Threshold) { Spoke = true; _speechMs += dtMs; _quietMs = 0f; }
             else if (Spoke) _quietMs += dtMs;
-            return (Spoke && _speechMs > MinSpeechMs && _quietMs > SilenceMs) || _elapsedMs > MaxMs;
+            return (Spoke && _speechMs > MinSpeechMs && _quietMs > SilenceMs) || _elapsedMs > MaxMs || (!Spoke && _elapsedMs > NoSpeechMs);
         }
     }
 }
