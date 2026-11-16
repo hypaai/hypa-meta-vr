@@ -207,8 +207,9 @@ namespace HypaCore
             Ui.Text(_menu, "Hypa", 0.024f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
             // The X closes the Hypa app.
             Ui.IconButton("x", _menu, new Vector3(0.11f, titleY, -0.001f), 0.024f, QuitApp);
-            Ui.Button("Hypa Lens", _menu, new Vector3(0, 0.10f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Lens));
-            Ui.Button("Stories", _menu, new Vector3(0, 0.03f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Story));
+            // Stories is the first experience; Lens is still in beta
+            Ui.Button("Stories", _menu, new Vector3(0, 0.10f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Story));
+            Ui.Button("Lens (beta)", _menu, new Vector3(0, 0.03f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Lens));
             Ui.Button("Saved words", _menu, new Vector3(0, -0.04f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, OpenSavedWords);
             Ui.Button("How it works", _menu, new Vector3(0, -0.11f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => ShowHelp(true));
             _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.18f, 0), Color.white);
@@ -248,10 +249,10 @@ namespace HypaCore
                 Ui.Text(_help, wrapped, bodyH, new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
                 y -= wrapped.Split('\n').Length * bodyH * line + 0.03f;
             }
-            Section("camera", "Hypa Lens",
-                "Look at a sign, menu or book and pinch Capture. The text and its translation open in a popup: hear it, or save it to practise later. Caption reads the whole view at once.");
             Section("languages", "Stories",
                 "Sit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.");
+            Section("camera", "Lens (beta)",
+                "Look at a sign, menu or book and pinch Capture. The text and its translation open in a popup: hear it, or save it to practise later. Caption reads the whole view at once.");
             Ui.Text(_help, Ui.Wrap("Everything works with your hands. Pinch Home at any time to come back here.", chars), bodyH,
                 new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
             // Ui.IconButton("chevron-left", _help, new Vector3(0f, -h / 2f + pad + 0.03f, -0.001f), 0.028f, () => ShowHelp(false)); // back to Home (Stories' chevron)

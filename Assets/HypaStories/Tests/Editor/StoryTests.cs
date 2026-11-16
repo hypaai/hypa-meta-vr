@@ -61,11 +61,12 @@ namespace HypaStories.Tests
         {
             var marlow = StoryLibrary.Find("marlow-street").Timeline;
             var caps = marlow.Captions;
-            Assert.AreEqual(13, caps.Length);
+            Assert.AreEqual(48, caps.Length);
+            Assert.That(marlow.Duration, Is.InRange(230f, 290f), "about four minutes, like the other stories");
             Assert.AreEqual(0.4f, caps[0].At, 1e-4);
             for (var i = 1; i < caps.Length; i++) Assert.Greater(caps[i].At, caps[i - 1].Until);
             Assert.GreaterOrEqual(marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
-            Assert.AreEqual(5, marlow.Flashes.Length);
+            Assert.AreEqual(9, marlow.Flashes.Length);
             var d = new StoryDirector(marlow);
             Assert.AreEqual(0.12f, d.Sample(caps[0].At).Rain, 1e-4);
             Assert.AreEqual(0.72f, d.Sample(caps[0].Until).Rain, 1e-4);

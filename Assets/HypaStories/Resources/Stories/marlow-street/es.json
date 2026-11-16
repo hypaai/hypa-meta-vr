@@ -1,26 +1,112 @@
 {
-  "words": ["lluvia", "llave", "puerta"],
+  "words": [
+    "lluvia",
+    "llave",
+    "puerta"
+  ],
   "rain": "Llovía en Marlow Street, esa clase de lluvia que esconde las pisadas.",
-  "rain.ask": ["¿Dónde está Marlow Street?"],
+  "rain.ask": [
+    "¿Dónde está Marlow Street?"
+  ],
+  "call": "Poco después de medianoche, alguien llamó por un hombre tendido en el callejón detrás de la panadería.",
   "tape": "La detective Nia estaba tras la cinta amarilla, viendo cómo el callejón respiraba en rojo y azul.",
-  "tape.ask": ["¿Quién es la detective Nia?"],
+  "tape.ask": [
+    "¿Quién es la detective Nia?"
+  ],
+  "bello": "A su lado estaba el agente Bello, joven y empapado, intentando no parecer nervioso.",
+  "bello.ask": [
+    "¿Quién es el agente Bello?"
+  ],
+  "nobody": "—Nadie oyó nada —dijo—. Ni un grito, ni un coche. Nada.",
+  "lift": "Nia levantó la cinta y entró en el callejón.",
+  "puddles": "Los charcos brillaban con cada vuelta de las luces de la policía.",
   "body": "Habían encontrado a un hombre al fondo, junto al viejo muro de ladrillo.",
-  "body.ask": ["¿Quién era el hombre?"],
+  "body.ask": [
+    "¿Quién era el hombre?"
+  ],
+  "hand": "Su mano derecha apretaba algo con fuerza.",
+  "hand.ask": [
+    "¿Qué tiene en la mano?"
+  ],
+  "button": "Nia le abrió los dedos con cuidado. Dentro había un solo botón de latón.",
+  "not-his": "Revisó su abrigo. No le faltaba ningún botón. Este era de otra persona.",
+  "not-his.ask": [
+    "¿De quién es el botón?"
+  ],
   "witness": "Ni arma. Ni cartera. Solo una testigo, una niña que juraba no haber visto nada.",
-  "witness.ask": ["¿Por qué dice la niña que no vio nada?"],
+  "witness.ask": [
+    "¿Por qué dice la niña que no vio nada?"
+  ],
+  "step": "Estaba sentada en el escalón de la panadería, bajo un paraguas grande, con una taza de té que no había tocado.",
+  "ama": "Se llamaba Ama. Parecía tener unos diecinueve años.",
+  "crouch": "Nia se agachó a su lado. —¿Viste algo esta noche?",
+  "asleep": "—Nada —dijo Ama, sin levantar la vista—. Estaba dormida.",
+  "window": "Sin embargo, la ventana sobre la panadería, justo encima del callejón, seguía con la luz encendida.",
+  "window.ask": [
+    "¿Dice Ama la verdad?"
+  ],
+  "wait": "Nia no la llamó mentirosa. Solo dijo: —Estaré cerca.",
   "streetlight": "Pero la farola sobre el callejón llevaba toda la noche parpadeando.",
-  "streetlight.ask": ["¿Por qué parpadea la farola?"],
+  "streetlight.ask": [
+    "¿Por qué parpadea la farola?"
+  ],
+  "broken": "—Esa farola lleva años rota —dijo Bello—. Nadie la arregla nunca.",
   "not-random": "Nia notó que nunca parpadeaba al azar.",
   "pattern": "Se apagaba tres segundos y luego destellaba dos veces.",
+  "again": "Tres segundos de oscuridad. Dos destellos. Luego oscuridad otra vez.",
   "message": "Una y otra vez, como alguien que envía un mensaje.",
-  "message.ask": ["¿Quién envía el mensaje?"],
+  "message.ask": [
+    "¿Quién envía el mensaje?"
+  ],
+  "someone": "Una farola no sabe contar. Alguien muy cerca la estaba haciendo parpadear así.",
+  "someone.ask": [
+    "¿Quién hace parpadear la farola?"
+  ],
   "key": "Siguió el patrón hasta el poste y encontró una pequeña llave de latón pegada debajo.",
-  "key.ask": ["¿Qué abre la llave?"],
+  "key.ask": [
+    "¿Qué abre la llave?"
+  ],
+  "wall": "Nia se giró despacio. Al fondo del callejón, junto al hombre, estaba el viejo muro de ladrillo.",
+  "patch": "La mayoría de los ladrillos eran oscuros y viejos. Pero una parte era más clara, más nueva, y tenía forma de puerta.",
+  "patch.ask": [
+    "¿Por qué algunos ladrillos son más nuevos?"
+  ],
   "door": "La llave encajaba en una puerta tapiada hacía veinte años.",
-  "door.ask": ["¿Quién tapió la puerta?"],
+  "door.ask": [
+    "¿Quién tapió la puerta?"
+  ],
+  "pull": "Quitaron los ladrillos sueltos uno a uno, bajo la lluvia.",
+  "groan": "La llave giró con un chirrido oxidado, y una pequeña puerta de madera se abrió.",
   "cupboard": "Tras los ladrillos había un armario y dentro una sola fotografía.",
   "photo": "Mostraba a la testigo, mucho más joven, junto al hombre desaparecido.",
-  "photo.ask": ["¿Quién sale en la foto?"],
+  "photo.ask": [
+    "¿Quién sale en la foto?"
+  ],
+  "writing": "Por detrás, en tinta desvaída: «Marlow Street. La noche en que se apagaron las luces».",
+  "writing.ask": [
+    "¿Qué pasó la noche en que se apagaron las luces?"
+  ],
+  "blackout": "Veinte años atrás, toda la calle se había quedado sin luz hasta la mañana.",
+  "vanished": "Y esa noche, un hombre de Marlow Street había desaparecido. Nunca lo encontraron.",
+  "same-face": "Nia miró la fotografía y luego al hombre junto al muro. La misma cara, veinte años mayor.",
+  "came-back": "No había muerto aquella noche. Había huido. Y esta noche, había vuelto.",
+  "came-back.ask": [
+    "¿Por qué volvió?"
+  ],
+  "buttons": "En la fotografía, un segundo hombre quedaba medio fuera del marco. Su abrigo tenía una hilera de botones de latón.",
+  "face-cut": "Le habían arrancado la cara de la foto.",
+  "wire": "Entonces Nia miró hacia arriba. Un cable fino iba desde la farola, a lo largo del muro, hasta la ventana encendida de Ama.",
+  "wire.ask": [
+    "¿Adónde va el cable?"
+  ],
+  "switch": "Alguien allá arriba le había estado hablando toda la noche, con luz.",
+  "daughter": "En la fotografía, la niña le tomaba la mano como lo hace una hija.",
   "truth": "La niña no había visto nada… había visto todo, y esperaba que alguien hiciera la pregunta correcta.",
-  "truth.ask": ["¿Por qué esperaba la niña?"]
+  "truth.ask": [
+    "¿Por qué esperaba la niña?"
+  ],
+  "rain-softer": "La lluvia amainó. La farola dejó de parpadear y simplemente brilló.",
+  "walk-back": "Nia volvió entre los charcos hasta el escalón de la panadería.",
+  "looked-up": "Ama dejó su té frío y, por primera vez en toda la noche, la miró.",
+  "right-question": "Y Nia supo exactamente qué preguntar."
 }
