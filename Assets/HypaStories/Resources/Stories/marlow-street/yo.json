@@ -1,26 +1,112 @@
 {
-  "words": ["òjò", "kọ́kọ́rọ́", "ìlẹ̀kùn"],
+  "words": [
+    "òjò",
+    "kọ́kọ́rọ́",
+    "ìlẹ̀kùn"
+  ],
   "rain": "Òjò ń rọ̀ ní Marlow Street, irú òjò tí ń bo ìró ẹsẹ̀ mọ́lẹ̀.",
-  "rain.ask": ["Níbo ni Marlow Street wà?"],
+  "rain.ask": [
+    "Níbo ni Marlow Street wà?"
+  ],
+  "call": "Lẹ́yìn ọ̀gànjọ́ òru díẹ̀, ẹnì kan pè nípa ọkùnrin kan tó dùbúlẹ̀ ní ọ̀nà tó wà lẹ́yìn ilé ìṣẹ̀ búrẹ́dì.",
   "tape": "Ọ̀tẹlẹ̀múyẹ́ Nia dúró lẹ́yìn tẹ́ẹ̀pù aláwọ̀ ofeefee, ó ń wo bí ọ̀nà tóóró náà ṣe ń mí sínú ìmọ́lẹ̀ pupa àti búlúù.",
-  "tape.ask": ["Ta ni Ọ̀tẹlẹ̀múyẹ́ Nia?"],
+  "tape.ask": [
+    "Ta ni Ọ̀tẹlẹ̀múyẹ́ Nia?"
+  ],
+  "bello": "Ọlọ́pàá Bello dúró ní ẹ̀gbẹ́ rẹ̀, ọ̀dọ́ ni, òjò ti rin ín gbẹ̀rẹ̀gẹ̀dẹ̀, ó ń gbìyànjú láti má ṣe dà bí ẹni pé ẹ̀rù ń bà á.",
+  "bello.ask": [
+    "Ta ni Ọlọ́pàá Bello?"
+  ],
+  "nobody": "“Kò sí ẹni tó gbọ́ ohunkóhun,” ó sọ. “Kò sí igbe, kò sí ọkọ̀ ayọ́kẹ́lẹ́. Kò sí nǹkan kan.”",
+  "lift": "Nia gbé tẹ́ẹ̀pù náà sókè, ó sì wọ ọ̀nà tóóró náà.",
+  "puddles": "Àwọn adágún omi náà ń dán mọ́rán ní gbogbo ìgbà tí ìmọ́lẹ̀ ọlọ́pàá bá yí ká.",
   "body": "Wọ́n ti rí ọkùnrin kan ní ìkángun ọ̀nà náà, lẹ́gbẹ̀ẹ́ ògiri bíríkì àtijọ́.",
-  "body.ask": ["Ta ni ọkùnrin náà?"],
+  "body.ask": [
+    "Ta ni ọkùnrin náà?"
+  ],
+  "hand": "Ọwọ́ ọ̀tún rẹ̀ dì mọ́ ohun kan ṣinṣin.",
+  "hand.ask": [
+    "Kí ló wà lọ́wọ́ rẹ̀?"
+  ],
+  "button": "Nia rọra ṣí àwọn ìka ọwọ́ rẹ̀. Bọ́tìnì bàbà kan ṣoṣo ló wà nínú rẹ̀.",
+  "not-his": "Ó yẹ ẹ̀wù rẹ̀ wò. Gbogbo bọ́tìnì ló pé. Èyí jẹ́ ti ẹlòmíràn.",
+  "not-his.ask": [
+    "Bọ́tìnì ta ni?"
+  ],
   "witness": "Kò sí ohun ìjà. Kò sí àpamọ́wọ́. Ẹlẹ́rìí kan ṣoṣo ló wà, ọmọdébìnrin kan tó búra pé òun ò rí nǹkan kan.",
-  "witness.ask": ["Kí ló dé tí ọmọdébìnrin náà fi sọ pé òun ò rí nǹkan kan?"],
+  "witness.ask": [
+    "Kí ló dé tí ọmọdébìnrin náà fi sọ pé òun ò rí nǹkan kan?"
+  ],
+  "step": "Ó jókòó lórí àtẹ̀gùn ilé búrẹ́dì lábẹ́ agboorun ńlá kan, ó di ife tii kan tí kò tíì fọwọ́ kàn mú.",
+  "ama": "Orúkọ rẹ̀ ni Ama. Ó dà bí ẹni pé ó pé ọmọ ọdún mọ́kàndínlógún.",
+  "crouch": "Nia bẹ̀rẹ̀ sílẹ̀ lẹ́gbẹ̀ẹ́ rẹ̀. “Ṣé o rí ohunkóhun ní alẹ́ yìí?”",
+  "asleep": "“Kò sí nǹkan kan,” ni Ama sọ láìgbé ojú sókè. “Mo ń sùn.”",
+  "window": "Síbẹ̀, fèrèsé tó wà lókè ilé ìṣè búrẹ́dì náà, gan-an lókè ọ̀nà tóóró náà, ṣì ní iná rẹ̀ tàn.",
+  "window.ask": [
+    "Ṣé Ama ń sọ òtítọ́?"
+  ],
+  "wait": "Nia kò pè é ní òpùrọ́. Ó kàn sọ pé, “Màá wà nítòsí.”",
   "streetlight": "Ṣùgbọ́n fìtílà ojú pópó tó wà lókè ọ̀nà tóóró náà ti ń pa, ó sì ń tàn láti ìbẹ̀rẹ̀ òru.",
-  "streetlight.ask": ["Kí ló dé tí fìtílà ojú pópó náà fi ń pa, tó sì ń tàn?"],
+  "streetlight.ask": [
+    "Kí ló dé tí fìtílà ojú pópó náà fi ń pa, tó sì ń tàn?"
+  ],
+  "broken": "“Fìtílà yẹn ti bàjẹ́ fún ọ̀pọ̀ ọdún,” ni Bello sọ. “Kò sí ẹni tó tún un ṣe rí.”",
   "not-random": "Nia kíyè sí i pé pípa àti títàn rẹ̀ kì í ṣẹlẹ̀ lásán láìní ètò.",
   "pattern": "Ó máa ń pa fún ìṣẹ́jú àáyá mẹ́ta, lẹ́yìn náà, á kọ mànàmáná lẹ́ẹ̀mejì.",
+  "again": "Ìṣẹ́jú-àáyá mẹ́ta ti òkùnkùn. Ìmọ́lẹ̀ méjì tó kọjá bí mànàmáná. Lẹ́yìn náà, òkùnkùn tún padà.",
   "message": "Léraléra, bí ẹni pé ẹnì kan ń fi ránṣẹ́.",
-  "message.ask": ["Ta ló ń fi ránṣẹ́?"],
+  "message.ask": [
+    "Ta ló ń fi ránṣẹ́?"
+  ],
+  "someone": "Àtùpà kò kà. Ẹnì kan tó wà nítòsí ló ń mú un ṣe bẹ́ẹ̀.",
+  "someone.ask": [
+    "Ta ni ó ń mú kí fìtílà náà máa tàn kú tàn?"
+  ],
   "key": "Ó tẹ̀ lé ètò pípa àti títàn náà dé ibi òpó fìtílà, ó sì rí kọ́kọ́rọ́ idẹ kékeré kan tí wọ́n fi tẹ́ẹ̀pù lẹ̀ mọ́ abẹ́ rẹ̀.",
-  "key.ask": ["Kí ni kọ́kọ́rọ́ náà ń ṣí?"],
+  "key.ask": [
+    "Kí ni kọ́kọ́rọ́ náà ń ṣí?"
+  ],
+  "wall": "Nia yí padà díẹ̀díẹ̀. Ní òpin ọ̀nà tóóró náà, lẹ́gbẹ̀ẹ́ ọkùnrin náà, ògiri bíríkì àtijọ́ náà dúró.",
+  "patch": "Ọ̀pọ̀ jù lọ lára àwọn bíríkì náà dúdú, wọ́n sì ti pẹ́. Ṣùgbọ́n apá kan fẹ́ẹ̀rẹ́ sí i, ó sì jẹ́ tuntun sí i, ó sì ní ìrísí ẹnu-ọ̀nà.",
+  "patch.ask": [
+    "Kí ló dé tí àwọn bíríkì kan fi jẹ́ tuntun ju àwọn míì lọ?"
+  ],
   "door": "Kọ́kọ́rọ́ náà bá ìlẹ̀kùn kan mu, ìlẹ̀kùn tí wọ́n ti fi bíríkì dí pa fún ogún ọdún.",
-  "door.ask": ["Ta ló fi bíríkì dí ìlẹ̀kùn náà pa?"],
+  "door.ask": [
+    "Ta ló fi bíríkì dí ìlẹ̀kùn náà pa?"
+  ],
+  "pull": "Wọ́n yọ àwọn bíríkì tí kò dúró ṣinṣin náà kúrò lọ́kọ̀ọ̀kan, lábẹ́ òjò.",
+  "groan": "Kọ́kọ́rọ́ náà yí pẹ̀lú ìró ìpata, ilẹ̀kùn onígi kékeré kan sì ṣí sílẹ̀.",
   "cupboard": "Lẹ́yìn àwọn bíríkì náà ni àpótí ìpamọ́ kan wà, fọ́tò kan ṣoṣo sì wà nínú rẹ̀.",
   "photo": "Ẹlẹ́rìí náà ló wà nínú fọ́tò, nígbà tó ṣì kéré gan-an, ó dúró lẹ́gbẹ̀ẹ́ ọkùnrin tó sọnù náà.",
-  "photo.ask": ["Ta ló wà nínú fọ́tò náà?"],
+  "photo.ask": [
+    "Ta ló wà nínú fọ́tò náà?"
+  ],
+  "writing": "Ní ẹ̀yìn rẹ̀, pẹ̀lú tàdáwà tó ti ṣá: “Òpópónà Marlow. Alẹ́ tí àwọn iná kú.”",
+  "writing.ask": [
+    "Kí ló ṣẹlẹ̀ ní alẹ́ tí iná kú?"
+  ],
+  "blackout": "Ní ogún ọdún sẹ́yìn, gbogbo òpópónà náà kò ní iná mànàmáná títí di òwúrọ̀.",
+  "vanished": "Ní alẹ́ yẹn, ọkùnrin kan láti Òpópónà Marlow ti pòórá. A kò rí i mọ́ láéláé.",
+  "same-face": "Nia wo fọ́tò náà, lẹ́yìn náà ó wo ọkùnrin tó wà lẹ́gbẹ̀ẹ́ ògiri. Ojú kan náà, ṣùgbọ́n ó ti dàgbà ní ogún ọdún.",
+  "came-back": "Kò kú ní alẹ́ yẹn. Ó sá lọ. Ní alẹ́ òní sì ni ó padà wá.",
+  "came-back.ask": [
+    "Kí ló dé tí ó fi padà wá?"
+  ],
+  "buttons": "Nínú fọ́tò náà, ọkùnrin kejì kan dúró tí apá kan ara rẹ̀ wà lẹ́yìn ààlà fọ́tò náà. Kóòtù rẹ̀ ní ìlà àwọn bọ́tìnì bàbà.",
+  "face-cut": "A ti ya ojú rẹ̀ kúrò nínú àwòrán náà.",
+  "wire": "Nígbà náà ni Nia gbé ojú sókè. Wáyà tín-ín-rín kan gba orí òpó iná lọ lẹ́gbẹ̀ẹ́ ògiri, títí dé fèrèsé Ama tí ìmọ́lẹ̀ ń tàn.",
+  "wire.ask": [
+    "Ibo ni waya náà lọ?"
+  ],
+  "switch": "Ẹnì kan ní òkè ti ń bá a sọ̀rọ̀ ní gbogbo òru, nínú ìmọ́lẹ̀.",
+  "daughter": "Nínú fọ́tò náà, ọmọdébìnrin kékeré náà di ọwọ́ rẹ̀ mú bí ọmọbìnrin ṣe máa ń ṣe.",
   "truth": "Kì í ṣe pé ọmọdébìnrin náà ò rí nǹkan kan. Ó ti rí ohun gbogbo, ó sì ti ń dúró de ẹni tí yóò béèrè ìbéèrè tó yẹ.",
-  "truth.ask": ["Kí ló dé tí ọmọdébìnrin náà fi ń dúró?"]
+  "truth.ask": [
+    "Kí ló dé tí ọmọdébìnrin náà fi ń dúró?"
+  ],
+  "rain-softer": "Òjò náà rọlẹ̀. Fìtílà náà dẹ́kun pípajú, ó sì kàn ń tàn.",
+  "walk-back": "Nia rìn padà la àwọn adágún omi kọjá sí àtẹ̀gùn ilé búrẹ́dì.",
+  "looked-up": "Ama gbé tii rẹ̀ tí ó ti tutù kalẹ̀, àti fún ìgbà àkọ́kọ́ ní alẹ́ yẹn, ó gbójú sókè wo obìnrin náà.",
+  "right-question": "Nia sì mọ ohun tí yóò béèrè gan-an."
 }

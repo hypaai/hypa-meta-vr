@@ -144,15 +144,23 @@ namespace HypaStories
         // Marlow Street: English answers; other languages fall back to English until the translation step covers answers.
         static readonly Intent[] Marlow =
         {
-            I("nia|detective|who is", 1, new[] { "Nia is the detective on the case.", "She is standing behind the tape, watching the alley." }),
-            I("man|body|found|dead|victim", 2, new[] { "A man was found at the far end of the alley, beside the old brick wall." }),
-            I("witness|girl|saw", 3, new[] { "The only witness is a girl.", "She swears she saw nothing." }),
-            I("light|lamp|flicker|streetlight", 4, new[] { "The streetlight above the alley has been flickering all night.", "Nia thinks it is not random." }),
-            I("pattern|message|code|three seconds", 7, new[] { "The light goes dark for three seconds, then flashes twice.", "It repeats, like someone sending a message." }),
-            I("key|brass", 8, new[] { "Under the lamp post, Nia finds a small brass key." }),
-            I("door|brick|cupboard", 9, new[] { "The key opens a door that was bricked over twenty years ago." }),
-            I("photo|picture|photograph", 11, new[] { "Inside the cupboard is a single photograph.", "It shows the witness, much younger, beside the missing man." }),
-            I("truth|why|really|waiting|question", 12, new[] { "The girl saw everything.", "She was waiting for someone to ask the right question." }),
+            I(@"\bnia\b|detective", 2, new[] { "Nia is the detective on the case.", "She is standing behind the tape, watching the alley." }),
+            I(@"bello|officer|policeman", 3, new[] { "Officer Bello is a young policeman working with Nia.", "He is soaked, and trying not to look nervous." }),
+            I("man|body|found|dead|victim", 7, new[] { "A man was found at the far end of the alley, beside the old brick wall." }),
+            I(@"button|his hand|in his hand", 9, new[] { "In the man's hand, Nia found a single brass button.", "It did not come from his own coat." }),
+            I(@"witness|girl|saw|\bama\b", 11, new[] { "The only witness is a girl called Ama.", "She says she saw nothing, because she was asleep." }),
+            I(@"asleep|window|lying|\bliar\b", 16, new[] { "Ama says she was asleep.", "But the light in her window, right over the alley, was still on." }),
+            I("light|lamp|flicker|streetlight", 18, new[] { "The streetlight above the alley has been flickering all night.", "Nia thinks it is not random." }),
+            I("pattern|message|code|three seconds", 23, new[] { "The light goes dark for three seconds, then flashes twice.", "It repeats, like someone sending a message." }),
+            I("key|brass", 25, new[] { "Under the lamp post, Nia finds a small brass key." }),
+            I("door|brick|cupboard", 28, new[] { "The key opens a door that was bricked over twenty years ago." }),
+            I("photo|picture|photograph", 32, new[] { "Inside the cupboard is a single photograph.", "It shows the witness, much younger, beside the missing man." }),
+            I(@"blackout|lights went out|power cut|twenty years|vanish|missing", 34, new[] { "Twenty years ago, the whole street lost its power for a night.", "That same night, a man from Marlow Street vanished and was never found." }),
+            I(@"came back|come back|ran away|run away|same face", 37, new[] { "The man in the alley is the man who vanished twenty years ago.", "He had run away, and tonight he came back." }),
+            I(@"second man|torn|killer|who did it|who killed", 38, new[] { "In the photograph, a second man stands half out of the frame, with brass buttons on his coat.", "His face has been torn away." }),
+            I(@"wire|switch|signal|who is sending", 40, new[] { "A thin wire runs from the lamp post to Ama's lit window.", "Someone up there has been talking to Nia all night, in light." }),
+            I(@"daughter|father|related", 42, new[] { "In the photograph, the little girl holds the man's hand the way a daughter does." }),
+            I("truth|why|really|waiting|question", 43, new[] { "The girl saw everything.", "She was waiting for someone to ask the right question." }),
         };
 
         static readonly Dictionary<string, string[]> Spoiler = new Dictionary<string, string[]>
