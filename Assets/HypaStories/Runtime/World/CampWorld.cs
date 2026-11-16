@@ -93,6 +93,7 @@ namespace HypaStories
             BuildTrees();
             BuildProps();
             BuildTrail(glow);
+            BuildEyes(glow);
             BuildMist();
             BuildParticles();
             BuildRain();
@@ -105,6 +106,11 @@ namespace HypaStories
             Teller = teller.AddComponent<Storyteller>();
             Teller.Fire = Fire.Root;
             Teller.Build(a.storyteller, a.lit);
+
+            // don't draw what the fog hides: the far ends of the trails, the hut, the pines round them (the village has its own)
+            var cull = gameObject.AddComponent<DistanceCull>();
+            cull.Collect(transform, t => Village != null && t == Village.transform || t == Fire.Root || t == PortalRing || t == Teller.transform,
+                14f, n => n == "Wolf" || n == "Owl" || n == "Bat" || n == "Bushbaby" || n == "Frog", 16f);
         }
 
         // ---------- builders ----------
@@ -311,6 +317,67 @@ namespace HypaStories
         }
 
         /// <summary>The trail to the hut, and ferns and rocks along its edges.</summary>
+        // ---------- eyes in the dark (a story's "dark" cue) ----------
+
+        readonly List<(Transform pair, Material m, float ph)> _eyes = new List<(Transform, Material, float)>();
+        Transform _eyesRoot;
+
+        /// <summary>
+        /// Pairs of eyes among the trees round the clearing, unseen until a story's night gets deep: then they open one by one,
+        /// blink, watch you, and close again when the dark lifts.
+        /// </summary>
+        void BuildEyes(Texture2D glow)
+        {
+            _eyesRoot = new GameObject("Eyes in the Dark").transform;
+            _eyesRoot.SetParent(transform, false);
+            var r = new System.Random(19);
+            float Rr() => (float)r.NextDouble();
+            for (var i = 0; i < 7; i++)
+            {
+                // round the far side and the flanks, never behind the seats, never on a trail
+                Vector2 at;
+                var tries = 0;
+                do
+                {
+                    var a = (-110f + Rr() * 220f) * Mathf.Deg2Rad;
+                    at = new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * (8f + Rr() * 4.5f);
+                } while (Grounds.KeepClear(at.x, at.y, 2f, 2f) && ++tries < 20);
+                var pair = new GameObject("Eyes").transform;
+                pair.SetParent(_eyesRoot, false);
+                pair.localPosition = new Vector3(at.x, 0.45f + Rr() * 1.3f, at.y);
+                var m = new Material(_a.additive) { name = "Eyes", mainTexture = glow, color = i % 3 == 0 ? new Color(1f, 0.45f, 0.15f) : new Color(1f, 0.85f, 0.35f) };
+                m.SetFloat(OpacityId, 0f);
+                var gap = 0.1f + Rr() * 0.06f;
+                foreach (var k in new[] { -1f, 1f })
+                {
+                    var eye = Child("Eye", StoryMeshes.Quad(0.2f, 0.2f), m, pair); // a glowing point with a soft halo, readable from the seat
+                    eye.localPosition = new Vector3(k * gap, 0f, 0f);
+                }
+                _eyes.Add((pair, m, Rr() * 10f));
+            }
+            _eyesRoot.gameObject.SetActive(false);
+        }
+
+        void Eyes(float dark, float t, Transform cam)
+        {
+            var open = Mathf.Clamp01((dark - 0.38f) / 0.3f);
+            _eyesRoot.gameObject.SetActive(open > 0.01f);
+            if (open <= 0.01f) return;
+            for (var i = 0; i < _eyes.Count; i++)
+            {
+                var (pair, m, ph) = _eyes[i];
+                var mine = Mathf.Clamp01(open * _eyes.Count - i * 0.8f);                 // they open one by one
+                var blink = Mathf.Repeat(t * 0.31f + ph, 1f) < 0.035f ? 0f : 1f;
+                var drift = 0.75f + 0.25f * Mathf.Sin(t * 0.7f + ph);                       // now and then they half-close, as if looking away
+                m.SetFloat(OpacityId, mine * blink * drift);
+                if (cam != null)
+                {
+                    var to = cam.position - pair.position; to.y = 0f;
+                    if (to.sqrMagnitude > 1e-4f) pair.rotation = Quaternion.LookRotation(-to);
+                }
+            }
+        }
+
         void BuildTrail(Texture2D glow)
         {
             var go = new GameObject("Hut Trail");
@@ -442,6 +509,23 @@ namespace HypaStories
         /// <summary>The weather and lightning of the story being told (null = none).</summary>
         public void SetStory(StorySample? s) => _story = s;
 
+        float _burst, _gutter;
+        static readonly int DarkId = Shader.PropertyToID("_Dark"), DawnId = Shader.PropertyToID("_Dawn"), TintId = Shader.PropertyToID("_Tint");
+        static readonly Color DawnFog = new Color(0.36f, 0.3f, 0.33f);
+
+        /// <summary>
+        /// A story sound's look: a hot stone, a throw or sparks burst embers out of the fire and make it flare; a roar, a stomp
+        /// or a door slam makes the flames gutter for a moment. Others have no look of their own.
+        /// </summary>
+        public void Effect(string name)
+        {
+            switch (name)
+            {
+                case "sizzle": case "sparks": case "throw": _burst = 1f; break;
+                case "roar": case "stomp": case "door": case "fall": _gutter = 1f; break;
+            }
+        }
+
         public bool RainVisible => _rainT != null && _rainT.gameObject.activeSelf;
 
         void Update()
@@ -452,7 +536,11 @@ namespace HypaStories
             var cam = Camera.main != null ? Camera.main.transform : null;
 
             var flick = 0.88f + 0.08f * Mathf.Sin(t * 9.1f) + 0.05f * Mathf.Sin(t * 17.3f + 1.7f) + 0.04f * Mathf.Sin(t * 3.1f);
-            var k = Boost * flick * (1f - Dim * 0.35f);
+            // the story's fire: its strength cue, a flare for sparks, a gutter for a roar or a slammed door
+            _burst = Mathf.Max(0f, _burst - dt * 1.4f);
+            _gutter = Mathf.Max(0f, _gutter - dt * 1.8f);
+            var storyFire = (_story?.Fire ?? 1f) * (1f + _burst * 0.6f) * (1f - _gutter * 0.35f * (0.6f + 0.4f * Mathf.Sin(t * 31f)));
+            var k = Boost * flick * (1f - Dim * 0.35f) * storyFire;
             Fire.Update(cam, t, k / (1f - Dim * 0.35f)); // the flame itself isn't dimmed
             Fire.Light.intensity = StoryFire.LightIntensity * k;
             _pool.SetFloat(OpacityId, 0.09f * k);
@@ -468,14 +556,45 @@ namespace HypaStories
             Shader.SetGlobalFloat(WindId, wind);
             foreach (var (tr, ph, amp) in _sway)
                 tr.localRotation = Quaternion.Euler(0f, tr.localEulerAngles.y, Mathf.Sin(t * (0.45f + wind * 0.9f) + ph) * amp * (1f + wind * 4f) * Mathf.Rad2Deg);
+            // deeper night, daybreak, police lights (red and blue, two quick pulses each)
+            float dark = _story?.Dark ?? 0f, dawn = _story?.Dawn ?? 0f, police = _story?.Police ?? 0f;
+            var phase = Mathf.Repeat(t * 1.25f, 1f);
+            var redSide = phase < 0.5f;
+            var p2 = Mathf.Repeat(phase * 2f, 1f);
+            var pulse = police * (p2 < 0.18f || (p2 > 0.28f && p2 < 0.46f) ? 1f : 0.3f);
+            var policeCol = (redSide ? new Color(1f, 0.08f, 0.06f) : new Color(0.1f, 0.25f, 1f)) * pulse;
             _sky.SetFloat(FlashId, flash);
-            _flash.intensity = flash * 1.6f;
-            var fill = (1f - Dim * 0.3f) * (1f + flash * 1.2f);
-            RenderSettings.ambientSkyColor = new Color(0.29f, 0.48f, 0.57f) * 0.42f * fill;
-            RenderSettings.ambientEquatorColor = new Color(0.16f, 0.24f, 0.27f) * 0.35f * fill;
+            _sky.SetFloat(DarkId, dark);
+            _sky.SetFloat(DawnId, dawn);
+            // the Dodo game's blood-red night: red sky low down, red haze, the firelight turned to embers
+            var danger = _story?.Danger ?? 0f;
+            var dangerCol = new Color(0.55f, 0.04f, 0.02f) * danger;
+            _sky.SetColor(TintId, policeCol * 0.3f + dangerCol * 0.5f);
+            _flash.color = flash > 0.02f ? new Color(0.71f, 0.78f, 1f) : (redSide ? new Color(1f, 0.15f, 0.12f) : new Color(0.2f, 0.35f, 1f));
+            _flash.intensity = flash * 1.6f + pulse * 1.3f;
+            _moon.intensity = 0.3f * (1f - dark * 0.7f) + dawn * 0.55f;
+            _moon.color = Color.Lerp(new Color(0.62f, 0.79f, 0.88f), new Color(1f, 0.78f, 0.6f), dawn);
+            RenderSettings.fogColor = Color.Lerp(Color.Lerp(FogColor, DawnFog, dawn), new Color(0.16f, 0.02f, 0.02f), danger * 0.85f);
+            var fill = (1f - Dim * 0.3f) * (1f + flash * 1.2f) * (1f - dark * 0.55f) * (1f + dawn * 1.4f);
+            var warm = Color.Lerp(Color.white, new Color(1.25f, 0.95f, 0.8f), dawn);
+            RenderSettings.ambientSkyColor = new Color(0.29f, 0.48f, 0.57f) * 0.42f * fill * warm + policeCol * 0.22f;
+            RenderSettings.ambientEquatorColor = new Color(0.16f, 0.24f, 0.27f) * 0.35f * fill * warm + policeCol * 0.2f + dangerCol * 0.35f;
+            if (danger > 0.01f) RenderSettings.ambientSkyColor = Color.Lerp(RenderSettings.ambientSkyColor, new Color(0.2f, 0.03f, 0.03f), danger * 0.8f);
             RenderSettings.ambientGroundColor = new Color(0.08f, 0.055f, 0.035f) * 0.5f * fill;
 
-            _embers.SetFloat(BoostId, Boost);
+            _embers.SetFloat(BoostId, Boost * Mathf.Max(0.5f, storyFire) + _burst * 2.5f);
+
+            // a god's light: the fire's glow swings slowly from deep red to pale white and back
+            var spirit = _story?.Spirit ?? 0f;
+            if (spirit > 0.01f)
+            {
+                var swing = 0.5f + 0.5f * Mathf.Sin(t * Mathf.PI * 2f / 4.5f);
+                var spiritCol = Color.Lerp(new Color(1f, 0.1f, 0.07f), new Color(0.95f, 0.95f, 1f), swing);
+                Fire.Light.color = Color.Lerp(Fire.Light.color, spiritCol, spirit * 0.85f);
+                RenderSettings.ambientEquatorColor += spiritCol * spirit * 0.08f;
+            }
+            if (danger > 0.01f) Fire.Light.color = Color.Lerp(Fire.Light.color, new Color(1f, 0.25f, 0.08f), danger * 0.6f);
+            Eyes(dark, t, cam);
             _fireflies.SetFloat(GatherId, Gather);
 
             // portal ring: breathes while idle, brightens on hover, faces the viewer

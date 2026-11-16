@@ -1,0 +1,112 @@
+{
+  "words": [
+    "mvua",
+    "ufunguo",
+    "mlango"
+  ],
+  "rain": "Mvua ilikuwa ikinyesha katika Mtaa wa Marlow, aina ya mvua inayoficha sauti za nyayo.",
+  "rain.ask": [
+    "Mtaa wa Marlow uko wapi?"
+  ],
+  "call": "Mara tu baada ya saa sita usiku, mtu fulani alipiga simu kuhusu mwanamume aliyekuwa amelala kwenye kichochoro nyuma ya duka la mikate.",
+  "tape": "Mpelelezi Nia alisimama nyuma ya utepe wa manjano, akitazama kichochoro kikimulikwa kwa nuru nyekundu na buluu.",
+  "tape.ask": [
+    "Mpelelezi Nia ni nani?"
+  ],
+  "bello": "Pembeni yake alisimama Afisa Bello, akiwa kijana na amelowa, akijaribu kutoonekana mwenye wasiwasi.",
+  "bello.ask": [
+    "Afisa Bello ni nani?"
+  ],
+  "nobody": "“Hakuna mtu aliyesikia chochote,” alisema. “Si kelele, si gari. Hakuna chochote.”",
+  "lift": "Nia aliinua utepe na kuingia kwenye kichochoro.",
+  "puddles": "Madimbwi yaling'aa kila taa za polisi zilipozunguka.",
+  "body": "Mwanamume mmoja alikuwa amepatikana upande wa mbali, kando ya ukuta wa zamani wa matofali.",
+  "body.ask": [
+    "Mwanamume huyo alikuwa nani?"
+  ],
+  "hand": "Mkono wake wa kulia ulikuwa umefumba kitu fulani kwa nguvu.",
+  "hand.ask": [
+    "Ana nini mkononi mwake?"
+  ],
+  "button": "Nia alifungua vidole vyake taratibu. Ndani kulikuwa na kifungo kimoja cha shaba.",
+  "not-his": "Alikagua koti lake. Kila kifungo kilikuwepo. Hili lilikuwa la mtu mwingine.",
+  "not-his.ask": [
+    "Ni kifungo cha nani?"
+  ],
+  "witness": "Hakuna silaha. Hakuna pochi. Shahidi mmoja tu, msichana aliyeapa kwamba hakuwa ameona chochote.",
+  "witness.ask": [
+    "Kwa nini msichana anasema kwamba hakuona chochote?"
+  ],
+  "step": "Aliketi kwenye ngazi ya duka la mikate chini ya mwavuli mkubwa, akiwa ameshika kikombe cha chai ambacho hakuwa amekigusa.",
+  "ama": "Jina lake lilikuwa Ama. Alionekana kuwa na umri wa miaka kumi na tisa hivi.",
+  "crouch": "Nia alichuchumaa kando yake. “Je, uliona chochote usiku wa leo?”",
+  "asleep": "“Hamna kitu,” Ama alisema, bila kuinua macho. “Nilikuwa nimelala.”",
+  "window": "Hata hivyo, dirisha lililokuwa juu ya duka la mikate, moja kwa moja juu ya kichochoro, bado lilikuwa na taa iliyowashwa.",
+  "window.ask": [
+    "Je, Ama anasema ukweli?"
+  ],
+  "wait": "Nia hakumwita mwongo. Alisema tu, “Nitakuwa karibu.”",
+  "streetlight": "Lakini taa ya barabarani iliyokuwa juu ya kichochoro ilikuwa ikiwaka na kuzimika usiku kucha.",
+  "streetlight.ask": [
+    "Kwa nini taa ya barabarani inamulika na kuzimika?"
+  ],
+  "broken": "“Taa hiyo imeharibika kwa miaka mingi,” alisema Bello. “Hakuna mtu anayeitengeneza kamwe.”",
+  "not-random": "Nia aligundua kwamba taa haikuwahi kuwaka na kuzima ovyo.",
+  "pattern": "Kilizima kwa sekunde tatu, kisha kikamulika mara mbili.",
+  "again": "Sekunde tatu za giza. Mimweko miwili. Kisha giza tena.",
+  "message": "Tena na tena, kama mtu anayetuma ujumbe.",
+  "message.ask": [
+    "Ni nani anayetuma ujumbe?"
+  ],
+  "someone": "Taa haihesabiki. Mtu aliyekuwa karibu alikuwa akiifanya ifanye hivyo.",
+  "someone.ask": [
+    "Ni nani anayefanya taa imeremete?"
+  ],
+  "key": "Alifuata alama hadi kwenye nguzo ya taa na akapata ufunguo mdogo wa shaba uliobandikwa chini yake kwa mkanda.",
+  "key.ask": [
+    "Ufunguo unafungua nini?"
+  ],
+  "wall": "Nia aligeuka polepole. Mwishoni mwa kichochoro, kando ya yule mwanamume, ulisimama ukuta wa zamani wa matofali.",
+  "patch": "Matofali mengi yalikuwa meusi na ya zamani. Lakini sehemu moja ilikuwa na rangi nyepesi zaidi na mpya zaidi, na ilikuwa na umbo la mlango.",
+  "patch.ask": [
+    "Kwa nini baadhi ya matofali ni mapya zaidi?"
+  ],
+  "door": "Ufunguo ulifaa kufungua mlango uliokuwa umezibwa kwa matofali kwa miaka ishirini.",
+  "door.ask": [
+    "Nani aliuziba mlango kwa matofali?"
+  ],
+  "pull": "Waliondoa matofali yaliyolegea moja baada ya jingine, kwenye mvua.",
+  "groan": "Ufunguo uligeuka kwa mlio wa kugugumia kwa kutu, na mlango mdogo wa mbao ukafunguka.",
+  "cupboard": "Nyuma ya matofali kulikuwa na kabati, na ndani yake kulikuwa na picha moja tu.",
+  "photo": "Ilionyesha shahidi huyo, akiwa mdogo zaidi kwa umri, amesimama kando ya mwanamume aliyepotea.",
+  "photo.ask": [
+    "Nani yuko kwenye picha?"
+  ],
+  "writing": "Upande wa nyuma, kwa wino uliofifia: “Mtaa wa Marlow. Usiku ambao taa zilizimika.”",
+  "writing.ask": [
+    "Nini kilitokea usiku ambao taa zilizimika?"
+  ],
+  "blackout": "Miaka ishirini iliyopita, mtaa mzima ulikosa umeme hadi asubuhi.",
+  "vanished": "Na usiku huo, mwanamume mmoja kutoka Mtaa wa Marlow alikuwa ametoweka. Hakupatikana kamwe.",
+  "same-face": "Nia aliitazama picha, kisha akamtazama mwanamume aliyekuwa kando ya ukuta. Uso uleule, miaka ishirini zaidi.",
+  "came-back": "Hakuwa amekufa usiku ule. Alikuwa amekimbia. Na usiku huu, alikuwa amerudi.",
+  "came-back.ask": [
+    "Kwa nini alirudi?"
+  ],
+  "buttons": "Katika picha hiyo, mwanamume wa pili alisimama huku nusu ya mwili wake ikiwa nje ya fremu. Koti lake lilikuwa na safu ya vifungo vya shaba.",
+  "face-cut": "Uso wake ulikuwa umeraruliwa kutoka kwenye picha.",
+  "wire": "Kisha Nia akatazama juu. Waya mwembamba ulitoka kwenye nguzo ya taa, ukapita kandokando ya ukuta, hadi kwenye dirisha la Ama lililokuwa na mwangaza.",
+  "wire.ask": [
+    "Waya inaenda wapi?"
+  ],
+  "switch": "Mtu fulani kule juu alikuwa akizungumza naye usiku kucha, katika mwanga.",
+  "daughter": "Katika picha hiyo, msichana mdogo alimshika mkono kama binti anavyofanya.",
+  "truth": "Si kwamba msichana hakuona chochote. Alikuwa ameona kila kitu, na alikuwa akisubiri mtu aulize swali sahihi.",
+  "truth.ask": [
+    "Kwa nini msichana alikuwa akisubiri?"
+  ],
+  "rain-softer": "Mvua ilipungua. Taa iliacha kupepesa na ikawaka tu.",
+  "walk-back": "Nia alirudi kupitia madimbwi hadi kwenye ngazi ya duka la mikate.",
+  "looked-up": "Ama aliweka chini chai yake iliyopoa na, kwa mara ya kwanza usiku huo, akamtazama.",
+  "right-question": "Na Nia alijua hasa cha kuuliza."
+}

@@ -61,11 +61,16 @@ namespace HypaStories.Tests
         {
             var marlow = StoryLibrary.Find("marlow-street").Timeline;
             var caps = marlow.Captions;
-            Assert.AreEqual(13, caps.Length);
+            Assert.AreEqual(48, caps.Length);
+            Assert.That(marlow.Duration, Is.InRange(230f, 290f), "about four minutes, like the other stories");
             Assert.AreEqual(0.4f, caps[0].At, 1e-4);
             for (var i = 1; i < caps.Length; i++) Assert.Greater(caps[i].At, caps[i - 1].Until);
             Assert.GreaterOrEqual(marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
-            Assert.AreEqual(4, marlow.Flashes.Length);
+            Assert.AreEqual(9, marlow.Flashes.Length);
+            var d = new StoryDirector(marlow);
+            Assert.AreEqual(0.12f, d.Sample(caps[0].At).Rain, 1e-4);
+            Assert.AreEqual(0.72f, d.Sample(caps[0].Until).Rain, 1e-4);
+            Assert.AreEqual(0.18f, d.Sample(Line(marlow, "truth").Until).Rain, 1e-4);
         }
 
         [Test] public void Parse_TranslatesById_FallsBackToEnglish_AndEasesCuesOverTheirLine()
@@ -83,6 +88,79 @@ namespace HypaStories.Tests
             Assert.AreEqual(caps[1].At + 0.5f, st.Timeline.Flashes[0], 1e-4);
             Assert.AreEqual(StoryLibrary.DefaultModel, st.Model);
             Assert.IsEmpty(st.VoicesFor("en")); // no voices: Auto
+        }
+
+        [Test] public void Parse_FireDarkDawnPolice_EaseOverTheirLine_AndSoundsLandInTheLine()
+        {
+            const string story = @"{ ""dawn"": 0.2, ""lines"": [
+                { ""id"": ""a"", ""text"": ""one two three four five"", ""fire"": 1.8, ""dark"": 0.5, ""sounds"": { ""roar"": [0.5], ""door"": [0.1, 1.2] } },
+                { ""id"": ""b"", ""text"": ""six seven"", ""dawn"": 1, ""police"": 0.7 } ] }";
+            var tl = StoryLibrary.Parse("t", story, new Dictionary<string, string>()).Timeline;
+            var d = new StoryDirector(tl);
+            var a = Line(tl, "a"); var b = Line(tl, "b");
+            Assert.AreEqual(1f, d.Sample(0f).Fire, 1e-4f, "the fire is as it is until a cue");
+            Assert.AreEqual(1.8f, d.Sample(a.Until).Fire, 1e-4f);
+            Assert.AreEqual(0.5f, d.Sample(b.Until).Dark, 1e-4f, "held after its line");
+            Assert.AreEqual(0.2f, d.Sample(0f).Dawn, 1e-4f, "the story's starting value");
+            Assert.AreEqual(1f, d.Sample(b.Until).Dawn, 1e-4f);
+            Assert.AreEqual(0.7f, d.Sample(b.Until).Police, 1e-4f);
+            CollectionAssert.AreEqual(new[] { "door", "roar", "door" }, tl.Sounds.Select(x => x.Name).ToArray(), "in time order");
+            Assert.AreEqual(a.At + 0.5f, tl.Sounds[1].T, 1e-4f);
+            var heard = new List<string>();
+            d.SoundsBetween(a.At, a.At + 0.6f, heard);
+            CollectionAssert.AreEqual(new[] { "door", "roar" }, heard);
+            heard.Clear();
+            d.SoundsBetween(a.At + 0.6f, a.At + 0.6f, heard);
+            Assert.IsEmpty(heard, "never twice for the same moment");
+        }
+
+        [Test] public void Eshu_IsTheThirdCard_HisLightTurnsWithTheHat_AndHeLaughsLast()
+        {
+            Assert.AreEqual("eshu-crossroads", StoryLibrary.All[2].Id);
+            var tl = StoryLibrary.Find("eshu-crossroads").Timeline;
+            var d = new StoryDirector(tl);
+            Assert.AreEqual(0f, d.Sample(Line(tl, "road").Until).Spirit, 1e-4f, "no god's light before Eshu");
+            Assert.AreEqual(1f, d.Sample(Line(tl, "turned").Until).Spirit, 1e-4f, "full as he turns the hat");
+            Assert.AreEqual(0f, d.Sample(Line(tl, "same-road").Until).Spirit, 1e-4f, "gone once the lesson is told");
+            Assert.AreEqual("laugh", tl.Sounds[tl.Sounds.Length - 1].Name, "the last sound is Eshu's laugh");
+        }
+
+        [Test] public void Director_WithoutAFireTrack_KeepsTheFireAsItIs()
+        {
+            var d = new StoryDirector(new StoryTimeline { Fire = new Vector2[0] });
+            Assert.AreEqual(1f, d.Sample(3f).Fire);
+        }
+
+        [Test] public void EveryStorySound_IsOneTheCampCanPlay()
+        {
+            foreach (var st in StoryLibrary.All)
+                foreach (var c in st.Timeline.Sounds)
+                {
+                    Assert.IsTrue(StoryAudio.Effects.ContainsKey(c.Name), $"{st.Id}: no sound called '{c.Name}'");
+                    Assert.LessOrEqual(c.T, st.Timeline.Duration, $"{st.Id}: '{c.Name}' after the story ends");
+                }
+            Assert.IsNotEmpty(StoryLibrary.Find("seven-hot-stones").Timeline.Sounds, "Seven Hot Stones has its sounds");
+            var eshu = StoryLibrary.Find("eshu-crossroads").Timeline;
+            var ed = new StoryDirector(eshu);
+            Assert.AreEqual(0f, ed.Sample(eshu.Duration).Rain, 1e-4);
+            Assert.Greater(ed.Sample(Line(eshu, "between").Until).Wind, 0.5f);
+            Assert.Greater(ed.Sample(Line(eshu, "between").At + 0.7f).Flash, 0.3f);
+            Assert.Greater(ed.Sample(Line(eshu, "morning").Until).Dawn, 0.4f);
+            Assert.IsNotEmpty(eshu.Sounds);
+        }
+
+        [Test] public void StorySounds_AreMadeCleanly()
+        {
+            foreach (var kv in StoryAudio.Effects)
+            {
+                var d = kv.Value.make();
+                Assert.Greater(d.Length, 0, kv.Key);
+                Assert.LessOrEqual(d.Length, ProceduralClips.Rate * 10, $"{kv.Key} is short");
+                var peak = 0f;
+                foreach (var v in d) { Assert.IsFalse(float.IsNaN(v) || float.IsInfinity(v), kv.Key); peak = Mathf.Max(peak, Mathf.Abs(v)); }
+                Assert.Greater(peak, 0.1f, $"{kv.Key} is heard");
+                Assert.LessOrEqual(peak, 1f, $"{kv.Key} doesn't clip");
+            }
         }
 
         [Test] public void Parse_Voices_PerLanguage_FirstThatHasOneWins()
@@ -114,6 +192,42 @@ namespace HypaStories.Tests
             CollectionAssert.AreEqual(new[] { "C fr ?", "A?" }, st.Suggestions(2, "fr"));
         }
 
+        [Test] public void Parse_Models_AListInOrder_OrTheOldSingleModel_OrTheDefaults()
+        {
+            const string lines = @"""lines"": [ { ""id"": ""a"", ""text"": ""one"" } ]";
+            var list = StoryLibrary.Parse("t", "{ \"models\": [\"meta/a\", \"google/b\"], " + lines + " }", new Dictionary<string, string>());
+            CollectionAssert.AreEqual(new[] { "meta/a", "google/b" }, list.Models);
+            Assert.AreEqual("meta/a", list.Model);
+            var one = StoryLibrary.Parse("t", "{ \"model\": \"meta/m\", " + lines + " }", new Dictionary<string, string>());
+            CollectionAssert.AreEqual(new[] { "meta/m" }, one.Models);
+            var none = StoryLibrary.Parse("t", "{ " + lines + " }", new Dictionary<string, string>());
+            CollectionAssert.AreEqual(StoryLibrary.DefaultModels, none.Models);
+        }
+
+        [Test] public void Chat_TriesModelsInOrder_SkippingOnesTheServiceDoesntHave()
+        {
+            var models = new[] { "meta/spark", "google/flash", "meta/glimmer" };
+            CollectionAssert.AreEqual(models, ChatStoryQa.Order(models, new HashSet<string>()));
+            CollectionAssert.AreEqual(new[] { "google/flash", "meta/glimmer" }, ChatStoryQa.Order(models, new HashSet<string> { "meta/spark" }));
+            CollectionAssert.AreEqual(new[] { "meta/spark" }, ChatStoryQa.Order(models, new HashSet<string>(models)), "all missing: still try the first");
+            Assert.IsTrue(ChatStoryQa.IsMissingModel("chat: Your request could not be processed. Provider details: The requested model was not found. It may not exist"));
+            Assert.IsFalse(ChatStoryQa.IsMissingModel("chat: meta/spark reached its output-token limit before completing the response."), "a one-off failure: still tried next time");
+        }
+
+        [Test] public void Chat_NeverSpeaksAModelsThinking()
+        {
+            CollectionAssert.AreEqual(new[] { "They swore an oath." }, ChatStoryQa.Sentences("<think>The user asks about the oath…</think>They swore an oath."));
+        }
+
+        [Test] public void EveryStory_HasMetaFirst_AndAFastFallback()
+        {
+            foreach (var st in StoryLibrary.All)
+            {
+                StringAssert.StartsWith("meta/", st.Models[0], st.Id);
+                Assert.Contains("google/gemini-3.5-flash", st.Models, st.Id);
+            }
+        }
+
         [Test] public void EveryStory_SuggestsFromTheStart_InEveryLanguage()
         {
             foreach (var st in StoryLibrary.All)
@@ -138,7 +252,7 @@ namespace HypaStories.Tests
                 foreach (var c in st.Timeline.Captions)
                     foreach (var lang in Translated)
                         Assert.IsFalse(string.IsNullOrEmpty(c.TextFor(lang)) || c.TextFor(lang) == c.Text, $"{st.Id} {lang}: {c.Text}");
-            Assert.AreEqual("One stone.", Line(Stones, "one-stone").TextFor("sw")); // not offered: English
+            Assert.AreEqual("One stone.", Line(Stones, "one-stone").TextFor("de")); // not offered: English
         }
 
         [Test] public void Languages_FindByCodeOrHypaLabel()
@@ -147,9 +261,22 @@ namespace HypaStories.Tests
             Assert.AreEqual("Español", StoryLanguages.Find("ES").Name);
             Assert.AreEqual("yo", StoryLanguages.Find("Yoruba").Code);
             Assert.AreEqual("pcm", StoryLanguages.Find("Pidgin").Code);
-            Assert.IsNull(StoryLanguages.Find("Swahili"));
+            Assert.AreEqual("sw", StoryLanguages.Find("Swahili").Code);
+            Assert.AreEqual("Kiswahili", StoryLanguages.Find("sw").Name);
             foreach (var l in StoryLanguages.All.Where(l => l.Code != "en"))
                 Assert.AreNotEqual(StoryLanguages.Lines("en").Again, StoryLanguages.Lines(l.Code).Again, l.Code);
+            var en = StoryLanguages.Lines("en");
+            foreach (var l in StoryLanguages.All)
+            {
+                var lines = StoryLanguages.Lines(l.Code);
+                Assert.GreaterOrEqual(lines.Filler.Length, 4, l.Code);
+                Assert.GreaterOrEqual(lines.Resume.Length, 4, l.Code);
+                CollectionAssert.AllItemsAreUnique(lines.Filler, l.Code);
+                CollectionAssert.AllItemsAreUnique(lines.Resume, l.Code);
+                if (l.Code == "en") continue;
+                Assert.IsFalse(lines.Filler.Any(f => en.Filler.Contains(f)), l.Code);
+                Assert.IsFalse(lines.Resume.Any(f => en.Resume.Contains(f)), l.Code);
+            }
         }
 
         // ---------- Q&A stand-in ----------
@@ -422,7 +549,7 @@ namespace HypaStories.Tests
             SynchronizationContext.SetSynchronizationContext(null);
             _speech = new FakeSpeech(); _mic = new FakeListener(); _qa = new FakeQa(); _story = new FakeNarration(); _view = new FakeView();
             _asking.Clear();
-            _ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0);
+            _ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0, n => 0);
         }
 
         [TearDown] public void TearDown() => SynchronizationContext.SetSynchronizationContext(_ctx);
@@ -444,6 +571,27 @@ namespace HypaStories.Tests
             Assert.AreEqual(100, log.Filler);
             Assert.AreEqual(40, log.Transcript);
             Assert.AreEqual(100, log.Playback);
+        }
+
+        [Test] public void Ask_CanPickAnotherFillerAndAnotherResume()
+        {
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            var ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0, n => 1);
+            Assert.IsTrue(ask.BeginAsync().IsCompleted);
+            Assert.AreEqual("Let me think about that…", _speech.Spoken[0]);
+            Assert.AreEqual("Right. Where was I…", _speech.Spoken[_speech.Spoken.Count - 1]);
+        }
+
+        [Test] public void Ask_NextQuestion_SkipsTheLineJustUsed()
+        {
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            Assert.IsTrue(_ask.BeginAsync().IsCompleted);
+            Assert.IsTrue(_ask.BeginAsync().IsCompleted);
+            Assert.AreEqual("Hmm, good question…", _speech.Spoken[0]);
+            Assert.AreEqual("Now, where was I…", _speech.Spoken[3]);
+            Assert.AreEqual("Let me think about that…", _speech.Spoken[4]);
+            Assert.AreEqual("Right. Where was I…", _speech.Spoken[_speech.Spoken.Count - 1]);
         }
 
         [Test] public void Ask_UnclearThreeTimes_GoesBackToTheStory()

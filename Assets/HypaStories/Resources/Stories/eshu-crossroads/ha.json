@@ -1,0 +1,96 @@
+{
+  "words": ["abokai", "hula", "kwarya"],
+  "friends": "A kan waccan hanyar ne wasu abokai biyu suka rayu, suna noma gefe da gefe sannan suna zuwa kasuwa tare kamar mutum ɗaya.",
+  "friends.ask": [
+    "Waye abokan biyu?"
+  ],
+  "walk": "Kowace safiyar kasuwa sun kasance suna tafiya tare, suna hira a duk tsawon tafiyar.",
+  "oath": "Sun rantse cewa babu abin da ke duniya da zai raba su. Ba faɗa ba. Ko da abin bauta ma ba.",
+  "oath.ask": [
+    "Me abokan suka rantse da shi?"
+  ],
+  "day": "Wata rana mai Haske suka fita kamar yadda suka saba, kowanne a gefensa na hanya.",
+  "waiting": "A mahadar hanya, wani yana jiran gani.",
+  "eshu.ask": [
+    "Wane ne Eshu?"
+  ],
+  "hat": "A kan kansa akwai babban hula. Bangare guda ja ne. Bangare na biyu kuma fari ne.",
+  "hat.ask": [
+    "Me ya sa hular ta zama ta musamman?"
+  ],
+  "between": "Ya taka zuwa kan titi ya wuce tsakanin abokan nan biyu kai tsaye.",
+  "passed": "Bai gaishe su ba. Bai tsaya ba. Ya wuce abinsa, kura ta rufe a bayansa.",
+  "white": "Abokin da ke gefen dama ya tsaya. Ya ce, hula farace.",
+  "white.ask": [
+    "Me ya sa abokanan suka sabawa juna?"
+  ],
+  "quarrel": "Sun tsaya a kan titi suna jayayya, kowannesu na da tabbas cewa dayan ya makanta.",
+  "market": "Zuwa lokacin da suka isa kasuwa, musu ya yi girma har garin baki daya ya ji.",
+  "fight": "Kalmomi suka koma ihu, ihun kuma ya koma fada a cikin ƙura.",
+  "watch": "Mutane sun bar kayan sana'arsu domin su kalli abokai biyu suna kokarin tabbatar da launi.",
+  "there": "Eshu yana can tun kafin su isa, yana zaune kusa da wuta, kuma yana dariya.",
+  "there.ask": [
+    "Me yasa Eshu ke dariya?"
+  ],
+  "turned": "Ya ɗaga hular ya juya ta a hankali, sau ɗaya, ta yadda kowane fuskoki za su gani.",
+  "both": "Ja a gefe guda. Fari a ɗayan gefen. Abokai duka biyu sun faɗi gaskiya.",
+  "both.ask": [
+    "Ta yaya hular za ta zama launi biyu?"
+  ],
+  "teaching": "Eshu ya ce, Na yi tafiya a tsakanin ku, kuma kowannen ku ya ga gefen da aka ba shi kaɗai.",
+  "teaching.ask": [
+    "Me Eshu ke koya musu?"
+  ],
+  "same-road": "Kun manta cewa kuna kan ainihin hanyar ɗaya.",
+  "laughed": "Abokai biyu ɗinnan suka kalli hular, sannan suka kalli juna, suka yi dariya har sai da suka zauna.",
+  "offering": "Kuma shi ya sa, a mahadar hanya, mutane har yanzu suke barin wani ɗan abu domin Eshu.",
+  "offering.ask": [
+    "Me mutane suke barin wa Eshu?"
+  ],
+  "road": "Tun da daɗewa, wata jar hanya ta ratsa tsakanin gidaje biyu, kuma duk wanda ya bi ta yakan wuce ta mahadar hanya.",
+  "road.ask": [
+    "Ina mahadar take?"
+  ],
+  "eshu": "Eshu ne, ƙaramin abin bauta, wanda ke ɗaukar saƙonni da barkwanci tsakanin sama da ƙasa.",
+  "red": "Abokin da ke hagu ya ce, wace irin kyakkyawar jar hula ce wannan.",
+  "evening": "A yammacin ranar garin ya tafi da su wurin bauta, domin a daidaita batun.",
+  "calabash": "Ya ajiye kwaryar giyar kwakwa a tsakaninsu.",
+  "morning": "Da safiya suka sake ɗaukar hanya, suna tafiya tare kamar mutum ɗaya.",
+  "gates": "Kofofinsu sun buɗe kan ƙura ɗaya.",
+  "bowl": "Sun yi noma tare kuma suka ci abinci daga kwano ɗaya.",
+  "prices": "Sun yi magana game da ruwan sama da kuma farashi.",
+  "boys": "Mutane sun yi dariya. Tsofaffin abokai kullum haka suke faɗa.",
+  "louder": "Ɗayan ya faɗi hakan da ƙarfi, domin hanya ta ji.",
+  "god": "Ko ma abin bauta ba.",
+  "listening": "Wani ƙaramin abin bauta yana sauraro.",
+  "smiled": "Ya yi murmushi. An ba shi aiki.",
+  "staffs": "Kowanesu ya riƙe sanda.",
+  "sight": "Mahadar ta bayyana a idanu.",
+  "post": "Suka ɗauke shi a matsayin ginshiƙi.",
+  "bones": "Igiyar wuri ta yi ƙara a kan sandarsa.",
+  "nothing": "Bai ce komai ba.",
+  "hung": "Jar ƙura ta rataya a iska.",
+  "sure": "Abokin hagu ya amince da idanunsa.",
+  "strange": "Abokin da ke dama ya ɓata rai.",
+  "looking": "Ja, in ji na farko.",
+  "sun": "Farin, in ji na biyun.",
+  "liar": "Kowanne ya kira juna mai karya.",
+  "step": "Ba wanda ya ƙetare zuwa ɗayan bangaren.",
+  "sellers": "Yan kasuwa sun dago daga kayansu.",
+  "only": "Sun ji juna kaɗai.",
+  "rolled": "Suka yi birgima a cikin ƙura.",
+  "elders": "Dattawan suka raba su.",
+  "neighbours": "Har yanzu ba za su yarda ba.",
+  "followed": "Rabin gari ne suka bi bayansu, suna dauke da fitilun wuta.",
+  "known": "Hula tana nan a kansa.",
+  "longer": "Ya bar su suka yi ihu.",
+  "white-side": "Fari ya zagaya ga abokin hagu.",
+  "red-side": "Ja ya zo zagaye ga abokin dama.",
+  "quiet": "Wurin bautar ya yi shiru.",
+  "pot": "Har ma wutar ta zama kamar tana sauraro.",
+  "whole": "Gaskiya ne, ya ce. Ba dukan hular ba.",
+  "ashamed": "Sun ji kunya.",
+  "drink": "Sha daga kofi ɗaya, ya ce.",
+  "town": "Garin ya yi dariya, kuma ta ƙare.",
+  "head": "Wani ya shafi kansa, kamar yana duban hula, sannan ya yi murmushi."
+}

@@ -1,0 +1,96 @@
+{
+  "words": ["ọ̀rẹ́", "fìlà", "igbá"],
+  "road": "Ní ọjọ́ pípẹ́ sẹ́yìn, ojú ọ̀nà pupa kan kọjá láàárín agbo ilé méjì, ẹnikẹ́ni tó bá sì ń lò ó gbọ́dọ̀ kọjá lóríta.",
+  "road.ask": [
+    "Níbo ni oríta náà wà?"
+  ],
+  "friends": "Lójú ọ̀nà yẹn, ọ̀rẹ́ méjì kan wà tí oko wọn sún mọ́ra wọn, tí wọ́n sì jọ ń lọ sọ́jà bí ẹnì kan ṣoṣo.",
+  "friends.ask": [
+    "Àwọn wo ni ọ̀rẹ́ méjèèjì náà?"
+  ],
+  "walk": "Ní gbogbo òwúrọ̀ ọjà, wọ́n jọ ń rìn lójú ọ̀nà náà, wọ́n a máa sọ̀rọ̀ lọ látìbẹ̀dẹ̀.",
+  "oath": "Wọ́n búra pé kò sí ohun kankan lágbàáyé tó lè yà wọ́n. Kò sí ìjà. Kódà kò sí òrìṣà kankan.",
+  "oath.ask": [
+    "Kí ni àwọn ọ̀rẹ́ náà búra rẹ̀?"
+  ],
+  "waiting": "Ní oríta, ẹnì kan wà tó ń dúró de wọn.",
+  "eshu": "Èṣù ni, òrìṣà kékeré kan, ẹni tó ń jẹ́ iṣẹ́ tí ó sì ń dá rògbòdìyàn sílẹ̀ láàárín ọ̀run àti ayé.",
+  "eshu.ask": [
+    "Ta ni Èṣù?"
+  ],
+  "hat": "Fìlà gíga kan wà lórí rẹ̀. Apá kan rẹ̀ jẹ́ pupa, apá kejì sì jẹ́ funfun.",
+  "hat.ask": [
+    "Kí ló jẹ́ àrà nípa fìlà náà?"
+  ],
+  "between": "Ó bọ́ sí ojú ọ̀nà, ó sì rìn kọjá tààrà láàárín àwọn ọ̀rẹ́ méjèèjì náà.",
+  "passed": "Kò kí wọn. Kò dúró. Ó kọjá lọ, eruku sì bo ipasẹ̀ rẹ̀ mọ́lẹ̀ lẹ́yìn rẹ̀.",
+  "red": "Ọ̀rẹ́ tó wà ní apá òsì sọ pé, fìlà pupa tó rẹwà wo nìyẹn!",
+  "white": "Ọ̀rẹ́ tó wà ní apá ọ̀tún dúró. Ó ní, fìlà náà jẹ́ funfun.",
+  "white.ask": [
+    "Kí nìdí tí àwọn ọ̀rẹ́ náà kò fi fohùn ṣọ̀kan?"
+  ],
+  "quarrel": "Wọ́n dúró lójú ọ̀nà, wọ́n ń jiyàn, olúkúlùkú sì gbà gbọ́ láìsí àní-àní pé ẹnì kejì rẹ̀ ti fọ́jú.",
+  "market": "Nígbà tí wọ́n máa fi dé ọjà, aáyanjú náà ti di ariwo ńlá tí gbogbo ìlú fi ń gbọ́.",
+  "fight": "Ọ̀rọ̀ di kíkígbe, kígbe-kígbe sì di ìjà gidi nínú eruku.",
+  "watch": "Àwọn ènìyàn fi ibùsọ̀ ọjà wọn sílẹ̀ láti wá wo àwọn ọ̀rẹ́ méjì tí wọ́n ń fẹnu jà nítorí àwọ̀ fìlà.",
+  "evening": "Ní alẹ́ ọjọ́ náà, àwọn ará ìlú mú wọn lọ sí ojúbọ, kí wọ́n lè yanjú ọ̀rọ̀ náà.",
+  "there": "Èṣù ti wà níbẹ̀ tẹ́lẹ̀, ó jókòó lẹ́gbẹ̀ẹ́ iná, ó sì ń rẹ́rìn-ín múṣẹ́.",
+  "there.ask": [
+    "Kí ló dé tí Èṣù fi ń rẹ́rìn-ín?"
+  ],
+  "turned": "Ó gbé fìlà náà sókè, ó sì rọra yí i ká, lẹ́ẹ̀kan, kí gbogbo ojú lè rí i.",
+  "both.ask": [
+    "Báwo ni fìlà náà ṣe lè jẹ́ àwọ̀ méjèèjì?"
+  ],
+  "teaching.ask": [
+    "Kí ni Èṣù ń kọ́ wọn?"
+  ],
+  "laughed": "Àwọn ọ̀rẹ́ méjèèjì wo fìlà náà, wọ́n wo ara wọn, wọ́n sì rẹ́rìn-ín títí tí wọ́n fi jókòó sílẹ̀.",
+  "morning": "Ní òwúrọ̀ ọjọ́ kejì, wọ́n tún ti wà lójú ọ̀nà, wọ́n ń rìn níṣọ̀kan.",
+  "offering": "Ìdí nìyẹn tí àwọn èèyàn ṣì fi ń fi nǹkan kékeré kan sílẹ̀ fún Èṣù ní oríta.",
+  "offering.ask": [
+    "Kí ni àwọn èèyàn ń fi sílẹ̀ fún Èṣù?"
+  ],
+  "day": "Lọ́jọ́ kan tó mọ́ sáká, wọ́n gbéra gẹ́gẹ́ bí wọ́n ṣe máa ń ṣe, olúkúlùkù nípa tirẹ̀ lẹ́gbẹ̀ẹ́ títì.",
+  "both": "Pupa lẹ́gbẹ̀ẹ́ kan. Funfun lẹ́gbẹ̀ẹ́ kejì. Àwọn ọ̀rẹ́ méjèèjì ló sọ òtítọ́.",
+  "teaching": "Èṣù sọ pé, Mo rìn láàárín yín, olúkúlùkù yín sì rí apá tí a fún yín nìkan.",
+  "same-road": "Ẹ gbàgbé pé ọ̀nà kan náà ni ẹ ṣì wà.",
+  "calabash": "Ó gbé igbá ẹmu sí àárín wọn.",
+  "gates": "Ẹnu-ọna wọn ṣí sí ojú eruku kan naa.",
+  "bowl": "Wọ́n jọ roko papọ̀, wọ́n sì jẹun nínú igbá kan.",
+  "prices": "Wọ́n sọ̀rọ̀ nípa òjò àti nípa iye owó.",
+  "boys": "Àwọn ènìyàn rẹ́rìn-ín. Àwọn ọ̀rẹ́ àtijọ́ máa ń sọ bẹ́ẹ̀ nígbà gbogbo.",
+  "louder": "Ọ̀kan sọ ọ́ sókè jù, kí ọ̀nà lè gbọ́.",
+  "god": "Kódà òrìṣà kan kò lè ṣe é.",
+  "listening": "Òrìṣà kékeré kan ń gbọ́.",
+  "smiled": "Ó rẹ́rìn-músẹ́, wọ́n ti fún un ní iṣẹ́.",
+  "staffs": "Olúkúlùkù wọn mú ọ̀pà kan dání.",
+  "sight": "Oríta náà farahàn.",
+  "post": "Wọ́n gbà á kà sí òpó.",
+  "bones": "Okùn owó ẹyọ ń kàn lórí ọ̀pá rẹ̀.",
+  "nothing": "Kò sọ nǹkan kan.",
+  "hung": "Erùpẹ̀ pupa rọ̀ ní afẹ́fẹ́.",
+  "sure": "Ọ̀rẹ́ tó wà ní òsì gbẹ́kẹ̀lé ojú rẹ̀.",
+  "strange": "Ọ̀rẹ́ tó wà lọ́wọ́ ọ̀tún fajú ro.",
+  "looking": "Pupa, ni ẹni àkọ́kọ́ sọ.",
+  "sun": "“Funfun,” ni ẹlẹ́ẹ̀kejì sọ.",
+  "liar": "Olúkúlùkù wọn pe ẹlòmíràn ní èké.",
+  "step": "Kò sí ẹnìkan nínú wọn tí ó rékọjá sí ẹ̀gbẹ́ ẹlòmíràn.",
+  "sellers": "Àwọn olùtàjà gbé ojú wọn sókè kúrò lára àwọn ọjà wọn.",
+  "only": "Wọ́n gbọ́ ara wọn nìkan.",
+  "rolled": "Wọ́n yí ká nínú erùpẹ̀.",
+  "elders": "Àwọn àgbàlagbà ya wọ́n sọ́tọ̀.",
+  "neighbours": "Síbẹ̀, wọn kò lè fohùn ṣọ̀kan.",
+  "followed": "Ìdajì ìlú tẹ̀lé wọn lẹ́yìn, wọ́n sì gbé ìmọ́lẹ̀ ọwọ́.",
+  "known": "Fìlà náà ṣì wà lórí rẹ̀.",
+  "longer": "Ó jẹ́ kí wọ́n kígbe.",
+  "white-side": "Funfun yọ sí ọ̀rẹ́ apá òsì.",
+  "red-side": "Pupa wá sọ́dọ̀ ọ̀rẹ́ tó wà lọ́wọ́ ọ̀tún.",
+  "quiet": "Ojúbọ náà dákẹ́.",
+  "pot": "Kódà iná náà dà bí ẹni pé ó ń tẹ́tí sílẹ̀.",
+  "whole": "Òótọ́ ni, ó wí, kì í ṣe gbogbo fìlà náà.",
+  "ashamed": "Ẹ̀tí wọ́n tì wọ́n.",
+  "drink": "Ẹ mu látinú igbá kan, ó sọ.",
+  "town": "Ìlú náà rẹ́rìn-ín, ó sì parí.",
+  "head": "Ọ̀kan nínú wọn fọwọ́ kàn orí ara rẹ̀, bí ẹni pé ó ń wá fìlà, ó sì rẹ́rìn-ín."
+}

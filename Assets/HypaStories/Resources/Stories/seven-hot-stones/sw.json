@@ -1,0 +1,123 @@
+{
+  "words": ["moto", "mawe", "farasi"],
+  "town": "Zamani sana, katika mji mmoja katika nchi ya Wahausa, watu waliishi maisha yao kama walivyozoea siku zote.",
+  "town.ask": [
+    "Nchi ya Wahausa iko wapi?"
+  ],
+  "day": "Wakati wa mchana, mitaa ilikuwa na shughuli nyingi, watu waliendelea na kazi zao, na mji ulikuwa umejaa uhai.",
+  "night": "Lakini usiku ulipofika, kitu fulani kilibadilika.",
+  "night.ask": [
+    "Ni nini kilibadilika usiku?"
+  ],
+  "dodo": "Kulikuwa na kiumbe aliyejulikana kama Dodo.",
+  "dodo.ask": [
+    "Dodo ni nini?"
+  ],
+  "feared": "Dodo aliogopwa, na watu walijua kuwa haikuwa busara kumpinga.",
+  "feared.ask": [
+    "Kwa nini watu walimwogopa Dodo?"
+  ],
+  "came": "Usiku mmoja, Dodo aliingia mjini.",
+  "darkness": "Ilipokuwa ikipita gizani, iliita kwa sauti kubwa:",
+  "challenge": "“Katika mji huu, ni nani anayeweza kupigana nami?”",
+  "challenge.ask": [
+    "Kwa nini Dodo anataka kupigana?"
+  ],
+  "carried": "Sauti yake ilisikika mitaani.",
+  "silent-people": "Watu walisikia, lakini hakuna aliyethubutu kujibu.",
+  "silent-people.ask": [
+    "Kwa nini hakuna aliyejibu?"
+  ],
+  "doors": "Milango ilifungwa. Watu walijificha popote walipoweza.",
+  "grain": "Baadhi yao waliogopa sana kiasi kwamba walipanda na kuingia ndani ya maghala yao ya nafaka na kubaki humo, wakitumaini kwamba kiumbe huyo hangewapata.",
+  "grain.ask": [
+    "Ghala la nafaka ni nini?"
+  ],
+  "continued": "Dodo iliendelea na changamoto yake.",
+  "challenge-2": "“Ni nani anayeweza kupigana nami?”",
+  "silence": "Lakini mji ulibaki kimya.",
+  "except": "Isipokuwa mtu mmoja.",
+  "auta": "Jina lake lilikuwa Auta.",
+  "auta.ask": [
+    "Auta ni nani?"
+  ],
+  "boy": "Auta alikuwa mvulana mdogo aliyekuwa akiishi na mwanamke mzee.",
+  "boy.ask": [
+    "Mwanamke mzee ni nani?"
+  ],
+  "stranger": "Alikuwa mgeni mjini, akiishi nyumbani kwake.",
+  "heard": "Aliposikia changamoto ya Dodo, alijibu:",
+  "i-am": "Ni mimi.",
+  "i-am.ask": [
+    "Je, Auta hakuogopa?"
+  ],
+  "believe": "Mwanamke mzee hakuweza kuamini kabisa kile alichokuwa amesikia.",
+  "begged": "Alimuuliza kama alikuwa amepoteza akili zake na akamsihi aingie ndani.",
+  "dangerous": "Alijua jinsi Dodo alivyokuwa hatari na hakuweza kuelewa kwa nini mvulana mdogo angeamua kwa hiari kumkabili kiumbe kama huyo.",
+  "retreat": "Lakini Auta hakurudi nyuma.",
+  "fire": "Badala yake, alienda kwenye moto.",
+  "stones": "Alichukua mawe saba na kuyaweka motoni, akiyaacha yapate moto sana.",
+  "stones.ask": [
+    "Kwa nini Auta alipasha mawe moto?"
+  ],
+  "waited": "Alisubiri.",
+  "approached": "Muda si muda, Dodo aliikaribia nyumba.",
+  "doorway": "Kiumbe huyo alikuja hadi mlangoni. Alikuwa mkubwa sana kiasi kwamba ilimbidi ainame ili apite kwenye mlango huo mfupi.",
+  "doorway.ask": [
+    "Dodo alikuwa mkubwa kiasi gani?"
+  ],
+  "moment": "Huo ndio ulikuwa wakati ambao Auta alikuwa akiungoja.",
+  "throw": "Dodo alipoinama ili kuingia, Auta alichukua moja ya mawe ya moto na kulitupa moja kwa moja kinywani mwa kiumbe huyo.",
+  "throw.ask": [
+    "Je, jiwe lilimuumiza Dodo?"
+  ],
+  "swallowed": "Dodo aliimeza.",
+  "backed": "Kiumbe huyo alirudi nyuma kutoka mlangoni na kusimama wima tena.",
+  "not-finished": "Lakini haikuwa imekamilika.",
+  "once-more": "Kwa mara nyingine, Dodo aliita:",
+  "challenge-3": "“Nani katika mji huu anaweza kupigana nami?”",
+  "answered": "Na kwa mara nyingine, Auta akajibu.",
+  "returned": "Kiumbe kilirudi kwenye mlango.",
+  "bent": "Tena, iliinama ili kuingia.",
+  "again-stone": "Tena, Auta alitupa jiwe la moto mdomoni mwake.",
+  "another": "Dodo alimeza mwingine.",
+  "repeatedly": "Hili lilitokea mara kwa mara.",
+  "each-time": "Kila mara Dodo alipotoa changamoto kwa mji, Auta alijibu. Kila mara kiumbe hicho kilipokaribia mlango, Auta alitupa jiwe jingine la moto kinywani mwake.",
+  "each-time.ask": [
+    "Auta alikuwa na mawe mangapi?"
+  ],
+  "one-stone": "Jiwe moja.",
+  "then-another": "Kisha lingine.",
+  "all-seven": "Hadi mawe yote saba yalipokwisha.",
+  "could-not": "Hatimaye, Dodo hakuweza kuendelea tena.",
+  "dead": "Kufikia asubuhi, kiumbe huyo alikuwa amekufa.",
+  "dead.ask": [
+    "Mawe yalimshindaje Dodo?"
+  ],
+  "dawn": "Asubuhi iliyofuata, alfajiri, wanawake wa mji walitoka kwenda kuteka maji.",
+  "body": "Waligundua mwili wa Dodo ukiwa umelala barabarani.",
+  "alarm": "Walitishwa na mandhari hiyo, wakapiga yowe.",
+  "spread": "Habari zilienea haraka mjini.",
+  "horsemen": "Mfalme alituma wapanda farasi kwenda kumchunguza kiumbe huyo, lakini jambo la kushangaza lilitokea.",
+  "horses": "Farasi wao walikataa kuukaribia mwili wa Dodo.",
+  "horses.ask": [
+    "Kwa nini farasi waliogopa?"
+  ],
+  "would-not": "Haijalishi wapanda farasi walifanya nini, wanyama hao hawakukaribia kitu hicho.",
+  "nobody-knew": "Hakuna mtu aliyeweza kuelewa jinsi kiumbe huyo alivyokuwa ameshindwa.",
+  "forward": "Kisha Auta akasonga mbele.",
+  "tail": "Alikuwa ameuchukua mkia wa Dodo wakati wa usiku, na akauwasilisha kama uthibitisho kwamba yeye ndiye aliyekuwa amemuua kiumbe huyo.",
+  "tail.ask": [
+    "Kwa nini Auta alihifadhi mkia?"
+  ],
+  "knew": "Watu sasa walijua ni nani aliyekuwa amekubali changamoto ya Dodo.",
+  "was-auta": "Alikuwa Auta, yule mgeni kijana aliyekuwa akiishi kwa yule mwanamke mzee.",
+  "reward": "Mfalme alimtuza kwa ujasiri wake.",
+  "reward.ask": [
+    "Mfalme alimpa Auta nini?"
+  ],
+  "end": "Na hivyo ndivyo Auta alivyomshinda Dodo wa kutisha kwa kutumia mawe saba ya moto.",
+  "end.ask": [
+    "Tunaweza kujifunza nini kutoka kwa Auta?"
+  ]
+}

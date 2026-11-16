@@ -1,0 +1,96 @@
+{
+  "words": ["amis", "chapeau", "calebasse"],
+  "road": "Il y a bien longtemps, une route rouge passait entre deux concessions, et quiconque l'empruntait passait par un carrefour.",
+  "road.ask": [
+    "Où se trouve ce carrefour ?"
+  ],
+  "friends": "Près de cette route vivaient deux amis qui cultivaient la terre côte à côte et allaient au marché d'un même pas.",
+  "friends.ask": [
+    "Qui sont ces deux amis ?"
+  ],
+  "walk": "Chaque matin de marché, ils la parcouraient ensemble, bavardant tout au long du chemin.",
+  "oath": "Ils avaient juré que rien au monde ne pourrait s'interposer entre eux. Pas une querelle. Pas même un dieu.",
+  "oath.ask": [
+    "Qu'avaient juré les deux amis ?"
+  ],
+  "day": "Un beau jour, ils se mirent en route comme d'habitude, chacun de son côté de la route.",
+  "waiting": "Au carrefour, quelqu'un attendait.",
+  "eshu": "C'était Eshu, un petit dieu, celui qui porte les messages et la malice entre le ciel et la terre.",
+  "eshu.ask": [
+    "Qui est Eshu ?"
+  ],
+  "hat": "Sur sa tête était posé un haut chapeau. Un côté était rouge. L'autre côté était blanc.",
+  "hat.ask": [
+    "Qu'avait-il de si particulier, ce chapeau ?"
+  ],
+  "between": "Il s'engagea sur le chemin et passa droit entre les deux amis.",
+  "passed": "Il ne les salua pas. Il ne s'arrêta pas. Il continua sa route, et la poussière se referma derrière lui.",
+  "red": "L'ami de gauche dit : quel beau chapeau rouge c'était.",
+  "white": "L'ami de droite s'arrêta. Il dit que le chapeau était blanc.",
+  "white.ask": [
+    "Pourquoi les deux amis ne sont-ils pas d'accord ?"
+  ],
+  "quarrel": "Debout sur le chemin, ils se disputaient, chacun certain que l'autre était devenu aveugle.",
+  "market": "Le temps d'arriver au marché, leur querelle faisait tellement de bruit que toute la ville pouvait l'entendre.",
+  "fight": "Les mots devinrent des cris, et les cris se transformèrent en bagarre dans la poussière.",
+  "watch": "Les gens abandonnèrent leurs étals pour regarder deux amis essayer de prouver une couleur.",
+  "evening": "Ce soir-là, les villageois les emmenèrent au sanctuaire pour régler le différend.",
+  "there": "Eshu était déjà là, assis près du feu, et il riait.",
+  "there.ask": [
+    "Pourquoi Eshu rit-il ?"
+  ],
+  "turned": "Il souleva son chapeau et le tourna lentement, une fois, pour que chaque visage puisse voir.",
+  "both": "Rouge d'un côté. Blanc de l'autre. Les deux amis avaient dit la vérité.",
+  "both.ask": [
+    "Comment le chapeau peut-il être des deux couleurs ?"
+  ],
+  "teaching": "Eshu dit : « J'ai marché entre vous, et chacun de vous n'a vu que le côté qui lui était présenté. »",
+  "teaching.ask": [
+    "Qu'est-ce qu'Eshu leur enseignait ?"
+  ],
+  "same-road": "Vous avez oublié que vous étiez toujours sur le même chemin.",
+  "calabash": "Il posa une calebasse de vin de palme entre eux.",
+  "laughed": "Les deux amis regardèrent le chapeau, puis se regardèrent, et ils rirent tellement qu'ils durent s'asseoir.",
+  "morning": "Au matin, ils étaient de nouveau sur la route, ne faisant plus qu'un.",
+  "offering": "Et voilà pourquoi, aux carrefours, les gens laissent toujours un petit quelque chose pour Eshu.",
+  "offering.ask": [
+    "Qu'est-ce que les gens laissent pour Eshu ?"
+  ],
+  "gates": "Leurs portails s'ouvraient sur la même poussière.",
+  "bowl": "Ils piochaient ensemble et mangeaient dans un seul bol.",
+  "prices": "Ils parlaient de la pluie et des prix.",
+  "boys": "Les gens ont ri. Les vieux amis disent toujours ça.",
+  "louder": "L'un le dit plus fort, pour que la route l'entende.",
+  "god": "Pas même un dieu.",
+  "listening": "Un petit dieu écoutait.",
+  "smiled": "Il sourit, on lui avait donné du travail.",
+  "staffs": "Chacun portait un bâton.",
+  "sight": "Le carrefour apparut.",
+  "post": "Ils le prirent pour un poteau.",
+  "bones": "Un chapelet de cauris a cliqueté sur son bâton.",
+  "nothing": "Il n'a rien dit.",
+  "hung": "De la poussière rouge était suspendue dans l'air.",
+  "sure": "L'ami de gauche fit confiance à ses yeux.",
+  "strange": "L'ami de droite a froncé les sourcils.",
+  "looking": "Rouge, dit le premier.",
+  "sun": "Blanc, dit le second.",
+  "liar": "Chacun a traité l'autre de menteur.",
+  "step": "Ni l'un ni l'autre ne passa du côté de l'autre.",
+  "sellers": "Les vendeurs levèrent les yeux de leurs marchandises.",
+  "only": "Ils n'entendaient qu'eux deux.",
+  "rolled": "Ils ont roulé dans la poussière.",
+  "elders": "Les anciens les ont séparés.",
+  "neighbours": "Pourtant, ils ne s'entendaient toujours pas.",
+  "followed": "La moitié du village marchait derrière eux, portant des torches.",
+  "known": "Le chapeau était encore sur sa tête.",
+  "longer": "Il les a laissés crier.",
+  "white-side": "Le blanc est apparu pour l'ami de gauche.",
+  "red-side": "Le rouge est venu pour l'ami de droite.",
+  "quiet": "Le sanctuaire devint silencieux.",
+  "pot": "Même le feu semblait écouter.",
+  "whole": "Vrai, dit-il. Pas tout le chapeau.",
+  "ashamed": "Ils ont eu honte.",
+  "drink": "Buvez dans une seule coupe, dit-il.",
+  "town": "La ville a ri, et c'était fini.",
+  "head": "L'un d'eux a touché sa propre tête, comme pour chercher un chapeau, et a souri."
+}

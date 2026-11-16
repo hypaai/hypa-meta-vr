@@ -96,18 +96,71 @@ namespace HypaStories
                 new[] { "El rey recompensa a Auta por su valentía." }),
         };
 
+        // Eshu at the Crossroads: English, French and Spanish answers; other languages fall back to English.
+        static readonly Intent[] Eshu =
+        {
+            I("crossroad|where|où|carrefour|dónde|donde|encrucijada", 0,
+                new[] { "The road runs between two compounds and meets at a crossroads.", "Everyone who uses it has to pass that place." },
+                new[] { "La route passe entre deux concessions et rejoint un carrefour.", "Tous ceux qui l’empruntent passent par cet endroit." },
+                new[] { "El camino pasa entre dos recintos familiares y llega a una encrucijada.", "Todos los que lo usan tienen que pasar por ese lugar." }),
+            I("friend|ami|amigo", 2,
+                new[] { "They are two friends who farm side by side.", "They go to market as one." },
+                new[] { "Ce sont deux amis qui cultivent leurs champs côte à côte.", "Ils vont au marché d’un même pas." },
+                new[] { "Son dos amigos que cultivan campos vecinos.", "Van juntos al mercado, como uno solo." }),
+            I("swear|oath|swore|jur", 6,
+                new[] { "They swore that nothing could come between them.", "Not a quarrel, and not even a god." },
+                new[] { "Ils ont juré que rien ne pourrait les séparer.", "Ni une querelle, ni même un dieu." },
+                new[] { "Juraron que nada podría separarlos.", "Ni una pelea, ni siquiera un dios." }),
+            I("eshu|èṣù|esù|god|dieu|dios|deity|divinité|deidad", 17,
+                new[] { "Eshu is a small god of the crossroads.", "He carries messages and mischief between heaven and earth." },
+                new[] { "Eshu est un petit dieu des carrefours.", "Il porte les messages et la malice entre le ciel et la terre." },
+                new[] { "Eshu es un pequeño dios de las encrucijadas.", "Lleva mensajes y travesuras entre el cielo y la tierra." }),
+            I("hat|chapeau|sombrero|colour|color|couleur|red|white|rouge|blanc|rojo|blanco", 19,
+                new[] { "His hat is red on one side and white on the other.", "Each friend can see only one side." },
+                new[] { "Son chapeau est rouge d’un côté et blanc de l’autre.", "Chaque ami n’en voit qu’un seul côté." },
+                new[] { "Su sombrero es rojo por un lado y blanco por el otro.", "Cada amigo solo puede ver un lado." }),
+            I("disagree|argue|quarrel|blind|désaccord|disput|querelle|aveugle|discut|pelea|ciego", 27,
+                new[] { "Each friend saw a different side of the same hat.", "One saw red, and the other saw white." },
+                new[] { "Chaque ami a vu un côté différent du même chapeau.", "L’un a vu du rouge, l’autre du blanc." },
+                new[] { "Cada amigo vio un lado distinto del mismo sombrero.", "Uno vio rojo y el otro vio blanco." }),
+            I("fight|market|marché|bagarre|mercado|shout", 36,
+                new[] { "The quarrel follows them to the market and becomes a fight." },
+                new[] { "La querelle les suit jusqu’au marché et tourne à la bagarre." },
+                new[] { "La disputa los sigue hasta el mercado y acaba en pelea." }),
+            I("laugh|rire|rit|reír|ríe|rie", 43,
+                new[] { "Eshu is at the shrine, laughing, because he planned the trick." },
+                new[] { "Eshu est au sanctuaire et il rit, parce que c’est lui qui a monté le tour." },
+                new[] { "Eshu está en el santuario, riéndose, porque él planeó el engaño." }),
+            I("both|truth|teach|same road|vérité|enseign|leçon|verdad|enseñ|lección", 52,
+                new[] { "He walked between them so each saw only his own side.", "They forgot they were still on the same road." },
+                new[] { "Il est passé entre eux, et chacun n’a vu que son côté.", "Ils avaient oublié qu’ils étaient toujours sur la même route." },
+                new[] { "Caminó entre ellos, y cada uno vio solo su propio lado.", "Olvidaron que seguían en el mismo camino." }),
+            I("leave|offering|calabash|wine|laiss|offrande|ofrenda|vino", 62,
+                new[] { "People leave a little something for Eshu at a crossroads." },
+                new[] { "Les gens laissent une petite offrande pour Eshu aux carrefours." },
+                new[] { "La gente deja una pequeña ofrenda para Eshu en las encrucijadas." }),
+        };
+
         // Marlow Street: English answers; other languages fall back to English until the translation step covers answers.
         static readonly Intent[] Marlow =
         {
-            I("nia|detective|who is", 1, new[] { "Nia is the detective on the case.", "She is standing behind the tape, watching the alley." }),
-            I("man|body|found|dead|victim", 2, new[] { "A man was found at the far end of the alley, beside the old brick wall." }),
-            I("witness|girl|saw", 3, new[] { "The only witness is a girl.", "She swears she saw nothing." }),
-            I("light|lamp|flicker|streetlight", 4, new[] { "The streetlight above the alley has been flickering all night.", "Nia thinks it is not random." }),
-            I("pattern|message|code|three seconds", 7, new[] { "The light goes dark for three seconds, then flashes twice.", "It repeats, like someone sending a message." }),
-            I("key|brass", 8, new[] { "Under the lamp post, Nia finds a small brass key." }),
-            I("door|brick|cupboard", 9, new[] { "The key opens a door that was bricked over twenty years ago." }),
-            I("photo|picture|photograph", 11, new[] { "Inside the cupboard is a single photograph.", "It shows the witness, much younger, beside the missing man." }),
-            I("truth|why|really|waiting|question", 12, new[] { "The girl saw everything.", "She was waiting for someone to ask the right question." }),
+            I(@"\bnia\b|detective", 2, new[] { "Nia is the detective on the case.", "She is standing behind the tape, watching the alley." }),
+            I(@"bello|officer|policeman", 3, new[] { "Officer Bello is a young policeman working with Nia.", "He is soaked, and trying not to look nervous." }),
+            I("man|body|found|dead|victim", 7, new[] { "A man was found at the far end of the alley, beside the old brick wall." }),
+            I(@"button|his hand|in his hand", 9, new[] { "In the man's hand, Nia found a single brass button.", "It did not come from his own coat." }),
+            I(@"witness|girl|saw|\bama\b", 11, new[] { "The only witness is a girl called Ama.", "She says she saw nothing, because she was asleep." }),
+            I(@"asleep|window|lying|\bliar\b", 16, new[] { "Ama says she was asleep.", "But the light in her window, right over the alley, was still on." }),
+            I("light|lamp|flicker|streetlight", 18, new[] { "The streetlight above the alley has been flickering all night.", "Nia thinks it is not random." }),
+            I("pattern|message|code|three seconds", 23, new[] { "The light goes dark for three seconds, then flashes twice.", "It repeats, like someone sending a message." }),
+            I("key|brass", 25, new[] { "Under the lamp post, Nia finds a small brass key." }),
+            I("door|brick|cupboard", 28, new[] { "The key opens a door that was bricked over twenty years ago." }),
+            I("photo|picture|photograph", 32, new[] { "Inside the cupboard is a single photograph.", "It shows the witness, much younger, beside the missing man." }),
+            I(@"blackout|lights went out|power cut|twenty years|vanish|missing", 34, new[] { "Twenty years ago, the whole street lost its power for a night.", "That same night, a man from Marlow Street vanished and was never found." }),
+            I(@"came back|come back|ran away|run away|same face", 37, new[] { "The man in the alley is the man who vanished twenty years ago.", "He had run away, and tonight he came back." }),
+            I(@"second man|torn|killer|who did it|who killed", 38, new[] { "In the photograph, a second man stands half out of the frame, with brass buttons on his coat.", "His face has been torn away." }),
+            I(@"wire|switch|signal|who is sending", 40, new[] { "A thin wire runs from the lamp post to Ama's lit window.", "Someone up there has been talking to Nia all night, in light." }),
+            I(@"daughter|father|related", 42, new[] { "In the photograph, the little girl holds the man's hand the way a daughter does." }),
+            I("truth|why|really|waiting|question", 43, new[] { "The girl saw everything.", "She was waiting for someone to ask the right question." }),
         };
 
         static readonly Dictionary<string, string[]> Spoiler = new Dictionary<string, string[]>
@@ -132,7 +185,7 @@ namespace HypaStories
         /// </summary>
         public static string[] AnswerFor(string question, int lineIndex, string lang, string storyId)
         {
-            var intents = storyId == "marlow-street" ? Marlow : SevenStones;
+            var intents = storyId == "marlow-street" ? Marlow : storyId == "eshu-crossroads" ? Eshu : SevenStones;
             var hit = intents.Where(i => i.Re.IsMatch(question ?? "")).OrderByDescending(i => i.Min).FirstOrDefault();
             if (hit == null) return For(Default, lang);
             if (hit.Min > lineIndex) return For(Spoiler, lang);

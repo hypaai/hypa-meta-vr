@@ -1,25 +1,112 @@
 {
+  "words": [
+    "rain",
+    "key",
+    "door"
+  ],
   "rain": "Rain dey fall for Marlow Street, the kind rain wey dey swallow sound of footsteps.",
-  "rain.ask": ["Where Marlow Street dey?"],
+  "rain.ask": [
+    "Where Marlow Street dey?"
+  ],
+  "call": "Small after midnight, somebody call say one man dey lie down for the alley wey dey behind the bakery.",
   "tape": "Detective Nia stand behind the yellow tape, dey watch as red and blue light dey pulse inside the narrow passage like say e dey breathe.",
-  "tape.ask": ["Who be Detective Nia?"],
+  "tape.ask": [
+    "Who be Detective Nia?"
+  ],
+  "bello": "Officer Bello stand for her side, young boy, rain don soak am finish, e dey try make e no look like say fear dey catch am.",
+  "bello.ask": [
+    "Who be Officer Bello?"
+  ],
+  "nobody": "“Nobody hear anything,” na wetin e talk. “No shout, no motor. Nothing.”",
+  "lift": "Nia raise the tape come waka enter the alley.",
+  "puddles": "The water wey gather for ground dey shine anytime the police light turn.",
   "body": "Dem don find one man for the far end, beside the old brick wall.",
-  "body.ask": ["Who the man be?"],
+  "body.ask": [
+    "Who the man be?"
+  ],
+  "hand": "Im right hand close tight for one something.",
+  "hand.ask": [
+    "Wetin dey im hand?"
+  ],
+  "button": "Nia open im finger dem softly. Inside am na one brass button.",
+  "not-his": "She check im coat. All im button complete. This one na another person own.",
+  "not-his.ask": [
+    "Na who get this button?"
+  ],
   "witness": "No weapon. No wallet. Na only one witness dey: one girl wey swear say she no see anything.",
-  "witness.ask": ["Why the girl talk say she no see anything?"],
+  "witness.ask": [
+    "Why the girl talk say she no see anything?"
+  ],
+  "step": "She sidon for the bakery step under one big umbrella, hold one cup of tea wey she never touch.",
+  "ama": "Her name na Ama. She go be like nineteen years.",
+  "crouch": "Nia bend down for her side. “You see anything tonight?”",
+  "asleep": "“Nothing,” Ama talk, she no even look up. “I dey sleep.”",
+  "window": "But the window wey dey on top the bakery, straight over the alley, im light still dey on.",
+  "window.ask": [
+    "Ama dey talk true?"
+  ],
+  "wait": "Nia no call am liar. She just talk say, “I go dey near.”",
   "streetlight": "But the streetlight above the narrow passage don dey blink all night.",
-  "streetlight.ask": ["Why the streetlight dey blink?"],
+  "streetlight.ask": [
+    "Why the streetlight dey blink?"
+  ],
+  "broken": "“That lamp don spoil since many years,” Bello talk. “Nobody dey ever fix am.”",
   "not-random": "Nia notice say the light no dey just blink anyhow.",
   "pattern": "E go go off for three seconds, then flash two times.",
+  "again": "Three seconds of dark. Two flash. Then dark again.",
   "message": "Again and again, like say person dey send message.",
-  "message.ask": ["Who dey send the message?"],
+  "message.ask": [
+    "Who dey send the message?"
+  ],
+  "someone": "Lamp no dey count. Na somebody wey dey near dey make am do like that.",
+  "someone.ask": [
+    "Who dey make the lamp dey blink?"
+  ],
   "key": "She follow the way the light dey blink reach the pole, come find one small brass key wey dem use tape hold under am.",
-  "key.ask": ["Wetin the key dey open?"],
+  "key.ask": [
+    "Wetin the key dey open?"
+  ],
+  "wall": "Nia turn slowly. For the end of the alley, near the man, the old brick wall stand there.",
+  "patch": "Most of the bricks don black and old. But one part fresh pass, e new, and e get shape like door.",
+  "patch.ask": [
+    "Why some bricks new pass the others?"
+  ],
   "door": "The key fit the lock of one door wey dem don use brick block for twenty years.",
-  "door.ask": ["Who use brick block the door?"],
+  "door.ask": [
+    "Who use brick block the door?"
+  ],
+  "pull": "Dem pull the loose bricks comot one by one, inside the rain.",
+  "groan": "The key turn with one rusty sound, and one small wooden door open.",
   "cupboard": "Behind the bricks, one cupboard dey, and na only one photograph dey inside am.",
   "photo": "For the photograph, the girl wey be witness still small well-well, dey stand beside the man wey don missing.",
-  "photo.ask": ["Who dey inside the photograph?"],
+  "photo.ask": [
+    "Who dey inside the photograph?"
+  ],
+  "writing": "For the back, with ink wey don fade: “Marlow Street. The night wey light go off.”",
+  "writing.ask": [
+    "Wetin happen the night wey light go off?"
+  ],
+  "blackout": "Twenty years ago, the whole street no get light until morning.",
+  "vanished": "And that same night, one man from Marlow Street disappear. Dem no ever find am.",
+  "same-face": "Nia look the photo, then look the man wey dey near the wall. Na the same face, twenty years older.",
+  "came-back": "E no die that night. E run comot. And tonight, e come back.",
+  "came-back.ask": [
+    "Why e come back?"
+  ],
+  "buttons": "For the photo, another man stand half for outside the picture. Im coat get one line of brass buttons.",
+  "face-cut": "Dem don tear im face comot from the picture.",
+  "wire": "Then Nia look up. One thin wire run from the lamp post, follow the wall, reach Ama window wey light dey.",
+  "wire.ask": [
+    "Where the wire dey go?"
+  ],
+  "switch": "Somebody for up there don dey talk to her all night, with light.",
+  "daughter": "For the photo, the small girl hold im hand the way pikin wey be im daughter dey hold am.",
   "truth": "No be say the girl no see anything. She see everything, and she don dey wait make somebody ask the right question.",
-  "truth.ask": ["Why the girl dey wait?"]
+  "truth.ask": [
+    "Why the girl dey wait?"
+  ],
+  "rain-softer": "The rain come calm. The lamp stop to blink, e just dey shine.",
+  "walk-back": "Nia waka back pass the water for ground reach the bakery step.",
+  "looked-up": "Ama drop her cold tea and, for the first time that night, she look up face am.",
+  "right-question": "And Nia sabi exactly wetin she go ask."
 }

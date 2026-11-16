@@ -1,7 +1,7 @@
 # Hypa Story (tickets 3A-3C, 3F)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
-Same three screens, two stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
+Same three screens, three stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, and *Eshu at the Crossroads* is a third card), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
 moves, pinch instead of click. Uses HypaCore only and never references HypaLens.
 
 ## Run it
@@ -25,8 +25,9 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | Language buttons | Pinch | Narration, questions and answers in English / Français / Español |
 | Space, ← → | Pause, `<<` `>>` | Pause / resume / replay, previous / next line |
 | **H** | Raise a hand above your head | Interrupt and ask |
-| **Q** (tap or hold), **Ask** (tap or hold) | Pinch Ask (hold = push-to-talk) | Ask; tap again = done talking / skip the line being said |
-| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question (about the lines told so far) |
+| **Q** | Raise a hand above your head | Ask; **Done** / **Skip** = done talking / skip the line being said |
+| **T**, after the story ends | Pinch **Try Hypa Translate** | Opens Hypa Translate in the story panel (see [Try Hypa](#try-hypa)); Esc / **x** closes it. The corner button becomes **Speak** |
+| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question, or translate a suggested word |
 | Esc, **Back** | Pinch Back | Cancel the question / back to the list / back to start |
 
 ## Places (ticket 3F): camp, hut, gathering
@@ -61,6 +62,17 @@ Done: the `Places` and `PlaceEntry` API, the switcher with fade and pause/resume
 scenes, the builder helper, editor keys, EditMode tests (`PlacesTests`). Not done: the real hut and gathering (3H, 3M), the
 portal (3L).
 
+## Try Hypa
+
+When a story ends, **Try Hypa Translate** appears in the story panel. It opens in that same panel. The story's language is the
+source. **To Yoruba** (or whichever language you last chose) cycles through the story languages. Three words from the story sit
+where suggested questions do: tap one and it is translated, then spoken. **Speak** on the corner button listens, translates what
+you said, and speaks that too. **Hear** plays the translation again. Translation and speech use Hypa's auto router (`model: auto`
+on `translate_message` and `text_to_speech`).
+
+Code: `Core/TryHypaFlow`, `Core/TryHypaText.Suggest`, `Ui/TryHypaView` (drawn inside `PlayerView`), `Ui/TryFonts` (device fonts so
+Yoruba tone marks, Igbo dots and Hausa hooks can be drawn; the story fonts are Latin-1 only). Unit tests: `TryHypaTests`.
+
 ## What came across from the prototype
 
 | Prototype (`Ideation/src`) | Here |
@@ -87,20 +99,30 @@ portal (3L).
 
 Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `StoryLibrary.Ids`:
 
-- `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `model` that answers questions
-  (`"provider/model"`, default `meta/muse-wonder-1.0`), the storyteller's `voices` (`[{ "model", "voice" }]`, as Hypa
+- `story.json`: the card (`theme`, `accent`, `eyebrow`, `title`, `description`), the `models` that answer questions
+  (`"provider/model"`, in order: every question starts with the first, and a model that fails hands the same question to the
+  next at once, within the 12 s the storyteller waits; one the service says it doesn't have is skipped for the session. All three
+  stories use Meta's `meta/meta-models/Muse-Spark-Open-816B-A42B:baseten`, then `google/gemini-3.5-flash`, then
+  `meta/meta-models/Muse-Glimmer-30B:deepinfra`, then `meta/muse-wonder-1.0` (last until the service can reach it again); an older single
+  `model` still works), the storyteller's `voices` (`[{ "model", "voice" }]`, as Hypa
   `list_voices` names them; `voice` is one name for every language or `{ "language code": name }`, since Hypa's voices are per
   language; each language uses the first entry with a voice for it, and the next ones are its fallbacks; empty = Hypa's Auto
   routing, which both stories use for now), the starting `rain` /
   `wind` (0..1), and the English `lines`, each
   `{ "id", "text" }` with optional `ask` (questions to suggest once the line is told) and cues: `rain` / `wind` (reached by the end
-  of that line) and `flashes` (lightning, seconds after the line starts).
-- `{code}.json` per translation (`fr`, `es`, `ha`, `ig`, `pcm`, `yo`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing
+  of that line) and `flashes` (lightning, seconds after the line starts). Also reached by the end of their line: `fire` (the
+  campfire's strength, 1 as it is: below shrinks and gutters, above roars up), `dark` (a deeper night), `dawn` (daybreak: the sky
+  warms, the stars fade) `police` (red and blue lights) and `spirit` (a god's light: the fire's glow swings from deep red to pale white). And `sounds`: `{ "roar": [0.4], "door": [0.2, 0.9] }`, seconds after the
+  line starts, by name from `StoryAudio.Effects` (roar, groan, stomp, fall, door, sizzle, sparks, throw, gulp, neigh, gallop,
+  rooster, heartbeat, cheer, drums, siren, clink, bricks, steps, laugh, rattle, birds), all made in code; a hot stone, sparks or a throw also flare the
+  fire, a roar, stomp or slammed door makes it gutter. When the night gets deep (`dark` above about 0.4), pairs of eyes open one by one
+  in the trees round the clearing, blink and watch you, and close as it lifts. A test checks every name a story uses.
+- `{code}.json` per translation (`fr`, `es`, `ha`, `ig`, `pcm`, `sw`, `yo`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing
   file or line is told in English, and a test lists every untranslated line of the offered languages. **The Hausa, Igbo, Pidgin and
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
   story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
   (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
-  (Claude) and need the same check.
+  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for all three stories also comes from that auto router and needs the same native check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
@@ -147,7 +169,7 @@ the translations are matched on.
 
 - The alley world (`alley.js`): the prototype keeps it for later too; both V1 stories are told at the campfire.
 - The "Voice" cue toggle (say "pause" / "question"): needs an on-device wake-word recogniser (Meta Voice SDK); raise a hand instead.
-- Typed questions: replaced by suggested-question buttons in VR.
+- Typed questions: replaced by suggested-question buttons in VR. Try Hypa takes a tap on a word, or your voice.
 - Loader, grain, bloom, adaptive quality, debug panel: desktop-preview features. On Quest use OVR fixed foveation and the
   Immersive Debugger; the Q&A timing log goes to the console (and the player's note line in the editor).
 - An Animator with Idle / Talking clips for the storyteller (the bones are driven directly, as in the prototype without clips).
@@ -164,3 +186,22 @@ The player sits just below eye level so the storyteller stays in view above it.
 No shadows, no post, one real-time point light, two mist bands, halved particle counts, 3-octave noise. Still to measure on a
 headset: the glTF props (grass and rock sets have many sub-meshes; merge or instance them if draw calls are high), the card shader
 (full-screen-ish fbm on two cards), and the fire light's per-pixel cost.
+
+## The Dodo game (after *Seven Hot Stones*)
+
+When *Seven Hot Stones* ends, **Face Dodo** appears above the player panel: you are Auta. The night turns blood red and Dodo
+(Quaternius' Demon, CC0, `Art/Models/dodo_demon.glb`: recoloured, glowing eyes, halo and trident hidden) bursts out of the trees.
+
+- **Heat the stones:** pinch each of the seven stones on the slab by your seat and drop it in the fire (or point at a stone from
+  afar and pinch: it flies to your hand). Each flares the fire and glows red hot.
+- **Answer:** Dodo roars "Who is able to fight with me?" (the storyteller says the line in your language). Shout back "I am!":
+  any loud answer counts (`ShoutDetector`, no speech-to-text), or pinch the **I am!** button.
+- **Throw:** Dodo stoops at the fire with its mouth open (a ring of fire marks it, shrinking as time runs out). Grab a hot stone
+  and throw. A throw roughly toward the mouth curves in; letting go while pointing at it lobs the stone there.
+- **Three lives:** a stone that misses, being too slow, or not answering twice costs a life (Dodo steps closer). The third ends
+  it: **Try again**, **The story** or **Stories**. **Back** during the fight returns to the end of the story.
+- **Seven stones swallowed:** Dodo falls, dawn breaks, and the villagers come out of the trees to dance round the fire.
+
+Hands first; controllers work the same way (trigger = pinch). Rules: `Core/DodoRules` (unit tested). Game: `World/DodoGame`,
+creature: `World/DodoCreature`. In the editor: **P** puts a stone in the fire, **T** throws into the mouth, **M** throws wide,
+**Space** shouts.

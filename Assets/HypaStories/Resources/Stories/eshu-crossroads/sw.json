@@ -1,0 +1,96 @@
+{
+  "words": ["marafiki", "kofia", "kibuyu"],
+  "road": "Hapo zamani za kale, barabara nyekundu ilipita kati ya makazi mawili, na kila aliyeitumia alipita njia panda.",
+  "road.ask": [
+    "Njia panda iko wapi?"
+  ],
+  "friends": "Kando ya barabara hiyo waliishi marafiki wawili waliolima bega kwa bega na kwenda sokoni pamoja.",
+  "friends.ask": [
+    "Marafiki hao wawili ni akina nani?"
+  ],
+  "walk": "Kila asubuhi ya soko waliitembea pamoja, wakizungumza njiani kote.",
+  "oath": "Waliapa kwamba hakuna chochote duniani ambacho kingeweza kuwatenganisha. Si ugomvi. Hata mungu.",
+  "oath.ask": [
+    "Marafiki waliapa nini?"
+  ],
+  "day": "Siku moja yenye mwanga mwingi, waliondoka kama kawaida, kila mmoja akiwa upande wake wa barabara.",
+  "waiting": "Kwenye njia panda, mtu fulani alikuwa akisubiri.",
+  "eshu": "Alikuwa Eshu, mungu mdogo, yule anayebeba ujumbe na hila kati ya mbingu na dunia.",
+  "eshu.ask": [
+    "Eshu ni nani?"
+  ],
+  "hat": "Kichwani mwake kulikuwa na kofia ndefu. Upande mmoja ulikuwa mwekundu. Upande mwingine ulikuwa mweupe.",
+  "hat.ask": [
+    "Ni nini kilichokuwa cha pekee kuhusu kofia?"
+  ],
+  "between": "Alikanyaga barabarani na kutembea moja kwa moja katikati ya marafiki hao wawili.",
+  "passed": "Hakuwasalimu. Hakusimama. Aliendelea, na vumbi likafunika njia nyuma yake.",
+  "red": "Rafiki aliyekuwa upande wa kushoto alisema, hiyo ilikuwa kofia nzuri sana nyekundu.",
+  "white": "Rafiki aliyekuwa upande wa kulia alisimama. Alisema, kofia ilikuwa nyeupe.",
+  "white.ask": [
+    "Kwa nini marafiki hawakubaliani?"
+  ],
+  "quarrel": "Walisimama barabarani na kubishana, kila mmoja akiwa na hakika kwamba mwenzake alikuwa amepofuka.",
+  "market": "Walipofika sokoni, ugomvi ulikuwa umekuwa mkubwa kiasi cha kusikika na mji mzima.",
+  "fight": "Maneno yakawa kelele, na kelele zikawa mapigano mavumbini.",
+  "watch": "Watu waliacha vibanda vyao ili kuwatazama marafiki wawili wakijaribu kuthibitisha rangi.",
+  "evening": "Jioni hiyo, watu wa mji waliwapeleka kwenye madhabahu ili suala hilo liweze kutatuliwa.",
+  "there": "Eshu alikuwa tayari pale, ameketi karibu na moto, na alikuwa akicheka.",
+  "there.ask": [
+    "Kwa nini Eshu anacheka?"
+  ],
+  "turned": "Aliinua kofia na kuizungusha polepole mara moja ili kila mtu aweze kuiona.",
+  "both": "Nyekundu upande mmoja. Nyeupe upande mwingine. Marafiki wote wawili walikuwa wamesema ukweli.",
+  "both.ask": [
+    "Kofia inawezaje kuwa na rangi zote mbili?"
+  ],
+  "teaching": "Eshu alisema, nilitembea katikati yenu, na kila mmoja wenu aliona tu upande alioonyeshwa.",
+  "teaching.ask": [
+    "Eshu alikuwa akiwafundisha nini?"
+  ],
+  "same-road": "Mlisahau kwamba bado mlikuwa kwenye barabara ileile.",
+  "calabash": "Aliweka kibuyu cha divai ya mnazi kati yao.",
+  "laughed": "Marafiki hao wawili waliitazama kofia, kisha wakatazamana, na wakacheka hadi ikabidi wakae chini.",
+  "morning": "Kufikia asubuhi walikuwa njiani tena, wakitembea kwa pamoja.",
+  "offering": "Na ndiyo maana, kwenye njia panda, watu bado humwachia Eshu kitu kidogo.",
+  "offering.ask": [
+    "Watu humwachia Eshu nini?"
+  ],
+  "gates": "Malango yao yalifungukia kwenye vumbi lilelile.",
+  "bowl": "Walilima kwa jembe pamoja na kula kutoka bakuli moja.",
+  "prices": "Walizungumza kuhusu mvua na bei.",
+  "boys": "Watu wakacheka. Marafiki wa zamani husema hivyo kila mara.",
+  "louder": "Mmoja alisema kwa sauti kubwa zaidi, ili barabara isikie.",
+  "god": "Hata mungu hawezi.",
+  "listening": "Mungu mdogo alikuwa akisikiliza.",
+  "smiled": "Alitabasamu. Alikuwa amepewa kazi.",
+  "staffs": "Kila mmoja alibeba fimbo.",
+  "sight": "Njia panda ikaonekana.",
+  "post": "Walimdhania kuwa nguzo.",
+  "bones": "Msururu wa kauri ulitikisika kwenye fimbo yake.",
+  "nothing": "Hakusema chochote.",
+  "hung": "Vumbi jekundu lilitanda hewani.",
+  "sure": "Rafiki wa kushoto aliamini macho yake.",
+  "strange": "Yule rafiki wa upande wa kulia akakunja uso.",
+  "looking": "Nyekundu, alisema wa kwanza.",
+  "sun": "Nyeupe, alisema wa pili.",
+  "liar": "Kila mmoja alimwita mwenzake mwongo.",
+  "step": "Hakuna hata mmoja aliyevuka kwenda upande wa mwenzake.",
+  "sellers": "Wauzaji waliinua macho kutoka kwenye bidhaa zao.",
+  "only": "Walisikiana wao kwa wao tu.",
+  "rolled": "Walibingirika mavumbini.",
+  "elders": "Wazee waliwatenganisha.",
+  "neighbours": "Bado hawakukubaliana.",
+  "followed": "Nusu ya watu wa mji wakatembea nyuma yao, wakiwa wamebeba mienge.",
+  "known": "Kofia ilikuwa bado kichwani mwake.",
+  "longer": "Aliwaacha wapige kelele.",
+  "white-side": "Upande mweupe ukamfikia rafiki wa kushoto.",
+  "red-side": "Rangi nyekundu ilimjia rafiki wa kulia.",
+  "quiet": "Madhabahu pakawa kimya.",
+  "pot": "Hata moto ulionekana kusikiliza.",
+  "whole": "Ni kweli, alisema. Si kofia nzima.",
+  "ashamed": "Waliaibika.",
+  "drink": "Kunyweni kutoka kikombe kimoja, alisema.",
+  "town": "Mji ukacheka, na ikaisha.",
+  "head": "Mmoja akagusa kichwa chake mwenyewe, kana kwamba anahisi kama amevaa kofia, kisha akatabasamu."
+}

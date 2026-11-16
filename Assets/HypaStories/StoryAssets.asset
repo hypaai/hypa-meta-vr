@@ -29,6 +29,7 @@ MonoBehaviour:
   log: {fileID: 2100000, guid: 61aecc26543e34d9f9e7b72ddc81efe1, type: 2}
   campFire: {fileID: 8128668236925612103, guid: 024689840da914eb9b218e0d35a49607, type: 3}
   storyteller: {fileID: 6635245195314443262, guid: 3be1a977b700547dcaeb4ccc5b87450c, type: 3}
+  dodo: {fileID: 2242888416370347441, guid: 81fc030469e84d2d8b677e8310f84f3c, type: 3}
   deadTrunk: {fileID: 1079839889373478930, guid: 2c690c633d88b40f4b62af518e484873, type: 3}
   stump: {fileID: 1589626869621635631, guid: 02ce66c0d83084daca63aa7311ffa42c, type: 3}
   fern: {fileID: 8771091787928289351, guid: 6ea9bd29592ef435d8c38c8fd02334ff, type: 3}
@@ -67,3 +68,12 @@ MonoBehaviour:
   - {fileID: 2800000, guid: c6250aa3b18d54ee386152498c6f391e, type: 3}
   - {fileID: 2800000, guid: 54509682f37854c84b84da1e1e685ccb, type: 3}
   - {fileID: 2800000, guid: a406eb80867c84508b404b2333031b45, type: 3}
+  - {fileID: 2800000, guid: 1d65d5399dfe34b9b879a9060daa92ba, type: 3}
+  - {fileID: 2800000, guid: f2f56ca74ca8942fe9b13ca05c56e7a7, type: 3}
+  - {fileID: 2800000, guid: b87c00fea93aa48798ac6a1fcc4f4128, type: 3}
+  - {fileID: 2800000, guid: 67de72f4435b4baf982aedc99f2bc40a, type: 3}
+  - {fileID: 2800000, guid: 3ad74f5b14bb44ebbf1428c5f6a2d16c, type: 3}
+  - {fileID: 2800000, guid: 87e9ff364e7940c5bd0f977284e665ba, type: 3}
+  - {fileID: 2800000, guid: 0051018bd63c4ea19ada7537d69495fb, type: 3}
+  - {fileID: 2800000, guid: 283e1c8a7bdb4ebd96081494274dfb0e, type: 3}
+  - {fileID: 2800000, guid: 41d23230ee2d4a9e8db3d63fff42f506, type: 3}

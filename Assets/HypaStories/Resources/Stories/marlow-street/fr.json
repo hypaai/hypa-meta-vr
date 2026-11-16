@@ -1,25 +1,112 @@
 {
+  "words": [
+    "pluie",
+    "clé",
+    "porte"
+  ],
   "rain": "Il pleuvait sur Marlow Street, le genre de pluie qui cache les pas.",
-  "rain.ask": ["Où se trouve Marlow Street ?"],
+  "rain.ask": [
+    "Où se trouve Marlow Street ?"
+  ],
+  "call": "Peu après minuit, quelqu’un appela au sujet d’un homme étendu dans la ruelle derrière la boulangerie.",
   "tape": "La détective Nia se tenait derrière le ruban jaune, regardant la ruelle respirer en rouge et bleu.",
-  "tape.ask": ["Qui est la détective Nia ?"],
+  "tape.ask": [
+    "Qui est la détective Nia ?"
+  ],
+  "bello": "À côté d’elle se tenait l’agent Bello, jeune et trempé, qui essayait de ne pas avoir l’air nerveux.",
+  "bello.ask": [
+    "Qui est l’agent Bello ?"
+  ],
+  "nobody": "« Personne n’a rien entendu, dit-il. Pas un cri, pas une voiture. Rien. »",
+  "lift": "Nia souleva le ruban et entra dans la ruelle.",
+  "puddles": "Les flaques brillaient à chaque tour des gyrophares.",
   "body": "Un homme avait été retrouvé au fond, près du vieux mur de briques.",
-  "body.ask": ["Qui était cet homme ?"],
+  "body.ask": [
+    "Qui était cet homme ?"
+  ],
+  "hand": "Sa main droite était serrée sur quelque chose.",
+  "hand.ask": [
+    "Qu’a-t-il dans la main ?"
+  ],
+  "button": "Nia lui ouvrit doucement les doigts. À l’intérieur, il y avait un seul bouton en laiton.",
+  "not-his": "Elle vérifia son manteau. Il ne manquait aucun bouton. Celui-ci venait de quelqu’un d’autre.",
+  "not-his.ask": [
+    "À qui est ce bouton ?"
+  ],
   "witness": "Pas d’arme. Pas de portefeuille. Un seul témoin, une fille qui jurait n’avoir rien vu.",
-  "witness.ask": ["Pourquoi la fille dit-elle n’avoir rien vu ?"],
+  "witness.ask": [
+    "Pourquoi la fille dit-elle n’avoir rien vu ?"
+  ],
+  "step": "Elle était assise sur la marche de la boulangerie, sous un grand parapluie, une tasse de thé intacte entre les mains.",
+  "ama": "Elle s’appelait Ama. Elle semblait avoir dix-neuf ans.",
+  "crouch": "Nia s’accroupit près d’elle. « Tu as vu quelque chose cette nuit ? »",
+  "asleep": "« Rien, dit Ama sans lever les yeux. Je dormais. »",
+  "window": "Pourtant, la fenêtre au-dessus de la boulangerie, juste au-dessus de la ruelle, était encore allumée.",
+  "window.ask": [
+    "Ama dit-elle la vérité ?"
+  ],
+  "wait": "Nia ne la traita pas de menteuse. Elle dit seulement : « Je ne serai pas loin. »",
   "streetlight": "Mais le lampadaire au-dessus de la ruelle clignotait depuis le début de la nuit.",
-  "streetlight.ask": ["Pourquoi le lampadaire clignote-t-il ?"],
+  "streetlight.ask": [
+    "Pourquoi le lampadaire clignote-t-il ?"
+  ],
+  "broken": "« Ce lampadaire est cassé depuis des années, dit Bello. Personne ne le répare jamais. »",
   "not-random": "Nia remarqua qu’il ne clignotait jamais au hasard.",
   "pattern": "Il s’éteignait trois secondes, puis clignotait deux fois.",
+  "again": "Trois secondes de noir. Deux éclairs. Puis de nouveau le noir.",
   "message": "Encore et encore, comme quelqu’un qui envoie un message.",
-  "message.ask": ["Qui envoie ce message ?"],
+  "message.ask": [
+    "Qui envoie ce message ?"
+  ],
+  "someone": "Un lampadaire ne compte pas. Quelqu’un, tout près, le faisait clignoter ainsi.",
+  "someone.ask": [
+    "Qui fait clignoter le lampadaire ?"
+  ],
   "key": "Elle suivit le rythme jusqu’au lampadaire et trouva une petite clé en laiton collée en dessous.",
-  "key.ask": ["Qu’ouvre cette clé ?"],
+  "key.ask": [
+    "Qu’ouvre cette clé ?"
+  ],
+  "wall": "Nia se retourna lentement. Au fond de la ruelle, à côté de l’homme, se dressait le vieux mur de briques.",
+  "patch": "La plupart des briques étaient sombres et vieilles. Mais une partie était plus claire, plus récente, et avait la forme d’une porte.",
+  "patch.ask": [
+    "Pourquoi certaines briques sont-elles plus récentes ?"
+  ],
   "door": "La clé allait à une porte murée depuis vingt ans.",
-  "door.ask": ["Qui a muré cette porte ?"],
+  "door.ask": [
+    "Qui a muré cette porte ?"
+  ],
+  "pull": "Ils retirèrent les briques descellées une à une, sous la pluie.",
+  "groan": "La clé tourna dans un grincement rouillé, et une petite porte en bois s’ouvrit.",
   "cupboard": "Derrière les briques se cachait un placard, et dedans une seule photographie.",
   "photo": "Elle montrait la témoin, bien plus jeune, à côté de l’homme disparu.",
-  "photo.ask": ["Qui est sur la photo ?"],
+  "photo.ask": [
+    "Qui est sur la photo ?"
+  ],
+  "writing": "Au dos, à l’encre pâlie : « Marlow Street. La nuit où les lumières se sont éteintes. »",
+  "writing.ask": [
+    "Que s’est-il passé la nuit où les lumières se sont éteintes ?"
+  ],
+  "blackout": "Vingt ans plus tôt, toute la rue avait été privée d’électricité jusqu’au matin.",
+  "vanished": "Et cette nuit-là, un homme de Marlow Street avait disparu. On ne l’avait jamais retrouvé.",
+  "same-face": "Nia regarda la photo, puis l’homme près du mur. Le même visage, vingt ans plus tard.",
+  "came-back": "Il n’était pas mort cette nuit-là. Il s’était enfui. Et cette nuit, il était revenu.",
+  "came-back.ask": [
+    "Pourquoi est-il revenu ?"
+  ],
+  "buttons": "Sur la photo, un deuxième homme se tenait à moitié hors du cadre. Son manteau avait une rangée de boutons en laiton.",
+  "face-cut": "Son visage avait été arraché de la photo.",
+  "wire": "Alors Nia leva les yeux. Un fil fin partait du lampadaire, longeait le mur et montait jusqu’à la fenêtre allumée d’Ama.",
+  "wire.ask": [
+    "Où va le fil ?"
+  ],
+  "switch": "Quelqu’un, là-haut, lui avait parlé toute la nuit, avec de la lumière.",
+  "daughter": "Sur la photo, la petite fille lui tenait la main comme le fait une fille avec son père.",
   "truth": "La fille n’avait pas rien vu. Elle avait tout vu, et elle attendait que quelqu’un pose la bonne question.",
-  "truth.ask": ["Pourquoi la fille attendait-elle ?"]
+  "truth.ask": [
+    "Pourquoi la fille attendait-elle ?"
+  ],
+  "rain-softer": "La pluie se calma. Le lampadaire cessa de clignoter et brilla, simplement.",
+  "walk-back": "Nia retraversa les flaques jusqu’à la marche de la boulangerie.",
+  "looked-up": "Ama posa son thé froid et, pour la première fois de la nuit, leva les yeux vers elle.",
+  "right-question": "Et Nia savait exactement quoi demander."
 }

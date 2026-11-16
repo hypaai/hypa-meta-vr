@@ -1,0 +1,96 @@
+{
+  "words": ["amigos", "sombrero", "jícara"],
+  "road": "Hace mucho tiempo, un camino de tierra roja discurría entre dos recintos familiares, y todos los que lo transitaban pasaban por una encrucijada.",
+  "road.ask": [
+    "¿Dónde está la encrucijada?"
+  ],
+  "friends": "Junto a aquel camino vivían dos amigos que cultivaban campos contiguos e iban juntos al mercado.",
+  "friends.ask": [
+    "¿Quiénes son los dos amigos?"
+  ],
+  "walk": "Cada mañana de mercado lo recorrían juntos, hablando durante todo el trayecto.",
+  "oath": "Juraron que nada en el mundo podría separarlos. Ni una disputa. Ni siquiera un dios.",
+  "oath.ask": [
+    "¿Qué juraron los amigos?"
+  ],
+  "day": "Un día radiante salieron como de costumbre, cada uno por su lado del camino.",
+  "waiting": "En la encrucijada, alguien esperaba.",
+  "eshu": "Era Eshu, un dios menor, el que lleva mensajes y travesuras entre el cielo y la tierra.",
+  "eshu.ask": [
+    "¿Quién es Eshu?"
+  ],
+  "hat": "En la cabeza llevaba un sombrero alto. Un lado era rojo. El otro lado era blanco.",
+  "hat.ask": [
+    "¿Qué tenía de especial el sombrero?"
+  ],
+  "between": "Se adentró en el camino y pasó justo entre los dos amigos.",
+  "passed": "No los saludó. No se detuvo. Siguió adelante, y el polvo se cerró tras él.",
+  "red": "El amigo de la izquierda dijo: «Qué bonito era aquel sombrero rojo».",
+  "white": "El amigo de la derecha se detuvo. Dijo que el sombrero era blanco.",
+  "white.ask": [
+    "¿Por qué no están de acuerdo los amigos?"
+  ],
+  "quarrel": "Se quedaron en medio del camino discutiendo, cada uno convencido de que el otro se había quedado ciego.",
+  "market": "Cuando llegaron al mercado, la disputa se había vuelto tan ruidosa que todo el pueblo podía oírla.",
+  "fight": "Las palabras se convirtieron en gritos, y los gritos, en una pelea en el polvo.",
+  "watch": "La gente abandonó sus puestos para ver a dos amigos intentar demostrar de qué color era.",
+  "evening": "Aquella tarde, la gente del pueblo los llevó al santuario para zanjar el asunto.",
+  "there": "Eshu ya estaba allí, sentado junto al fuego, riéndose.",
+  "there.ask": [
+    "¿Por qué se ríe Eshu?"
+  ],
+  "turned": "Levantó el sombrero y lo giró lentamente una vez, para que todos pudieran verlo.",
+  "both": "Rojo por un lado. Blanco por el otro. Los dos amigos habían dicho la verdad.",
+  "both.ask": [
+    "¿Cómo puede ser el sombrero de los dos colores?"
+  ],
+  "teaching": "Eshu dijo: «Caminé entre ustedes, y cada uno vio solamente el lado que le tocó».",
+  "teaching.ask": [
+    "¿Qué quería enseñarles Eshu?"
+  ],
+  "same-road": "Olvidaron que aún estaban en el mismo camino.",
+  "calabash": "Puso entre ellos una jícara de vino de palma.",
+  "laughed": "Los dos amigos miraron el sombrero, luego se miraron el uno al otro y rieron hasta que tuvieron que sentarse.",
+  "morning": "Al amanecer ya estaban de nuevo en camino, andando como uno solo.",
+  "offering": "Y por eso, en las encrucijadas, la gente todavía deja alguna pequeña ofrenda para Eshu.",
+  "offering.ask": [
+    "¿Qué deja la gente para Eshu?"
+  ],
+  "gates": "Sus puertas se abrían en el mismo polvo.",
+  "bowl": "Cavaron juntos y comieron de un mismo tazón.",
+  "prices": "Hablaron de lluvia y de precios.",
+  "boys": "La gente se rio. Los viejos amigos siempre dicen eso.",
+  "louder": "Uno lo dijo más fuerte, para que el camino lo oyera.",
+  "god": "Ni siquiera un dios.",
+  "listening": "Un pequeño dios estaba escuchando.",
+  "smiled": "Sonrió. Le habían dado trabajo.",
+  "staffs": "Cada uno llevaba un bastón.",
+  "sight": "Apareció la encrucijada.",
+  "post": "Lo tomaron por un poste.",
+  "bones": "Un collar de cauríes repiqueteó en su bastón.",
+  "nothing": "No dijo nada.",
+  "hung": "El polvo rojo flotaba en el aire.",
+  "sure": "El amigo de la izquierda confió en sus ojos.",
+  "strange": "El amigo de la derecha frunció el ceño.",
+  "looking": "Rojo, dijo el primero.",
+  "sun": "Blanco, dijo el segundo.",
+  "liar": "Cada uno llamó mentiroso al otro.",
+  "step": "Ninguno cruzó al lado del otro.",
+  "sellers": "Los vendedores levantaron la vista de sus mercancías.",
+  "only": "Solo se oían el uno al otro.",
+  "rolled": "Rodaron por el polvo.",
+  "elders": "Los ancianos los separaron.",
+  "neighbours": "Aun así, no se ponían de acuerdo.",
+  "followed": "Medio pueblo caminó detrás de ellos, llevando antorchas.",
+  "known": "El sombrero todavía estaba sobre su cabeza.",
+  "longer": "Dejó que gritaran.",
+  "white-side": "El blanco apareció para el amigo de la izquierda.",
+  "red-side": "El rojo pasó por el lado del amigo de la derecha.",
+  "quiet": "El santuario quedó en silencio.",
+  "pot": "Hasta el fuego parecía escuchar.",
+  "whole": "Es verdad, dijo. No todo el sombrero.",
+  "ashamed": "Estaban avergonzados.",
+  "drink": "Beban de una sola taza, dijo.",
+  "town": "El pueblo se rio y todo terminó.",
+  "head": "Uno se tocó la cabeza, como si buscara un sombrero, y sonrió."
+}
