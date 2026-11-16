@@ -79,7 +79,7 @@ namespace HypaLens
         Transform _cam, _hud, _world;
         TextMesh _status; GameObject _statusBg;
         PinchTarget _sourceBtn, _targetBtn, _captureBtn, _captionBtn, _speakBtn, _savedBtn;
-        GameObject _onboarding, _liveBadge;
+        GameObject _onboarding, _consent, _liveBadge;
         readonly List<GameObject> _bottomRow = new List<GameObject>();
         readonly List<GameObject> _topBar = new List<GameObject>(); // X, languages, bookmark: hidden in Saved words
         LanguagePicker _picker;
@@ -270,13 +270,13 @@ namespace HypaLens
         {
             if (_speakState == SpeakState.Playing) StopSpeaking();
             ClearAll();
-            _picker?.Close(); ShowOnboarding(false); ClosePopup();
+            _picker?.Close(); ShowOnboarding(false); CloseConsent(); ClosePopup();
 
             if (HypaShell.Instance != null) HypaShell.Instance.ExitToHome(); // leaves Lens for the entry screen
             else SetStatus("Home needs the Hypa shell. Play from the HypaShell scene.");
         }
 
-        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _popup != null
+        bool OtherViewOpen => (_picker != null && _picker.IsOpen) || _onboarding != null || _consent != null || _popup != null
                               || (HypaShell.Instance != null && HypaShell.Instance.IsMenuOpen);
 
         /// <summary>Onboarding, practice, the picker, the caption and the consent card share the spot above the bar: one at a time.</summary>
@@ -284,6 +284,7 @@ namespace HypaLens
         {
             _picker?.Close();
             ShowOnboarding(false);
+            CloseConsent();
             ClosePopup();
         }
 
@@ -468,11 +469,41 @@ namespace HypaLens
 
         // ---------- Caption (Hypa reads and translates the whole view; the photo leaves the headset, as the tooltip says) ----------
 
-        Task CaptionAsync() => _busy ? Task.CompletedTask : Loading(CaptionWorkAsync, _captionBtn, _captureBtn);
+        Task CaptionAsync()
+        {
+            if (_busy) return Task.CompletedTask;
+            if (!LensPrefs.CaptionConsent) { ShowCaptionConsent(); return Task.CompletedTask; }
+            return Loading(CaptionWorkAsync, _captionBtn, _captureBtn);
+        }
+
+        /// <summary>Asked once, before the first Caption: the photo of the view leaves the headset for Hypa.</summary>
+        void ShowCaptionConsent()
+        {
+            CloseCards();
+            var size = new Vector2(0.50f, 0.26f);
+            _consent = Card("Caption consent", "Send this view to Hypa?", size, CloseConsent);
+            Ui.Text(_consent.transform,
+                "Caption takes one photo of what you see and sends it to Hypa,\nwhich reads the text in it and translates it.\n\nThe photo is used for that only and is not saved on the headset.\nCapture never sends photos: it reads text on the headset.",
+                0.015f, new Vector3(-0.23f, 0.01f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);
+            var y = -size.y * 0.5f + 0.035f;
+            Ui.Button("Not now", _consent.transform, new Vector3(-0.07f, y, -0.001f), new Vector2(0.12f, 0.036f), Ui.Muted, CloseConsent);
+            Ui.Button("Allow", _consent.transform, new Vector3(0.07f, y, -0.001f), new Vector2(0.12f, 0.036f), Ui.Primary, () =>
+            {
+                LensPrefs.CaptionConsent = true;
+                CloseConsent();
+                _ = CaptionAsync();
+            });
+        }
+
+        void CloseConsent()
+        {
+            if (_consent != null) Destroy(_consent);
+            _consent = null;
+        }
 
         async Task CaptionWorkAsync()
         {
-            if (_busy) return;
+            if (_busy || !LensPrefs.CaptionConsent) return; // never send a photo without the user's yes
             _busy = true;
             CloseCards();
             SetStatus("Sending the view to Hypa...");
@@ -858,7 +889,7 @@ namespace HypaLens
         bool _modal;
 
         /// <summary>Any card in the middle (the results popup, the language list, onboarding, saved words) is modal.</summary>
-        bool CardOpen => _popup != null || (_picker != null && _picker.IsOpen) || _onboarding != null;
+        bool CardOpen => _popup != null || (_picker != null && _picker.IsOpen) || _onboarding != null || _consent != null;
 
         /// <summary>The bottom row and the hint step aside while a card is up, so nothing draws over it.</summary>
         void SetPopupMode(bool open)

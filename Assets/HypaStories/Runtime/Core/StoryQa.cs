@@ -27,10 +27,9 @@ namespace HypaStories
     }
 
     /// <summary>
-    /// Stand-in for the Hypa chat step (canned, spoiler-guarded answers with simulated latency), ported from the prototype's
-    /// qa.js. It proves the interaction loop and gives the timing log real numbers for the local parts. Hypa's MCP endpoint has
-    /// no chat tool yet; when the REST chat endpoint is confirmed, implement <see cref="IStoryQa"/> on it and swap it in.
-    /// Modes: "stub", "slow" (about 3 s to the first sentence: exercises the second filler) and "offline" (every call fails).
+    /// Stand-in for <see cref="ChatStoryQa"/> (canned, spoiler-guarded answers with simulated latency), ported from the prototype's
+    /// qa.js: tests the interaction loop without the network. Pick it with StoryApp's qaMode: "stub", "slow" (about 3 s to the first
+    /// sentence: exercises the second filler) or "offline" (every call fails).
     /// </summary>
     public sealed class StubStoryQa : IStoryQa
     {
@@ -53,40 +52,93 @@ namespace HypaStories
             return new Intent { Re = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant), Min = min, A = a };
         }
 
-        static readonly Intent[] Kiko =
+        static readonly Intent[] SevenStones =
         {
-            I("kiko|tortoise|tortue|tortuga|who is", 1,
-                new[] { "Kiko is a curious tortoise from a small village.", "He is known for asking too many questions." },
-                new[] { "Kiko est une tortue curieuse d’un petit village.", "Il est connu pour poser trop de questions." },
-                new[] { "Kiko es una tortuga curiosa de un pequeño pueblo.", "Es famoso por hacer demasiadas preguntas." }),
-            I("village|where|where does|où|dónde|donde", 0,
-                new[] { "It all happens long ago, in a small village.", "The village is surrounded by forests." },
-                new[] { "Tout se passe il y a longtemps, dans un petit village.", "Le village est entouré de forêts." },
-                new[] { "Todo ocurre hace mucho tiempo, en un pequeño pueblo.", "El pueblo está rodeado de bosques." }),
-            I("moon|lune|luna", 4,
-                new[] { "Kiko wonders why the moon seems to follow travellers.", "It is one of the many things he wants to understand." },
-                new[] { "Kiko se demande pourquoi la lune semble suivre les voyageurs.", "C’est l’une des nombreuses choses qu’il veut comprendre." },
-                new[] { "Kiko se pregunta por qué la luna parece seguir a los viajeros.", "Es una de las muchas cosas que quiere entender." }),
-            I("bird|oiseau|pájaro|pajaro|sunrise", 5,
-                new[] { "Kiko also wonders why birds sing before sunrise." },
-                new[] { "Kiko se demande aussi pourquoi les oiseaux chantent avant le lever du soleil." },
-                new[] { "Kiko también se pregunta por qué los pájaros cantan antes del amanecer." }),
-            I("baobab|tree|arbre|árbol|arbol|leaves", 6,
-                new[] { "The old baobab tree never seems to lose its leaves.", "Kiko cannot work out why." },
-                new[] { "Le vieux baobab ne perd jamais ses feuilles.", "Kiko ne comprend pas pourquoi." },
-                new[] { "El viejo baobab nunca parece perder sus hojas.", "Kiko no entiende por qué." }),
-            I("fire|feu|fuego|burning", 9,
-                new[] { "Deep in the forest, a fire burns beneath an ancient tree.", "Nobody in the village can explain it." },
-                new[] { "Au fond de la forêt, un feu brûle sous un arbre ancien.", "Personne au village ne peut l’expliquer." },
-                new[] { "En lo profundo del bosque, un fuego arde bajo un árbol antiguo.", "Nadie en el pueblo puede explicarlo." }),
-            I("rain|wind|storm|pluie|vent|lluvia|viento|tormenta|go out|never", 11,
-                new[] { "That fire never goes out.", "Not in the rain, not in the wind, not even in the heaviest storms." },
-                new[] { "Ce feu ne s’éteint jamais.", "Ni sous la pluie, ni dans le vent, pas même dans les pires tempêtes." },
-                new[] { "Ese fuego nunca se apaga.", "Ni con lluvia, ni con viento, ni siquiera en las peores tormentas." }),
-            I("remember|memor|mémoire|souvenir|recuerdo|name|called", 14,
-                new[] { "The villagers call it the Remembering Fire.", "They believe it holds the memories of everyone who ever lived." },
-                new[] { "Les villageois l’appellent le Feu du Souvenir.", "Ils croient qu’il garde les souvenirs de tous ceux qui ont vécu." },
-                new[] { "Los aldeanos lo llaman el Fuego del Recuerdo.", "Creen que guarda los recuerdos de todos los que han vivido." }),
+            I("hausa|town|where|ville|où|pueblo|ciudad|dónde|donde", 0,
+                new[] { "It all happens long ago, in a town in Hausaland.", "By day, the town is full of life." },
+                new[] { "Tout se passe il y a longtemps, dans une ville du pays haoussa.", "Le jour, la ville déborde de vie." },
+                new[] { "Todo ocurre hace mucho tiempo, en un pueblo del país hausa.", "De día, el pueblo rebosa de vida." }),
+            I("dodo|creature|monster|créature|monstre|criatura|monstruo", 3,
+                new[] { "Dodo is a creature the whole town fears.", "Nobody dares to challenge it." },
+                new[] { "Dodo est une créature que toute la ville craint.", "Personne n’ose la défier." },
+                new[] { "Dodo es una criatura que todo el pueblo teme.", "Nadie se atreve a desafiarla." }),
+            I("fight|answer|afraid|scared|hide|combat|répond|peur|pelea|respond|miedo", 7,
+                new[] { "Dodo calls out, asking who in the town can fight it.", "Everyone is too frightened to answer." },
+                new[] { "Dodo crie pour demander qui, dans la ville, peut se battre contre lui.", "Tout le monde a trop peur pour répondre." },
+                new[] { "Dodo grita preguntando quién en el pueblo puede pelear con él.", "Todos tienen demasiado miedo para responder." }),
+            I("auta|boy|garçon|niño|nino|old woman|vieille|anciana", 16,
+                new[] { "Auta is a young boy, a stranger in the town.", "He is staying with an old woman." },
+                new[] { "Auta est un jeune garçon, un étranger dans la ville.", "Il loge chez une vieille femme." },
+                new[] { "Auta es un niño, un forastero en el pueblo.", "Vive con una anciana." }),
+            I("stone|hot|fire|pierre|feu|piedra|fuego", 26,
+                new[] { "Auta heats seven stones in the fire until they are very hot.", "He has a plan for them." },
+                new[] { "Auta chauffe sept pierres dans le feu jusqu’à ce qu’elles soient brûlantes.", "Il a un plan." },
+                new[] { "Auta calienta siete piedras en el fuego hasta que arden.", "Tiene un plan." }),
+            I("mouth|swallow|throw|bouche|gueule|avale|boca|traga", 31,
+                new[] { "When Dodo bends down at the doorway, Auta throws a hot stone into its mouth.", "Dodo swallows it." },
+                new[] { "Quand Dodo se baisse à la porte, Auta lui lance une pierre brûlante dans la gueule.", "Dodo l’avale." },
+                new[] { "Cuando Dodo se agacha en la puerta, Auta le lanza una piedra caliente a la boca.", "Dodo se la traga." }),
+            I("dead|die|defeat|kill|mort|vaincu|tué|muerto|vencido|mató", 48,
+                new[] { "After swallowing all seven hot stones, Dodo could not go on.", "By morning, it was dead." },
+                new[] { "Après avoir avalé les sept pierres brûlantes, Dodo ne put plus continuer.", "Au matin, il était mort." },
+                new[] { "Después de tragarse las siete piedras calientes, Dodo ya no pudo seguir.", "Por la mañana, estaba muerto." }),
+            I("horse|cheval|chevaux|caballo", 54,
+                new[] { "The horses refuse to go near Dodo's body.", "Even dead, it frightens them." },
+                new[] { "Les chevaux refusent de s’approcher du corps de Dodo.", "Même mort, il les effraie." },
+                new[] { "Los caballos se niegan a acercarse al cuerpo de Dodo.", "Incluso muerto, los asusta." }),
+            I("tail|proof|queue|preuve|cola|prueba", 58,
+                new[] { "Auta took Dodo's tail in the night.", "He shows it as proof that he killed the creature." },
+                new[] { "Auta a pris la queue de Dodo pendant la nuit.", "Il la montre comme preuve qu’il a tué la créature." },
+                new[] { "Auta le quitó la cola a Dodo durante la noche.", "La muestra como prueba de que él mató a la criatura." }),
+            I("king|reward|roi|récompense|rey|premio|recompensa", 61,
+                new[] { "The king rewards Auta for his bravery." },
+                new[] { "Le roi récompense Auta pour son courage." },
+                new[] { "El rey recompensa a Auta por su valentía." }),
+        };
+
+        // Eshu at the Crossroads: English, French and Spanish answers; other languages fall back to English.
+        static readonly Intent[] Eshu =
+        {
+            I("crossroad|where|où|carrefour|dónde|donde|encrucijada", 0,
+                new[] { "The road runs between two compounds and meets at a crossroads.", "Everyone who uses it has to pass that place." },
+                new[] { "La route passe entre deux concessions et rejoint un carrefour.", "Tous ceux qui l’empruntent passent par cet endroit." },
+                new[] { "El camino pasa entre dos recintos familiares y llega a una encrucijada.", "Todos los que lo usan tienen que pasar por ese lugar." }),
+            I("friend|ami|amigo", 2,
+                new[] { "They are two friends who farm side by side.", "They go to market as one." },
+                new[] { "Ce sont deux amis qui cultivent leurs champs côte à côte.", "Ils vont au marché d’un même pas." },
+                new[] { "Son dos amigos que cultivan campos vecinos.", "Van juntos al mercado, como uno solo." }),
+            I("swear|oath|swore|jur", 6,
+                new[] { "They swore that nothing could come between them.", "Not a quarrel, and not even a god." },
+                new[] { "Ils ont juré que rien ne pourrait les séparer.", "Ni une querelle, ni même un dieu." },
+                new[] { "Juraron que nada podría separarlos.", "Ni una pelea, ni siquiera un dios." }),
+            I("eshu|èṣù|esù|god|dieu|dios|deity|divinité|deidad", 17,
+                new[] { "Eshu is a small god of the crossroads.", "He carries messages and mischief between heaven and earth." },
+                new[] { "Eshu est un petit dieu des carrefours.", "Il porte les messages et la malice entre le ciel et la terre." },
+                new[] { "Eshu es un pequeño dios de las encrucijadas.", "Lleva mensajes y travesuras entre el cielo y la tierra." }),
+            I("hat|chapeau|sombrero|colour|color|couleur|red|white|rouge|blanc|rojo|blanco", 19,
+                new[] { "His hat is red on one side and white on the other.", "Each friend can see only one side." },
+                new[] { "Son chapeau est rouge d’un côté et blanc de l’autre.", "Chaque ami n’en voit qu’un seul côté." },
+                new[] { "Su sombrero es rojo por un lado y blanco por el otro.", "Cada amigo solo puede ver un lado." }),
+            I("disagree|argue|quarrel|blind|désaccord|disput|querelle|aveugle|discut|pelea|ciego", 27,
+                new[] { "Each friend saw a different side of the same hat.", "One saw red, and the other saw white." },
+                new[] { "Chaque ami a vu un côté différent du même chapeau.", "L’un a vu du rouge, l’autre du blanc." },
+                new[] { "Cada amigo vio un lado distinto del mismo sombrero.", "Uno vio rojo y el otro vio blanco." }),
+            I("fight|market|marché|bagarre|mercado|shout", 36,
+                new[] { "The quarrel follows them to the market and becomes a fight." },
+                new[] { "La querelle les suit jusqu’au marché et tourne à la bagarre." },
+                new[] { "La disputa los sigue hasta el mercado y acaba en pelea." }),
+            I("laugh|rire|rit|reír|ríe|rie", 43,
+                new[] { "Eshu is at the shrine, laughing, because he planned the trick." },
+                new[] { "Eshu est au sanctuaire et il rit, parce que c’est lui qui a monté le tour." },
+                new[] { "Eshu está en el santuario, riéndose, porque él planeó el engaño." }),
+            I("both|truth|teach|same road|vérité|enseign|leçon|verdad|enseñ|lección", 52,
+                new[] { "He walked between them so each saw only his own side.", "They forgot they were still on the same road." },
+                new[] { "Il est passé entre eux, et chacun n’a vu que son côté.", "Ils avaient oublié qu’ils étaient toujours sur la même route." },
+                new[] { "Caminó entre ellos, y cada uno vio solo su propio lado.", "Olvidaron que seguían en el mismo camino." }),
+            I("leave|offering|calabash|wine|laiss|offrande|ofrenda|vino", 62,
+                new[] { "People leave a little something for Eshu at a crossroads." },
+                new[] { "Les gens laissent une petite offrande pour Eshu aux carrefours." },
+                new[] { "La gente deja una pequeña ofrenda para Eshu en las encrucijadas." }),
         };
 
         // Marlow Street: English answers; other languages fall back to English until the translation step covers answers.
@@ -120,28 +172,16 @@ namespace HypaStories
         static string[] For(Dictionary<string, string[]> d, string lang) => d.TryGetValue(lang ?? "en", out var a) ? a : d["en"];
 
         /// <summary>
-        /// The most advanced matching topic wins, so "why does the fire never go out?" hits the spoiler guard until the story
+        /// The most advanced matching topic wins, so "how did the stones defeat Dodo?" hits the spoiler guard until the story
         /// has said it. Pure.
         /// </summary>
         public static string[] AnswerFor(string question, int lineIndex, string lang, string storyId)
         {
-            var intents = storyId == "marlow-street" ? Marlow : Kiko;
+            var intents = storyId == "marlow-street" ? Marlow : storyId == "eshu-crossroads" ? Eshu : SevenStones;
             var hit = intents.Where(i => i.Re.IsMatch(question ?? "")).OrderByDescending(i => i.Min).FirstOrDefault();
             if (hit == null) return For(Default, lang);
             if (hit.Min > lineIndex) return For(Spoiler, lang);
             return For(hit.A, lang);
-        }
-
-        /// <summary>Suggested questions shown while listening (the VR stand-in for the prototype's typed fallback).</summary>
-        public static string[] Suggestions(string storyId, string lang)
-        {
-            if (storyId == "marlow-street") return new[] { "Who is Nia?", "Who is the witness?", "What is wrong with the streetlight?" };
-            switch (lang)
-            {
-                case "fr": return new[] { "Qui est Kiko ?", "Où se passe l’histoire ?", "Pourquoi le feu ne s’éteint-il pas ?" };
-                case "es": return new[] { "¿Quién es Kiko?", "¿Dónde ocurre la historia?", "¿Por qué el fuego no se apaga?" };
-                default: return new[] { "Who is Kiko?", "Where does it happen?", "Why does the fire never go out?" };
-            }
         }
 
         public async Task AnswerAsync(QaRequest req, Action<string, int, bool> onSentence, CancellationToken ct)

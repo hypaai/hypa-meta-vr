@@ -34,6 +34,8 @@ namespace HypaStories
         [Header("Models (glTF, imported by glTFast)")]
         public GameObject campFire;
         public GameObject storyteller;
+        [Tooltip("Dodo, the creature in the Seven Hot Stones game (Quaternius' Demon, CC0), with its animations (legacy clips).")]
+        public GameObject dodo;
         public GameObject deadTrunk;
         public GameObject stump;
         public GameObject fern;
@@ -46,7 +48,6 @@ namespace HypaStories
         public AudioClip fireFar;
         public AudioClip fireNear;
         public AudioClip wolf;
-        public AudioClip kikoVoice;
 
         [Header("Brand and UI")]
         public Texture2D logo;
@@ -57,8 +58,6 @@ namespace HypaStories
         public TMPro.TMP_FontAsset serifItalic;
         [Tooltip("Lucide icons (Art/Icons), white on transparent. Looked up by file name.")]
         public Texture2D[] icons = new Texture2D[0];
-
-        public AudioClip Voice(string key) => key == StoryLibrary.KikoVoice ? kikoVoice : null;
 
         public Texture2D Icon(string name)
         {

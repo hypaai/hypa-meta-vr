@@ -11,8 +11,8 @@ namespace HypaCore
     /// final JSON payload either way.
     ///
     /// STATUS: transport is shared with the live-verified MCP client. Request/response field names for the REST
-    /// endpoints have NOT been confirmed with a keyed live call yet; only <see cref="MtAsync"/> and
-    /// <see cref="DictionaryAsync"/> are typed, from the API notes. Confirm each with one live call (README > API)
+    /// endpoints have NOT been confirmed with a keyed live call yet, except <see cref="ChatAsync"/>; <see cref="MtAsync"/> and
+    /// <see cref="DictionaryAsync"/> are typed from the API notes. Confirm each with one live call (README > API)
     /// before building features on them. Prefer <see cref="HypaMcpClient"/> where a tool exists: typed schemas,
     /// verified, and audio as a link.
     /// </summary>
@@ -35,8 +35,14 @@ namespace HypaCore
             var raw = await HypaHttp.PostAsync(_cfg, BasePath + endpoint, body.ToString(Formatting.None), ct).ConfigureAwait(false);
             var payloads = HypaHttp.JsonPayloads(raw);
             if (payloads.Count == 0) throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: empty response.");
-            try { return JToken.Parse(payloads[payloads.Count - 1]); }
-            catch (JsonException e) { throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: {e.Message}", 0, null, e); }
+            var last = payloads[payloads.Count - 1];
+            try { return JToken.Parse(last); }
+            catch (JsonException e)
+            {
+                // an error event carries plain text ("Your request could not be processed... model was not found"): say that
+                var text = last.Length > 300 ? last.Substring(0, 300) + "…" : last;
+                throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: {text}", 0, null, e);
+            }
         }
 
         /// <summary>
@@ -53,6 +59,26 @@ namespace HypaCore
             var res = await PostAsync(Endpoints.Mt, body, ct).ConfigureAwait(false);
             var content = (string)res.SelectToken("choices[0].message.content");
             if (string.IsNullOrEmpty(content)) throw new HypaException(HypaErrorKind.InvalidResponse, "mt: no choices[0].message.content.");
+            return content;
+        }
+
+        /// <summary>
+        /// Chat, not streamed. model = "provider/model" (e.g. "meta/muse-wonder-1.0"); messages = [{ role, content }] with roles
+        /// system / user / assistant. maxTokens covers the model's reasoning too, so leave room. Verified live (Meta): the final
+        /// event carries choices[0].message.content.
+        /// </summary>
+        public async Task<string> ChatAsync(string model, JArray messages, int maxTokens, CancellationToken ct)
+        {
+            var slash = model?.IndexOf('/') ?? -1;
+            if (slash <= 0) throw new HypaException(HypaErrorKind.InvalidResponse, $"chat: model must be \"provider/model\", got \"{model}\".");
+            var body = new JObject
+            {
+                ["provider"] = model.Substring(0, slash), ["model"] = model.Substring(slash + 1), ["messages"] = messages,
+                ["stream"] = false, ["thinking"] = false, ["max_tokens"] = maxTokens,
+            };
+            var res = await PostAsync(Endpoints.Chat, body, ct).ConfigureAwait(false);
+            var content = (string)res.SelectToken("choices[0].message.content");
+            if (string.IsNullOrWhiteSpace(content)) throw new HypaException(HypaErrorKind.InvalidResponse, "chat: no choices[0].message.content.");
             return content;
         }
 

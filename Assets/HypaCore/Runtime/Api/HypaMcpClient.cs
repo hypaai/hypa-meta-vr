@@ -208,10 +208,10 @@ namespace HypaCore
         readonly Dictionary<string, List<KeyValuePair<string, List<string>>>> _voiceOptions = new Dictionary<string, List<KeyValuePair<string, List<string>>>>();
 
         /// <summary>Audio comes back as a signed URL (default) valid about an hour. No voice = Auto; a voice is sent with its own model.</summary>
-        public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null)
+        public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null, string model = null)
         {
-            string model = null;
-            if (!string.IsNullOrEmpty(voice))
+            // a story's voice names its own model; otherwise find the model that owns the voice
+            if (string.IsNullOrEmpty(model) && !string.IsNullOrEmpty(voice))
             {
                 if (!_voiceOptions.TryGetValue(language, out var opts)) { opts = await ListVoicesAsync(language, ct).ConfigureAwait(false); _voiceOptions[language] = opts; }
                 model = ModelForVoice(opts, voice);

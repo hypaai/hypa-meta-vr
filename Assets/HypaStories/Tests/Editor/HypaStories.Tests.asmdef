@@ -1,7 +1,7 @@
 {
   "name": "HypaStories.Tests",
   "rootNamespace": "HypaStories.Tests",
-  "references": [ "HypaCore.Runtime", "HypaStories.Runtime", "UnityEngine.TestRunner", "UnityEditor.TestRunner" ],
+  "references": [ "HypaCore.Runtime", "HypaStories.Runtime", "Unity.TextMeshPro", "UnityEngine.TestRunner", "UnityEditor.TestRunner" ],
   "includePlatforms": [ "Editor" ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

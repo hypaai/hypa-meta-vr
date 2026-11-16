@@ -15,6 +15,12 @@ EditorBuildSettings:
     path: Assets/HypaStories/Scenes/HypaStory.unity
     guid: 5da2fc3c55d3f47b0aa845c3950563f8
   - enabled: 1
+    path: Assets/HypaStories/Scenes/HypaStoryHut.unity
+    guid: 22b2b7ae6cb094c37b0db880b43d1488
+  - enabled: 1
+    path: Assets/HypaStories/Scenes/HypaStoryGathering.unity
+    guid: f45579491b6274a05ab9cc8c3145d04f
+  - enabled: 1
     path: Assets/HypaCore/Scenes/HypaCoreTest.unity
     guid: 90ce47044fcfa43e3ad1c3dc22df131f
   m_configObjects:

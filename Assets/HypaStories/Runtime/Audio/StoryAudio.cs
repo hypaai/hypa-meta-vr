@@ -129,6 +129,91 @@ namespace HypaStories
             Destroy(s.gameObject, s.clip.length / s.pitch + 0.2f);
         }
 
+        // ---------- story sound cues ----------
+
+        /// <summary>
+        /// The sounds a story can cue by name ("sounds" in story.json), each made in code, with where it comes from (camp
+        /// ground: the fire at the origin, the seats on -Z; null: all around you) and how loud. Unit tested against the stories.
+        /// </summary>
+        public static readonly Dictionary<string, (Func<float[]> make, Vector3? at, float level)> Effects = new Dictionary<string, (Func<float[]>, Vector3?, float)>
+        {
+            { "roar", (() => ProceduralClips.RoarSamples(201), new Vector3(-6f, 3f, 16f), 1f) },
+            { "groan", (() => ProceduralClips.RoarSamples(202, true), new Vector3(-3f, 1.5f, 9f), 0.85f) },
+            { "stomp", (() => ProceduralClips.StompSamples(203), new Vector3(4f, 0f, 11f), 1f) },
+            { "fall", (() => ProceduralClips.StompSamples(204, true), new Vector3(2f, 0f, 9f), 1f) },
+            { "door", (() => ProceduralClips.DoorSamples(205), new Vector3(-7f, 1f, -2f), 0.75f) },
+            { "sizzle", (() => ProceduralClips.SizzleSamples(206), new Vector3(0f, 0.4f, 0f), 0.6f) },
+            { "sparks", (() => ProceduralClips.SparksSamples(207), new Vector3(0f, 0.5f, 0f), 0.55f) },
+            { "throw", (() => ProceduralClips.ThrowSamples(208), new Vector3(0f, 1.3f, 2.5f), 0.6f) },
+            { "gulp", (() => ProceduralClips.GulpSamples(209), new Vector3(0f, 2f, 7f), 0.85f) },
+            { "neigh", (() => ProceduralClips.NeighSamples(210), new Vector3(11f, 1.5f, 6f), 0.7f) },
+            { "gallop", (() => ProceduralClips.GallopSamples(211), new Vector3(12f, 0.5f, 4f), 0.75f) },
+            { "rooster", (() => ProceduralClips.RoosterSamples(212), new Vector3(14f, 3f, 5f), 0.6f) },
+            { "heartbeat", (() => ProceduralClips.HeartbeatSamples(), null, 0.55f) },
+            { "cheer", (() => ProceduralClips.CheerSamples(213), new Vector3(0f, 1.5f, 11f), 0.7f) },
+            { "drums", (() => ProceduralClips.DrumLoopSamples(), new Vector3(3f, 1f, 12f), 0.4f) },
+            { "siren", (() => ProceduralClips.SirenSamples(), new Vector3(-30f, 4f, -20f), 0.5f) },
+            { "clink", (() => ProceduralClips.ClinkSamples(), null, 0.45f) },
+            { "bricks", (() => ProceduralClips.BricksSamples(214), new Vector3(3f, 1f, 5f), 0.7f) },
+            { "steps", (() => ProceduralClips.WetStepsSamples(215), null, 0.45f) },
+            { "laugh", (() => ProceduralClips.LaughSamples(216), new Vector3(0.8f, 1.4f, 1.6f), 0.75f) },
+            { "rattle", (() => ProceduralClips.RattleSamples(217), new Vector3(-1.5f, 1f, 3f), 0.55f) },
+            { "birds", (() => ProceduralClips.BirdsSamples(218), new Vector3(-6f, 6f, 9f), 0.45f) },
+            { "shout", (() => ProceduralClips.ShoutSamples(219), null, 0.6f) },
+        };
+
+        readonly Dictionary<string, AudioClip> _effects = new Dictionary<string, AudioClip>();
+
+        /// <summary>Makes a story's sounds ahead of time (when it starts), so none is built mid-story.</summary>
+        public void Prepare(IEnumerable<string> names)
+        {
+            foreach (var n in names) Clip(n);
+        }
+
+        AudioClip Clip(string name)
+        {
+            if (_effects.TryGetValue(name, out var c)) return c;
+            if (!Effects.TryGetValue(name, out var e)) { Debug.LogWarning($"Hypa Stories: no story sound called '{name}'."); return _effects[name] = null; }
+            return _effects[name] = ProceduralClips.Clip(name, e.make());
+        }
+
+        /// <summary>Plays a story sound by name, from its place round the fire. It stays audible under the storyteller's voice.</summary>
+        public void Effect(string name)
+        {
+            var clip = Clip(name);
+            if (clip == null) return;
+            var e = Effects[name];
+            var s = NewSource("Story " + name, transform, e.at.HasValue ? 1f : 0f);
+            if (e.at.HasValue)
+            {
+                s.transform.position = _fire != null ? _fire.TransformPoint(e.at.Value) : e.at.Value;
+                s.minDistance = 4f; s.maxDistance = 120f; s.rolloffMode = AudioRolloffMode.Logarithmic;
+            }
+            s.clip = clip;
+            s.pitch = Rand(0.96f, 1.04f);
+            s.volume = e.level * Mathf.Lerp(_bus, 1f, 0.6f) * _master;
+            s.Play();
+            Destroy(s.gameObject, clip.length / s.pitch + 0.2f);
+        }
+
+        /// <summary>
+        /// A story sound from a spot in the world (Dodo's own mouth, its feet), full volume within <paramref name="near"/> metres
+        /// and never ducked under the voice: Dodo's roar must be heard.
+        /// </summary>
+        public void EffectAt(string name, Vector3 world, float level = 1f, float pitch = 1f, float near = 10f)
+        {
+            var clip = Clip(name);
+            if (clip == null) return;
+            var s = NewSource("Story " + name, transform, 1f);
+            s.transform.position = world;
+            s.minDistance = near; s.maxDistance = 150f; s.rolloffMode = AudioRolloffMode.Logarithmic;
+            s.clip = clip;
+            s.pitch = pitch * Rand(0.97f, 1.03f);
+            s.volume = Mathf.Clamp01(level) * _master;
+            s.Play();
+            Destroy(s.gameObject, clip.length / s.pitch + 0.2f);
+        }
+
         static float Approach(float cur, float target, float tau, float dt) => cur + (target - cur) * (1f - Mathf.Exp(-dt / Mathf.Max(tau, 1e-3f)));
 
         void Update()

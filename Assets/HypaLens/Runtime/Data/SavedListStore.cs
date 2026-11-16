@@ -74,10 +74,12 @@ namespace HypaLens
     /// <summary>Lens-only preferences. The target language lives in HypaCore.HypaSettings (shared by all modes).</summary>
     public static class LensPrefs
     {
-        const string SourceKey = "hypalens.source", OnboardedKey = "hypalens.onboarded";
+        const string SourceKey = "hypalens.source", OnboardedKey = "hypalens.onboarded", CaptionConsentKey = "hypalens.captionConsent";
         /// <summary>Hypa language label, or empty = auto-detect.</summary>
         public static string Source { get => PlayerPrefs.GetString(SourceKey, ""); set { PlayerPrefs.SetString(SourceKey, value ?? ""); PlayerPrefs.Save(); } }
         public static bool Onboarded { get => PlayerPrefs.GetInt(OnboardedKey, 0) == 1; set { PlayerPrefs.SetInt(OnboardedKey, value ? 1 : 0); PlayerPrefs.Save(); } }
+        /// <summary>The user said yes to Caption sending a photo of the view to Hypa. Asked once.</summary>
+        public static bool CaptionConsent { get => PlayerPrefs.GetInt(CaptionConsentKey, 0) == 1; set { PlayerPrefs.SetInt(CaptionConsentKey, value ? 1 : 0); PlayerPrefs.Save(); } }
     }
 
     /// <summary>Flip-card practice state. Pure logic.</summary>
