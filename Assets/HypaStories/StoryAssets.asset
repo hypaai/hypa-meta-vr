@@ -24,6 +24,7 @@ MonoBehaviour:
   pine: {fileID: 4800000, guid: 22caf231be50742fcbcfb962a8bfd310, type: 3}
   uiPanel: {fileID: 4800000, guid: f6525e84d92ca4f63bdb108b6f9389c5, type: 3}
   uiIcon: {fileID: 4800000, guid: 48bde19bf6687411bba34cd33edbdd77, type: 3}
+  portal: {fileID: 4800000, guid: 10e5dc7e435c04d1db250cbf9e1f36ed, type: 3}
   depthLit: {fileID: 4800000, guid: b6c71c9c13df7fb4ca02d7fcdc872360, type: 3}
   lit: {fileID: 2100000, guid: e67fa3730deef4346bde65c7effa63a2, type: 2}
   ground: {fileID: 2100000, guid: 4240ce2c3bbf149f38b5f94389905e12, type: 2}

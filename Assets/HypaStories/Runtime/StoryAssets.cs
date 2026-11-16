@@ -23,6 +23,8 @@ namespace HypaStories
         public Shader pine;
         public Shader uiPanel;
         public Shader uiIcon;
+        [Tooltip("The doorway of light that opens in your room (3L).")]
+        public Shader portal;
         [Tooltip("Meta's depth-occlusion surface shader (Core SDK): the storyteller and the fire's stones use it in the room, so a real table or body in front hides them.")]
         public Shader depthLit;
 

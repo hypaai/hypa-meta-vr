@@ -33,7 +33,7 @@ namespace HypaStories
         static readonly Color Unlit = new Color(1f, 0.97f, 0.92f, 0.55f);
 
         public PlayerView(Transform uiRoot, Action prev, Action pause, Action next, Action askTap, Action askHold,
-            Action back, Action toggleSound, Action<string> pickQuestion, Action toggleRoom = null)
+            Action back, Action toggleSound, Action<string> pickQuestion, Action toggleRoom = null, Action togglePortal = null)
         {
             _pick = pickQuestion;
             Root = new GameObject("Player").transform;
@@ -99,7 +99,9 @@ namespace HypaStories
 
             // 3K: below the panel, so it never crowds the transport. "In my room" brings the fire into your real room; again, back to the forest.
             if (toggleRoom != null)
-                _room = Kit.Button(Root, new Vector3(0f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), InMyRoom, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+                _room = Kit.Button(Root, new Vector3(togglePortal != null ? -0.16f : 0f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), InMyRoom, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+            if (togglePortal != null)
+                _portal = Kit.Button(Root, new Vector3(0.16f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), HutPortal, "flame", KitStyle.Ghost, togglePortal, null, 0.017f);
 
             Fade = Root.gameObject.AddComponent<KitGroup>();
             SetState(AskState.Idle, "");
@@ -165,7 +167,17 @@ namespace HypaStories
         public void SetSound(bool muted) => _sound.SetIcon(muted ? "volume-x" : "volume-2");
 
         const string InMyRoom = "In my room", BackToForest = "Back to the forest";
-        KitButton _room;
+        KitButton _room, _portal;
+        const string HutPortal = "Hut portal", ClosePortal = "Close portal";
+
+        /// <summary>The portal button is lit and says "Close portal" while the doorway is open (3L).</summary>
+        public void SetPortal(bool open)
+        {
+            if (_portal == null) return;
+            _portal.SetLabel(open ? ClosePortal : HutPortal);
+            _portal.Style = open ? KitStyle.Primary : KitStyle.Ghost;
+            _portal.Selected = open;
+        }
 
         /// <summary>The room button shows where you are: lit and "Back to the forest" while the camp is in your room.</summary>
         public void SetRoom(bool inRoom)

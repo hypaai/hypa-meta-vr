@@ -169,6 +169,28 @@ namespace HypaStories
             return d;
         }
 
+        /// <summary>Ticket 3L: the portal opening (a soft shimmer of high sines, a low swell) or being stepped through (a rushing whoosh that falls away).</summary>
+        public static float[] PortalSamples(bool stepThrough)
+        {
+            var n = (int)(Rate * (stepThrough ? 1.4f : 1.1f));
+            var d = new float[n];
+            var w = White(n, stepThrough ? 41 : 43);
+            var bp = Biquad.BandPass(300f, 0.9f);
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                var u = t / (n / (float)Rate);
+                // the noise band sweeps up as you fall in, and down as it shimmers open
+                var hz = stepThrough ? 220f * Mathf.Pow(2600f / 220f, Mathf.Sin(u * Mathf.PI * 0.5f)) : 600f + 900f * u;
+                if (i % 64 == 0) bp.RetuneBandPass(hz, 0.9f);
+                var env = stepThrough ? Mathf.Sin(Mathf.Clamp01(u) * Mathf.PI) * (1f - 0.35f * u) : Mathf.Sin(Mathf.Clamp01(u) * Mathf.PI) * 0.45f;
+                d[i] = bp.Process(w[i]) * env * 0.5f;
+                if (stepThrough) d[i] += Mathf.Sin(2f * Mathf.PI * (70f - 30f * u) * t) * env * 0.22f; // the drop under the feet
+                else d[i] += (Mathf.Sin(2f * Mathf.PI * 880f * t) + Mathf.Sin(2f * Mathf.PI * 1318.5f * t) * 0.7f) * 0.05f * Mathf.Exp(-t * 2.6f);
+            }
+            return Normalize(d, 0.8f);
+        }
+
         /// <summary>The transition cue: an A-major arpeggio of soft sines plus a rising filtered whoosh.</summary>
         public static float[] ChimeSamples()
         {

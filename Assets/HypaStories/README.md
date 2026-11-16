@@ -95,6 +95,20 @@ Tested: the spot finder (`RoomTests`: open room, small room, furniture, no spot,
 restoring, material swap) in the editor. **Not tried on a headset** (none here): the scan, the depth hiding and the passthrough look
 need a Quest 3 pass.
 
+## Portal to the hut (ticket 3L)
+
+In your room (**In my room**), **Hut portal** (or **P** in the editor) opens a doorway of light: on your real **door** if the room scan
+found one, else on a clear stretch of **wall** you can walk up to (open floor in front, away from the fire, never over a window).
+With no scan it stands 2 m in front of you. Walk through it, pinch the glass (sitting), or press **G** in the editor to step in.
+
+- **Through:** a short soft flash and a whoosh, then you are in the hut's doorway on the camp trail (the camp's world is laid so the
+  hut's door sits exactly on the portal, so nothing jumps). Real furniture hiding things and passthrough end; you are in VR.
+- **Back:** walk out of the hut's door (or **G**) and your room is back, the portal where it was. The story never stops.
+- **Code:** `Core/PortalSpot` (placement and stepping, unit tested in `PortalTests`), `World/StoryPortal` (the doorway),
+  `Shaders/StoryPortal` (frame, glass, pull), `StoryApp` (the flow), `QuestRoomScan` (doors, windows, walls from MRUK).
+- **Not yet:** the glass shows a painted glimpse of the hut; a live, per-eye view of the real hut through it is the next step.
+  Only a Quest 3 shows the real passthrough, depth hiding and frame rate.
+
 ## What came across from the prototype
 
 | Prototype (`Ideation/src`) | Here |

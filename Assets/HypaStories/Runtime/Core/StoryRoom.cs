@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -26,6 +27,8 @@ namespace HypaStories
         public Func<Vector2, float> Clearance;
         /// <summary>The room's floor outline's bounding box (world x, z), for a search of the whole floor.</summary>
         public Rect Floor;
+        /// <summary>Ticket 3L: the doors, windows and wall faces of the room, for the portal. Empty if the scan has none.</summary>
+        public List<PortalSurface> Surfaces = new List<PortalSurface>();
     }
 
     /// <summary>
