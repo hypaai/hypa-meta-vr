@@ -106,6 +106,9 @@ namespace HypaStories
         /// <summary>The voice for the translation: <see cref="VoiceAuto"/> or one of the target language's voices.</summary>
         public string Voice { get; private set; } = VoiceAuto;
         public IReadOnlyList<HypaLanguage> Languages { get; private set; } = new HypaLanguage[0];
+        /// <summary>Words from the story offered as chips, in story order.</summary>
+        public string[] Suggestions { get; private set; } = new string[0];
+        string[] _cycle = new string[0];
 
         // speech: which button is speaking ("input", "output", "word", "definition", "usage", "synonyms", "antonyms", "cultural", "fun")
         public string ActiveAudio { get; private set; }
@@ -177,6 +180,59 @@ namespace HypaStories
 
         /// <summary>Source language, or null for auto-detect.</summary>
         public void SetSource(HypaLanguage l) { if (l?.Name == Source?.Name) return; Source = l; ResetTranslation(); Notify(); }
+
+        /// <summary>The story's language is the source. The target stays whatever you last chose, unless that is the same language.</summary>
+        public void BindStory(string storyLanguage, IReadOnlyList<string> targets)
+        {
+            _cycle = (targets ?? new string[0]).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToArray();
+            var src = Find(storyLanguage) ?? Bare(storyLanguage);
+            SetSource(src);
+            if (Target == null || string.Equals(Target.Name, src?.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                var other = _cycle.FirstOrDefault(n => !string.Equals(n, src?.Name, StringComparison.OrdinalIgnoreCase)) ?? "English";
+                SetTarget(Find(other) ?? Bare(other));
+            }
+        }
+
+        /// <summary>The next story language, skipping the one the story is being told in.</summary>
+        public void CycleTarget()
+        {
+            if (_cycle.Length == 0) return;
+            var i = Array.FindIndex(_cycle, n => string.Equals(n, Target?.Name, StringComparison.OrdinalIgnoreCase));
+            for (var k = 1; k <= _cycle.Length; k++)
+            {
+                var name = _cycle[(i + k) % _cycle.Length];
+                if (string.Equals(name, Source?.Name, StringComparison.OrdinalIgnoreCase)) continue;
+                SetTarget(Find(name) ?? Bare(name));
+                return;
+            }
+        }
+
+        public void SetSuggestions(string[] words) { Suggestions = words ?? new string[0]; Notify(); }
+
+        static HypaLanguage Bare(string name) => new HypaLanguage { Name = name ?? "", Code = name ?? "", Voices = new[] { "auto" } };
+
+        /// <summary>A suggested word: translate it, then say the translation.</summary>
+        public async Task UseWordAsync(string word)
+        {
+            if (string.IsNullOrWhiteSpace(word) || Listening) return;
+            Input = word.Trim();
+            Notify();
+            await RunAsync();
+            if (Status == TryStatus.Idle && !string.IsNullOrWhiteSpace(Output) && string.IsNullOrEmpty(Message))
+                await SpeakOutputAsync();
+        }
+
+        /// <summary>Tap to speak. Tap again to stop. The words are translated and then spoken back.</summary>
+        public async Task DictateAsync()
+        {
+            if (Listening) { await ToggleMicAsync(); return; }
+            await ToggleMicAsync();
+            if (Status != TryStatus.Idle || string.IsNullOrWhiteSpace(Input) || !string.IsNullOrEmpty(Message)) return;
+            await RunAsync();
+            if (Status == TryStatus.Idle && !string.IsNullOrWhiteSpace(Output) && string.IsNullOrEmpty(Message))
+                await SpeakOutputAsync();
+        }
 
         public void SetTarget(HypaLanguage l)
         {

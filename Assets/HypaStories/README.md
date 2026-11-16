@@ -25,9 +25,9 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | Language buttons | Pinch | Narration, questions and answers in English / Français / Español |
 | Space, ← → | Pause, `<<` `>>` | Pause / resume / replay, previous / next line |
 | **H** | Raise a hand above your head | Interrupt and ask |
-| **Q** | Raise a hand above your head | Ask; **Done** / **Skip** (the button where Ask used to be) = done talking / skip the line being said |
-| **T**, **Try Hypa** button, or just finish the story | Pinch **Try Hypa** | Hypa Translate pops up in front of the pulpit (see [Try Hypa](#try-hypa)); Esc / **x** closes it |
-| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question (no microphone or no key) |
+| **Q** | Raise a hand above your head | Ask; **Done** / **Skip** = done talking / skip the line being said |
+| **T**, after the story ends | Pinch **Try Hypa Translate** | Opens Hypa Translate in the story panel (see [Try Hypa](#try-hypa)); Esc / **x** closes it. The corner button becomes **Speak** |
+| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question, or translate a suggested word |
 | Esc, **Back** | Pinch Back | Cancel the question / back to the list / back to start |
 
 ## Places (ticket 3F): camp, hut, gathering
@@ -64,24 +64,14 @@ portal (3L).
 
 ## Try Hypa
 
-The Ask button in the player is now **Try Hypa** (while a question is open it turns into Done / Skip; raising a hand still asks the
-storyteller). When a story ends, Hypa Translate pops up by itself, floating at eye level right in front of you at the pulpit. It
-copies the web app (`hypa-v2/apps/hypa-translate`, light theme) and is voice only. The story pauses behind it.
+When a story ends, **Try Hypa Translate** appears in the story panel. It opens in that same panel. The story's language is the
+source. **To Yoruba** (or whichever language you last chose) cycles through the story languages. Three words from the story sit
+where suggested questions do: tap one and it is translated, then spoken. **Speak** on the corner button listens, translates what
+you said, and speaks that too. **Hear** plays the translation again. Translation and speech use Hypa's auto router (`model: auto`
+on `translate_message` and `text_to_speech`).
 
-- **Translate:** pick the two languages (pill opens the picker; the first is Auto detect; the round button swaps them), tap the
-  mic and speak (tap the red button to stop). What you said is typed into the input and translated. The speaker plays it back,
-  and the **Auto** menu picks one of the language's voices.
-- **Dictionary:** exactly as on the web. When you translated a **single word**, a dictionary icon appears by the speaker. It opens
-  a panel with a tab for the source word and one for the translated word. Each is looked up (`look_up_term`) the first time its
-  tab is opened, with Retry on failure. It shows phonetic, definitions, usage, synonyms, antonyms, cultural context and fun
-  facts, each with its own speaker (same spoken prefixes as the web).
-- Not here, on purpose: keyboard typing, image translation, documents, websites, history, bookmarks, copy and feedback buttons.
-
-Code: `Core/TryHypaFlow` (logic over `ITryApi` + `IListener`, unit tested in `TryHypaTests`), `Ui/TryHypaView` (the panel),
-`Ui/TryFonts` (device fonts so Yoruba tone marks, Igbo dots, Hausa hooks, Arabic and Chinese can be drawn; the story fonts are
-Latin-1 only), `HypaCore` `HypaDictionaryCard`. Uses `translate_message`, `speech_to_text`, `text_to_speech`, `look_up_term` and
-`list_languages`; all but the last need an API key. Arabic is drawn but not joined or right-to-left yet (TextMeshPro has no
-shaper); the icons added for it (`arrow-left-right`, `book-open`, `chevron-down`) are Lucide.
+Code: `Core/TryHypaFlow`, `Core/TryHypaText.Suggest`, `Ui/TryHypaView` (drawn inside `PlayerView`), `Ui/TryFonts` (device fonts so
+Yoruba tone marks, Igbo dots and Hausa hooks can be drawn; the story fonts are Latin-1 only). Unit tests: `TryHypaTests`.
 
 ## What came across from the prototype
 
@@ -177,7 +167,7 @@ the translations are matched on.
 
 - The alley world (`alley.js`): the prototype keeps it for later too; both V1 stories are told at the campfire.
 - The "Voice" cue toggle (say "pause" / "question"): needs an on-device wake-word recogniser (Meta Voice SDK); raise a hand instead.
-- Typed questions: replaced by suggested-question buttons in VR (and Try Hypa is voice only).
+- Typed questions: replaced by suggested-question buttons in VR. Try Hypa takes a tap on a word, or your voice.
 - Loader, grain, bloom, adaptive quality, debug panel: desktop-preview features. On Quest use OVR fixed foveation and the
   Immersive Debugger; the Q&A timing log goes to the console (and the player's note line in the editor).
 - An Animator with Idle / Talking clips for the storyteller (the bones are driven directly, as in the prototype without clips).

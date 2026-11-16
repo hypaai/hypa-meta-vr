@@ -8,8 +8,9 @@ namespace HypaStories
     /// <summary>
     /// The story player (the prototype's #play panel): a glass panel just below eye level, in front of you, so the storyteller stays in
     /// view above it. The line being spoken is large, its words lighting up with the voice, with the lines before and after faded.
-    /// Progress, previous / play-pause / next and Try Hypa along the bottom (while a question is open the same button is Done / Skip). While a question is open the script gives way to the Q&amp;A:
+    /// Progress, previous / play-pause / next and Ask along the bottom. While a question is open the script gives way to the Q&amp;A:
     /// state and mic level, "You asked", the answer in the story's accent colour, and suggested questions (no microphone or no key).
+    /// When the story has ended, Try Hypa Translate sits in the panel and opens the translation there.
     /// </summary>
     public sealed class PlayerView : IAskView
     {
@@ -21,12 +22,13 @@ namespace HypaStories
         readonly TextMeshPro _kicker, _title, _prev, _line, _next, _time, _hint, _state, _question, _answer;
         readonly Transform _lines, _qa;
         readonly KitPanel _fill, _level;
-        readonly KitButton _pause, _ask, _sound;
+        readonly KitButton _pause, _ask, _sound, _tryOffer;
         readonly KitIcon _hintIcon;
         readonly List<KitButton> _suggestions = new List<KitButton>();
         readonly Action<string> _pick;
         readonly Action _tryHypa, _askTap;
-        bool _asking;
+        bool _asking, _translateOpen, _offer;
+        string _cornerLabel;
         StoryInfo _story;
         StoryLanguage _lang;
         string[] _asks = new string[0];
@@ -95,9 +97,10 @@ namespace HypaStories
             Kit.Button(Root, new Vector3(-0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-back", KitStyle.Ghost, prev);
             _pause = Kit.Button(Root, new Vector3(0f, cy, 0f), new Vector2(0.07f, 0.07f), null, "pause", KitStyle.Primary, pause);
             Kit.Button(Root, new Vector3(0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-forward", KitStyle.Ghost, next);
-            // Try Hypa replaces the old Ask button; raising a hand still asks the storyteller, and this button is Done / Skip while you do
-            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.115f, cy, 0f), new Vector2(0.17f, 0.056f), "Try Hypa", "languages", KitStyle.Primary,
-                () => { if (_asking) _askTap(); else _tryHypa(); }, null, 0.019f);
+            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.1f, cy, 0f), new Vector2(0.14f, 0.056f), "Ask", "mic", KitStyle.Primary, () => _askTap(), null, 0.02f);
+            // only at the end of a story: opens Hypa Translate in this same panel
+            _tryOffer = Kit.Button(Root, new Vector3(0f, -0.074f, -0.012f), new Vector2(0.36f, 0.04f), "Try Hypa Translate", "languages", KitStyle.Primary, () => _tryHypa(), null, 0.015f);
+            _tryOffer.gameObject.SetActive(false);
             _hintIcon = Kit.Icon(Root, "hand", new Vector3(-W / 2f + 0.05f, cy, 0f), 0.024f, KitTheme.Dim);
             _hint = Kit.Text(Root, "", 0.0145f, new Vector3(-W / 2f + 0.145f, cy, 0f), new Vector2(0.16f, 0.05f), KitTheme.Dim, TextAlignmentOptions.Left);
 
@@ -162,8 +165,31 @@ namespace HypaStories
             _pause.SetIcon(s == "Pause" ? "pause" : s == "Replay" ? "rotate-ccw" : "play");
         }
 
-        /// <summary>Glow on the Try Hypa button (the story is over: nudge them to it).</summary>
-        public void SetTryAttention(bool on) => _ask.Selected = on;
+        /// <summary>The end-of-story button. Hidden while a question or the translation is open.</summary>
+        public void SetTryOffer(bool on)
+        {
+            _offer = on;
+            _tryOffer.gameObject.SetActive(on && !_translateOpen && !_asking);
+        }
+
+        /// <summary>The translation is open in this panel: the script steps aside and the corner button speaks.</summary>
+        public void SetTranslateOpen(bool on)
+        {
+            _translateOpen = on;
+            _lines.gameObject.SetActive(!on && !_asking);
+            _tryOffer.gameObject.SetActive(!on && _offer && !_asking);
+            if (on) SetCorner("Speak", "mic");
+            else if (!_asking) SetCorner("Ask", "mic");
+        }
+
+        /// <summary>The corner button's words, while translating (Speak / Done).</summary>
+        public void SetCorner(string label, string icon)
+        {
+            if (label == _cornerLabel) return;
+            _cornerLabel = label;
+            _ask.SetLabel(label);
+            _ask.SetIcon(icon);
+        }
 
         public void SetSound(bool muted) => _sound.SetIcon(muted ? "volume-x" : "volume-2");
 
@@ -179,8 +205,10 @@ namespace HypaStories
         public void SetState(AskState state, string text)
         {
             var asking = state != AskState.Idle;
-            _lines.gameObject.SetActive(!asking);
+            _asking = asking;
+            _lines.gameObject.SetActive(!asking && !_translateOpen);
             _qa.gameObject.SetActive(asking);
+            _tryOffer.gameObject.SetActive(!asking && !_translateOpen && _offer);
             _state.text = text ?? "";
             var listening = state == AskState.Listening || state == AskState.Interrupt;
             _level.gameObject.SetActive(state == AskState.Listening);
@@ -192,9 +220,9 @@ namespace HypaStories
                 if (on) _suggestions[i].SetLabel(qs[i]);
             }
             _answer.gameObject.SetActive(!listening);
-            _asking = asking;
-            _ask.SetLabel(state == AskState.Listening ? "Done" : asking ? "Skip" : "Try Hypa");
-            _ask.SetIcon(state == AskState.Listening ? "check" : asking ? "skip-forward" : "languages");
+            if (!_translateOpen)
+                SetCorner(state == AskState.Listening ? "Done" : asking ? "Skip" : "Ask",
+                    state == AskState.Listening ? "check" : asking ? "skip-forward" : "mic");
             if (!asking) SetLevel(0f);
         }
 

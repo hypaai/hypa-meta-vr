@@ -90,6 +90,14 @@ namespace HypaStories
         public string Model => Models.Length > 0 ? Models[0] : StoryLibrary.DefaultModel;
         /// <summary>The storyteller's voices for this story, in order of preference.</summary>
         public VoiceOption[] Voices = new VoiceOption[0];
+        /// <summary>Words from the story to try in Hypa Translate at the end ("words" in story.json), in English.</summary>
+        public string[] Words = new string[0];
+        /// <summary>The same words in each translation's own wording (language code → words), from each language file's "words".</summary>
+        public readonly Dictionary<string, string[]> WordsTr = new Dictionary<string, string[]>();
+
+        /// <summary>The story's words in the language it was told in; empty when that language file has none. Pure.</summary>
+        public string[] WordsFor(string lang)
+            => lang == "en" ? Words : WordsTr.TryGetValue(lang ?? "", out var w) ? w : new string[0];
 
         /// <summary>
         /// The voices that can tell the story in a language, best first: each entry with a voice for it, as (model, voice).

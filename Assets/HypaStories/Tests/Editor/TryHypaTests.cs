@@ -87,6 +87,46 @@ namespace HypaStories.Tests
             HypaSettings.TargetLanguage = _savedTarget;
         }
 
+        [Test] public void TheStoryLanguage_IsTheSource_AndNotTheTarget()
+        {
+            _f.SetTarget(_f.Find("English"));
+            _f.BindStory("English", new[] { "English", "Yoruba", "French" });
+            Assert.AreEqual("English", _f.Source.Name);
+            Assert.AreEqual("Yoruba", _f.Target.Name);
+            _f.CycleTarget();
+            Assert.AreEqual("French", _f.Target.Name);
+            _f.CycleTarget();
+            Assert.AreEqual("Yoruba", _f.Target.Name); // English, the story, is skipped
+        }
+
+        [Test] public void AWordFromTheStory_IsTranslated_AndSpoken()
+        {
+            _f.UseWordAsync("calabash");
+            Assert.AreEqual("calabash", _f.Input);
+            Assert.AreEqual("Bonjour", _f.Output);
+            CollectionAssert.AreEqual(new[] { "mt calabash|French|auto" }, _api.Calls);
+            CollectionAssert.AreEqual(new[] { "French:auto:Bonjour" }, _api.Spoken);
+        }
+
+        [Test] public void EveryStory_HasThreeWordsToTranslate_InEveryLanguage()
+        {
+            foreach (var st in StoryLibrary.All)
+                foreach (var lang in StoryLanguages.All)
+                {
+                    var w = st.WordsFor(lang.Code);
+                    Assert.AreEqual(3, w.Length, $"{st.Id} {lang.Code}");
+                    Assert.IsTrue(w.All(x => x.Length < 18), $"{st.Id} {lang.Code}: short enough for a chip");
+                }
+            Assert.AreEqual(new[] { "friends", "hat", "calabash" }, StoryLibrary.Find("eshu-crossroads").WordsFor("en"));
+            Assert.AreEqual("fìlà", StoryLibrary.Find("eshu-crossroads").WordsFor("yo")[1], "in the story's own wording");
+        }
+
+        [Test] public void SuggestedWords_ComeFromTheStory_InOrder()
+        {
+            var words = TryHypaText.Suggest(new[] { "The calabash of palm wine.", "He set the hat down.", "A friend shouted." }, 3);
+            CollectionAssert.AreEqual(new[] { "calabash", "palm", "wine" }, words);
+        }
+
         [Test] public void Speaking_IsTypedIntoTheInput_ThenTranslated()
         {
             _mic.Heard = "  Good morning ";

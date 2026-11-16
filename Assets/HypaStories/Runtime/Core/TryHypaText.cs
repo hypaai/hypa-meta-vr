@@ -10,6 +10,48 @@ namespace HypaStories
         /// <summary>A label cut to <paramref name="max"/> characters with an ellipsis.</summary>
         public static string Clip(string s, int max)
             => string.IsNullOrEmpty(s) || s.Length <= max ? s ?? "" : s.Substring(0, Math.Max(max - 1, 1)).TrimEnd() + "…";
+
+        static readonly HashSet<string> Stop = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "his", "her", "their", "they", "them",
+            "he", "she", "it", "was", "were", "is", "are", "be", "been", "that", "this", "from", "as", "at", "by", "but",
+            "not", "you", "your", "we", "our", "me", "my", "so", "if", "then", "when", "there", "here", "into", "over",
+            "after", "before", "about", "what", "who", "how", "one", "out", "all", "just", "said", "says", "came", "come",
+            "went", "like", "its", "had", "have", "has", "him", "did", "do", "does", "would", "could", "should",
+        };
+
+        /// <summary>
+        /// Up to <paramref name="count"/> words from the story, in the order they are told, skipping the little words.
+        /// These are the chips you can tap to translate, the way a story offers questions.
+        /// </summary>
+        public static string[] Suggest(IEnumerable<string> lines, int count = 3)
+        {
+            var found = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (lines == null || count <= 0) return new string[0];
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrEmpty(line)) continue;
+                var word = new System.Text.StringBuilder();
+                void Take()
+                {
+                    if (word.Length == 0) return;
+                    var s = word.ToString();
+                    word.Clear();
+                    if (s.Length < 4 || s.Length > 18 || Stop.Contains(s) || !seen.Add(s)) return;
+                    found.Add(s);
+                }
+                foreach (var ch in line)
+                {
+                    if (char.IsLetter(ch) || (ch == '\'' && word.Length > 0)) word.Append(ch);
+                    else Take();
+                    if (found.Count >= count) return found.ToArray();
+                }
+                Take();
+                if (found.Count >= count) break;
+            }
+            return found.ToArray();
+        }
     }
 
     /// <summary>
