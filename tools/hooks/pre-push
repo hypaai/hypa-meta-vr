@@ -3,4 +3,11 @@ set -e
 refs=$(cat)
 "$(git rev-parse --show-toplevel)/tools/scan-secrets.sh" </dev/null
 command -v git-lfs >/dev/null 2>&1 || { echo "git-lfs is not installed: binary assets would not be uploaded. brew install git-lfs" >&2; exit 2; }
+# PolinRider scan (see .githooks/polinrider-scan.sh) of every commit about to be pushed
+zero=0000000000000000000000000000000000000000
+printf '%s\n' "$refs" | while read -r _ local_sha remote_ref _; do
+  if [ "$remote_ref" = refs/heads/main ]; then echo "Push blocked: main only changes through a pull request." >&2; exit 1; fi
+  [ "$local_sha" = "$zero" ] && continue
+  "$(git rev-parse --show-toplevel)/.githooks/polinrider-scan.sh" "$local_sha" || { echo "Push blocked: possible PolinRider malware. Do not install, build or run tests." >&2; exit 1; }
+done
 printf '%s\n' "$refs" | git lfs pre-push "$@"
