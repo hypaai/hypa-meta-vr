@@ -494,7 +494,7 @@ namespace HypaStories
         {
             var l = StoryLanguages.Lines(_lang.Code);
             foreach (var s in l.Filler) _voice.Prefetch(s, _lang);
-            _voice.Prefetch(l.Resume, _lang);
+            foreach (var s in l.Resume) _voice.Prefetch(s, _lang);
             _voice.Prefetch(l.Again, _lang);
             _voice.Prefetch(l.Offline, _lang);
         }

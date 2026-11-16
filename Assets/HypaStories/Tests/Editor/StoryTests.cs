@@ -265,6 +265,18 @@ namespace HypaStories.Tests
             Assert.AreEqual("Kiswahili", StoryLanguages.Find("sw").Name);
             foreach (var l in StoryLanguages.All.Where(l => l.Code != "en"))
                 Assert.AreNotEqual(StoryLanguages.Lines("en").Again, StoryLanguages.Lines(l.Code).Again, l.Code);
+            var en = StoryLanguages.Lines("en");
+            foreach (var l in StoryLanguages.All)
+            {
+                var lines = StoryLanguages.Lines(l.Code);
+                Assert.GreaterOrEqual(lines.Filler.Length, 4, l.Code);
+                Assert.GreaterOrEqual(lines.Resume.Length, 4, l.Code);
+                CollectionAssert.AllItemsAreUnique(lines.Filler, l.Code);
+                CollectionAssert.AllItemsAreUnique(lines.Resume, l.Code);
+                if (l.Code == "en") continue;
+                Assert.IsFalse(lines.Filler.Any(f => en.Filler.Contains(f)), l.Code);
+                Assert.IsFalse(lines.Resume.Any(f => en.Resume.Contains(f)), l.Code);
+            }
         }
 
         // ---------- Q&A stand-in ----------
@@ -468,7 +480,7 @@ namespace HypaStories.Tests
             SynchronizationContext.SetSynchronizationContext(null);
             _speech = new FakeSpeech(); _mic = new FakeListener(); _qa = new FakeQa(); _story = new FakeNarration(); _view = new FakeView();
             _asking.Clear();
-            _ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0);
+            _ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0, n => 0);
         }
 
         [TearDown] public void TearDown() => SynchronizationContext.SetSynchronizationContext(_ctx);
@@ -490,6 +502,27 @@ namespace HypaStories.Tests
             Assert.AreEqual(100, log.Filler);
             Assert.AreEqual(40, log.Transcript);
             Assert.AreEqual(100, log.Playback);
+        }
+
+        [Test] public void Ask_CanPickAnotherFillerAndAnotherResume()
+        {
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            var ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0, n => 1);
+            Assert.IsTrue(ask.BeginAsync().IsCompleted);
+            Assert.AreEqual("Let me think about that…", _speech.Spoken[0]);
+            Assert.AreEqual("Right. Where was I…", _speech.Spoken[_speech.Spoken.Count - 1]);
+        }
+
+        [Test] public void Ask_NextQuestion_SkipsTheLineJustUsed()
+        {
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            Assert.IsTrue(_ask.BeginAsync().IsCompleted);
+            Assert.IsTrue(_ask.BeginAsync().IsCompleted);
+            Assert.AreEqual("Hmm, good question…", _speech.Spoken[0]);
+            Assert.AreEqual("Now, where was I…", _speech.Spoken[3]);
+            Assert.AreEqual("Let me think about that…", _speech.Spoken[4]);
+            Assert.AreEqual("Right. Where was I…", _speech.Spoken[_speech.Spoken.Count - 1]);
         }
 
         [Test] public void Ask_UnclearThreeTimes_GoesBackToTheStory()
