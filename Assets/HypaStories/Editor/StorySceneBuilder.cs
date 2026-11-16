@@ -161,6 +161,7 @@ namespace HypaStories.EditorTools
             GameObject M(string path) => AssetDatabase.LoadAssetAtPath<GameObject>(path);
             GameObject Ph(string id) => M($"{Art}/PolyHaven/{id}/{id}_1k.gltf");
             a.campFire = M($"{Art}/Models/camp_fire.glb");
+            a.dodo = M($"{Art}/Models/dodo_demon.glb");
             a.storyteller = M($"{Local}/Models/storyteller.glb");
             a.deadTrunk = Ph("dead_tree_trunk"); a.stump = Ph("tree_stump_02"); a.fern = Ph("fern_02"); a.grass = Ph("grass_medium_01");
             a.rocks = Rocks.Select(Ph).Where(r => r != null).ToArray();

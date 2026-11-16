@@ -36,6 +36,8 @@ namespace HypaStories
         [Header("Models (glTF, imported by glTFast)")]
         public GameObject campFire;
         public GameObject storyteller;
+        [Tooltip("Dodo, the creature in the Seven Hot Stones game (Quaternius' Demon, CC0), with its animations (legacy clips).")]
+        public GameObject dodo;
         public GameObject deadTrunk;
         public GameObject stump;
         public GameObject fern;

@@ -1,0 +1,45 @@
+{
+  "rain": "Mvua ilikuwa ikinyesha katika Mtaa wa Marlow, aina ya mvua inayoficha sauti za nyayo.",
+  "rain.ask": [
+    "Mtaa wa Marlow uko wapi?"
+  ],
+  "tape": "Mpelelezi Nia alisimama nyuma ya utepe wa manjano, akitazama kichochoro kikimulikwa kwa nuru nyekundu na buluu.",
+  "tape.ask": [
+    "Mpelelezi Nia ni nani?"
+  ],
+  "body": "Mwanamume mmoja alikuwa amepatikana upande wa mbali, kando ya ukuta wa zamani wa matofali.",
+  "body.ask": [
+    "Mwanamume huyo alikuwa nani?"
+  ],
+  "witness": "Hakuna silaha. Hakuna pochi. Shahidi mmoja tu, msichana aliyeapa kwamba hakuwa ameona chochote.",
+  "witness.ask": [
+    "Kwa nini msichana anasema kwamba hakuona chochote?"
+  ],
+  "streetlight": "Lakini taa ya barabarani iliyokuwa juu ya kichochoro ilikuwa ikiwaka na kuzimika usiku kucha.",
+  "streetlight.ask": [
+    "Kwa nini taa ya barabarani inamulika na kuzimika?"
+  ],
+  "not-random": "Nia aligundua kwamba taa haikuwahi kuwaka na kuzima ovyo.",
+  "pattern": "Kilizima kwa sekunde tatu, kisha kikamulika mara mbili.",
+  "message": "Tena na tena, kama mtu anayetuma ujumbe.",
+  "message.ask": [
+    "Ni nani anayetuma ujumbe?"
+  ],
+  "key": "Alifuata alama hadi kwenye nguzo ya taa na akapata ufunguo mdogo wa shaba uliobandikwa chini yake kwa mkanda.",
+  "key.ask": [
+    "Ufunguo unafungua nini?"
+  ],
+  "door": "Ufunguo ulifaa kufungua mlango uliokuwa umezibwa kwa matofali kwa miaka ishirini.",
+  "door.ask": [
+    "Nani aliuziba mlango kwa matofali?"
+  ],
+  "cupboard": "Nyuma ya matofali kulikuwa na kabati, na ndani yake kulikuwa na picha moja tu.",
+  "photo": "Ilionyesha shahidi huyo, akiwa mdogo zaidi kwa umri, amesimama kando ya mwanamume aliyepotea.",
+  "photo.ask": [
+    "Nani yuko kwenye picha?"
+  ],
+  "truth": "Si kwamba msichana hakuona chochote. Alikuwa ameona kila kitu, na alikuwa akisubiri mtu aulize swali sahihi.",
+  "truth.ask": [
+    "Kwa nini msichana alikuwa akisubiri?"
+  ]
+}

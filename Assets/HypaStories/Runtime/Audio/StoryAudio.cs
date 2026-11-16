@@ -159,6 +159,7 @@ namespace HypaStories
             { "laugh", (() => ProceduralClips.LaughSamples(216), new Vector3(0.8f, 1.4f, 1.6f), 0.75f) },
             { "rattle", (() => ProceduralClips.RattleSamples(217), new Vector3(-1.5f, 1f, 3f), 0.55f) },
             { "birds", (() => ProceduralClips.BirdsSamples(218), new Vector3(-6f, 6f, 9f), 0.45f) },
+            { "shout", (() => ProceduralClips.ShoutSamples(219), null, 0.6f) },
         };
 
         readonly Dictionary<string, AudioClip> _effects = new Dictionary<string, AudioClip>();
@@ -191,6 +192,24 @@ namespace HypaStories
             s.clip = clip;
             s.pitch = Rand(0.96f, 1.04f);
             s.volume = e.level * Mathf.Lerp(_bus, 1f, 0.6f) * _master;
+            s.Play();
+            Destroy(s.gameObject, clip.length / s.pitch + 0.2f);
+        }
+
+        /// <summary>
+        /// A story sound from a spot in the world (Dodo's own mouth, its feet), full volume within <paramref name="near"/> metres
+        /// and never ducked under the voice: Dodo's roar must be heard.
+        /// </summary>
+        public void EffectAt(string name, Vector3 world, float level = 1f, float pitch = 1f, float near = 10f)
+        {
+            var clip = Clip(name);
+            if (clip == null) return;
+            var s = NewSource("Story " + name, transform, 1f);
+            s.transform.position = world;
+            s.minDistance = near; s.maxDistance = 150f; s.rolloffMode = AudioRolloffMode.Logarithmic;
+            s.clip = clip;
+            s.pitch = pitch * Rand(0.97f, 1.03f);
+            s.volume = Mathf.Clamp01(level) * _master;
             s.Play();
             Destroy(s.gameObject, clip.length / s.pitch + 0.2f);
         }

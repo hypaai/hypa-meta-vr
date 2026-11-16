@@ -139,12 +139,12 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
   rooster, heartbeat, cheer, drums, siren, clink, bricks, steps, laugh, rattle, birds), all made in code; a hot stone, sparks or a throw also flare the
   fire, a roar, stomp or slammed door makes it gutter. When the night gets deep (`dark` above about 0.4), pairs of eyes open one by one
   in the trees round the clearing, blink and watch you, and close as it lifts. A test checks every name a story uses.
-- `{code}.json` per translation (`fr`, `es`, `ha`, `ig`, `pcm`, `yo`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing
+- `{code}.json` per translation (`fr`, `es`, `ha`, `ig`, `pcm`, `sw`, `yo`): `{ "line id": "text", "line id.ask": ["question"] }`. A missing
   file or line is told in English, and a test lists every untranslated line of the offered languages. **The Hausa, Igbo, Pidgin and
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
   story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
   (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
-  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check.
+  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for all three stories also comes from that auto router and needs the same native check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
@@ -206,3 +206,22 @@ The player sits just below eye level so the storyteller stays in view above it.
 No shadows, no post, one real-time point light, two mist bands, halved particle counts, 3-octave noise. Still to measure on a
 headset: the glTF props (grass and rock sets have many sub-meshes; merge or instance them if draw calls are high), the card shader
 (full-screen-ish fbm on two cards), and the fire light's per-pixel cost.
+
+## The Dodo game (after *Seven Hot Stones*)
+
+When *Seven Hot Stones* ends, **Face Dodo** appears above the player panel: you are Auta. The night turns blood red and Dodo
+(Quaternius' Demon, CC0, `Art/Models/dodo_demon.glb`: recoloured, glowing eyes, halo and trident hidden) bursts out of the trees.
+
+- **Heat the stones:** pinch each of the seven stones on the slab by your seat and drop it in the fire (or point at a stone from
+  afar and pinch: it flies to your hand). Each flares the fire and glows red hot.
+- **Answer:** Dodo roars "Who is able to fight with me?" (the storyteller says the line in your language). Shout back "I am!":
+  any loud answer counts (`ShoutDetector`, no speech-to-text), or pinch the **I am!** button.
+- **Throw:** Dodo stoops at the fire with its mouth open (a ring of fire marks it, shrinking as time runs out). Grab a hot stone
+  and throw. A throw roughly toward the mouth curves in; letting go while pointing at it lobs the stone there.
+- **Three lives:** a stone that misses, being too slow, or not answering twice costs a life (Dodo steps closer). The third ends
+  it: **Try again**, **The story** or **Stories**. **Back** during the fight returns to the end of the story.
+- **Seven stones swallowed:** Dodo falls, dawn breaks, and the villagers come out of the trees to dance round the fire.
+
+Hands first; controllers work the same way (trigger = pinch). Rules: `Core/DodoRules` (unit tested). Game: `World/DodoGame`,
+creature: `World/DodoCreature`. In the editor: **P** puts a stone in the fire, **T** throws into the mouth, **M** throws wide,
+**Space** shouts.

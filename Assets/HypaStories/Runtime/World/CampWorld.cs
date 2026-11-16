@@ -117,6 +117,11 @@ namespace HypaStories
             Teller = teller.AddComponent<Storyteller>();
             Teller.Fire = Fire.Root;
             Teller.Build(a.storyteller, a.lit);
+
+            // don't draw what the fog hides: the far ends of the trails, the hut, the pines round them (the village has its own)
+            var cull = gameObject.AddComponent<DistanceCull>();
+            cull.Collect(transform, t => Village != null && t == Village.transform || t == Fire.Root || t == PortalRing || t == Teller.transform,
+                14f, n => n == "Wolf" || n == "Owl" || n == "Bat" || n == "Bushbaby" || n == "Frog", 16f);
         }
 
         // ---------- builders ----------
@@ -682,16 +687,20 @@ namespace HypaStories
             _sky.SetFloat(FlashId, flash);
             _sky.SetFloat(DarkId, dark);
             _sky.SetFloat(DawnId, dawn);
-            _sky.SetColor(TintId, policeCol * 0.3f);
+            // the Dodo game's blood-red night: red sky low down, red haze, the firelight turned to embers
+            var danger = _story?.Danger ?? 0f;
+            var dangerCol = new Color(0.55f, 0.04f, 0.02f) * danger;
+            _sky.SetColor(TintId, policeCol * 0.3f + dangerCol * 0.5f);
             _flash.color = flash > 0.02f ? new Color(0.71f, 0.78f, 1f) : (redSide ? new Color(1f, 0.15f, 0.12f) : new Color(0.2f, 0.35f, 1f));
             _flash.intensity = flash * 1.6f + pulse * 1.3f;
             _moon.intensity = Room ? 0f : 0.3f * (1f - dark * 0.7f) + dawn * 0.55f; // the room has no moon: the fire is the light
             _moon.color = Color.Lerp(new Color(0.62f, 0.79f, 0.88f), new Color(1f, 0.78f, 0.6f), dawn);
-            RenderSettings.fogColor = Color.Lerp(FogColor, DawnFog, dawn);
+            RenderSettings.fogColor = Color.Lerp(Color.Lerp(FogColor, DawnFog, dawn), new Color(0.16f, 0.02f, 0.02f), danger * 0.85f);
             var fill = (1f - Dim * 0.3f) * (1f + flash * 1.2f) * (1f - dark * 0.55f) * (1f + dawn * 1.4f);
             var warm = Color.Lerp(Color.white, new Color(1.25f, 0.95f, 0.8f), dawn);
             RenderSettings.ambientSkyColor = new Color(0.29f, 0.48f, 0.57f) * 0.42f * fill * warm + policeCol * 0.22f;
-            RenderSettings.ambientEquatorColor = new Color(0.16f, 0.24f, 0.27f) * 0.35f * fill * warm + policeCol * 0.2f;
+            RenderSettings.ambientEquatorColor = new Color(0.16f, 0.24f, 0.27f) * 0.35f * fill * warm + policeCol * 0.2f + dangerCol * 0.35f;
+            if (danger > 0.01f) RenderSettings.ambientSkyColor = Color.Lerp(RenderSettings.ambientSkyColor, new Color(0.2f, 0.03f, 0.03f), danger * 0.8f);
             RenderSettings.ambientGroundColor = new Color(0.08f, 0.055f, 0.035f) * 0.5f * fill;
 
             _embers.SetFloat(BoostId, Boost * Mathf.Max(0.5f, storyFire) + _burst * 2.5f);
@@ -705,6 +714,7 @@ namespace HypaStories
                 Fire.Light.color = Color.Lerp(Fire.Light.color, spiritCol, spirit * 0.85f);
                 RenderSettings.ambientEquatorColor += spiritCol * spirit * 0.08f;
             }
+            if (danger > 0.01f) Fire.Light.color = Color.Lerp(Fire.Light.color, new Color(1f, 0.25f, 0.08f), danger * 0.6f);
             Eyes(Room ? 0f : dark, t, cam);
             _fireflies.SetFloat(GatherId, Gather);
 
