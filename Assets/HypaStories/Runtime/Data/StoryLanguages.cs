@@ -37,6 +37,7 @@ namespace HypaStories
             new StoryLanguage("ha", "Hausa", "Hausa"),
             new StoryLanguage("ig", "Igbo", "Igbo"),
             new StoryLanguage("pcm", "Pidgin", "Pidgin"),
+            new StoryLanguage("sw", "Kiswahili", "Swahili"),
             new StoryLanguage("yo", "Yorùbá", "Yoruba"),
         };
 
@@ -87,6 +88,12 @@ namespace HypaStories
             Again = "Abeg, you fit talk am again?", Offline = "Make we continue the tori.", Resume = "Ehen, where I stop sef…", You = "You ask",
         };
 
+        static readonly QaLines Sw = new QaLines
+        {
+            Listening = "Nasikiliza…", Thinking = "Ninafikiria…", Filler = new[] { "Hmm, swali zuri…", "Hebu nifikirie hilo…" },
+            Again = "Samahani, unaweza kusema tena?", Offline = "Tuendelee na hadithi.", Resume = "Sasa, nilikuwa wapi…", You = "Uliuliza",
+        };
+
         static readonly QaLines Yo = new QaLines
         {
             Listening = "Mò ń tẹ́tí sí ọ…", Thinking = "Mò ń ronú…", Filler = new[] { "Hmmm, ìbéèrè tó dára nìyẹn…", "Jẹ́ kí n ronú nípa ìyẹn…" },
@@ -95,7 +102,7 @@ namespace HypaStories
 
         static readonly System.Collections.Generic.Dictionary<string, QaLines> ByCode = new System.Collections.Generic.Dictionary<string, QaLines>
         {
-            ["en"] = En, ["fr"] = Fr, ["es"] = Es, ["ha"] = Ha, ["ig"] = Ig, ["pcm"] = Pcm, ["yo"] = Yo,
+            ["en"] = En, ["fr"] = Fr, ["es"] = Es, ["ha"] = Ha, ["ig"] = Ig, ["pcm"] = Pcm, ["sw"] = Sw, ["yo"] = Yo,
         };
 
         public static QaLines Lines(string code) => code != null && ByCode.TryGetValue(code, out var l) ? l : En;
