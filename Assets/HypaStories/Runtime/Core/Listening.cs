@@ -8,6 +8,8 @@ namespace HypaStories
     {
         public string Transcript = "";
         public double TEnd, TTranscript;
+        /// <summary>Loudest the microphone got (RMS 0..1). Near zero = no sound reached it (permission, wrong device).</summary>
+        public float Peak;
         public bool Spoke, Typed;
     }
 
@@ -20,6 +22,9 @@ namespace HypaStories
         /// <summary>Stop recording and drop it (a suggested question was picked instead): no transcription call.</summary>
         void Cancel();
     }
+
+    /// <summary>A listener that can report what it has heard so far while still recording (live typing).</summary>
+    public interface IPartialListener { void SetPartialHandler(Action<string> handler); }
 
     /// <summary>Microphone + speech-to-text. Listen throws when there is no microphone (or no permission).</summary>
     public interface IListener

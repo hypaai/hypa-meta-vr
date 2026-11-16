@@ -8,7 +8,7 @@ namespace HypaStories
     /// <summary>
     /// The story player (the prototype's #play panel): a glass panel just below eye level, in front of you, so the storyteller stays in
     /// view above it. The line being spoken is large, its words lighting up with the voice, with the lines before and after faded.
-    /// Progress, previous / play-pause / next and Ask along the bottom. While a question is open the script gives way to the Q&amp;A:
+    /// Progress, previous / play-pause / next and Try Hypa along the bottom (while a question is open the same button is Done / Skip). While a question is open the script gives way to the Q&amp;A:
     /// state and mic level, "You asked", the answer in the story's accent colour, and suggested questions (no microphone or no key).
     /// </summary>
     public sealed class PlayerView : IAskView
@@ -25,16 +25,18 @@ namespace HypaStories
         readonly KitIcon _hintIcon;
         readonly List<KitButton> _suggestions = new List<KitButton>();
         readonly Action<string> _pick;
+        readonly Action _tryHypa, _askTap;
+        bool _asking;
         StoryInfo _story;
         StoryLanguage _lang;
         string _pauseState;
         int _shownWords = -1, _shownLine = -2;
         static readonly Color Unlit = new Color(1f, 0.97f, 0.92f, 0.32f);
 
-        public PlayerView(Transform uiRoot, Action prev, Action pause, Action next, Action askTap, Action askHold,
+        public PlayerView(Transform uiRoot, Action prev, Action pause, Action next, Action tryHypa, Action askTap,
             Action back, Action toggleSound, Action<string> pickQuestion)
         {
-            _pick = pickQuestion;
+            _pick = pickQuestion; _tryHypa = tryHypa; _askTap = askTap;
             Root = new GameObject("Player").transform;
             Root.SetParent(uiRoot, false);
             Follow = Root.gameObject.AddComponent<FollowView>();
@@ -86,7 +88,9 @@ namespace HypaStories
             Kit.Button(Root, new Vector3(-0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-back", KitStyle.Ghost, prev);
             _pause = Kit.Button(Root, new Vector3(0f, cy, 0f), new Vector2(0.07f, 0.07f), null, "pause", KitStyle.Primary, pause);
             Kit.Button(Root, new Vector3(0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-forward", KitStyle.Ghost, next);
-            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.1f, cy, 0f), new Vector2(0.14f, 0.056f), "Ask", "mic", KitStyle.Primary, askTap, askHold, 0.02f);
+            // Try Hypa replaces the old Ask button; raising a hand still asks the storyteller, and this button is Done / Skip while you do
+            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.115f, cy, 0f), new Vector2(0.17f, 0.056f), "Try Hypa", "languages", KitStyle.Primary,
+                () => { if (_asking) _askTap(); else _tryHypa(); }, null, 0.019f);
             _hintIcon = Kit.Icon(Root, "hand", new Vector3(-W / 2f + 0.05f, cy, 0f), 0.024f, KitTheme.Dim);
             _hint = Kit.Text(Root, "", 0.0145f, new Vector3(-W / 2f + 0.145f, cy, 0f), new Vector2(0.16f, 0.05f), KitTheme.Dim, TextAlignmentOptions.Left);
 
@@ -151,6 +155,9 @@ namespace HypaStories
             _pause.SetIcon(s == "Pause" ? "pause" : s == "Replay" ? "rotate-ccw" : "play");
         }
 
+        /// <summary>Glow on the Try Hypa button (the story is over: nudge them to it).</summary>
+        public void SetTryAttention(bool on) => _ask.Selected = on;
+
         public void SetSound(bool muted) => _sound.SetIcon(muted ? "volume-x" : "volume-2");
 
         /// <summary>The hint beside the transport (default: raise a hand to ask). Empty restores the default.</summary>
@@ -178,8 +185,9 @@ namespace HypaStories
                 if (on) _suggestions[i].SetLabel(qs[i]);
             }
             _answer.gameObject.SetActive(!listening);
-            _ask.SetLabel(state == AskState.Listening ? "Done" : asking ? "Skip" : "Ask");
-            _ask.SetIcon(state == AskState.Listening ? "check" : asking ? "skip-forward" : "mic");
+            _asking = asking;
+            _ask.SetLabel(state == AskState.Listening ? "Done" : asking ? "Skip" : "Try Hypa");
+            _ask.SetIcon(state == AskState.Listening ? "check" : asking ? "skip-forward" : "languages");
             if (!asking) SetLevel(0f);
         }
 

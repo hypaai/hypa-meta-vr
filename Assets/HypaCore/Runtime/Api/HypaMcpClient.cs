@@ -167,12 +167,56 @@ namespace HypaCore
             NoTextFound = (bool?)o["noTextFound"] ?? false,
         };
 
-        /// <summary>Audio comes back as a signed URL (default) valid about an hour.</summary>
+        /// <summary>
+        /// text_to_speech arguments. No voice = Hypa's auto router picks voice and model ("model": "auto"). A named voice only works
+        /// with the model that owns it (the tool rejects it otherwise), so it is sent with that model; with no known model the voice is
+        /// dropped and Auto speaks. Pure, unit tested.
+        /// </summary>
+        public static JObject TtsArgs(string text, string language, string voice, string voiceModel)
+        {
+            var args = new JObject { ["text"] = text, ["language"] = language };
+            var named = !string.IsNullOrEmpty(voice) && !voice.Equals("auto", System.StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(voiceModel);
+            args["model"] = named ? voiceModel : Model;
+            if (named) args["voice"] = voice;
+            return args;
+        }
+
+        /// <summary>list_voices: for a language, each model and the voices it owns ("hypaai/auto" has none).</summary>
+        public async Task<List<KeyValuePair<string, List<string>>>> ListVoicesAsync(string language, CancellationToken ct)
+        {
+            var o = await CallToolAsync("list_voices", new JObject { ["language"] = language }, ct).ConfigureAwait(false);
+            return ParseVoiceOptions(o);
+        }
+
+        /// <summary>Pure, unit tested.</summary>
+        public static List<KeyValuePair<string, List<string>>> ParseVoiceOptions(JObject o)
+        {
+            var list = new List<KeyValuePair<string, List<string>>>();
+            if (o?["options"] is JArray arr)
+                foreach (var opt in arr)
+                {
+                    var voices = (opt["voices"] as JArray)?.Select(v => (string)v).Where(v => !string.IsNullOrEmpty(v)).ToList() ?? new List<string>();
+                    if (voices.Count > 0 && (string)opt["model"] != null) list.Add(new KeyValuePair<string, List<string>>((string)opt["model"], voices));
+                }
+            return list;
+        }
+
+        /// <summary>The first model that owns <paramref name="voice"/> for the language, or null.</summary>
+        public static string ModelForVoice(List<KeyValuePair<string, List<string>>> options, string voice)
+            => options?.FirstOrDefault(x => x.Value.Contains(voice, System.StringComparer.OrdinalIgnoreCase)).Key;
+
+        readonly Dictionary<string, List<KeyValuePair<string, List<string>>>> _voiceOptions = new Dictionary<string, List<KeyValuePair<string, List<string>>>>();
+
+        /// <summary>Audio comes back as a signed URL (default) valid about an hour. No voice = Auto; a voice is sent with its own model.</summary>
         public async Task<HypaSpeech> TextToSpeechAsync(string text, string language, CancellationToken ct, string voice = null)
         {
-            var args = new JObject { ["text"] = text, ["language"] = language, ["model"] = Model };
-            if (!string.IsNullOrEmpty(voice)) args["voice"] = voice;
-            var o = await CallToolAsync("text_to_speech", args, ct).ConfigureAwait(false);
+            string model = null;
+            if (!string.IsNullOrEmpty(voice))
+            {
+                if (!_voiceOptions.TryGetValue(language, out var opts)) { opts = await ListVoicesAsync(language, ct).ConfigureAwait(false); _voiceOptions[language] = opts; }
+                model = ModelForVoice(opts, voice);
+            }
+            var o = await CallToolAsync("text_to_speech", TtsArgs(text, language, voice, model), ct).ConfigureAwait(false);
             return ParseSpeech(o);
         }
 
@@ -201,6 +245,25 @@ namespace HypaCore
             if (!string.IsNullOrEmpty(language)) args["language"] = language;
             var o = await CallToolAsync("look_up_term", args, ct).ConfigureAwait(false);
             return new HypaDictionaryEntry { Raw = o["result"] as JObject };
+        }
+
+        /// <summary>
+        /// Hypa Translate's "thinking" button: why the text translates the way it does (POST /v2/translate/mt/thinking, a plain REST
+        /// call, not an MCP tool; routed by Auto). Needs the API key.
+        /// </summary>
+        public async Task<string> ExplainTranslationAsync(string sourceText, string targetText, string sourceLang, string targetLang, CancellationToken ct)
+        {
+            var body = new JObject
+            {
+                ["provider"] = "auto", // the auto router, as Hypa Translate sends it (no model)
+                ["source_text"] = sourceText, ["target_text"] = targetText,
+                ["source_lang"] = string.IsNullOrEmpty(sourceLang) ? "English" : sourceLang, ["target_lang"] = targetLang,
+                ["stream"] = false, ["temperature"] = 0.3, ["top_p"] = 0.5, ["top_k"] = 1, ["max_tokens"] = 800,
+                ["client_request_id"] = "vr-" + System.Guid.NewGuid().ToString("N"),
+            };
+            var raw = await HypaHttp.PostAsync(_cfg, "/v2/translate/mt/thinking", body.ToString(Formatting.None), ct).ConfigureAwait(false);
+            try { return ((string)JObject.Parse(raw)["thinking"] ?? "").Trim(); }
+            catch (JsonException) { throw new HypaException(HypaErrorKind.InvalidResponse, "thinking: unreadable answer."); }
         }
     }
 }

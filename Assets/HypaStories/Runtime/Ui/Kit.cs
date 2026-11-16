@@ -6,8 +6,9 @@ using UnityEngine;
 
 namespace HypaStories
 {
-    public enum KitFont { Ui, UiBold, Serif, SerifItalic }
-    public enum KitStyle { Primary, Ghost, Quiet }
+    public enum KitFont { Ui, UiBold, Serif, SerifItalic, Content, ContentBold }
+    /// <summary>Primary / Ghost / Quiet are the dark story look. Black / Outline / Soft are Hypa Translate's light look (shadcn: default, outline, ghost).</summary>
+    public enum KitStyle { Primary, Ghost, Quiet, Black, Outline, Soft, Danger, Dim }
 
     /// <summary>The Stories look: warm dark glass, ember accents, Outfit for the interface and Cormorant Garamond for the story.</summary>
     public static class KitTheme
@@ -24,6 +25,25 @@ namespace HypaStories
         public static readonly Color GhostTop = new Color(1f, 0.95f, 0.88f, 0.1f);
         public static readonly Color GhostBottom = new Color(1f, 0.95f, 0.88f, 0.06f);
         public static readonly Color Clear = new Color(0f, 0f, 0f, 0f);
+    }
+
+    /// <summary>
+    /// Hypa Translate's light theme (hypa-translate/src/index.css, oklch values as sRGB): white cards, hairline borders, near-black
+    /// primary buttons, grey secondary text.
+    /// </summary>
+    public static class WebTheme
+    {
+        public static readonly Color Background = new Color(1f, 1f, 1f);
+        public static readonly Color Page = new Color(0.975f, 0.975f, 0.985f);        // white with a faint indigo wash
+        public static readonly Color Foreground = new Color(0.039f, 0.039f, 0.039f);  // oklch(.145 0 0)
+        public static readonly Color Primary = new Color(0.09f, 0.09f, 0.09f);        // oklch(.205 0 0)
+        public static readonly Color PrimaryHover = new Color(0.15f, 0.15f, 0.15f);
+        public static readonly Color OnPrimary = new Color(0.98f, 0.98f, 0.98f);
+        public static readonly Color Muted = new Color(0.961f, 0.961f, 0.961f);       // oklch(.97 0 0)
+        public static readonly Color MutedForeground = new Color(0.451f, 0.451f, 0.451f); // oklch(.556 0 0)
+        public static readonly Color Border = new Color(0.898f, 0.898f, 0.898f);      // oklch(.922 0 0)
+        public static readonly Color Destructive = new Color(0.9f, 0.18f, 0.18f);
+        public static readonly Color Recording = new Color(0.937f, 0.267f, 0.267f);   // red-500, as the Translate mic button
     }
 
     interface IKitFade { void SetGroupAlpha(float a); }
@@ -119,7 +139,7 @@ namespace HypaStories
         public bool Selected { get => _selected; set { _selected = value; Paint(); } }
         public PinchTarget Target { get; private set; }
         bool _selected, _hover;
-        float _h, _press;
+        float _h, _press, _lift;
         Vector3 _scale = Vector3.one;
 
         internal void Init(PinchTarget target)
@@ -144,6 +164,9 @@ namespace HypaStories
             _h += ((_hover ? 1f : 0f) - _h) * (1f - Mathf.Exp(-14f * dt));
             _press = Mathf.Max(0f, _press - dt * 4f);
             transform.localScale = _scale * (1f + 0.045f * _h - 0.05f * _press);
+            // and floats toward you a little: the depth you see when you move your head
+            var dz = -0.008f * _h + 0.004f * _press;
+            if (Mathf.Abs(dz - _lift) > 1e-5f) { var lp = transform.localPosition; lp.z += dz - _lift; transform.localPosition = lp; _lift = dz; }
             Paint();
         }
 
@@ -163,16 +186,46 @@ namespace HypaStories
                     Bg.Bottom = Color.Lerp(KitTheme.GhostBottom, new Color(1f, 0.7f, 0.45f, 0.14f), _h);
                     Bg.Border = Color.Lerp(new Color(1f, 0.92f, 0.82f, 0.16f), KitTheme.Ember, glow * 0.8f);
                     break;
+                case KitStyle.Black:
+                    Bg.Top = Bg.Bottom = Color.Lerp(WebTheme.Primary, WebTheme.PrimaryHover, _h);
+                    Bg.Border = WebTheme.Primary;
+                    break;
+                case KitStyle.Outline: // selected = filled black, like the selected feature tab on Hypa Translate
+                    Bg.Top = Bg.Bottom = _selected ? Color.Lerp(WebTheme.Primary, WebTheme.PrimaryHover, _h) : Color.Lerp(WebTheme.Background, WebTheme.Muted, _h);
+                    Bg.Border = _selected ? WebTheme.Primary : WebTheme.Border;
+                    break;
+                case KitStyle.Dim: // a disabled button on the glass: faint fill, faint ink
+                    Bg.Top = new Color(1f, 0.95f, 0.88f, 0.07f);
+                    Bg.Bottom = new Color(1f, 0.95f, 0.88f, 0.04f);
+                    Bg.Border = new Color(1f, 0.92f, 0.82f, 0.08f);
+                    break;
+                case KitStyle.Danger:
+                    Bg.Top = Bg.Bottom = Color.Lerp(WebTheme.Recording, WebTheme.Destructive, _h);
+                    Bg.Border = WebTheme.Recording;
+                    break;
+                case KitStyle.Soft:
+                    Bg.Top = Bg.Bottom = new Color(WebTheme.Muted.r, WebTheme.Muted.g, WebTheme.Muted.b, _selected ? 1f : _h);
+                    Bg.Border = KitTheme.Clear;
+                    break;
                 default:
                     Bg.Top = new Color(1f, 0.9f, 0.8f, 0.1f * _h);
                     Bg.Bottom = new Color(1f, 0.9f, 0.8f, 0.07f * _h);
                     Bg.Border = new Color(1f, 0.9f, 0.8f, 0.12f * _h);
                     break;
             }
-            Bg.Glow = new Color(KitTheme.Ember.r, KitTheme.Ember.g, KitTheme.Ember.b, 0.5f * glow);
+            var light = Style == KitStyle.Black || Style == KitStyle.Outline || Style == KitStyle.Soft || Style == KitStyle.Danger;
+            Bg.Glow = light ? KitTheme.Clear : new Color(KitTheme.Ember.r, KitTheme.Ember.g, KitTheme.Ember.b, 0.5f * glow);
             Bg.Apply();
-            if (Style == KitStyle.Ghost && Label != null) Label.color = _selected ? KitTheme.Ember : KitTheme.Paper;
-            if (Style == KitStyle.Ghost && Icon != null) { Icon.Color = _selected ? KitTheme.Ember : KitTheme.Paper; Icon.Apply(); }
+            if (Style == KitStyle.Ghost) Ink(_selected ? KitTheme.Ember : KitTheme.Paper);
+            else if (Style == KitStyle.Dim) Ink(KitTheme.Faint);
+            else if (light) Ink(Style == KitStyle.Black || Style == KitStyle.Danger || (Style == KitStyle.Outline && _selected) ? WebTheme.OnPrimary : WebTheme.Foreground);
+        }
+
+        /// <summary>Label and icon colour; the label keeps its alpha so a fading group isn't popped back to opaque each frame.</summary>
+        void Ink(Color c)
+        {
+            if (Icon != null) { Icon.Color = c; Icon.Apply(); }
+            if (Label != null) { c.a = Label.color.a; Label.color = c; }
         }
     }
 
@@ -256,6 +309,8 @@ namespace HypaStories
     /// <summary>Builds Stories UI elements. <see cref="Init"/> once with the scene's assets.</summary>
     public static class Kit
     {
+        /// <summary>Added to every sorting order built while set, so a screen can draw over the player behind it.</summary>
+        public static int OrderBoost;
         static StoryAssets _a;
         static Material _panelMat, _iconMat;
         static Mesh _quad;
@@ -286,7 +341,7 @@ namespace HypaStories
             go.AddComponent<MeshFilter>().sharedMesh = _quad;
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = _panelMat;
-            r.sortingOrder = order;
+            r.sortingOrder = order + OrderBoost;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
             var p = go.AddComponent<KitPanel>();
@@ -307,7 +362,7 @@ namespace HypaStories
             go.AddComponent<MeshFilter>().sharedMesh = _quad;
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = _iconMat;
-            r.sortingOrder = order;
+            r.sortingOrder = order + OrderBoost;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             var i = go.AddComponent<KitIcon>();
             i.Color = c;
@@ -324,7 +379,7 @@ namespace HypaStories
             return i;
         }
 
-        static TMP_FontAsset FontOf(KitFont f) => f == KitFont.UiBold ? _a.uiFontBold : f == KitFont.Serif ? _a.serifFont : f == KitFont.SerifItalic ? _a.serifItalic : _a.uiFont;
+        static TMP_FontAsset FontOf(KitFont f) => f == KitFont.Content || f == KitFont.ContentBold ? TryFonts.Content ?? _a.uiFont : f == KitFont.UiBold ? _a.uiFontBold : f == KitFont.Serif ? _a.serifFont : f == KitFont.SerifItalic ? _a.serifItalic : _a.uiFont;
 
         /// <summary>
         /// Text in a <paramref name="box"/> (metres) centred at <paramref name="pos"/>. <paramref name="em"/> is the font size in metres
@@ -337,6 +392,7 @@ namespace HypaStories
             var t = go.AddComponent<TextMeshPro>();
             var fa = FontOf(font);
             if (fa != null) t.font = fa;
+            if (font == KitFont.ContentBold) t.fontStyle = FontStyles.Bold;
             t.fontSize = em * 10f;
             t.color = c;
             t.alignment = align;
@@ -346,7 +402,7 @@ namespace HypaStories
             t.rectTransform.sizeDelta = box;
             t.text = text;
             var r = go.GetComponent<MeshRenderer>();
-            r.sortingOrder = order;
+            r.sortingOrder = order + OrderBoost;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             return t;
         }
@@ -356,13 +412,14 @@ namespace HypaStories
         /// Quiet = no fill until hovered.
         /// </summary>
         public static KitButton Button(Transform parent, Vector3 pos, Vector2 size, string label, string icon, KitStyle style,
-            Action onPress, Action onLong = null, float em = 0.019f)
+            Action onPress, Action onLong = null, float em = 0.019f, float radius = -1f)
         {
             var go = Node("Button " + (label ?? icon), parent, pos);
             var round = string.IsNullOrEmpty(label);
-            var bg = Panel(go.transform, "bg", Vector3.zero, size, Mathf.Min(size.x, size.y) * 0.5f, KitTheme.GhostTop, KitTheme.GhostBottom,
-                KitTheme.Hairline, 11, style == KitStyle.Quiet ? 0f : 0.25f);
-            var ink = style == KitStyle.Primary ? KitTheme.Ink : KitTheme.Paper;
+            var bg = Panel(go.transform, "bg", Vector3.zero, size, radius >= 0f ? radius : Mathf.Min(size.x, size.y) * 0.5f, KitTheme.GhostTop, KitTheme.GhostBottom,
+                KitTheme.Hairline, 11, style == KitStyle.Quiet || style == KitStyle.Soft ? 0f : style == KitStyle.Outline ? 0.1f : 0.25f);
+            var ink = style == KitStyle.Primary ? KitTheme.Ink : style == KitStyle.Dim ? KitTheme.Faint : style == KitStyle.Black || style == KitStyle.Danger ? WebTheme.OnPrimary
+                : style == KitStyle.Outline || style == KitStyle.Soft ? WebTheme.Foreground : KitTheme.Paper;
             KitIcon ic = null;
             TextMeshPro lb = null;
             var iconSize = size.y * (round ? 0.62f : 0.5f);
