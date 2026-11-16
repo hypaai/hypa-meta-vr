@@ -366,6 +366,7 @@ namespace HypaStories
             _ask.Cancel();
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
+            _game.Fit(CurrentFit());
             _game.Begin();
         }
 
@@ -401,6 +402,7 @@ namespace HypaStories
             _ask.Cancel();
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
+            _hatGame.Fit(CurrentFit());
             _hatGame.Begin();
         }
 
@@ -810,6 +812,7 @@ namespace HypaStories
             StoryRoom.Depth?.Invoke(true);
             PlaceInRoom();
             SetRoomButtons(true);
+            RefitGames();
             SnapPanels();
             Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
             if (note != null) ShowRoomNote(note, 7f); else HideRoomNote();
@@ -826,6 +829,7 @@ namespace HypaStories
             {
                 ExitRoomNow();
                 Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
+                RefitGames();
                 SnapPanels();
             }
             Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
@@ -859,6 +863,30 @@ namespace HypaStories
             _world.SetPositionAndRotation(new Vector3(_roomPlan.Fire.x, _roomFloorY, _roomPlan.Fire.y), Quaternion.LookRotation(away));
             _camp.SetTellerGap(_roomPlan.Gap);
             _camp.FaceTeller(_cam.position);
+        }
+
+        /// <summary>
+        /// How a game should lay itself out now: as built in the forest, or pulled in to your room's real distances. If you've walked
+        /// well round the fire since it was placed, the camp turns (round the fire, which stays put) so the game is in front of you.
+        /// </summary>
+        GameFit CurrentFit()
+        {
+            if (!_room) return GameFit.Forest;
+            var head = new Vector2(_cam.position.x, _cam.position.z);
+            var toFire = _roomPlan.Fire - head;
+            if (toFire.sqrMagnitude > 0.04f && Vector2.Angle(toFire, _roomPlan.Away) > 30f)
+            {
+                _roomPlan = new RoomSpotPlan(_roomPlan.Fire, toFire.normalized, _roomPlan.Gap, _roomPlan.Scanned);
+                PlaceInRoom();
+            }
+            return GameFit.InRoom(toFire.magnitude, _roomPlan.Gap);
+        }
+
+        /// <summary>A game going on when you switch worlds carries on, laid out for the new one.</summary>
+        void RefitGames()
+        {
+            if (_game != null && _game.Active) _game.Fit(CurrentFit());
+            if (_hatGame != null && _hatGame.Active) _hatGame.Fit(CurrentFit());
         }
 
         /// <summary>A line in front of you for <paramref name="seconds"/> (0 = until hidden).</summary>

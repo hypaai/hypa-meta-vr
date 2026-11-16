@@ -117,5 +117,28 @@ namespace HypaStories.Tests
             Assert.AreEqual(a.Away, b.Away);
             Assert.AreEqual(a.Gap, b.Gap);
         }
-    }
+    
+        [Test] public void Games_InTheForest_AreAsBuilt()
+        {
+            var f = GameFit.Forest;
+            Assert.IsFalse(f.Room);
+            Assert.AreEqual(new Vector3(0.62f, 0f, -2.35f), f.At(new Vector3(0.62f, 0f, -2.35f)));
+            Assert.AreEqual(1f, f.DodoScale);
+        }
+
+        [Test] public void Games_InASmallRoom_PullInToYou_AndStayInFrontOfYou()
+        {
+            // you 2 m from the fire (no scan: the fire just in front), the storyteller 1.6 m beyond it
+            var f = GameFit.InRoom(2f, 1.6f);
+            var slab = f.At(new Vector3(0.62f, 0f, -2.35f));
+            Assert.Greater(slab.z, -2f, "the slab is in front of you, not behind");
+            var post = f.At(new Vector3(0f, 0f, -1.45f));
+            Assert.Less(post.z, -0.75f, "the hat's post stays clear of the fire's stones");
+            var eshu = f.At(new Vector3(1.15f, 0f, 1.45f));
+            Assert.LessOrEqual(eshu.magnitude, 1.6f + 0.5f, "beyond the fire no farther than the storyteller's open floor");
+            Assert.Less(f.DodoScale * 3.4f, 2.6f, "Dodo stands under a ceiling");
+            // nearer than that is squeezed only so far
+            Assert.AreEqual(GameFit.InRoom(1.2f, 1.1f).Near, GameFit.InRoom(1.6f, 1.1f).Near, 1e-4);
+        }
+}
 }

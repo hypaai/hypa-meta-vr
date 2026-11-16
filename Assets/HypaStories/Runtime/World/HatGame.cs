@@ -18,14 +18,24 @@ namespace HypaStories
     /// </summary>
     public sealed class HatGame : MonoBehaviour
     {
-        // the camp's ground: the fire at the origin, you at the story seat on -Z
-        static readonly Vector3 Post = new Vector3(0f, 0f, -1.45f);
-        static readonly Vector3 FriendLeft = new Vector3(-1.75f, 0f, -1.25f), FriendRight = new Vector3(1.75f, 0f, -1.25f);
-        static readonly Vector3 EshuAt = new Vector3(1.15f, 0f, 1.45f);
-        static readonly Vector3 Slab = new Vector3(0.62f, 0f, -2.35f), Bowl = new Vector3(-0.78f, 0f, -2.15f);
+        // the camp's ground as laid out in the forest: the fire at the origin, you at the story seat on -Z. In your room the same
+        // layout is pulled in to fit (see GameFit), so everything below goes through _fit.
+        static readonly Vector3 FPost = new Vector3(0f, 0f, -1.45f);
+        static readonly Vector3 FFriendLeft = new Vector3(-1.75f, 0f, -1.25f), FFriendRight = new Vector3(1.75f, 0f, -1.25f);
+        static readonly Vector3 FEshu = new Vector3(1.15f, 0f, 1.45f);
+        static readonly Vector3 FSlab = new Vector3(0.62f, 0f, -2.35f), FBowl = new Vector3(-0.78f, 0f, -2.15f);
+        GameFit _fit = GameFit.Forest;
+        Vector3 Post => _fit.At(FPost);
+        Vector3 FriendLeft => _fit.At(FFriendLeft);
+        Vector3 FriendRight => _fit.At(FFriendRight);
+        Vector3 EshuAt => _fit.At(FEshu);
+        Vector3 Slab => _fit.At(FSlab);
+        Vector3 Bowl => _fit.At(FBowl);
+        /// <summary>Where you sit: the forest seat, or how far from the fire your room put you.</summary>
+        Vector3 Seat => _fit.At(new Vector3(0f, 0f, -GameFit.ForestSeat));
         const float SlabTop = 0.62f, PostTop = 1.0f, HatFloat = 0.38f, IdleSpin = 24f, Snap = 65f, ReturnSpeed = 220f;
         /// <summary>Where the open calabash sits: on the post's cap, in sight, under the floating hat.</summary>
-        static readonly Vector3 CupSpot = new Vector3(0f, PostTop + 0.085f, -1.45f);
+        Vector3 CupSpot => Post + new Vector3(0f, PostTop + 0.085f, 0f);
         /// <summary>Tipped toward the seat, so the wine is a face you can see and not a line at eye level.</summary>
         static readonly Quaternion CupSit = Quaternion.Euler(-22f, 0f, 0f);
 
@@ -88,6 +98,7 @@ namespace HypaStories
         public void Begin()
         {
             if (_root == null) Build();
+            Fit(_fit); // the props at their spots for the forest or your room
             _root.gameObject.SetActive(true);
             Active = true;
             _rules = new HatRules();
@@ -127,20 +138,24 @@ namespace HypaStories
             // the post, and the hat floating over it
             var post = new TrailBuilder.MeshKit();
             var wood = new Color(0.3f, 0.2f, 0.12f);
-            post.Limb(Post, Post + Vector3.up * PostTop, 0.07f, 0.055f, wood, 8);
-            post.Cylinder(Post + Vector3.up * PostTop, 0.16f, 0.18f, 0.045f, wood * 1.1f, wood * 1.2f, 10); // a platform under the hat, wide enough for the bowl
+            post.Limb(Vector3.zero, Vector3.up * PostTop, 0.07f, 0.055f, wood, 8);
+            post.Cylinder(Vector3.up * PostTop, 0.16f, 0.18f, 0.045f, wood * 1.1f, wood * 1.2f, 10); // a platform under the hat, wide enough for the bowl
+            _postT = Node("Post", post.Build("Post"), _vc); _postT.SetParent(_root, false);
+            var shrine = new TrailBuilder.MeshKit();
             // a little crossroads shrine by your left hand: three paths meeting, a short post, a calabash bowl on top
             var ground = new Color(0.32f, 0.2f, 0.12f);
             for (var k = 0; k < 3; k++)
             {
                 var a = (k * 120f + 30f) * Mathf.Deg2Rad;
-                post.Box(Bowl + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 0.35f + Vector3.up * 0.01f, new Vector3(0.14f, 0.01f, 0.7f), Quaternion.Euler(0f, k * 120f + 30f, 0f), ground);
+                shrine.Box(new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 0.35f + Vector3.up * 0.01f, new Vector3(0.14f, 0.01f, 0.7f), Quaternion.Euler(0f, k * 120f + 30f, 0f), ground);
             }
-            post.Limb(Bowl, Bowl + Vector3.up * 0.55f, 0.05f, 0.04f, wood, 8);
-            post.Ellipsoid(Bowl + Vector3.up * 0.6f, new Vector3(0.13f, 0.06f, 0.13f), Quaternion.identity, new Color(0.62f, 0.46f, 0.24f), 12, 5, null, 100f);
+            shrine.Limb(Vector3.zero, Vector3.up * 0.55f, 0.05f, 0.04f, wood, 8);
+            shrine.Ellipsoid(Vector3.up * 0.6f, new Vector3(0.13f, 0.06f, 0.13f), Quaternion.identity, new Color(0.62f, 0.46f, 0.24f), 12, 5, null, 100f);
             // the slab by your right hand, where the calabash and the cowrie wait
-            post.Cylinder(Slab, 0.36f, 0.3f, SlabTop, new Color(0.26f, 0.25f, 0.24f), new Color(0.34f, 0.33f, 0.31f), 9);
-            Node("Shrine Props", post.Build("Shrine Props"), _vc).SetParent(_root, false);
+            _shrineT = Node("Shrine", shrine.Build("Shrine"), _vc); _shrineT.SetParent(_root, false);
+            var slab = new TrailBuilder.MeshKit();
+            slab.Cylinder(Vector3.zero, 0.36f, 0.3f, SlabTop, new Color(0.26f, 0.25f, 0.24f), new Color(0.34f, 0.33f, 0.31f), 9);
+            _slabT = Node("Slab", slab.Build("Slab"), _vc); _slabT.SetParent(_root, false);
 
             _hat = Node("Eshu's Hat", HatMesh(), _vc);
             _hat.SetParent(_root, false);
@@ -149,8 +164,8 @@ namespace HypaStories
             var lamp = new GameObject("Hat Light").AddComponent<Light>();
             lamp.type = LightType.Point; lamp.range = 1.6f; lamp.intensity = 1.8f; lamp.color = new Color(1f, 0.9f, 0.75f);
             lamp.shadows = LightShadows.None; lamp.renderMode = LightRenderMode.ForceVertex;
-            lamp.transform.SetParent(_root, false);
-            lamp.transform.localPosition = Post + new Vector3(0f, PostTop + HatFloat + 0.25f, -0.55f);
+            lamp.transform.SetParent(_postT, false);
+            lamp.transform.localPosition = new Vector3(0f, PostTop + HatFloat + 0.25f, -0.55f);
 
             // the friends, either side of the post, and Eshu by the fire
             var v = _camp.Village;
@@ -159,7 +174,7 @@ namespace HypaStories
             {
                 _friends[0] = v.MakePerson(people, "Left Friend", new Vector2(FriendLeft.x, FriendLeft.z), Vector2.right, false);
                 _friends[1] = v.MakePerson(people, "Right Friend", new Vector2(FriendRight.x, FriendRight.z), Vector2.left, false);
-                _eshu = v.MakeEshu(people, new Vector2(EshuAt.x, EshuAt.z), new Vector2(-EshuAt.x, -3.1f - EshuAt.z));
+                _eshu = v.MakeEshu(people, new Vector2(EshuAt.x, EshuAt.z), new Vector2(Seat.x - EshuAt.x, Seat.z - EshuAt.z));
                 // his staff, strung with cowries: taller than he is (built in his own scale, so ~2.1 m in the world)
                 var st = new TrailBuilder.MeshKit();
                 var k2 = 1f / _eshu.Root.localScale.y;
@@ -309,7 +324,22 @@ namespace HypaStories
         }
 
         /// <summary>Where friend <paramref name="i"/> (0 shouts red) stands: left or right of the post (swapped in the last round).</summary>
-        static Vector3 Spot(int i, bool swapped) => (i == 0) != swapped ? FriendLeft : FriendRight;
+        Vector3 Spot(int i, bool swapped) => (i == 0) != swapped ? FriendLeft : FriendRight;
+
+        Transform _postT, _shrineT, _slabT;
+
+        /// <summary>
+        /// Lays the game out for the forest or your room (see <see cref="GameFit"/>). Can be called mid-game when you switch:
+        /// the props move, the friends walk to their new spots, and the game carries on where it was.
+        /// </summary>
+        public void Fit(GameFit fit)
+        {
+            _fit = fit;
+            if (_root == null) return;
+            _postT.localPosition = Post; _shrineT.localPosition = Bowl; _slabT.localPosition = Slab;
+            if (_eshu != null) Place(_eshu, EshuAt, Seat);
+            if (_cup != null && _rules != null && _rules.Phase >= HatPhase.Drink) _cup.localPosition = CupSpot;
+        }
 
         // ---------- the hat: which side faces whom ----------
 
@@ -598,7 +628,8 @@ namespace HypaStories
                     var u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((T - 0.5f) / 2.2f));
                     var from = Spot(i, false); var to = Spot(i, true);
                     // two lanes so they pass each other: one just behind the post (still clear of the fire's stones, ~1 m out), one just in front
-                    var mid = new Vector3(0f, 0f, i == 0 ? Post.z + 0.4f : Post.z - 0.4f);
+                    var behind = Post.z + 0.4f < -0.95f; // room between the post and the fire's stones for a lane
+                    var mid = new Vector3(0f, 0f, i == 0 ? (behind ? Post.z + 0.4f : Post.z - 0.35f) : (behind ? Post.z - 0.4f : Post.z - 0.8f));
                     at = u < 0.5f ? Vector3.Lerp(from, mid, u * 2f) : Vector3.Lerp(mid, to, (u - 0.5f) * 2f);
                 }
                 else if (p == HatPhase.Fight && T < HatRules.FightTime - 0.8f) at = Vector3.Lerp(spot, new Vector3(spot.x * 0.35f, 0f, spot.z + 0.35f), Mathf.Clamp01(T * 2f));
@@ -840,8 +871,10 @@ namespace HypaStories
             _meterLabel = Kit.Text(_hud, "Quarrel", 0.012f, new Vector3(-0.14f, -0.04f, 0f), new Vector2(0.1f, 0.02f), KitTheme.Dim, TextAlignmentOptions.Right).transform;
             _quit = Kit.Button(_hud, new Vector3(-0.2f, 0.055f, 0f), new Vector2(0.09f, 0.038f), "Back", "arrow-left", KitStyle.Ghost, () => { End(); _return?.Invoke(); }, null, 0.015f);
             if (_toggleRoom != null)
+            {
                 _room = Kit.Button(_hud, new Vector3(0f, -0.115f, 0f), new Vector2(0.28f, 0.04f), "Back to the forest", "house", KitStyle.Ghost, _toggleRoom, null, 0.014f);
                 _room.SetLabel("In my room");
+            }
             _retry = Kit.Button(_hud, new Vector3(-0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Play again", "rotate-ccw", KitStyle.Primary, () => { End(); Begin(); });
             _restart = Kit.Button(_hud, new Vector3(0f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "The story", "play", KitStyle.Ghost, () => { End(); _restartStory?.Invoke(); });
             _leave = Kit.Button(_hud, new Vector3(0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Stories", "arrow-left", KitStyle.Ghost, () => { End(); _back?.Invoke(); });

@@ -19,8 +19,30 @@ namespace HypaStories
     public sealed class DodoGame : MonoBehaviour
     {
         // where things are on the camp's ground (the fire at the origin, you at the story seat on -Z)
-        static readonly Vector3 Lair = new Vector3(0f, 0f, 15f), Home = new Vector3(0f, 0f, 5.4f), Stoop = new Vector3(0f, 0f, 2.35f);
-        static readonly Vector3 Slab = new Vector3(0.62f, 0f, -2.35f);
+        // Dodo's run in, its spot beyond the fire, and where it stoops over it; the slab by your seat. As laid out in the forest:
+        // in your room (GameFit) Dodo is smaller, waits just past the storyteller's spot and charges in through your far wall.
+        static readonly Vector3 FSlab = new Vector3(0.62f, 0f, -2.35f);
+        GameFit _fit = GameFit.Forest;
+        Vector3 Stoop => new Vector3(0f, 0f, _fit.Room ? Mathf.Max(FireRing + 0.9f, 2.35f * _fit.DodoScale) : 2.35f);
+        Vector3 Home => new Vector3(0f, 0f, _fit.Room ? Mathf.Max(_fit.Gap + 0.9f, Stoop.z + 1f) : 5.4f);
+        Vector3 Lair => new Vector3(0f, 0f, _fit.Room ? Home.z + 6f : 15f);
+        Vector3 Slab => _fit.At(FSlab);
+        Transform _slabT;
+
+        /// <summary>
+        /// Lays the game out for the forest or your room (see <see cref="GameFit"/>). Mid-game too: the slab and its stones move,
+        /// and Dodo walks to its new spot, the game carrying on where it was.
+        /// </summary>
+        public void Fit(GameFit fit)
+        {
+            _fit = fit;
+            if (_root == null) return;
+            _slabT.localPosition = Slab;
+            for (var i = 0; i < _stones.Count; i++)
+                if (_stones[i].S == StoneState.Pile && _held != _stones[i]) _stones[i].T.localPosition = PilePos(i);
+            if (_dodo != null) _dodo.transform.localScale = Vector3.one * _fit.DodoScale;
+            _homeZ = Mathf.Clamp(_homeZ, Stoop.z + 0.6f, Home.z);
+        }
         const float SlabTop = 0.62f, FireRing = 0.6f;
 
         CampWorld _camp;
@@ -84,6 +106,8 @@ namespace HypaStories
         public void Begin()
         {
             if (_root == null) Build();
+            _homeZ = Home.z;
+            Fit(_fit); // the slab, and Dodo's size, for the forest or your room
             _root.gameObject.SetActive(true);
             Active = true;
             _rules = new DodoRules();
@@ -135,8 +159,9 @@ namespace HypaStories
 
             // a flat stone slab by your seat, with the seven cool stones on it
             var slab = new TrailBuilder.MeshKit();
-            slab.Cylinder(Slab, 0.36f, 0.3f, SlabTop, new Color(0.26f, 0.25f, 0.24f), new Color(0.34f, 0.33f, 0.31f), 9);
-            Node("Stone Slab", slab.Build("Stone Slab"), new Material(_a.pine) { name = "Slab" }).SetParent(_root, false);
+            slab.Cylinder(Vector3.zero, 0.36f, 0.3f, SlabTop, new Color(0.26f, 0.25f, 0.24f), new Color(0.34f, 0.33f, 0.31f), 9);
+            _slabT = Node("Stone Slab", slab.Build("Stone Slab"), new Material(_a.pine) { name = "Slab" });
+            _slabT.SetParent(_root, false);
             for (var i = 0; i < DodoRules.Stones; i++)
             {
                 var mk = new TrailBuilder.MeshKit();
@@ -180,7 +205,7 @@ namespace HypaStories
             SetHeat(s, 0f);
         }
 
-        static Vector3 PilePos(int i)
+        Vector3 PilePos(int i)
         {
             var a = i / (float)DodoRules.Stones * Mathf.PI * 2f;
             var r = i == 0 ? 0f : 0.16f;
@@ -602,8 +627,10 @@ namespace HypaStories
             _iAm = Kit.Button(_hud, new Vector3(0f, -0.048f, 0f), new Vector2(0.16f, 0.05f), "I am!", "hand", KitStyle.Primary, IAm);
             _quit = Kit.Button(_hud, new Vector3(-0.2f, 0.055f, 0f), new Vector2(0.09f, 0.038f), "Back", "arrow-left", KitStyle.Ghost, ReturnToStory, null, 0.015f);
             if (_toggleRoom != null)
+            {
                 _room = Kit.Button(_hud, new Vector3(0f, -0.115f, 0f), new Vector2(0.28f, 0.04f), "Back to the forest", "house", KitStyle.Ghost, _toggleRoom, null, 0.014f);
                 _room.SetLabel("In my room");
+            }
             _retry = Kit.Button(_hud, new Vector3(-0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Try again", "rotate-ccw", KitStyle.Primary, () => { End(); Begin(); });
             _restart = Kit.Button(_hud, new Vector3(0f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "The story", "play", KitStyle.Ghost, () => { End(); _restartStory?.Invoke(); });
             _leave = Kit.Button(_hud, new Vector3(0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Stories", "arrow-left", KitStyle.Ghost, () => { End(); _back?.Invoke(); });
