@@ -35,13 +35,15 @@ namespace HypaStories
             for (var i = 0; i < 3; i++)
             {
                 var n = i;
-                var b = Kit.Button(Root, new Vector3((i - 1) * 0.21f, 0.036f, -0.01f), new Vector2(0.2f, 0.042f), "", null, KitStyle.Ghost,
+                // a placeholder label: Kit makes an empty-label button round, with no text to fill in later
+                var b = Kit.Button(Root, new Vector3((i - 1) * 0.21f, 0.036f, -0.01f), new Vector2(0.2f, 0.042f), "word", null, KitStyle.Ghost,
                     () => { if (!string.IsNullOrEmpty(_shown[n])) _ = _f.UseWordAsync(_shown[n]); }, null, 0.014f);
                 b.Label.textWrappingMode = TextWrappingModes.Normal;
                 b.Label.enableAutoSizing = true;
                 b.Label.fontSizeMax = b.Label.fontSize;
                 b.Label.fontSizeMin = b.Label.fontSize * 0.72f;
                 b.Label.overflowMode = TextOverflowModes.Ellipsis;
+                Face(b.Label); // the story's own words: ẹ, ọ, ụ, ɗ need the content font
                 _words[i] = b;
             }
             _heard = Text(Root, "", 0.015f, new Vector3(0f, -0.008f, -0.01f), new Vector2(0.58f, 0.022f), KitTheme.Dim, TextAlignmentOptions.Center);

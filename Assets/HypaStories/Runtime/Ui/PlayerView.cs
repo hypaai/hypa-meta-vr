@@ -97,7 +97,9 @@ namespace HypaStories
             Kit.Button(Root, new Vector3(-0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-back", KitStyle.Ghost, prev);
             _pause = Kit.Button(Root, new Vector3(0f, cy, 0f), new Vector2(0.07f, 0.07f), null, "pause", KitStyle.Primary, pause);
             Kit.Button(Root, new Vector3(0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-forward", KitStyle.Ghost, next);
-            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.1f, cy, 0f), new Vector2(0.14f, 0.056f), "Ask", "mic", KitStyle.Primary, () => _askTap(), null, 0.02f);
+            // made with the longest word it shows ("Speak", while translating) so the label never runs into the icon
+            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.1f, cy, 0f), new Vector2(0.14f, 0.056f), "Speak", "mic", KitStyle.Primary, () => _askTap(), null, 0.02f);
+            _ask.SetLabel("Ask");
             // only at the end of a story: opens Hypa Translate in this same panel
             _tryOffer = Kit.Button(Root, new Vector3(0f, -0.074f, -0.012f), new Vector2(0.36f, 0.04f), "Try Hypa Translate", "languages", KitStyle.Primary, () => _tryHypa(), null, 0.015f);
             _tryOffer.gameObject.SetActive(false);
