@@ -270,6 +270,75 @@ namespace HypaStories.Tests
             }
         }
 
+        // ---------- Voice lock ----------
+
+        static HypaCore.HypaSpeech Spoke(string provider, string model, string voice) => new HypaCore.HypaSpeech { Provider = provider, Model = model, Voice = voice };
+
+        /// <summary>Runs <paramref name="body"/> with no synchronization context, so awaits resume as soon as a task completes.</summary>
+        static void Inline(Action body)
+        {
+            var was = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(null);
+            try { body(); } finally { SynchronizationContext.SetSynchronizationContext(was); }
+        }
+
+        [Test] public void VoiceLock_FirstAutoPickIsUsedForTheRestOfTheStory() => Inline(() =>
+        {
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            var first = new TaskCompletionSource<HypaCore.HypaSpeech>();
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                return p == null ? first.Task : Task.FromResult(Spoke("hypaai", "orpheus", p.Voice));
+            }
+            var a = vl.SpeakAsync("yo", Speak);
+            var b = vl.SpeakAsync("yo", Speak); // prefetched while the first is still with Auto: waits for its pick
+            CollectionAssert.AreEqual(new[] { "auto" }, asked);
+            first.SetResult(Spoke("hypaai", "orpheus", "Eniola"));
+            Assert.IsTrue(a.IsCompleted && b.IsCompleted);
+            vl.SpeakAsync("yo", Speak).Wait();
+            CollectionAssert.AreEqual(new[] { "auto", "hypaai/orpheus Eniola", "hypaai/orpheus Eniola" }, asked);
+            Assert.AreEqual("hypaai/orpheus Eniola", vl.PickFor("yo").ToString());
+            Assert.IsNull(vl.PickFor("fr"), "each language is picked on its own");
+
+            vl.Reset(); // the story is opened again: Auto picks again
+            first = new TaskCompletionSource<HypaCore.HypaSpeech>();
+            first.SetResult(Spoke("openai", "gpt-4o-mini-tts", "alloy"));
+            vl.SpeakAsync("yo", Speak).Wait();
+            Assert.AreEqual("auto", asked.Last());
+            Assert.AreEqual("openai/gpt-4o-mini-tts alloy", vl.PickFor("yo").ToString());
+        });
+
+        [Test] public void VoiceLock_AFailedFirstLineLetsTheNextOnePick() => Inline(() =>
+        {
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            var first = new TaskCompletionSource<HypaCore.HypaSpeech>();
+            var calls = 0;
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                return ++calls == 1 ? first.Task : Task.FromResult(Spoke("google", "chirp", p?.Voice ?? "Achernar"));
+            }
+            var a = vl.SpeakAsync("es", Speak);
+            var b = vl.SpeakAsync("es", Speak);
+            first.SetException(new HypaCore.HypaException(HypaCore.HypaErrorKind.Unavailable, "down"));
+            Assert.IsTrue(a.IsFaulted);
+            Assert.IsTrue(b.IsCompleted && !b.IsFaulted, "the waiting line asks Auto itself");
+            CollectionAssert.AreEqual(new[] { "auto", "auto" }, asked);
+            Assert.AreEqual("google/chirp Achernar", vl.PickFor("es").ToString());
+        });
+
+        [Test] public void VoiceLock_PickNeedsProviderModelAndVoice()
+        {
+            Assert.IsNull(VoiceLock.Pick(null));
+            Assert.IsNull(VoiceLock.Pick(Spoke("openai", "gpt-4o-mini-tts", null)));
+            Assert.IsNull(VoiceLock.Pick(Spoke(null, "gpt-4o-mini-tts", "alloy")));
+            Assert.AreEqual("openai/gpt-4o-mini-tts", VoiceLock.Pick(Spoke("openai", "gpt-4o-mini-tts", "alloy")).Model);
+            Assert.AreEqual("openai/gpt-4o-mini-tts", VoiceLock.Pick(Spoke("openai", "openai/gpt-4o-mini-tts", "alloy")).Model);
+        }
+
         // ---------- The ask loop (tickets 3B / 3C) ----------
 
         sealed class FakeSpeech : IStorySpeech

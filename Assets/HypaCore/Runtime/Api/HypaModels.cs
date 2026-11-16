@@ -51,6 +51,8 @@ namespace HypaCore
         public string Mime;
         public int SampleRate;
         public string Voice;
+        /// <summary>The provider and model that spoke (with model "auto", the one Auto picked), e.g. "hypaai" + "hypa-orpheus-3b-tts-vc-flt".</summary>
+        public string Provider, Model;
     }
 
     /// <summary>look_up_term returns a free-form object. Render what we recognise, then fall back to a plain dump.</summary>

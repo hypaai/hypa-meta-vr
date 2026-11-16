@@ -115,9 +115,11 @@ the translations are matched on.
   fillers, answers. Both stories use Hypa's Auto routing (no `voices`): hypa-v2 ranks the speech models for the language by its
   benchmarks, uses the top model's first voice and fails over to the next model on the server (on 2026-11-14: English OpenAI `alloy`,
   Spanish Google `Achernar`, French / Hausa / Igbo / Pidgin / Yoruba Hypa Orpheus `Adaugo` / `Juliet` / `Amarachi` / `Prince` /
-  `Eniola`; 2.7-8 s a line). A story's `voices` pins voices instead (tried in order, then Auto). Meta has no TTS. Lines are cached for
-  the session and the next line is fetched while the current one plays; a line not ready after 12 s is read silently. Auto can't
-  take a chosen voice over MCP (hypa-v2 needs the voice's model with it; REST `/v2/developer/tts` can).
+  `Eniola`; 2.7-8 s a line). Auto routes every request on its own, so its first pick in a language (the provider/model and voice
+  the reply names) is locked for the rest of the story: later lines ask for that model and voice, and a line that fails in it is
+  read silently rather than in another voice. Opening a story (the same one again, or another) lets Auto pick again. A story's
+  `voices` pins voices instead (tried in order, then Auto). Meta has no TTS. Lines are cached for the session and the next line is
+  fetched while the current one plays; a line not ready after 12 s is read silently.
 - **ASR** (`speech_to_text`, schema read from `tools/list` on 2026-11-13, not yet called with a key): 16 kHz mono WAV, the story
   language as `sourceLang`, model picked by Hypa's auto-router. Nothing is sent if nothing louder than the noise floor was heard.
 - **Chat** (REST `/v2/developer/chat`, `HypaRestClient.ChatAsync`, not streamed): `ChatStoryQa` sends the storyteller persona, the

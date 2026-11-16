@@ -179,10 +179,12 @@ namespace HypaCore
             return ParseSpeech(o);
         }
 
-        static HypaSpeech ParseSpeech(JObject o) => new HypaSpeech
+        /// <summary>Pure, unit tested.</summary>
+        public static HypaSpeech ParseSpeech(JObject o) => new HypaSpeech
         {
             AudioUrl = (string)o["audioUrl"], AudioBase64 = (string)o["audioBase64"], Mime = (string)o["mime"],
             SampleRate = (int?)o["sampleRate"] ?? 0, Voice = (string)o["voice"],
+            Provider = (string)o["provider"], Model = (string)o["model"],
         };
 
         /// <summary>
