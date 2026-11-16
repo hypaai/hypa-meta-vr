@@ -78,6 +78,11 @@ namespace HypaStories
 
         readonly ITryApi _api;
         readonly IListener _listener;
+        /// <summary>
+        /// Show words as they are said (the microphone runs until you tap stop, streaming to live transcription). Off, it
+        /// records the way the storyteller's Ask does: until you stop talking (or tap stop), then transcribes once.
+        /// </summary>
+        public bool LiveText = true;
         CancellationTokenSource _cts = new CancellationTokenSource();
         IListenSession _session;
         int _version, _dictVersionS, _dictVersionT;
@@ -313,7 +318,7 @@ namespace HypaStories
             if (!string.IsNullOrEmpty(Output)) { Output = ""; _translatedFrom = ""; ResetDictionary(); }
             Status = TryStatus.Listening; Level = 0f;
             Notify();
-            var live = _listener as IPartialListener;
+            var live = LiveText ? _listener as IPartialListener : null;
             try
             {
                 // a handler also switches the microphone to "until you tap stop" and live partial results
@@ -323,12 +328,13 @@ namespace HypaStories
                 live?.SetPartialHandler(null);
                 if (version != _version) return;
                 _session = null; Level = 0f;
+                Debug.Log($"Hypa Stories: translate mic spoke={heard.Spoke} peak={heard.Peak:0.000} live={live != null} heard \"{heard.Transcript}\"");
                 if (!heard.Spoke || string.IsNullOrWhiteSpace(heard.Transcript))
                 {
                     Status = TryStatus.Idle;
                     Input = _base;
                     Message = heard.Peak < 0.002f && !heard.Spoke
-                        ? "No sound is reaching the microphone. Check that Unity is allowed to use it (System Settings > Privacy > Microphone)."
+                        ? NoSound
                         : "I didn't catch that. Tap the mic and try again.";
                     Notify();
                     return;
@@ -350,6 +356,11 @@ namespace HypaStories
         }
 
         public const int MaxChars = 500;
+
+        /// <summary>What to check when the microphone gave only silence, for this device.</summary>
+        static string NoSound => Application.platform == RuntimePlatform.Android
+            ? "No sound is reaching the microphone. Check that the headset's microphone is on, and that the app may use it (Settings > Apps > Permissions)."
+            : "No sound is reaching the microphone. Check that Unity is allowed to use it (System Settings > Privacy > Microphone).";
 
         static string Join(string a, string b) => string.IsNullOrEmpty(a) ? b : string.IsNullOrEmpty(b) ? a : a + " " + b;
 

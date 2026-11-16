@@ -51,8 +51,10 @@ namespace HypaStories.Tests
             public void Cancel() { }
         }
 
-        sealed class FakeListener : IListener
+        sealed class FakeListener : IListener, IPartialListener
         {
+            public int LiveSwitchedOn;
+            public void SetPartialHandler(Action<string> handler) { if (handler != null) LiveSwitchedOn++; }
             public string Heard;
             public float Peak = 0.1f;
             public bool NoMic;
@@ -125,6 +127,18 @@ namespace HypaStories.Tests
         {
             var words = TryHypaText.Suggest(new[] { "The calabash of palm wine.", "He set the hat down.", "A friend shouted." }, 3);
             CollectionAssert.AreEqual(new[] { "calabash", "palm", "wine" }, words);
+        }
+
+        [Test] public void WithoutLiveText_TheMicRecordsLikeAsk()
+        {
+            _f.LiveText = false;
+            _mic.Heard = "hat";
+            Assert.IsTrue(_f.ToggleMicAsync().IsCompleted);
+            Assert.AreEqual(0, _mic.LiveSwitchedOn, "never the stream-until-Done mode");
+            Assert.AreEqual("hat", _f.Input);
+            _f.LiveText = true;
+            _f.ToggleMicAsync();
+            Assert.AreEqual(1, _mic.LiveSwitchedOn, "with live text on, it streams");
         }
 
         [Test] public void Speaking_IsTypedIntoTheInput_ThenTranslated()

@@ -113,6 +113,9 @@ namespace HypaStories
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
                 OpenTry, CornerTap, ExitPlay, ToggleSound, q => _ask.SubmitText(q));
             _tryFlow = new TryHypaFlow(new HypaTryApi(), _mic, HypaSettings.TargetLanguage);
+            // the same recording as Ask (stops when you stop talking), which is the one proven on the headset; the live
+            // stream-until-Done mode gave only silence there
+            _tryFlow.LiveText = false;
             _try = new TryHypaView(_player.Root, _tryFlow, CloseTry);
             _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
             _ask.Logged += e => Debug.Log("Hypa Stories " + e);
