@@ -77,7 +77,7 @@ namespace HypaStories
 
         public void Update(float dt)
         {
-            _f.Tick();
+            _f.Tick(dt);
             if (_f.Listening)
                 _level.Resize(new Vector2(Mathf.Max(0.004f, 0.4f * Mathf.Clamp01(_f.Level)), 0.004f));
         }

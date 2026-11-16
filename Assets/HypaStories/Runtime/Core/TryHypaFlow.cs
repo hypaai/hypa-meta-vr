@@ -88,6 +88,8 @@ namespace HypaStories
         int _version, _dictVersionS, _dictVersionT;
         Task _loading;
         string _translatedFrom = "", _hint = "", _copied = "", _base = "";
+        string _flash;
+        float _flashLeft;
         int _thinkVersion;
 
         public TryStatus Status { get; private set; }
@@ -482,6 +484,9 @@ namespace HypaStories
             {
                 if (ActiveAudio == key) { ActiveAudio = null; AudioLoading = false; }
                 Fail(e, null);
+                // the translation is already on screen: the red note only needs a moment, then the words come back
+                _flash = Message;
+                _flashLeft = 4f;
             }
         }
 
@@ -497,10 +502,16 @@ namespace HypaStories
             Notify();
         }
 
-        /// <summary>Per frame: clears the speaker's state when the audio has finished playing.</summary>
-        public void Tick()
+        /// <summary>Per frame: clears the speaker's state when the audio has finished playing, and lets a failed reading's note fade.</summary>
+        public void Tick(float dt)
         {
             if (ActiveAudio != null && !AudioLoading && !_api.IsPlaying) { ActiveAudio = null; Notify(); }
+            if (_flash == null) return;
+            _flashLeft -= dt;
+            if (_flashLeft > 0f) return;
+            var gone = _flash;
+            _flash = null;
+            if (Message == gone) { Message = ""; Notify(); }
         }
 
         // ---------- copy, thinking ----------

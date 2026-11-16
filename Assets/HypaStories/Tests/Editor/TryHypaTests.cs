@@ -38,7 +38,12 @@ namespace HypaStories.Tests
                 if (Dict.TryGetValue(word, out var e)) return Task.FromResult(e);
                 return Task.FromResult(new HypaDictionaryEntry()); // nothing known
             }
-            public Task SpeakAsync(string text, string language, string voice, CancellationToken ct) { Spoken.Add(language + ":" + (voice ?? "auto") + ":" + text); return Task.CompletedTask; }
+            public Exception SpeakFail;
+            public Task SpeakAsync(string text, string language, string voice, CancellationToken ct)
+            {
+                if (SpeakFail != null) throw SpeakFail;
+                Spoken.Add(language + ":" + (voice ?? "auto") + ":" + text); return Task.CompletedTask;
+            }
             public Task<string> ExplainAsync(string st, string tt, string sl, string tl, CancellationToken ct) { Calls.Add($"think {st}|{tt}"); return Task.FromResult("because"); }
             public bool IsPlaying => false;
             public void StopSpeaking() { }
@@ -99,6 +104,19 @@ namespace HypaStories.Tests
             Assert.AreEqual("French", _f.Target.Name);
             _f.CycleTarget();
             Assert.AreEqual("Yoruba", _f.Target.Name); // English, the story, is skipped
+        }
+
+        [Test] public void AFailedReading_ShowsForAMoment_ThenTheWordsReturn()
+        {
+            _api.SpeakFail = new Exception("timeout");
+            _f.UseWordAsync("calabash");
+            Assert.AreEqual("Bonjour", _f.Output);
+            StringAssert.Contains("Try again", _f.Message);
+            _f.Tick(3.9f);
+            StringAssert.Contains("Try again", _f.Message);
+            _f.Tick(0.2f);
+            Assert.AreEqual("", _f.Message, "the red note goes, and the translation stays");
+            Assert.AreEqual("Bonjour", _f.Output);
         }
 
         [Test] public void AWordFromTheStory_IsTranslated_AndSpoken()
