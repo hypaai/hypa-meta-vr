@@ -195,6 +195,24 @@ namespace HypaStories
             Destroy(s.gameObject, clip.length / s.pitch + 0.2f);
         }
 
+        /// <summary>
+        /// A story sound from a spot in the world (Dodo's own mouth, its feet), full volume within <paramref name="near"/> metres
+        /// and never ducked under the voice: Dodo's roar must be heard.
+        /// </summary>
+        public void EffectAt(string name, Vector3 world, float level = 1f, float pitch = 1f, float near = 10f)
+        {
+            var clip = Clip(name);
+            if (clip == null) return;
+            var s = NewSource("Story " + name, transform, 1f);
+            s.transform.position = world;
+            s.minDistance = near; s.maxDistance = 150f; s.rolloffMode = AudioRolloffMode.Logarithmic;
+            s.clip = clip;
+            s.pitch = pitch * Rand(0.97f, 1.03f);
+            s.volume = Mathf.Clamp01(level) * _master;
+            s.Play();
+            Destroy(s.gameObject, clip.length / s.pitch + 0.2f);
+        }
+
         static float Approach(float cur, float target, float tau, float dt) => cur + (target - cur) * (1f - Mathf.Exp(-dt / Mathf.Max(tau, 1e-3f)));
 
         void Update()
