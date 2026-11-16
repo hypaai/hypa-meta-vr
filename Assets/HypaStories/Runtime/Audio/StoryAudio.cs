@@ -159,6 +159,7 @@ namespace HypaStories
             { "laugh", (() => ProceduralClips.LaughSamples(216), new Vector3(0.8f, 1.4f, 1.6f), 0.75f) },
             { "rattle", (() => ProceduralClips.RattleSamples(217), new Vector3(-1.5f, 1f, 3f), 0.55f) },
             { "birds", (() => ProceduralClips.BirdsSamples(218), new Vector3(-6f, 6f, 9f), 0.45f) },
+            { "shout", (() => ProceduralClips.ShoutSamples(219), null, 0.6f) },
         };
 
         readonly Dictionary<string, AudioClip> _effects = new Dictionary<string, AudioClip>();

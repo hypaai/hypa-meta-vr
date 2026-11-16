@@ -65,6 +65,11 @@ namespace HypaStories
         DodoGame _game;          // the playable scene after Seven Hot Stones
         KitButton _faceDodo;
         const string DodoStory = "seven-hot-stones";
+        HatGame _hatGame;        // the playable scene after Eshu at the Crossroads
+        KitButton _turnHat;
+        const string EshuStory = "eshu-crossroads";
+        bool Playing => (_game != null && _game.Active) || (_hatGame != null && _hatGame.Active);
+        void EndGames() { if (_game != null) _game.End(); if (_hatGame != null) _hatGame.End(); }
 
         void Start()
         {
@@ -120,6 +125,7 @@ namespace HypaStories
             BuildVeil();
             BuildDoorRows();
             BuildDodoGame();
+            BuildHatGame();
             Places.EnsureRunner();
             Places.Leaving += OnLeavingPlace;
             Places.Arrived += OnArrivedPlace;
@@ -150,7 +156,7 @@ namespace HypaStories
             foreach (var src in _resumeLoops) src.Pause();
             _audio.enabled = false; // no wolves or crickets from the camp while you're in the hut
             _away = true;
-            if (_game != null && _game.Active) { _game.End(); _player.Root.gameObject.SetActive(true); }
+            if (Playing) { EndGames(); _player.Root.gameObject.SetActive(true); }
             _world.gameObject.SetActive(false);
             _ui.gameObject.SetActive(false);
             foreach (var d in _doorRows) { d.Row.gameObject.SetActive(false); d.Shown = 0f; }
@@ -328,12 +334,48 @@ namespace HypaStories
 
         void FaceDodo()
         {
-            if (_busy || _game.Active || _screen != Screen.Play) return;
+            if (_busy || Playing || _screen != Screen.Play) return;
             _ask.Cancel();
             _holdToTalk = false;
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
             _game.Begin();
+        }
+
+        // ---------- the hat game (after Eshu at the Crossroads) ----------
+
+        void BuildHatGame()
+        {
+            _hatGame = gameObject.AddComponent<HatGame>();
+            _hatGame.Init(_camp, assets, _audio, StoryMeshes.Glow(), transform, () =>
+            {
+                _player.Root.gameObject.SetActive(true);
+                _player.Follow.Snap();
+                _story.Live = true;
+                _endNoted = false;
+                _story.Start(0f);
+            }, () =>
+            {
+                _player.Root.gameObject.SetActive(true);
+                ExitPlay();
+            }, () =>
+            {
+                _voice.StopAll();
+                _player.Root.gameObject.SetActive(true);
+                _player.Follow.Snap();
+            });
+            _turnHat = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Turn the hat", "rotate-ccw", KitStyle.Primary, TurnHat, null, 0.022f);
+            _turnHat.gameObject.SetActive(false);
+        }
+
+        void TurnHat()
+        {
+            if (_busy || Playing || _screen != Screen.Play) return;
+            _ask.Cancel();
+            _holdToTalk = false;
+            _audio.Tap();
+            _player.Root.gameObject.SetActive(false);
+            _hatGame.Begin();
         }
 
         /// <summary>A line of Seven Hot Stones in the listener's language (Dodo's challenge, Auta's "I am."), by its id.</summary>
@@ -406,7 +448,7 @@ namespace HypaStories
         void ExitPlay()
         {
             if (_busy || _screen != Screen.Play) return;
-            if (_game != null && _game.Active) { _game.End(); _voice.StopAll(); _player.Root.gameObject.SetActive(true); }
+            if (Playing) { EndGames(); _voice.StopAll(); _player.Root.gameObject.SetActive(true); }
             _busy = true;
             _ask.Cancel();
             _holdToTalk = false;
@@ -501,8 +543,9 @@ namespace HypaStories
             if (!_busy) KeepInBounds(); // every frame: head movement (room-scale, or the simulator) can't leave the clearing either
             TrailPanels(dt);
 
-            if (_game != null) _faceDodo.gameObject.SetActive(!_game.Active && _story.Live && _story.Ended && _story.StoryId == DodoStory && !_busy);
-            if (_story.Live && (_game == null || !_game.Active))
+            if (_hatGame != null) _turnHat.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == EshuStory && !_busy);
+            if (_game != null) _faceDodo.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == DodoStory && !_busy);
+            if (_story.Live && !Playing)
             {
                 var s = _story.Update(dt);
                 _camp.SetStory(s);
@@ -517,7 +560,7 @@ namespace HypaStories
             _camp.Teller.Attend = _ask.State != AskState.Idle ? 1f : 0f;
 
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
-            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && _ask.State == AskState.Idle && !(_game != null && _game.Active)) _ = _ask.BeginAsync();
+            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && _ask.State == AskState.Idle && !Playing) _ = _ask.BeginAsync();
             if (_holdToTalk && !HypaInput.Current.IsPinching)
             {
                 _holdToTalk = false;
@@ -542,9 +585,9 @@ namespace HypaStories
                     break;
                 case Screen.Play:
                     if (_busy) break;
-                    if (_game != null && _game.Active)
+                    if (Playing)
                     {
-                        if (Input.GetKeyDown(KeyCode.Escape)) { _game.End(); _voice.StopAll(); _player.Root.gameObject.SetActive(true); _player.Follow.Snap(); }
+                        if (Input.GetKeyDown(KeyCode.Escape)) { EndGames(); _voice.StopAll(); _player.Root.gameObject.SetActive(true); _player.Follow.Snap(); }
                         break; // Space is the shout; P, T and M belong to the fight
                     }
                     if (Input.GetKeyDown(KeyCode.Space)) _story.TogglePause();
@@ -605,7 +648,7 @@ namespace HypaStories
         /// </summary>
         void Locomotion(float dt)
         {
-            if (_busy || (_game != null && _game.Active)) return; // the fight is staged at the seat
+            if (_busy || Playing) return; // the fight is staged at the seat
             var move = StoryInput.Move?.Invoke() ?? Vector2.zero;
             if (Application.isEditor)
             {

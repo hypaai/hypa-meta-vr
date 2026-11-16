@@ -24,7 +24,8 @@ namespace HypaStories
         Transform _root;   // everything you see (hidden when far)
         StoryFire _fire;
 
-        sealed class Figure
+        /// <summary>A person of the village: move them by their parts (root, torso, head, arms and forearms).</summary>
+        public sealed class Figure
         {
             public Transform Root, Torso, Head, ArmL, ArmR, ForeL, ForeR, EyeL, EyeR, Mouth;
             public float Ph;
@@ -440,6 +441,34 @@ namespace HypaStories
 
         Color AnyCloth() => Cloth[(int)(R() * Cloth.Length) % Cloth.Length];
         int AnyPrint() => 1 + (int)(R() * WaxPrints.Count) % WaxPrints.Count;
+
+        /// <summary>
+        /// A villager for another scene (the hat game's two friends): built like the village's people, under
+        /// <paramref name="parent"/> in the camp's ground space, with a head that can turn.
+        /// </summary>
+        public Figure MakePerson(Transform parent, string name, Vector2 at, Vector2 facing, bool woman, float scale = 1f)
+        {
+            var keep = _root; _root = parent;
+            try { return Person(name, at, facing, RandomLook(woman), scale, false, true); }
+            finally { _root = keep; }
+        }
+
+        /// <summary>Eshu: small (he is told as short), dressed in his colours, red and black, a dark wrapper, his head bare (his hat floats on its own).</summary>
+        public Figure MakeEshu(Transform parent, Vector2 at, Vector2 facing, float scale = 0.7f)
+        {
+            var keep = _root; _root = parent;
+            try
+            {
+                var look = new Look
+                {
+                    Skin = new Color(0.24f, 0.15f, 0.1f), Top = new Color(0.62f, 0.08f, 0.06f), Wrap = new Color(0.06f, 0.05f, 0.05f),
+                    Hat = new Color(0.62f, 0.08f, 0.06f), Hair = new Color(0.03f, 0.03f, 0.03f), TopPrint = 0, WrapPrint = 0, Headwear = 0,
+                    Wrapper = true,
+                };
+                return Person("Eshu", at, facing, look, scale, false, true);
+            }
+            finally { _root = keep; }
+        }
 
         Look RandomLook(bool woman)
         {
