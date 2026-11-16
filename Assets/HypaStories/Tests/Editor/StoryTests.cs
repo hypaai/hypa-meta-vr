@@ -251,7 +251,7 @@ namespace HypaStories.Tests
                 foreach (var c in st.Timeline.Captions)
                     foreach (var lang in Translated)
                         Assert.IsFalse(string.IsNullOrEmpty(c.TextFor(lang)) || c.TextFor(lang) == c.Text, $"{st.Id} {lang}: {c.Text}");
-            Assert.AreEqual("One stone.", Line(Stones, "one-stone").TextFor("sw")); // not offered: English
+            Assert.AreEqual("One stone.", Line(Stones, "one-stone").TextFor("de")); // not offered: English
         }
 
         [Test] public void Languages_FindByCodeOrHypaLabel()
@@ -260,7 +260,8 @@ namespace HypaStories.Tests
             Assert.AreEqual("Español", StoryLanguages.Find("ES").Name);
             Assert.AreEqual("yo", StoryLanguages.Find("Yoruba").Code);
             Assert.AreEqual("pcm", StoryLanguages.Find("Pidgin").Code);
-            Assert.IsNull(StoryLanguages.Find("Swahili"));
+            Assert.AreEqual("sw", StoryLanguages.Find("Swahili").Code);
+            Assert.AreEqual("Kiswahili", StoryLanguages.Find("sw").Name);
             foreach (var l in StoryLanguages.All.Where(l => l.Code != "en"))
                 Assert.AreNotEqual(StoryLanguages.Lines("en").Again, StoryLanguages.Lines(l.Code).Again, l.Code);
         }
