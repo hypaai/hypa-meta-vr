@@ -1,25 +1,112 @@
 {
+  "words": [
+    "mmiri ozuzo",
+    "igodo",
+    "ọnụ ụzọ"
+  ],
   "rain": "Mmiri na-ezo na Marlow Street, ụdị mmiri ozuzo na-ekpuchi ụda nzọụkwụ.",
-  "rain.ask": ["Ebee ka Marlow Street dị?"],
+  "rain.ask": [
+    "Ebee ka Marlow Street dị?"
+  ],
+  "call": "Obere oge ka etiti abalị gafere, otu onye kpọrọ ekwentị banyere otu nwoke dina n'ụzọ warara dị n'azụ ebe a na-eme achịcha.",
   "tape": "Nia, nwanyị ọrụ ya bụ ịchọpụta mpụ, guzo n'azụ teepu edo edo ahụ, na-ele ka warawara ahụ na-eku ume n'ìhè uhie na anụnụ anụnụ.",
-  "tape.ask": ["Ònye bụ Nia, nwanyị ahụ na-achọpụta mpụ?"],
+  "tape.ask": [
+    "Ònye bụ Nia, nwanyị ahụ na-achọpụta mpụ?"
+  ],
+  "bello": "N’akụkụ ya ka Ọfịsa Bello guzo, ọ ka na-eto eto, mmiri wee gbaa ya niile, na-agbalị ka ọ ghara iyi onye ụjọ ji.",
+  "bello.ask": [
+    "Ònye bụ Ọfịsa Bello?"
+  ],
+  "nobody": "“Ọ dịghị onye nụrụ ihe ọ bụla,” ka o kwuru. “Ọ bụghị mkpu, ọ bụghị ụgbọala. Ọ dịghị ihe ọ bụla.”",
+  "lift": "Nia weliri teepu ahụ wee banye n'ụzọ wara wara ahụ.",
+  "puddles": "Mmiri ndị kwakọtara n’ụzọ na-egbukepụ egbukepụ mgbe ọ bụla ọkụ ụgbọala ndị uwe ojii na-atụgharị.",
   "body": "A hụrụ otu nwoke na nsọtụ warawara ahụ, n'akụkụ mgbidi brik ochie.",
-  "body.ask": ["Ònye bụ nwoke ahụ?"],
+  "body.ask": [
+    "Ònye bụ nwoke ahụ?"
+  ],
+  "hand": "Aka nri ya jidesiri ihe ike.",
+  "hand.ask": [
+    "Gịnị dị n’aka ya?"
+  ],
+  "button": "Nia jiri nwayọọ meghee mkpịsị aka ya. N'ime ya, e nwere otu bọtịnụ ọla kọpa.",
+  "not-his": "Ọ nyochara uwe elu ya. Bọtịnụ niile dị ebe ha kwesịrị ịdị. Nke a bụ nke onye ọzọ.",
+  "not-his.ask": [
+    "Bọtịnụ onye ka ọ bụ?"
+  ],
   "witness": "Ngwá ọgụ adịghị. Akpa ego adịghị. Naanị otu onye akaebe nọ: otu nwa agbọghọ ṅụrụ iyi na ọ hụghị ihe ọ bụla.",
-  "witness.ask": ["Gịnị mere nwa agbọghọ ahụ ji sị na ọ hụghị ihe ọ bụla?"],
+  "witness.ask": [
+    "Gịnị mere nwa agbọghọ ahụ ji sị na ọ hụghị ihe ọ bụla?"
+  ],
+  "step": "Ọ nọdụrụ ala n’elu steepụ ebe a na-eme achịcha, n’okpuru nnukwu nche anwụ, jide otu iko tii ọ na-emetụbeghị aka.",
+  "ama": "Aha ya bụ Ama. Ọ dị ka ọ dị ihe dị ka afọ iri na itoolu.",
+  "crouch": "Nia makpuru n'akụkụ ya. “Ị hụrụ ihe ọ bụla n'abalị a?”",
+  "asleep": "“Ọ dịghị ihe,” ka Ama kwuru, n’eleghị anya elu. “Anọ m n’ụra.”",
+  "window": "Ma windo dị n’elu ebe a na-eme achịcha, kpọmkwem n’elu warawara ahụ, ka na-enwu ọkụ.",
+  "window.ask": [
+    "Ama ọ̀ na-ekwu eziokwu?"
+  ],
+  "wait": "Nia akpọghị ya onye ụgha. Naanị ihe o kwuru bụ, “M ga-anọ nso.”",
   "streetlight": "Ma ọkụ okporo ụzọ dị n'elu warawara ahụ nọ na-enwu, na-anyụ, kemgbe abalị ahụ.",
-  "streetlight.ask": ["Gịnị mere ọkụ okporo ụzọ ahụ ji na-enwu, na-anyụ?"],
+  "streetlight.ask": [
+    "Gịnị mere ọkụ okporo ụzọ ahụ ji na-enwu, na-anyụ?"
+  ],
+  "broken": "“Ọtụtụ afọ agaala kemgbe oriọna ahụ mebiri,” ka Bello kwuru. “Ọ dịghị onye na-arụzi ya.”",
   "not-random": "Nia chọpụtara na ọkụ ahụ anaghị enwu ma nyụọ n'enweghị usoro.",
   "pattern": "Ọ na-anyụ ruo sekọnd atọ, wee nwuke ugboro abụọ.",
+  "again": "Sekọnd atọ nke ọchịchịrị. Àmụ̀mà abụọ. Mgbe ahụ ọchịchịrị ọzọ.",
   "message": "Ọ na-eme ya ugboro ugboro, dị ka a ga-asị na mmadụ na-ezi ozi.",
-  "message.ask": ["Ònye na-ezi ozi ahụ?"],
+  "message.ask": [
+    "Ònye na-ezi ozi ahụ?"
+  ],
+  "someone": "A naghị agụ oriọna. Onye nọ nso na-eme ka o mee otu ahụ.",
+  "someone.ask": [
+    "Ònye na-eme ka oriọna ahụ na-amụnyụ amụnyụ?"
+  ],
   "key": "Ọ gbasoro usoro ahụ ruo n'osisi ọkụ ahụ, wee hụ obere igodo ọla edo edo e ji teepu rapawa n'okpuru ya.",
-  "key.ask": ["Gịnị ka igodo ahụ na-emeghe?"],
+  "key.ask": [
+    "Gịnị ka igodo ahụ na-emeghe?"
+  ],
+  "wall": "Nia ji nwayọọ tụgharịa. N'ọgwụgwụ warawara ahụ, n'akụkụ nwoke ahụ, mgbidi brik ochie ahụ kwụụrụ.",
+  "patch": "Ọtụtụ brik ndị ahụ gbara ọchịchịrị ma bụrụkwa ochie. Ma e nwere otu akụkụ nke na-achachapụ agba ma dị ọhụrụ, bụrụkwa nke yiri ọnụ ụzọ.",
+  "patch.ask": [
+    "Gịnị mere brik ụfọdụ ji dị ọhụrụ karịa ndị ọzọ?"
+  ],
   "door": "Igodo ahụ dabara n'ọnụ ụzọ e ji brik wuchie kemgbe afọ iri abụọ.",
-  "door.ask": ["Ònye ji brik wuchie ọnụ ụzọ ahụ?"],
+  "door.ask": [
+    "Ònye ji brik wuchie ọnụ ụzọ ahụ?"
+  ],
+  "pull": "Ha wepụsịrị brik ndị ahụ tọpụụrụ atọpụ otu otu, n'ime mmiri ozuzo.",
+  "groan": "Mkpịsị ugodi ahụ jiri mkpọtụ nchara tụgharịa, otu obere ọnụ ụzọ osisi wee meghee.",
   "cupboard": "N'azụ brik ndị ahụ, e nwere kọbọd, otu foto dịkwa n'ime ya.",
   "photo": "Foto ahụ gosiri nwa agbọghọ akaebe ahụ mgbe ọ ka dị nnọọ obere, ka o guzo n'akụkụ nwoke ahụ furu efu.",
-  "photo.ask": ["Ònye nọ na foto ahụ?"],
+  "photo.ask": [
+    "Ònye nọ na foto ahụ?"
+  ],
+  "writing": "N’azụ ya, e ji ink dara agba dee: “Okporo ámá Marlow. Abalị ahụ ọkụ ndị ahụ nyụrụ.”",
+  "writing.ask": [
+    "Gịnị mere n'abalị ahụ ọkụ latụrụ?"
+  ],
+  "blackout": "Afọ iri abụọ gara aga, ọkụ eletrik kwụsịrị n’okporo ámá ahụ dum ruo ụtụtụ.",
+  "vanished": "N'abalị ahụ kwa, otu nwoke si n'Okporo Ụzọ Marlow furu efu. A hụghị ya ọzọ.",
+  "same-face": "Nia lere foto ahụ, lezie nwoke ahụ nọ n'akụkụ mgbidi anya. Otu ihu ahụ, mana o ji afọ iri abụọ kaa nká.",
+  "came-back": "Ọ nwụghị n'abalị ahụ. Ọ gbapụrụ. N'abalị a kwa, ọ lọghachila.",
+  "came-back.ask": [
+    "Gịnị mere o ji lọta?"
+  ],
+  "buttons": "N'ime foto ahụ, nwoke nke abụọ guzoro, ọkara ahụ ya apụla n'ime fremụ ahụ. Uwe elu ya nwere ahịrị bọtịnụ ọla.",
+  "face-cut": "Adọkapụla ihu ya na foto ahụ.",
+  "wire": "Mgbe ahụ, Nia lepụrụ anya elu. Otu waya dị gịrịgịrị sitere n'osisi ọkụ gafee n'akụkụ mgbidi ruo na windo Ama nke ọkụ na-enwu.",
+  "wire.ask": [
+    "Ebee ka waya ahụ na-aga?"
+  ],
+  "switch": "Otu onye nọ n’elu ebe ahụ ji ìhè na-agwa ya okwu abalị dum.",
+  "daughter": "N’ime foto ahụ, nwatakịrị nwanyị ahụ jidere aka ya dịka nwa nwanyị si eme.",
   "truth": "Ọ bụghị eziokwu na nwa agbọghọ ahụ hụghị ihe ọ bụla. Ọ hụrụ ihe niile, ọ nọkwa na-eche onye ga-ajụ ajụjụ kwesịrị ekwesị.",
-  "truth.ask": ["Gịnị mere nwa agbọghọ ahụ ji na-eche?"]
+  "truth.ask": [
+    "Gịnị mere nwa agbọghọ ahụ ji na-eche?"
+  ],
+  "rain-softer": "Mmiri ozuzo belatara. Oriọna ahụ kwụsịrị ịnyụnyụ anya ma na-enwu naanị ya.",
+  "walk-back": "Nia si n’ime apịtị mmiri laghachi n’ebe mgbago ụlọ achịcha ahụ.",
+  "looked-up": "Ama debere tii ya jụrụ oyi n’ala, ma, nke mbụ n’abalị ahụ, leliri ya anya.",
+  "right-question": "Nia makwaara kpọmkwem ihe ọ ga-ajụ."
 }

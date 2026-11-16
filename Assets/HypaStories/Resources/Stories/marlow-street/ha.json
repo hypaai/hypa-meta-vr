@@ -1,25 +1,112 @@
 {
+  "words": [
+    "ruwan sama",
+    "mabuɗi",
+    "ƙofa"
+  ],
   "rain": "Ana ruwa a Marlow Street, irin ruwan da ke danne ƙarar takun sawu.",
-  "rain.ask": ["Ina Marlow Street take?"],
+  "rain.ask": [
+    "Ina Marlow Street take?"
+  ],
+  "call": "Jim kaɗan bayan tsakar dare, wani ya kira game da wani mutum da ke kwance a lungu da ke bayan gidan burodi.",
   "tape": "Jami'ar binciken laifuka Nia ta tsaya a bayan tef ɗin rawaya da aka yi shinge da shi, tana kallon lungu yana numfasawa da hasken ja da shuɗi.",
-  "tape.ask": ["Wace ce jami'ar binciken laifuka Nia?"],
+  "tape.ask": [
+    "Wace ce jami'ar binciken laifuka Nia?"
+  ],
+  "bello": "A gefenta jami’i Bello ya tsaya, matashi kuma jikinsa ya jike sharkaf, yana ƙoƙarin kada ya nuna damuwa.",
+  "bello.ask": [
+    "Wane ne Jami'in Bello?"
+  ],
+  "nobody": "“Babu wanda ya ji komai,” in ji shi. “Ba ihu ba, ba mota ba. Babu komai.”",
+  "lift": "Nia ta ɗaga tef ɗin sannan ta shiga cikin lungu.",
+  "puddles": "Kududdufan ruwan suna kyalli a duk lokacin da fitilun ’yan sanda suka juya.",
   "body": "An sami wani mutum can ƙarshen lungun, kusa da tsohon bangon bulo.",
-  "body.ask": ["Wane ne mutumin?"],
+  "body.ask": [
+    "Wane ne mutumin?"
+  ],
+  "hand": "Hannunsa na dama ya damƙe wani abu sosai.",
+  "hand.ask": [
+    "Me ke hannunsa?"
+  ],
+  "button": "Nia ta buɗe yatsunsa a hankali. A ciki akwai maɓallin tagulla guda ɗaya.",
+  "not-his": "Ta duba rigarsa. Duk maɓallan suna nan. Wannan ta wani ne daban.",
+  "not-his.ask": [
+    "Maɓallin wa ne?"
+  ],
   "witness": "Babu makami. Babu walat. Mashaidiya ɗaya tak: wata yarinya da ta rantse ba ta ga komai ba.",
-  "witness.ask": ["Me ya sa yarinyar ta ce ba ta ga komai ba?"],
+  "witness.ask": [
+    "Me ya sa yarinyar ta ce ba ta ga komai ba?"
+  ],
+  "step": "Ta zauna a kan matattakalar gidan burodi a ƙarƙashin wata babbar laima, tana riƙe da kofin shayin da ba ta taɓa ba.",
+  "ama": "Sunanta Ama. Ta yi kama da ’yar shekara goma sha tara.",
+  "crouch": "Nia ta tsugunna kusa da ita. “Kin ga wani abu a daren yau?”",
+  "asleep": "“Ba komai,” in ji Ama, ba tare da ta ɗago kai ba. “Ina barci.”",
+  "window": "Duk da haka, har yanzu fitilar tagar da ke saman gidan burodi, daidai bisa ƙaramar hanyar, tana kunne.",
+  "window.ask": [
+    "Shin Ama tana faɗin gaskiya?"
+  ],
+  "wait": "Nia ba ta kira ta maƙaryaciya ba. Ta ce kawai, “Zan kasance kusa.”",
   "streetlight": "Amma fitilar titi da ke saman lungun ta yini tana ƙyallawa duk daren.",
-  "streetlight.ask": ["Me ya sa fitilar titin take ƙyallawa?"],
+  "streetlight.ask": [
+    "Me ya sa fitilar titin take ƙyallawa?"
+  ],
+  "broken": "“Wancan fitilar ta lalace shekaru da yawa da suka wuce,” in ji Bello. “Ba wanda ya taɓa gyara ta.”",
   "not-random": "Nia ta lura cewa ƙyallawar tana bin wani tsari ne.",
   "pattern": "Takan ɗauke na daƙiƙa uku, sannan ta ƙyalla sau biyu.",
+  "again": "Daƙiƙa uku na duhu. Walƙiya biyu. Sannan duhu ya sake komawa.",
   "message": "Haka ta riƙa yi, kamar wani yana aika saƙo.",
-  "message.ask": ["Wa yake aika saƙon?"],
+  "message.ask": [
+    "Wa yake aika saƙon?"
+  ],
+  "someone": "Fitila ba ta kirga. Wani da ke kusa ne yake sa ta yin haka.",
+  "someone.ask": [
+    "Wa ke sa fitilar ta dinga ƙyalli?"
+  ],
   "key": "Ta bi tsarin ƙyallawar har zuwa sandar fitilar, ta sami wani ƙaramin mabuɗin tagulla da aka maƙala da tef a ƙasanta.",
-  "key.ask": ["Me mabuɗin yake buɗewa?"],
+  "key.ask": [
+    "Me mabuɗin yake buɗewa?"
+  ],
+  "wall": "Nia ta juya a hankali. A ƙarshen lungun, kusa da mutumin, tsohuwar katangar bulo tana tsaye.",
+  "patch": "Yawancin tubalin sun yi duhu kuma sun tsufa. Amma wani ɓangare ya fi haske kuma ya fi sabo, kuma yana da siffar ƙofa.",
+  "patch.ask": [
+    "Me ya sa wasu tubalan suka fi sabo?"
+  ],
   "door": "Mabuɗin ya dace da wata ƙofa da aka rufe da bulaye shekara ashirin da suka wuce.",
-  "door.ask": ["Wa ya rufe ƙofar da bulaye?"],
+  "door.ask": [
+    "Wa ya rufe ƙofar da bulaye?"
+  ],
+  "pull": "Suka cire tubalan da suka saki ɗaya bayan ɗaya, cikin ruwan sama.",
+  "groan": "Mabuɗin ya juya da ƙaran tsatsa, sai wata ƙaramar ƙofar katako ta buɗe.",
   "cupboard": "A bayan bulayen akwai kabad, a cikinsa kuwa hoto ɗaya tak.",
   "photo": "Hoton ya nuna mashaidiyar tana ƙarama ƙwarai, tsaye kusa da mutumin da ya ɓace.",
-  "photo.ask": ["Su wa ke cikin hoton?"],
+  "photo.ask": [
+    "Su wa ke cikin hoton?"
+  ],
+  "writing": "A bayansa, da tawada da ta dusashe: “Titin Marlow. Daren da fitilu suka ɗauke.”",
+  "writing.ask": [
+    "Me ya faru a daren da wutar lantarki ta ɗauke?"
+  ],
+  "blackout": "Shekaru ashirin da suka wuce, duk titin ya rasa wutar lantarki har zuwa safe.",
+  "vanished": "Kuma a wannan dare, wani mutum daga Titin Marlow ya ɓace. Ba a taɓa samunsa ba.",
+  "same-face": "Nia ta dubi hoton, sannan ta dubi mutumin da ke gefen bango. Fuskar dai ɗaya ce, amma ta girmi ta hoton da shekara ashirin.",
+  "came-back": "Bai mutu a daren nan ba. Ya gudu ne. Kuma a daren yau, ya dawo.",
+  "came-back.ask": [
+    "Me ya sa ya dawo?"
+  ],
+  "buttons": "A cikin hoton, wani mutum na biyu yana tsaye rabinsa a wajen firam ɗin. Rigarsa tana da jeri na maɓallan tagulla.",
+  "face-cut": "An yage fuskarsa daga hoton.",
+  "wire": "Sai Nia ta ɗaga kai ta duba. Wata siririyar waya ta miƙe daga turken fitila, ta bi jikin bango, har zuwa tagar Ama mai haske.",
+  "wire.ask": [
+    "Ina wayar take zuwa?"
+  ],
+  "switch": "Wani a can sama ya yi ta magana da ita tsawon dare, cikin haske.",
+  "daughter": "A cikin hoton, ƙaramar yarinyar ta riƙe hannunsa kamar yadda diya take yi.",
   "truth": "Ba wai yarinyar ba ta ga komai ba ne. Ta ga komai, tana kuma jiran wanda zai yi mata tambayar da ta dace.",
-  "truth.ask": ["Me ya sa yarinyar take jira?"]
+  "truth.ask": [
+    "Me ya sa yarinyar take jira?"
+  ],
+  "rain-softer": "Ruwan saman ya lafa. Fitilar ta daina ƙiftawa, ta ci gaba da haskawa kawai.",
+  "walk-back": "Nia ta koma ta cikin kududdufai zuwa matattakalar gidan burodi.",
+  "looked-up": "Ama ta ajiye shayinta mai sanyi, kuma a karon farko a daren nan, ta ɗago kai ta kalle ta.",
+  "right-question": "Kuma Nia ta san ainihin abin da za ta tambaya."
 }

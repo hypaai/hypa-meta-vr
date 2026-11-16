@@ -25,8 +25,9 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | Language buttons | Pinch | Narration, questions and answers in English / Français / Español |
 | Space, ← → | Pause, `<<` `>>` | Pause / resume / replay, previous / next line |
 | **H** | Raise a hand above your head | Interrupt and ask |
-| **Q** (tap or hold), **Ask** (tap or hold) | Pinch Ask (hold = push-to-talk) | Ask; tap again = done talking / skip the line being said |
-| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question (about the lines told so far) |
+| **Q** | Raise a hand above your head | Ask; **Done** / **Skip** = done talking / skip the line being said |
+| **T**, after the story ends | Pinch **Try Hypa Translate** | Opens Hypa Translate in the story panel (see [Try Hypa](#try-hypa)); Esc / **x** closes it. The corner button becomes **Speak** |
+| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question, or translate a suggested word |
 | Esc, **Back** | Pinch Back | Cancel the question / back to the list / back to start |
 
 ## Places (ticket 3F): camp, hut, gathering
@@ -63,11 +64,12 @@ portal (3L).
 
 ## In my room (ticket 3K): the campfire in your real room
 
-On a Quest 3, the fire and the storyteller come into your own room. While a story plays, pinch **In my room** (under the player
-panel; editor key **R**). The sky, trees, ground, trails, mist, rain and fog fade out through the warm veil, the headset's
-passthrough shows your room, and the fire (its stones, flames, light, sound and embers) and the storyteller stand on your real
-floor. Pinch **Back to the forest** (or **R**) to return. The story, the voice and the fire's sound carry on through both: only
-the world around the fire changes.
+On a Quest 3, the fire and the storyteller come into your own room, whichever story is playing. Pinch **In my room** (under the
+player panel; editor key **R**). The same button sits under the panel of the game after a story (Face Dodo, Turn the hat). The sky,
+trees, ground, trails, mist, rain and fog fade out through the warm veil, the headset's passthrough shows your room, and the fire
+(its stones, flames, light, sound and embers), the storyteller, and the game around the fire stand on your real floor. Pinch
+**Back to the forest** (or **R**) to return. The story, the voice and the fire's sound carry on through both: only the world around
+the fire changes.
 
 - **Where the fire goes (Scene API / MRUK):** `Quest/Mruk/QuestRoomScan` reads your scanned room: the floor height, and for any
   floor point how far it is from the nearest wall or furniture (checked at knee, table and head height). `Core/RoomSpot` (pure
@@ -94,6 +96,17 @@ the world around the fire changes.
 Tested: the spot finder (`RoomTests`: open room, small room, furniture, no spot, deterministic) and the scene side (hiding,
 restoring, material swap) in the editor. **Not tried on a headset** (none here): the scan, the depth hiding and the passthrough look
 need a Quest 3 pass.
+
+## Try Hypa
+
+When a story ends, **Try Hypa Translate** appears in the story panel. It opens in that same panel. The story's language is the
+source. **To Yoruba** (or whichever language you last chose) cycles through the story languages. Three words from the story sit
+where suggested questions do: tap one and it is translated, then spoken. **Speak** on the corner button listens, translates what
+you said, and speaks that too. **Hear** plays the translation again. Translation and speech use Hypa's auto router (`model: auto`
+on `translate_message` and `text_to_speech`).
+
+Code: `Core/TryHypaFlow`, `Core/TryHypaText.Suggest`, `Ui/TryHypaView` (drawn inside `PlayerView`), `Ui/TryFonts` (device fonts so
+Yoruba tone marks, Igbo dots and Hausa hooks can be drawn; the story fonts are Latin-1 only). Unit tests: `TryHypaTests`.
 
 ## What came across from the prototype
 
@@ -189,7 +202,7 @@ the translations are matched on.
 
 - The alley world (`alley.js`): the prototype keeps it for later too; both V1 stories are told at the campfire.
 - The "Voice" cue toggle (say "pause" / "question"): needs an on-device wake-word recogniser (Meta Voice SDK); raise a hand instead.
-- Typed questions: replaced by suggested-question buttons in VR.
+- Typed questions: replaced by suggested-question buttons in VR. Try Hypa takes a tap on a word, or your voice.
 - Loader, grain, bloom, adaptive quality, debug panel: desktop-preview features. On Quest use OVR fixed foveation and the
   Immersive Debugger; the Q&A timing log goes to the console (and the player's note line in the editor).
 - An Animator with Idle / Talking clips for the storyteller (the bones are driven directly, as in the prototype without clips).

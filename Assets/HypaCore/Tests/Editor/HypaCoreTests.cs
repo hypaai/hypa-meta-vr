@@ -179,6 +179,50 @@ namespace HypaCore.Tests
             }
         }
 
+        [Test] public void DictionaryCard_ReadsTheFieldsHypaTranslateShows()
+        {
+            var e = new HypaDictionaryEntry { Raw = JObject.Parse(@"{
+                ""word"":""fish"",""phonetic"":""fɪʃ"",
+                ""definitions"":[{""text"":""an animal that lives in water"",""partOfSpeech"":""noun""},{""text"":""to try to catch fish""}],
+                ""usageExamples"":[{""partOfSpeech"":""noun"",""example"":""I ate fish.""}],
+                ""exampleSentences"":[""We fish at dawn.""],
+                ""syms"":[""catch""],""synonyms"":[""angle"",""catch""],""antm"":[""release""],
+                ""culturalContext"":""Fish is a staple."",""funFacts"":[{""text"":""Some fish glow.""}]}") };
+            var c = e.ToCard();
+            Assert.AreEqual("fish", c.Word);
+            Assert.AreEqual("fɪʃ", c.Phonetic);
+            Assert.AreEqual("an animal that lives in water", c.Definitions[0].Text);
+            Assert.AreEqual("noun", c.Definitions[0].Type);
+            Assert.AreEqual("to try to catch fish", c.Definitions[1].Text);
+            Assert.IsNull(c.Definitions[1].Type);
+            Assert.AreEqual(1, c.Examples.Count);                                  // usageExamples win over exampleSentences
+            Assert.AreEqual("I ate fish.", c.Examples[0].Text);
+            Assert.AreEqual("noun", c.Examples[0].Type);
+            CollectionAssert.AreEqual(new[] { "angle", "catch" }, c.Synonyms);     // synonyms win over syms
+            CollectionAssert.AreEqual(new[] { "release" }, c.Antonyms);            // antm when there is no antonyms
+            Assert.AreEqual("Fish is a staple.", c.CulturalContext[0].Text);
+            Assert.AreEqual("Some fish glow.", c.FunFacts[0].Text);
+            Assert.IsFalse(c.IsEmpty);
+        }
+
+        [Test] public void DictionaryCard_PlainStrings_AndNothing_NeverThrow()
+        {
+            var plain = new HypaDictionaryEntry { Raw = JObject.Parse("{\"meaning\":\"a small boat\"}") }.ToCard("canoe");
+            Assert.AreEqual("canoe", plain.Word);
+            Assert.AreEqual("a small boat", plain.Definitions[0].Text);
+            Assert.IsTrue(new HypaDictionaryEntry().ToCard("x").IsEmpty);
+            Assert.IsTrue(new HypaDictionaryEntry { Raw = new JObject() }.ToCard().IsEmpty);
+            Assert.IsTrue(new HypaDictionaryEntry { Raw = JObject.Parse("{\"meaning\":null,\"synonyms\":[]}") }.ToCard().IsEmpty);
+        }
+
+        [Test] public void LiveAsr_Url_IsTheApiHostAsWss_WithTheStreamingModel()
+        {
+            Assert.AreEqual("wss://api.hypaintelligence.com/?provider=meta&model=muse-voice-transcribe-1.0",
+                HypaLiveAsr.UrlFor(new HypaConfig("k", "https://api.hypaintelligence.com/")));
+            Assert.AreEqual("ws://localhost:3000/?provider=meta&model=muse-voice-transcribe-1.0",
+                HypaLiveAsr.UrlFor(new HypaConfig("k", "http://localhost:3000/v2")));
+        }
+
         // ---------- Interaction ----------
 
         [Test] public void Pinch_Short_And_Long()
@@ -376,5 +420,25 @@ namespace HypaCore.Tests
             Assert.Greater(HypaMcpClient.TimeoutFor("text_to_speech").TotalSeconds, 60, "speech for a few lines can pass 30 s");
             Assert.AreEqual(30, HypaMcpClient.TimeoutFor("translate_message").TotalSeconds, 0.01);
         }
-    }
+    
+        [Test] public void TtsArgs_AutoRouter_WithoutAVoice_AndAVoiceOnlyWithItsOwnModel()
+        {
+            var auto = HypaMcpClient.TtsArgs("hi", "Yoruba", null, null);
+            Assert.AreEqual("auto", (string)auto["model"]); Assert.IsNull(auto["voice"]);
+            var named = HypaMcpClient.TtsArgs("hi", "Yoruba", "Eniola", "hypaai/hypa-orpheus-3b-tts-vc-flt");
+            Assert.AreEqual("Eniola", (string)named["voice"]); Assert.AreEqual("hypaai/hypa-orpheus-3b-tts-vc-flt", (string)named["model"]);
+            // a voice with no known model would be rejected by the API: Auto speaks instead
+            var orphan = HypaMcpClient.TtsArgs("hi", "Yoruba", "Eniola", null);
+            Assert.AreEqual("auto", (string)orphan["model"]); Assert.IsNull(orphan["voice"]);
+        }
+
+        [Test] public void ParseVoiceOptions_SkipsAuto_AndFindsTheModelThatOwnsAVoice()
+        {
+            var o = Newtonsoft.Json.Linq.JObject.Parse("{\"options\":[{\"model\":\"hypaai/auto\",\"voices\":[]},{\"model\":\"hypaai/m1\",\"voices\":[\"Eniola\",\"Toyin\"]}]}");
+            var opts = HypaMcpClient.ParseVoiceOptions(o);
+            Assert.AreEqual(1, opts.Count);
+            Assert.AreEqual("hypaai/m1", HypaMcpClient.ModelForVoice(opts, "toyin"));
+            Assert.IsNull(HypaMcpClient.ModelForVoice(opts, "Nobody"));
+        }
+}
 }

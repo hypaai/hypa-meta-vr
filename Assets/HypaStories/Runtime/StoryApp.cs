@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HypaCore;
@@ -14,8 +15,10 @@ namespace HypaStories
     ///  - play: the storyteller tells the story (recorded narration or Hypa TTS line by line), with the script beside you, weather
     ///    timed to the words, and raise a hand / Ask to interrupt with a question (Hypa speech-to-text, the story's chat model, TTS answers).
     /// Transitions fade through a warm dark veil and move the world, never the camera. Uses HypaCore only; never references HypaLens.
-    /// Editor: right mouse = look; Enter = choose; arrows = cards / lines; Space = pause; Q (hold) = ask; H = raise a hand;
-    /// 1-3 = suggested question; Esc = back.
+    /// When the story ends, Try Hypa Translate appears in the panel. It opens there: words from the story, your voice,
+    /// and the translation spoken back. Translation and speech go through Hypa's auto router.
+    /// Editor: right mouse = look; Enter = choose; arrows = cards / lines; Space = pause; Q = ask; H = raise a hand; T = translate;
+    /// 1-3 = suggested question, or a suggested word while translating; Esc = back (closes Try Hypa first).
     /// </summary>
     public sealed class StoryApp : MonoBehaviour
     {
@@ -36,7 +39,7 @@ namespace HypaStories
         enum Screen { Splash, List, Play }
 
         Screen _screen = Screen.Splash;
-        bool _busy, _portalHover, _holdToTalk, _endNoted;
+        bool _busy, _portalHover, _endNoted, _tryOpen;
         int _active;
         float _boost = 1f, _hover, _gather, _gatherTarget, _restoreReach, _restoreFar;
         Transform _cam, _world, _ui;
@@ -54,6 +57,8 @@ namespace HypaStories
         SplashView _splash;
         StoryListView _list;
         PlayerView _player;
+        TryHypaView _try;
+        TryHypaFlow _tryFlow;
         StoryPlayer _story;
         AskFlow _ask;
         StoryLanguage _lang;
@@ -113,7 +118,12 @@ namespace HypaStories
             HypaShell.Instance?.SetMenuButtonVisible(false); // Back replaces the shell's floating Home button here
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
-                AskTap, AskHold, ExitPlay, ToggleSound, q => _ask.SubmitText(q), ToggleRoom);
+                OpenTry, CornerTap, ExitPlay, ToggleSound, q => _ask.SubmitText(q), ToggleRoom);
+            _tryFlow = new TryHypaFlow(new HypaTryApi(), _mic, HypaSettings.TargetLanguage);
+            // the same recording as Ask (stops when you stop talking), which is the one proven on the headset; the live
+            // stream-until-Done mode gave only silence there
+            _tryFlow.LiveText = false;
+            _try = new TryHypaView(_player.Root, _tryFlow, CloseTry);
             _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
             _ask.Logged += e => Debug.Log("Hypa Stories " + e);
 
@@ -137,6 +147,7 @@ namespace HypaStories
 
             _list.Root.gameObject.SetActive(false);
             _player.Root.gameObject.SetActive(false);
+            _try.Root.gameObject.SetActive(false);
             _camp.Teller.gameObject.SetActive(false);
             BuildVeil();
             BuildDoorRows();
@@ -165,7 +176,6 @@ namespace HypaStories
             if (_room) ExitRoomNow(); // the hut and the village are out in the forest: back to it, unseen, before the camp is put away
             _wasPlaying = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
             _ask.Cancel();
-            _holdToTalk = false;
             if (_story.Live) _story.Pause();
             _resumeLoops.Clear();
             foreach (var src in _world.GetComponentsInChildren<AudioSource>(true)) if (src.isPlaying && src.loop) _resumeLoops.Add(src);
@@ -344,7 +354,7 @@ namespace HypaStories
                 _voice.StopAll();
                 _player.Root.gameObject.SetActive(true);
                 _player.Follow.Snap();
-            });
+            }, ToggleRoom);
             // above the player panel when Seven Hot Stones ends: step in as Auta
             _faceDodo = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Face Dodo", "flame", KitStyle.Primary, FaceDodo, null, 0.022f);
             _faceDodo.gameObject.SetActive(false);
@@ -354,7 +364,6 @@ namespace HypaStories
         {
             if (_busy || Playing || _screen != Screen.Play) return;
             _ask.Cancel();
-            _holdToTalk = false;
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
             _game.Begin();
@@ -381,7 +390,7 @@ namespace HypaStories
                 _voice.StopAll();
                 _player.Root.gameObject.SetActive(true);
                 _player.Follow.Snap();
-            });
+            }, ToggleRoom);
             _turnHat = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Turn the hat", "rotate-ccw", KitStyle.Primary, TurnHat, null, 0.022f);
             _turnHat.gameObject.SetActive(false);
         }
@@ -390,7 +399,6 @@ namespace HypaStories
         {
             if (_busy || Playing || _screen != Screen.Play) return;
             _ask.Cancel();
-            _holdToTalk = false;
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
             _hatGame.Begin();
@@ -433,6 +441,7 @@ namespace HypaStories
             _audio.Prepare(System.Linq.Enumerable.Select(st.Timeline.Sounds, c => c.Name)); // the story's sounds, made now, not mid-story
             _player.Load(st, _lang);
             _endNoted = false;
+            _player.SetTryOffer(false);
             MicListener.RequestPermission();
             PrefetchLines();
             var ready = _story.PrepareAsync(_cts.Token);
@@ -468,8 +477,8 @@ namespace HypaStories
             if (_busy || _screen != Screen.Play) return;
             if (Playing) { EndGames(); _voice.StopAll(); _player.Root.gameObject.SetActive(true); }
             _busy = true;
+            if (_tryOpen) HideTryNow();
             _ask.Cancel();
-            _holdToTalk = false;
             _story.Stop();
             _audio.SetStorm(0f);
             _audio.Tap();
@@ -503,7 +512,7 @@ namespace HypaStories
         {
             var l = StoryLanguages.Lines(_lang.Code);
             foreach (var s in l.Filler) _voice.Prefetch(s, _lang);
-            _voice.Prefetch(l.Resume, _lang);
+            foreach (var s in l.Resume) _voice.Prefetch(s, _lang);
             _voice.Prefetch(l.Again, _lang);
             _voice.Prefetch(l.Offline, _lang);
         }
@@ -524,21 +533,59 @@ namespace HypaStories
             _gatherTarget = on ? 1f : 0f; // fireflies draw in: the storyteller listens
         }
 
-        /// <summary>Tap Ask: start a question, or end the recording, or skip the line being said.</summary>
+        // ---------- Try Hypa ----------
+
+        /// <summary>The corner button: speak while translating, otherwise Ask.</summary>
+        void CornerTap()
+        {
+            if (_tryOpen) { _ = _tryFlow.DictateAsync(); return; }
+            AskTap();
+        }
+
+        /// <summary>Opens Hypa Translate in the story panel, after the story. Words come from the lines just told.</summary>
+        void OpenTry()
+        {
+            if (_screen != Screen.Play || _busy || _tryOpen || Playing || !_story.Ended || _ask.State != AskState.Idle) return;
+            _tryOpen = true;
+            _audio.Tap();
+            _tryFlow.Clear();
+            _tryFlow.BindStory(_lang.HypaLabel, StoryLanguages.All.Select(l => l.HypaLabel).ToArray());
+            // the story's chosen words in the language it was told in; a story without them offers its first long words
+            var words = _story.Story.WordsFor(_lang.Code);
+            _tryFlow.SetSuggestions(words.Length > 0 ? words.Take(3).ToArray()
+                : TryHypaText.Suggest(_story.Story.Timeline.Captions.Select(c => c.TextFor(_lang.Code)), 3));
+            _try.Root.gameObject.SetActive(true);
+            _try.Show(_story.Story.Accent);
+            _player.SetTranslateOpen(true);
+            _ = _tryFlow.LoadLanguagesAsync();
+        }
+
+        void CloseTry()
+        {
+            if (!_tryOpen) return;
+            _tryOpen = false;
+            _tryFlow.Cancel();
+            _audio.Tap();
+            _try.Root.gameObject.SetActive(false);
+            _player.SetTranslateOpen(false);
+        }
+
+        /// <summary>Closes Try Hypa at once (leaving the story, or the story starting again).</summary>
+        void HideTryNow()
+        {
+            _tryOpen = false;
+            _tryFlow.Cancel();
+            if (_try != null) _try.Root.gameObject.SetActive(false);
+            _player?.SetTranslateOpen(false);
+        }
+
+        /// <summary>Tap Ask (Q in the editor): start a question, or end the recording, or skip the line being said.</summary>
         void AskTap()
         {
-            if (_screen != Screen.Play) return;
+            if (_screen != Screen.Play || _tryOpen) return;
             if (_ask.State == AskState.Idle) _ = _ask.BeginAsync();
             else if (_ask.State == AskState.Listening) _ask.StopListening();
             else _ask.Skip();
-        }
-
-        /// <summary>Hold Ask: push-to-talk. The question ends when the pinch is released.</summary>
-        void AskHold()
-        {
-            if (_screen != Screen.Play || _ask.State != AskState.Idle) return;
-            _holdToTalk = true;
-            _ = _ask.BeginAsync();
         }
 
         // ---------- frame ----------
@@ -571,19 +618,25 @@ namespace HypaStories
                 _player.ShowLine(s.Index, s.T);
                 _player.SetProgress(s.T, _story.Duration);
                 _player.SetPauseLabel(_story.Ended ? "Replay" : _story.Paused ? "Resume" : "Pause");
-                if (_story.Ended && !_endNoted) { _endNoted = true; _player.SetNote("The end of this story. Replay, or go back to the stories."); }
+                if (_story.Ended && !_endNoted)
+                {
+                    _endNoted = true;
+                    _player.SetNote("The end. Try Hypa Translate, or replay.");
+                }
                 if (!_story.Ended) _endNoted = false;
+                _player.SetTryOffer(_story.Ended && !_tryOpen && _ask.State == AskState.Idle);
+                if (_tryOpen && !_story.Ended) HideTryNow();
             }
             _camp.Teller.Level = _voice.Level;
             _camp.Teller.Attend = _ask.State != AskState.Idle ? 1f : 0f;
 
-            var raised = RaiseHand.Probe != null && RaiseHand.Probe();
-            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && _ask.State == AskState.Idle && !Playing) _ = _ask.BeginAsync();
-            if (_holdToTalk && !HypaInput.Current.IsPinching)
+            if (_tryOpen)
             {
-                _holdToTalk = false;
-                if (_ask.State == AskState.Listening) _ask.StopListening();
+                _try.Update(dt);
+                _player.SetCorner(_tryFlow.Listening ? "Done" : "Speak", _tryFlow.Listening ? "check" : "mic");
             }
+            var raised = RaiseHand.Probe != null && RaiseHand.Probe();
+            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && !_tryOpen && _ask.State == AskState.Idle && !Playing) _ = _ask.BeginAsync();
             if (Application.isEditor) EditorKeys();
         }
 
@@ -604,6 +657,17 @@ namespace HypaStories
                     break;
                 case Screen.Play:
                     if (_busy) break;
+                    if (_tryOpen)
+                    {
+                        if (Input.GetKeyDown(KeyCode.Escape)) CloseTry();
+                        for (var k = 0; k < 3; k++)
+                            if (Input.GetKeyDown(KeyCode.Alpha1 + k))
+                            {
+                                var words = _tryFlow.Suggestions;
+                                if (words != null && k < words.Length) _ = _tryFlow.UseWordAsync(words[k]);
+                            }
+                        break;
+                    }
                     if (Playing)
                     {
                         if (Input.GetKeyDown(KeyCode.Escape)) { EndGames(); _voice.StopAll(); _player.Root.gameObject.SetActive(true); _player.Follow.Snap(); }
@@ -613,6 +677,7 @@ namespace HypaStories
                     if (Input.GetKeyDown(KeyCode.RightArrow)) _story.Jump(1);
                     if (Input.GetKeyDown(KeyCode.LeftArrow)) _story.Jump(-1);
                     if (Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
+                    if (Input.GetKeyDown(KeyCode.T)) OpenTry();
                     if (Input.GetKeyDown(KeyCode.Q)) { _qDown = Time.time; AskTap(); }
                     if (Input.GetKeyUp(KeyCode.Q) && Time.time - _qDown > 0.5f && _ask.State == AskState.Listening) _ask.StopListening(); // hold-to-talk
                     for (var k = 0; k < 3; k++)
@@ -647,6 +712,7 @@ namespace HypaStories
             _cts.Cancel();
             _cts.Dispose();
             _ask?.Cancel();
+            _tryFlow?.Cancel();
             _story?.Stop();
             AudioListener.volume = 1f;
             if (PinchPointer.Instance != null && _restoreReach > 0f) PinchPointer.Instance.MaxDistance = _restoreReach;
@@ -668,7 +734,7 @@ namespace HypaStories
         /// </summary>
         void ToggleRoom()
         {
-            if (_busy || _roomBusy || _away || (!_room && Playing)) return;
+            if (_busy || _roomBusy || _away) return; // a story or its game: the fire and the storyteller come into your room either way
             StartCoroutine(_room ? LeaveRoom() : EnterRoom());
         }
 
@@ -743,7 +809,7 @@ namespace HypaStories
             _camp.SetRoom(true);
             StoryRoom.Depth?.Invoke(true);
             PlaceInRoom();
-            _player.SetRoom(true);
+            SetRoomButtons(true);
             SnapPanels();
             Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
             if (note != null) ShowRoomNote(note, 7f); else HideRoomNote();
@@ -774,8 +840,16 @@ namespace HypaStories
             _room = false;
             _camp.SetRoom(false);
             StoryRoom.Depth?.Invoke(false);
-            _player.SetRoom(false);
+            SetRoomButtons(false);
             HideRoomNote();
+        }
+
+        /// <summary>Every In my room button: the story panel, and the panels of the games after a story.</summary>
+        void SetRoomButtons(bool inRoom)
+        {
+            _player.SetRoom(inRoom);
+            _game?.SetInRoom(inRoom);
+            _hatGame?.SetInRoom(inRoom);
         }
 
         /// <summary>The camp's world on the real floor: the fire at its spot, you behind it, the storyteller across it facing you.</summary>

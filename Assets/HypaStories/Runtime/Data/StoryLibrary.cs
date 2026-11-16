@@ -96,7 +96,7 @@ namespace HypaStories
                 t = c.Until + Gap;
             }
 
-            return new StoryInfo
+            var info = new StoryInfo
             {
                 Id = id, Theme = (int?)o["theme"] ?? 0, Accent = accent,
                 Eyebrow = (string)o["eyebrow"] ?? "", Title = (string)o["title"] ?? id, Desc = (string)o["description"] ?? "",
@@ -115,7 +115,14 @@ namespace HypaStories
                     Fire = fire.Keys.ToArray(), Dark = dark.Keys.ToArray(), Dawn = dawn.Keys.ToArray(), Police = police.Keys.ToArray(), Spirit = spirit.Keys.ToArray(),
                     Sounds = sounds.OrderBy(x => x.T).ToArray(),
                 },
+                Words = Strings(o["words"]),
             };
+            foreach (var kv in tr)
+            {
+                var w = Strings(kv.Value["words"]);
+                if (w.Length > 0) info.WordsTr[kv.Key] = w;
+            }
+            return info;
         }
 
         /// <summary>A weather track: the story's starting value, then each line's cue eased in over that line.</summary>

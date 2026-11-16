@@ -4,6 +4,7 @@
   "eyebrow": "Hausa folk tale",
   "title": "Seven Hot Stones:\nThe Night Dodo Came",
   "description": "A feared creature stalks a Hausa town by night, and only a young stranger dares to answer its call.",
+  "words": ["fire", "stones", "horses"],
   "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
   "voices": [],
   "wind": 0.1,

@@ -29,7 +29,7 @@ namespace HypaStories
         Texture2D _glow;
         Func<string, string> _line;       // a story line in the listener's language, by id
         Action<string> _say;               // the storyteller speaks it
-        Action _restartStory, _back, _return;
+        Action _restartStory, _back, _return, _toggleRoom;
 
         DodoRules _rules;
         DodoCreature _dodo;
@@ -64,16 +64,16 @@ namespace HypaStories
         KitGroup _hudGroup;
         TextMeshPro _title, _sub;
         readonly List<KitIcon> _lives = new List<KitIcon>();
-        KitButton _iAm, _retry, _restart, _leave, _quit;
+        KitButton _iAm, _retry, _restart, _leave, _quit, _room;
 
         public bool Active { get; private set; }
         public DodoPhase Phase => _rules?.Phase ?? DodoPhase.Intro;
 
         public void Init(CampWorld camp, StoryAssets a, StoryAudio audio, Texture2D glow, Transform uiRoot,
-            Func<string, string> line, Action<string> say, Action restartStory, Action back, Action returnToStory)
+            Func<string, string> line, Action<string> say, Action restartStory, Action back, Action returnToStory, Action toggleRoom = null)
         {
             _camp = camp; _a = a; _audio = audio; _glow = glow;
-            _line = line; _say = say; _restartStory = restartStory; _back = back; _return = returnToStory;
+            _line = line; _say = say; _restartStory = restartStory; _back = back; _return = returnToStory; _toggleRoom = toggleRoom;
             _shout = gameObject.AddComponent<ShoutDetector>();
             _shout.enabled = false;
             BuildHud(uiRoot);
@@ -601,6 +601,9 @@ namespace HypaStories
             for (var i = 0; i < DodoRules.Lives; i++) _lives.Add(Kit.Icon(_hud, "flame", new Vector3(0.2f - i * 0.03f, 0.055f, 0f), 0.022f, KitTheme.Ember));
             _iAm = Kit.Button(_hud, new Vector3(0f, -0.048f, 0f), new Vector2(0.16f, 0.05f), "I am!", "hand", KitStyle.Primary, IAm);
             _quit = Kit.Button(_hud, new Vector3(-0.2f, 0.055f, 0f), new Vector2(0.09f, 0.038f), "Back", "arrow-left", KitStyle.Ghost, ReturnToStory, null, 0.015f);
+            if (_toggleRoom != null)
+                _room = Kit.Button(_hud, new Vector3(0f, -0.115f, 0f), new Vector2(0.28f, 0.04f), "Back to the forest", "house", KitStyle.Ghost, _toggleRoom, null, 0.014f);
+                _room.SetLabel("In my room");
             _retry = Kit.Button(_hud, new Vector3(-0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Try again", "rotate-ccw", KitStyle.Primary, () => { End(); Begin(); });
             _restart = Kit.Button(_hud, new Vector3(0f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "The story", "play", KitStyle.Ghost, () => { End(); _restartStory?.Invoke(); });
             _leave = Kit.Button(_hud, new Vector3(0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Stories", "arrow-left", KitStyle.Ghost, () => { End(); _back?.Invoke(); });
@@ -647,6 +650,15 @@ namespace HypaStories
             _retry.Label.text = p == DodoPhase.Won ? "Play again" : "Try again";
             _restart.gameObject.SetActive(over);
             _leave.gameObject.SetActive(over);
+        }
+
+        /// <summary>The same room switch as the story: the fire, Dodo and the stones in your real room.</summary>
+        public void SetInRoom(bool inRoom)
+        {
+            if (_room == null) return;
+            _room.SetLabel(inRoom ? "Back to the forest" : "In my room");
+            _room.Style = inRoom ? KitStyle.Primary : KitStyle.Ghost;
+            _room.Selected = inRoom;
         }
     }
 }
