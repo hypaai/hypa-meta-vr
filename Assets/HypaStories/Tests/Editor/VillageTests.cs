@@ -121,5 +121,16 @@ namespace HypaStories.Tests
             Assert.AreEqual(WaxPrints.Tile(1), WaxPrints.Tile(1 + WaxPrints.Count), "numbers past the last wrap round");
             Assert.IsTrue(plain.Contains(TrailBuilder.MeshKit.Plain), "untextured shapes sample the plain tile");
         }
+
+        [Test] public void FarThings_AreNotDrawn_AndComeBackAsYouWalkUp()
+        {
+            var hut = new Bounds(new Vector3(HutTrailLayout.Hut.x, 2f, HutTrailLayout.Hut.y), new Vector3(6f, 4.5f, 6f));
+            var seat = new Vector3(0f, 1.2f, -3.1f);
+            Assert.IsFalse(DistanceCull.Visible(hut, seat, DistanceCull.Range), "from the seat the hut is past the fog: not drawn");
+            var trail = new Vector3(HutTrailLayout.Along(0.6f).point.x, 1.6f, HutTrailLayout.Along(0.6f).point.y);
+            Assert.IsTrue(DistanceCull.Visible(hut, trail, DistanceCull.Range), "partway down the trail it is");
+            Assert.IsTrue(DistanceCull.Visible(new Bounds(new Vector3(-30f, 1f, 0f), Vector3.one), seat, DistanceCull.Range, 16f), "moving creatures get extra room");
+            Assert.Greater(DistanceCull.Range, 36f, "never closer than the fog's end: you never see anything vanish");
+        }
     }
 }

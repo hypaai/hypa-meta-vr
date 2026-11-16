@@ -29,6 +29,7 @@ MonoBehaviour:
   log: {fileID: 2100000, guid: 61aecc26543e34d9f9e7b72ddc81efe1, type: 2}
   campFire: {fileID: 8128668236925612103, guid: 024689840da914eb9b218e0d35a49607, type: 3}
   storyteller: {fileID: 6635245195314443262, guid: 3be1a977b700547dcaeb4ccc5b87450c, type: 3}
+  dodo: {fileID: 2242888416370347441, guid: 81fc030469e84d2d8b677e8310f84f3c, type: 3}
   deadTrunk: {fileID: 1079839889373478930, guid: 2c690c633d88b40f4b62af518e484873, type: 3}
   stump: {fileID: 1589626869621635631, guid: 02ce66c0d83084daca63aa7311ffa42c, type: 3}
   fern: {fileID: 8771091787928289351, guid: 6ea9bd29592ef435d8c38c8fd02334ff, type: 3}

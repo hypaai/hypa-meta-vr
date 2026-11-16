@@ -37,6 +37,119 @@ namespace HypaStories
         readonly List<Figure> _drummers = new List<Figure>();
         readonly List<Figure> _dancers = new List<Figure>();
         readonly List<Figure> _kids = new List<Figure>();
+
+        // ---------- the celebration at the campfire (after the Dodo game) ----------
+
+        Transform _party;
+        readonly List<(Figure f, Vector3 from, Vector3 to)> _celebrants = new List<(Figure, Vector3, Vector3)>();
+        float _partyT = -1f, _nextCheer;
+        AudioSource _partyDrums, _partyCrowd, _partyCheer;
+        AudioClip _murmurClip, _cheerClip;
+
+        /// <summary>
+        /// Villagers come out of the trees round the campfire and dance (Dodo is dead). Off: they go. Built once, the first time.
+        /// They live at the camp, not in the village, so they show however far away the village is.
+        /// </summary>
+        public void Celebrate(bool on)
+        {
+            if (!on)
+            {
+                if (_party != null) _party.gameObject.SetActive(false);
+                if (_masq != null && _masq.parent != _root) { _masq.SetParent(_root, false); }   // the masquerade goes home
+                _partyT = -1f;
+                return;
+            }
+            if (_party == null)
+            {
+                _party = Node("Celebration");
+                var keep = _root; _root = _party;   // Person builds under _root
+                // a wide arc in front of the seats and round the sides, never on the seats, in the fire, or where Dodo lies
+                // (it falls straight across the fire from you, so the middle of the arc stays clear)
+                var angles = new List<float>();
+                for (var d = -120f; d <= 120.1f; d += 20f) if (Mathf.Abs(d) > 30f) angles.Add(d);
+                for (var i = 0; i < angles.Count; i++)
+                {
+                    var a = angles[i] * Mathf.Deg2Rad;
+                    var dir = new Vector2(Mathf.Sin(a), Mathf.Cos(a));
+                    var to = dir * (5.6f + (i % 2) * 0.9f);
+                    var from = dir * 12.5f;
+                    var f = Person("Celebrant", from, -dir, RandomLook(i % 3 != 1), i % 4 == 3 ? 0.65f : 0.95f + R() * 0.1f);
+                    f.Ph = R() * 6.28f;
+                    _celebrants.Add((f, X0Z(from), X0Z(to)));
+                }
+                _root = keep;
+
+                // the village's drums and its crowd, close by this time, and the cheering
+                _partyDrums = Voice("Celebration Drums", _party, 40f);
+                _partyDrums.clip = _drums.clip; _partyDrums.loop = true; _partyDrums.minDistance = 7f; _partyDrums.spatialBlend = 0.5f;
+                _partyDrums.transform.localPosition = new Vector3(2.5f, 1f, 6f);
+                _partyCrowd = Voice("Celebration Crowd", _party, 40f);
+                _partyCrowd.clip = _murmurClip; _partyCrowd.loop = true; _partyCrowd.minDistance = 7f; _partyCrowd.spatialBlend = 0.4f;
+                _partyCrowd.transform.localPosition = new Vector3(-2f, 1.4f, 5f);
+                _partyCheer = Voice("Celebration Cheers", _party, 40f);
+                _partyCheer.minDistance = 7f; _partyCheer.spatialBlend = 0.4f;
+                _partyCheer.transform.localPosition = new Vector3(0f, 1.5f, 6f);
+                _cheerClip = ProceduralClips.Clip("cheer", ProceduralClips.CheerSamples(213));
+            }
+            _party.gameObject.SetActive(true);
+            _partyT = 0f;
+            _partyDrums.volume = 0.9f; _partyDrums.time = 0f; _partyDrums.Play();
+            _partyCrowd.volume = 0.55f; _partyCrowd.Play();
+            _partyCheer.PlayOneShot(_cheerClip, 1f);
+            _nextCheer = _t + 6f;
+            // and the masquerade comes to dance round the campfire
+            if (_masq != null) { _masq.SetParent(_party, false); _masq.gameObject.SetActive(true); }
+        }
+
+        void Celebrants(float dt)
+        {
+            if (_partyT < 0f || _party == null) return;
+            _partyT += dt;
+            var loopT = _partyDrums != null && _partyDrums.isPlaying ? _partyDrums.time : _t % ProceduralClips.DrumLoopLength;
+            var beat = loopT / 0.5f * Mathf.PI;
+            if (_t > _nextCheer) { _nextCheer = _t + 9f + R() * 7f; _partyCheer.PlayOneShot(_cheerClip, 0.8f); }
+            if (_masq != null && _masq.parent == _party)
+            {
+                // the masquerade whirls round the campfire (inside the villagers' arc), flaring on the drums' fill
+                var fill = loopT > ProceduralClips.DrumLoopLength * 0.75f;
+                _masqSpin = Mathf.MoveTowards(_masqSpin, fill ? 1f : 0.3f, dt * (fill ? 1.6f : 0.5f));
+                _masqAngle += dt * (0.3f + _masqSpin * 0.3f);
+                _masqYaw += dt * _masqSpin * 720f;
+                var arrive = Mathf.Clamp01(_partyT / 2.5f);
+                // back and forth along the far side of the fire, facing you: never close to your seat
+                var swing = Mathf.Sin(_masqAngle * 0.8f) * 1.15f;
+                var around = new Vector2(Mathf.Sin(swing), Mathf.Cos(swing)) * Mathf.Lerp(9f, 2.5f, Mathf.SmoothStep(0f, 1f, arrive));
+                _masq.localPosition = X0Z(around, Mathf.Abs(Mathf.Sin(loopT * Mathf.PI * 2f)) * 0.08f);
+                _masq.localRotation = Quaternion.Euler(0f, _masqYaw, 0f);
+                UpdateMasqueradeMesh(_masqSpin * 0.85f);
+            }
+            for (var i = 0; i < _celebrants.Count; i++)
+            {
+                var (f, from, to) = _celebrants[i];
+                var walk = Mathf.Clamp01((_partyT - i * 0.15f) / 3.2f);         // out of the trees, one after another
+                var at = Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, walk));
+                var bob = walk < 1f ? Mathf.Abs(Mathf.Sin(_t * 8f + i)) * 0.05f : Mathf.Abs(Mathf.Sin(beat + f.Ph)) * 0.07f;
+                f.Root.localPosition = at + Vector3.up * bob;
+                var face = -new Vector3(to.x, 0f, to.z);
+                if (face.sqrMagnitude > 1e-4f) f.Root.localRotation = Quaternion.LookRotation(face.normalized) * Quaternion.Euler(0f, walk < 1f ? 0f : Mathf.Sin(beat * 0.5f + f.Ph) * 25f, 0f);
+                if (walk < 1f)
+                {
+                    var swing = Mathf.Sin(_t * 8f + i) * 35f;
+                    f.ArmL.localRotation = Quaternion.Euler(swing, 0f, -8f); f.ArmR.localRotation = Quaternion.Euler(-swing, 0f, 8f);
+                    f.ForeL.localRotation = f.ForeR.localRotation = Quaternion.Euler(-25f, 0f, 0f);
+                    f.Torso.localRotation = Quaternion.Euler(6f, 0f, 0f);
+                }
+                else
+                {
+                    // hands up and waving with the drums
+                    f.Torso.localRotation = Quaternion.Euler(10f + Mathf.Sin(beat + f.Ph) * 8f, 0f, Mathf.Sin(beat * 0.5f + f.Ph) * 6f);
+                    f.ArmL.localRotation = Quaternion.Euler(-130f + Mathf.Sin(beat + f.Ph) * 30f, 0f, -25f);
+                    f.ArmR.localRotation = Quaternion.Euler(-130f - Mathf.Sin(beat + f.Ph) * 30f, 0f, 25f);
+                    f.ForeL.localRotation = Quaternion.Euler(-25f + Mathf.Sin(beat * 2f + f.Ph) * 25f, 0f, 0f);
+                    f.ForeR.localRotation = Quaternion.Euler(-25f - Mathf.Sin(beat * 2f + f.Ph) * 25f, 0f, 0f);
+                }
+            }
+        }
         Figure _local;
         float _waveT = -1f;
         bool _waved;
@@ -778,7 +891,8 @@ namespace HypaStories
             _drums = Bed("Drums", ProceduralClips.Clip("drums", ProceduralClips.DrumLoopSamples()), X0Z(VillageLayout.Fire, 0.8f), 0.85f, 5f, 34f);
             _drums.time = 0f;
             _drumsMuffle = _drums.gameObject.AddComponent<AudioLowPassFilter>();
-            Bed("Crowd", ProceduralClips.Clip("murmur", ProceduralClips.MurmurSamples()), X0Z(VillageLayout.YamPile, 1.4f), 0.45f, 3f, 22f);
+            _murmurClip = ProceduralClips.Clip("murmur", ProceduralClips.MurmurSamples());
+            Bed("Crowd", _murmurClip, X0Z(VillageLayout.YamPile, 1.4f), 0.45f, 3f, 22f);
             Bed("Village Fire", ProceduralClips.Clip("village fire", ProceduralClips.FireSamples()), X0Z(VillageLayout.Fire, 0.4f), 0.6f, 1.5f, 12f);
             _thudClip = ProceduralClips.Clip("pestle", ProceduralClips.StepSamples(151));
             _thud = Voice("Pestles", _root, 18f);
@@ -792,6 +906,7 @@ namespace HypaStories
             var cam = Tick();
             if (cam == null) return;
             var dt = Time.deltaTime;
+            Celebrants(dt);
             var dist = Vector2.Distance(Viewer, VillageLayout.Plaza);
             // the drums come clear as you come out of the trees
             _drumsMuffle.cutoffFrequency = Mathf.Lerp(900f, 22000f, Mathf.Pow(Mathf.Clamp01(1f - (dist - 8f) / 26f), 2f));
@@ -805,7 +920,7 @@ namespace HypaStories
             Pounders(beat);
             Crowd(dt);
             Dancers(beat);
-            Masquerade(dt, beat);
+            if (_masq.parent != _party) Masquerade(dt, beat);
             Local(cam, dt);
             Animals(cam, dt);
         }
