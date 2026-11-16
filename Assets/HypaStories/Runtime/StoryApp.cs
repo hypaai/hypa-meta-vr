@@ -552,6 +552,9 @@ namespace HypaStories
             _camp.Teller.Level = _voice.Level;
             _camp.Teller.Attend = _ask.State != AskState.Idle ? 1f : 0f;
 
+            // The storyteller's question uses the microphone: no wake word for the locals meanwhile.
+            var askOpen = _ask.State != AskState.Idle;
+            if (WakeWord.Paused != askOpen) { WakeWord.Paused = askOpen; WakeWord.Apply(); }
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
             // A raised hand goes to a local you're facing (3I) before the storyteller.
             if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && _ask.State == AskState.Idle && !(_game != null && _game.Active) && Local.Focused == null) _ = _ask.BeginAsync();

@@ -142,6 +142,21 @@ namespace HypaStories
             await Loop(s);
         }
 
+        /// <summary>
+        /// A question already heard (the wake word: "Ama, what do you weave?"): straight to the answer, no listening first.
+        /// Talking over the greeting is fine; ignored while another question is open.
+        /// </summary>
+        public async Task AskAsync(string question)
+        {
+            question = question?.Trim();
+            if (string.IsNullOrEmpty(question) || (State != AskState.Idle && !Greeting)) return;
+            if (Greeting) { Greeting = false; Cancel(); }
+            var s = _s = new Session();
+            _onEngaged?.Invoke(true);
+            var now = _clockMs();
+            await Answer(s, new ListenResult { Transcript = question, TEnd = now, TTranscript = now, Spoke = true });
+        }
+
         async Task Loop(Session s)
         {
             while (!s.Cancelled)

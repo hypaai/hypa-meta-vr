@@ -11,6 +11,8 @@ namespace HypaStories
     /// text_to_speech) with lip sync and subtitles, looking at you. Walk away and the visit ends.
     /// Optional: <see cref="Figure"/> (a Storyteller-style figure: lip sync and head turn come free), or <see cref="Head"/>
     /// (turned to you) and <see cref="Mouth"/> (where the voice comes from). Editor: T = talk to the local you're facing.
+    /// Wake word (with the Meta Voice SDK and a Wit token, see <see cref="WakeWord"/>): near them, say their name ("Ama?") to
+    /// talk, or ask straight away ("Ama, what do you weave?").
     /// </summary>
     public sealed class Local : MonoBehaviour
     {
@@ -37,6 +39,8 @@ namespace HypaStories
         [Tooltip("Height of the panel above this object's origin, metres.")]
         public float PanelHeight = 1.75f;
         public bool GreetOnApproach = true;
+        [Tooltip("Say their name to talk to them (Meta Voice SDK + WIT_CLIENT_TOKEN). Raise a hand and Talk always work too.")]
+        public bool WakeWordEnabled = true;
         [Tooltip("They greet you once you're within TalkDistance and looking within this many degrees of them.")]
         public float GreetAngle = 25f;
 
@@ -59,7 +63,8 @@ namespace HypaStories
         const float DuckTo = 0.15f, DuckAfter = 0.3f;
         float _listenedFor, _volumeBefore = -1f;
         readonly RaiseHandGesture _raise = new RaiseHandGesture();
-        bool _greeted, _holdToTalk, _engaged, _ready;
+        bool _greeted, _holdToTalk, _engaged, _ready, _wantWake;
+        static int _wokeFrame = -1;
         float _headYaw;
         Quaternion _headRest;
 
@@ -74,6 +79,8 @@ namespace HypaStories
 
         void OnDisable()
         {
+            SetWantWake(false);
+            if (WakeWord.Listener != null) WakeWord.Listener.Heard -= OnHeard;
             Unduck();
             All.Remove(this);
             if (Focused == this) Focused = null;
@@ -136,7 +143,46 @@ namespace HypaStories
             _voice.Prefetch(lines.Again, lang);
             _voice.Prefetch(lines.Lost, lang);
             if (!string.IsNullOrWhiteSpace(Persona.Greeting)) _voice.Prefetch(Persona.Greeting, lang);
+            if (WakeWordEnabled)
+            {
+                var l = WakeWord.Listener;
+                if (l == null) Debug.Log($"Hypa Stories: no wake word for {Persona.DisplayName} in this build; raise a hand or pinch Talk.");
+                else
+                {
+                    l.Heard += OnHeard;
+                    Debug.Log(l.Available
+                        ? $"Hypa Stories: say \"{Persona.DisplayName}\" near them to talk (wake word)."
+                        : $"Hypa Stories: wake word off ({l.Problem}); raise a hand or pinch Talk.");
+                }
+            }
             _ready = true;
+        }
+
+        void SetWantWake(bool want)
+        {
+            if (want == _wantWake) return;
+            _wantWake = want;
+            WakeWord.Want(this, want);
+        }
+
+        /// <summary>A phrase from the wake listener: if it calls this local, talk (the question in it, or listen for one).</summary>
+        void OnHeard(string phrase)
+        {
+            if (!_ready || !_wantWake || _wokeFrame == Time.frameCount) return;
+            if (!WakeWord.Match(phrase, Persona.CalledBy(), out var rest)) return;
+            _wokeFrame = Time.frameCount; // one local answers a call, even if two share a name
+            _ = WakeAsync(phrase, rest);
+        }
+
+        async System.Threading.Tasks.Task WakeAsync(string phrase, string rest)
+        {
+            var ask = WakeWord.IsQuestion(rest);
+            Debug.Log($"Hypa Stories: heard \"{phrase}\" → {Persona.DisplayName} {(ask ? "answers it" : "listens")} (wake word).");
+            SetWantWake(false); // the wake listener lets go of the microphone...
+            await System.Threading.Tasks.Task.Yield(); // ...before ours opens it
+            if (Talk.State != AskState.Idle && !Talk.Greeting) return;
+            if (ask) await Talk.AskAsync(rest);
+            else await Talk.BeginAsync();
         }
 
         /// <summary>
@@ -203,6 +249,9 @@ namespace HypaStories
                 _greeted = true;
                 _ = Talk.GreetAsync();
             }
+
+            // Listen for their name while you're near and nobody is talking (the listener would hear the local, or fight our microphone).
+            SetWantWake(WakeWordEnabled && near && Talk.State == AskState.Idle);
 
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
             if (_raise.Update(raised, Time.deltaTime) && Focused == this && (Talk.State == AskState.Idle || Talk.Greeting))

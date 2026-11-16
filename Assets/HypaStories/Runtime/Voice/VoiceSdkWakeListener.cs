@@ -1,0 +1,111 @@
+using System;
+using HypaCore;
+using Meta.WitAi.Configuration;
+using Meta.WitAi.Data.Configuration;
+using Oculus.Voice.Dictation;
+using Oculus.Voice.Dictation.Configuration;
+using UnityEngine;
+
+namespace HypaStories.Voice
+{
+    /// <summary>
+    /// The locals' wake word on the Meta Voice SDK (ticket 3I, stretch): its dictation (<see cref="AppDictationExperience"/>) runs
+    /// while a <see cref="Local"/> is near and idle, and each finished phrase goes to <see cref="WakeWord"/> to check for a name.
+    /// Dictation streams the microphone to Wit.ai, so it needs a Wit client token: WIT_CLIENT_TOKEN in the git-ignored .env (or
+    /// "witToken" in hypa.local.json), read by <see cref="HypaConfig"/>, never stored in an asset. Without one there's no wake
+    /// word and raise-a-hand / Talk work as before. The question itself still goes through Hypa speech_to_text.
+    /// </summary>
+    public sealed class VoiceSdkWakeListener : MonoBehaviour, IWakeListener
+    {
+        const int MaxErrors = 3;
+        const float RetryAfter = 1.5f;
+
+        AppDictationExperience _dictation;
+        bool _initialized, _want;
+        int _errors;
+        float _retryAt;
+        string _problem;
+
+        public bool Available => _dictation != null && _errors < MaxErrors;
+        public string Problem => _problem;
+        public bool Listening => _want;
+        public event Action<string> Heard;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Install()
+        {
+            if (WakeWord.Listener != null) return;
+            var go = new GameObject("Hypa Wake Word");
+            go.SetActive(false); // the dictation component starts in OnEnable: configure it first
+            DontDestroyOnLoad(go);
+            var listener = go.AddComponent<VoiceSdkWakeListener>();
+            listener.Setup();
+            go.SetActive(true);
+            WakeWord.Listener = listener;
+        }
+
+        void Setup()
+        {
+            var token = HypaConfig.Current.WitToken;
+            if (string.IsNullOrEmpty(token)) { _problem = "no WIT_CLIENT_TOKEN in .env"; return; }
+
+            var config = ScriptableObject.CreateInstance<WitConfiguration>();
+            config.name = "Hypa Wake Word (runtime, not saved)";
+            config.SetClientAccessToken(token);
+
+            _dictation = gameObject.AddComponent<AppDictationExperience>();
+            _dictation.RuntimeDictationConfiguration = new WitDictationRuntimeConfiguration
+            {
+                witConfiguration = config,
+                // Keep going phrase after phrase while active (the SDK reactivates after each one).
+                dictationConfiguration = new DictationConfiguration { multiPhrase = true },
+            };
+            _dictation.OnInitialized += () => { _initialized = true; if (_want) Activate(); };
+            _dictation.DictationEvents.OnFullTranscription.AddListener(OnPhrase);
+            _dictation.DictationEvents.OnError.AddListener(OnError);
+        }
+
+        void OnPhrase(string text)
+        {
+            _errors = 0;
+            if (!_want || string.IsNullOrWhiteSpace(text)) return;
+            Heard?.Invoke(text);
+        }
+
+        void OnError(string error, string message)
+        {
+            _errors++;
+            _retryAt = Time.unscaledTime + RetryAfter * _errors;
+            if (_errors < MaxErrors) { Debug.Log($"Hypa Stories: wake word paused ({error}: {message}); retrying."); return; }
+            _problem = $"{error}: {message}";
+            Debug.LogWarning($"Hypa Stories: wake word off after {MaxErrors} errors ({_problem}). Raise a hand or pinch Talk instead.");
+            End();
+        }
+
+        public void Begin()
+        {
+            if (!Available) return;
+            _want = true;
+            Activate();
+        }
+
+        public void End()
+        {
+            _want = false;
+            if (_dictation != null && _initialized && (_dictation.Active || _dictation.MicActive)) _dictation.Cancel(); // lets go of the mic now
+        }
+
+        void Activate()
+        {
+            if (!_initialized || !_want || _dictation.Active || Time.unscaledTime < _retryAt) return;
+            _retryAt = Time.unscaledTime + 0.5f; // not every frame while it starts up
+            _dictation.Activate();
+        }
+
+        // Safety net: if dictation stops on its own (timeout, network) while wanted, start it again.
+        void Update()
+        {
+            if (_want && Available) Activate();
+        }
+    }
+}

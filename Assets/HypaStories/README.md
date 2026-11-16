@@ -77,6 +77,13 @@ one after about 2 s while they think. They remember the last 4 exchanges of the 
   15% (the camp's wind and fire from the speakers otherwise reach the microphone and drown you out); the listening cue is
   ignored by the microphone for its first 0.35 s. The console says which microphone she uses. **In the editor on a Mac**, allow
   Unity in System Settings > Privacy & Security > Microphone.
+- **Wake word (Meta Voice SDK):** near a local, say their name: "Ama?" and she listens; "Hey Ama, what do you weave?" and she
+  answers straight away. The Voice SDK's dictation (`Runtime/Voice/VoiceSdkWakeListener.cs`, its own assembly) runs only while
+  you're within talking distance of an idle local, and stops before her microphone opens; when you only say the name, the question
+  still goes through Hypa `speech_to_text`. The name must be the first word (after "hey", "excuse me"...), with one letter of
+  slack for names of four letters or more; add other names in the persona's `WakeNames`. Dictation streams audio to Wit.ai, so it
+  needs a free Wit client token as `WIT_CLIENT_TOKEN` in `.env` (see `.env.example`; on Quest, the pushed `.env`). No token: the
+  console says the wake word is off, and raise a hand / Talk work as before. Uncheck `WakeWordEnabled` on a `Local` to turn it off.
 - **Add a local to your place (3H, 3M):** add a `Local` to the character, give it a `LocalPersona` (Assets > Create > Hypa >
   Stories > Local Persona: name, role, home, what they know and don't know, voice, greeting, 3 suggested questions, offline
   answers) and `StoryAssets`. Optional: `Figure` (a Storyteller: lip sync and head turn), or `Head` and `Mouth`.
@@ -96,9 +103,11 @@ audio **5.0–6.3 s** with the faster speech settings (8.2 s with Hypa's default
 filler covers the wait. Details in `docs/api-contract.md`.
 
 Done: real chat call documented, `Local`, `LocalPersona`, `ILocalBrain` (chat, stub, fallback), the brain setting and menu,
-in-character prompt with visit memory, faster speech models, the test local, EditMode tests (`LocalTests`, `ChatTests`).
+in-character prompt with visit memory, faster speech models, the test local, the wake word (Meta Voice SDK), EditMode tests
+(`LocalTests`, `ChatTests`).
 Not done: the 3 s target (see above); answers stream sentence by sentence only after the whole reply arrives (chat streaming
-saved ~0.4 s at best); canned offline answers are English; the wake word (stretch).
+saved ~0.4 s at best); canned offline answers are English; the wake word hasn't been tried with a live Wit token yet (its
+matching and on/off switching are unit tested).
 
 ## What came across from the prototype
 

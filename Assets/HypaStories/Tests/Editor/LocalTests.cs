@@ -279,5 +279,88 @@ namespace HypaStories.Tests
             for (var t = 0; t < 7000 && !ended; t += 100) ended = talking.Update(0.2f, 100f);
             Assert.IsFalse(ended, "someone talking is never cut off by the no-voice timeout");
         }
+
+        // ---------- wake word ----------
+
+        [Test] public void WakeWord_HearsTheName_FirstOrAfterAGreeting_WithTheQuestionThatFollows()
+        {
+            var names = new[] { "Ama", "Auntie Ama" };
+            Assert.IsTrue(WakeWord.Match("Ama?", names, out var rest)); Assert.AreEqual("", rest);
+            Assert.IsTrue(WakeWord.Match("Hey Ama, what do you weave?", names, out rest)); Assert.AreEqual("what do you weave?", rest);
+            Assert.IsTrue(WakeWord.Match("excuse me, ama. Who is Kiko?", names, out rest)); Assert.AreEqual("Who is Kiko?", rest);
+            Assert.IsTrue(WakeWord.Match("Ama's loom is lovely", names, out rest), "the transcriber's possessive still calls her");
+            Assert.IsTrue(WakeWord.Match("Auntie Ama tell me a story", names, out rest)); Assert.AreEqual("tell me a story", rest);
+            Assert.IsTrue(WakeWord.Match("Àma, hello", names, out _), "accents don't matter");
+        }
+
+        [Test] public void WakeWord_IgnoresTheNameMidSentence_AndOtherWords()
+        {
+            var names = new[] { "Ama" };
+            Assert.IsFalse(WakeWord.Match("I like Ama", names, out _));
+            Assert.IsFalse(WakeWord.Match("and then the fire went out", names, out _));
+            Assert.IsFalse(WakeWord.Match("Amazing story", names, out _), "a longer word that starts with the name is not the name");
+            Assert.IsFalse(WakeWord.Match("Emma, hi", names, out _), "short names must match exactly");
+            Assert.IsFalse(WakeWord.Match("", names, out _));
+            Assert.IsTrue(WakeWord.Match("Kofy, are you there?", new[] { "Kofi" }, out _), "longer names allow one letter off");
+        }
+
+        [Test] public void WakeWord_OnlyAQuestionOfTwoWordsOrMore_IsAnsweredStraightAway()
+        {
+            Assert.IsFalse(WakeWord.IsQuestion(""));
+            Assert.IsFalse(WakeWord.IsQuestion("please?"));
+            Assert.IsTrue(WakeWord.IsQuestion("what do you weave?"));
+        }
+
+        [Test] public void Persona_IsCalledByItsName_AndItsWakeNames()
+        {
+            var p = Ama();
+            p.WakeNames = new[] { "Auntie Ama", " " };
+            CollectionAssert.AreEqual(new[] { "Ama", "Auntie Ama" }, p.CalledBy().ToArray());
+        }
+
+        sealed class FakeWake : IWakeListener
+        {
+            public bool Available { get; set; } = true;
+            public string Problem => "";
+            public bool Listening { get; private set; }
+            public void Begin() => Listening = true;
+            public void End() => Listening = false;
+            public event Action<string> Heard { add { } remove { } }
+        }
+
+        [Test] public void WakeWord_ListensWhileALocalWantsIt_AndNotWhilePaused()
+        {
+            var before = WakeWord.Listener; var paused = WakeWord.Paused;
+            try
+            {
+                var l = new FakeWake(); WakeWord.Listener = l; WakeWord.Paused = false;
+                object a = new object(), b = new object();
+                WakeWord.Want(a, true); WakeWord.Want(b, true);
+                Assert.IsTrue(l.Listening);
+                WakeWord.Want(a, false);
+                Assert.IsTrue(l.Listening, "still wanted by the other local");
+                WakeWord.Paused = true; WakeWord.Apply();
+                Assert.IsFalse(l.Listening, "the storyteller's question has the microphone");
+                WakeWord.Paused = false; WakeWord.Apply();
+                Assert.IsTrue(l.Listening);
+                WakeWord.Want(b, false);
+                Assert.IsFalse(l.Listening);
+            }
+            finally { WakeWord.Listener = before; WakeWord.Paused = paused; }
+        }
+
+        [Test] public void Talk_AQuestionHeardWithTheName_IsAnsweredWithoutListeningFirst()
+        {
+            using (new NoContext())
+            {
+                var (talk, speech, mic, _, view, _) = Make();
+                talk.AskAsync("what do you weave?").Wait();
+                CollectionAssert.DoesNotContain(view.States, AskState.Listening);
+                CollectionAssert.AreEqual(new[] { "Hmm, good question…", "I weave blankets.", "My grandmother taught me." }, speech.Spoken);
+                Assert.AreEqual(1, talk.History.Count);
+                Assert.IsFalse(talk.Log[0].Typed);
+                Assert.AreEqual(AskState.Idle, talk.State);
+            }
+        }
     }
 }

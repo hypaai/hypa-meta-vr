@@ -42,6 +42,8 @@ namespace HypaStories
         [TextArea(2, 4)] public string Greeting = "";
         [Tooltip("Three questions to pick when there's no microphone or key (also shown while listening).")]
         public string[] Suggested = new string[3];
+        [Tooltip("Other names they answer to when called (the wake word), e.g. \"Auntie Ama\". Their name always works.")]
+        public string[] WakeNames = new string[0];
 
         [Header("Offline answers")]
         public CannedAnswer[] Canned = new CannedAnswer[0];
@@ -59,6 +61,13 @@ namespace HypaStories
             if (Suggested == null || Suggested.Length < 3 || Array.Exists(Suggested, string.IsNullOrWhiteSpace)) missing.Add("3 suggested questions");
             if (string.IsNullOrWhiteSpace(Fallback)) missing.Add("an offline fallback answer");
             return missing.Count == 0 ? null : $"{(string.IsNullOrWhiteSpace(DisplayName) ? name : DisplayName)} needs {string.Join(", ", missing)}.";
+        }
+
+        /// <summary>The names that wake them: their name, then <see cref="WakeNames"/>. Pure.</summary>
+        public IEnumerable<string> CalledBy()
+        {
+            if (!string.IsNullOrWhiteSpace(DisplayName)) yield return DisplayName;
+            foreach (var n in WakeNames ?? new string[0]) if (!string.IsNullOrWhiteSpace(n)) yield return n;
         }
 
         /// <summary>"Ama, the weaver". Pure.</summary>

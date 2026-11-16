@@ -12,8 +12,8 @@ namespace HypaCore
     /// (copy <c>.env.example</c>), then a git-ignored <c>hypa.local.json</c>. Both files live in:
     ///   Editor: project root (next to Assets/).
     ///   Quest:  Application.persistentDataPath, pushed with adb (see README). Never StreamingAssets/Resources.
-    /// .env shape: HYPA_API_KEY=... and HYPA_BASE_URL=...
-    /// json shape: { "apiKey": "...", "baseUrl": "https://api.hypaintelligence.com" }
+    /// .env shape: HYPA_API_KEY=... and HYPA_BASE_URL=... (optional WIT_CLIENT_TOKEN=... for the Stories wake word)
+    /// json shape: { "apiKey": "...", "baseUrl": "https://api.hypaintelligence.com", "witToken": "..." }
     /// The judges' build points baseUrl at the private proxy and needs no key in the app.
     /// </summary>
     public sealed class HypaConfig
@@ -29,9 +29,13 @@ namespace HypaCore
         public bool UsesProxy => BaseUrl != DefaultBaseUrl;
         /// <summary>Paid tools (chat, speech, translation) can be called: with the dev key, or through the proxy with no key in the app.</summary>
         public bool CanCallPaidTools => HasKey || UsesProxy;
+        /// <summary>Wit.ai client access token for the Meta Voice SDK (the Stories wake word); null = no wake word in the editor.</summary>
+        public string WitToken { get; }
+        public bool HasWitToken => !string.IsNullOrEmpty(WitToken);
 
-        public HypaConfig(string apiKey, string baseUrl = null)
+        public HypaConfig(string apiKey, string baseUrl = null, string witToken = null)
         {
+            WitToken = string.IsNullOrWhiteSpace(witToken) ? null : witToken.Trim();
             ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
             BaseUrl = string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl.Trim().TrimEnd('/');
         }
@@ -50,6 +54,7 @@ namespace HypaCore
         {
             string key = Environment.GetEnvironmentVariable("HYPA_API_KEY");
             string url = Environment.GetEnvironmentVariable("HYPA_BASE_URL");
+            string wit = Environment.GetEnvironmentVariable("WIT_CLIENT_TOKEN");
             try
             {
                 var path = EnvFilePath;
@@ -58,6 +63,7 @@ namespace HypaCore
                     var env = ParseEnv(File.ReadAllText(path));
                     if (string.IsNullOrEmpty(key)) env.TryGetValue("HYPA_API_KEY", out key);
                     if (string.IsNullOrEmpty(url)) env.TryGetValue("HYPA_BASE_URL", out url);
+                    if (string.IsNullOrEmpty(wit)) env.TryGetValue("WIT_CLIENT_TOKEN", out wit);
                 }
             }
             catch (Exception e) { Debug.LogWarning("Hypa: could not read " + EnvFileName + ": " + e.Message); } // never log the key
@@ -69,10 +75,11 @@ namespace HypaCore
                     var o = JObject.Parse(File.ReadAllText(path));
                     key = string.IsNullOrEmpty(key) ? (string)o["apiKey"] : key;
                     url = string.IsNullOrEmpty(url) ? (string)o["baseUrl"] : url;
+                    wit = string.IsNullOrEmpty(wit) ? (string)o["witToken"] : wit;
                 }
             }
             catch (Exception e) { Debug.LogWarning("Hypa: could not read " + FileName + ": " + e.Message); } // never log the key
-            var cfg = new HypaConfig(key, url);
+            var cfg = new HypaConfig(key, url, wit);
             // Says which server and whether a key was found, never the key itself.
             Debug.Log($"Hypa: API {cfg.BaseUrl} | key {(cfg.HasKey ? "found" : "missing (free tools only)")}");
             return cfg;
