@@ -8,7 +8,9 @@
     "VoiceSDK.Dictation.Runtime",
     "Meta.Wit.Dictation",
     "Meta.WitAi",
-    "Meta.WitAi.Lib"
+    "Meta.WitAi.Lib",
+    "Meta.VoiceSDK.Mic.Other",
+    "Meta.VoiceSDK.Mic.Common"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

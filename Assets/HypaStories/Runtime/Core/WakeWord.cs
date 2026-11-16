@@ -60,8 +60,10 @@ namespace HypaStories
         static readonly string[] Openers = { "hey", "hi", "hello", "ok", "okay", "excuse me", "please", "oh", "um", "uh", "so", "yo" };
 
         /// <summary>
-        /// Whether <paramref name="phrase"/> calls one of <paramref name="names"/>: the name (or one letter off, for names of four
-        /// letters or more, since transcription often misspells unfamiliar names) as the first word, after an optional opener.
+        /// Whether <paramref name="phrase"/> calls one of <paramref name="names"/>: the name as the first word, after an optional
+        /// opener. Transcription rarely spells an unfamiliar name right (Wit heard "Ama" as Anna, Emma, Amma, Amer, and glued to the
+        /// greeting as "Hayama"), so a word that sounds the same counts (<see cref="Sound"/>), as does a one-letter slip on names of four
+        /// letters or more, or the name with a short "h…" greeting stuck to its front.
         /// <paramref name="rest"/> is what follows, e.g. the question in "Ama, what do you weave?" (empty if they only said the name).
         /// A name later in a sentence ("I like Ama") doesn't count. Pure.
         /// </summary>
@@ -87,6 +89,15 @@ namespace HypaStories
                 rest = Tail(phrase, start + key.Count);
                 return true;
             }
+            // "Hayama", "Haluama": the greeting and a one-word name heard as one word.
+            if (start == 0)
+                foreach (var key in keys)
+                {
+                    var w = words[0]; var k = key[0];
+                    if (key.Count != 1 || k.Length < 3 || w.Length <= k.Length + 1 || w.Length - k.Length > 4 || w[0] != 'h' || !w.EndsWith(k)) continue;
+                    rest = Tail(phrase, 1);
+                    return true;
+                }
             return false;
         }
 
@@ -101,9 +112,36 @@ namespace HypaStories
                 // "Amas"/"Ama's" (possessive or plural from the transcriber) and one-letter slips on longer names.
                 if (w.StartsWith(key[i]) && w.Length - key[i].Length <= 1 && key[i].Length >= 3) continue;
                 if (key[i].Length >= 4 && Distance(w, key[i]) <= 1) continue;
+                if (key[i].Length >= 3 && w.Length >= 3 && !SoundsLikeNoName.Contains(w) && Sound(w) == Sound(key[i])) continue;
                 return false;
             }
             return true;
+        }
+
+        /// <summary>Everyday words that sound like a short name by <see cref="Sound"/> ("one" ~ "Ama"): never a call.</summary>
+        static readonly HashSet<string> SoundsLikeNoName = new HashSet<string> { "one", "any", "own", "ion", "aim", "anew", "anon" };
+
+        /// <summary>
+        /// A rough sound key for names: the first letter's kind (a vowel is a vowel), then the consonants in order, with m and n alike
+        /// (nasals swap most in transcription), similar consonants merged, h and doubled letters dropped, and a final r dropped
+        /// (non-rhotic "Amer" for "Ama"). Ama, Anna, Emma, Amma, Amer → "VM". Pure.
+        /// </summary>
+        public static string Sound(string word)
+        {
+            var sb = new StringBuilder();
+            var last = '\0';
+            for (var i = 0; i < word.Length; i++)
+            {
+                var c = word[i];
+                if ("aeiouy".IndexOf(c) >= 0) { if (i == 0) sb.Append('V'); last = '\0'; continue; }
+                if (c == 'h' || c == 'w') continue;
+                var k = c == 'n' || c == 'm' ? 'M' : c == 'b' || c == 'p' ? 'B' : c == 'd' || c == 't' ? 'D' : c == 'g' || c == 'k' || c == 'c' || c == 'q' ? 'K'
+                    : c == 's' || c == 'z' || c == 'x' ? 'S' : c == 'f' || c == 'v' ? 'F' : char.ToUpperInvariant(c);
+                if (k != last) sb.Append(k);
+                last = k;
+            }
+            if (sb.Length > 2 && sb[sb.Length - 1] == 'R') sb.Length--;
+            return sb.ToString();
         }
 
         /// <summary>Lower case, accents off, apostrophes dropped, split on anything that isn't a letter or digit. Pure.</summary>

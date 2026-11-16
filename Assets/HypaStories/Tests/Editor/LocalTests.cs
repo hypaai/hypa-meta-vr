@@ -299,9 +299,40 @@ namespace HypaStories.Tests
             Assert.IsFalse(WakeWord.Match("I like Ama", names, out _));
             Assert.IsFalse(WakeWord.Match("and then the fire went out", names, out _));
             Assert.IsFalse(WakeWord.Match("Amazing story", names, out _), "a longer word that starts with the name is not the name");
-            Assert.IsFalse(WakeWord.Match("Emma, hi", names, out _), "short names must match exactly");
+            Assert.IsFalse(WakeWord.Match("One more thing", names, out _), "everyday words that sound like the name");
+            Assert.IsFalse(WakeWord.Match("Any idea where Kiko is?", names, out _));
+            Assert.IsFalse(WakeWord.Match("Am I late?", names, out _));
+            Assert.IsFalse(WakeWord.Match("Anyone here?", names, out _));
+            Assert.IsFalse(WakeWord.Match("Hammer time", names, out _), "an h-word ending in other letters");
             Assert.IsFalse(WakeWord.Match("", names, out _));
             Assert.IsTrue(WakeWord.Match("Kofy, are you there?", new[] { "Kofi" }, out _), "longer names allow one letter off");
+        }
+
+        /// <summary>What Wit.ai's dictation actually returned for "Ama" phrases spoken by four voices (2026-11-16).</summary>
+        [TestCase("Anna tell me about Kiko", "tell me about Kiko")]
+        [TestCase("Hello Anna how are you", "how are you")]
+        [TestCase("Hey Anna what do you weave", "what do you weave")]
+        [TestCase("Amer. Tell me about Kiko", "Tell me about Kiko")]
+        [TestCase("Haluama how are you", "how are you")]
+        [TestCase("Hayama", "")]
+        [TestCase("Emma tell me about Kiko", "tell me about Kiko")]
+        [TestCase("Hello Emma how are you", "how are you")]
+        [TestCase("Hey Ama", "")]
+        [TestCase("Amma tell me about Kiko", "tell me about Kiko")]
+        [TestCase("Hey Emma", "")]
+        [TestCase("Hey Weaver what do you make", "what do you make")]
+        public void WakeWord_HearsAmaInWhatWitTranscribed(string heard, string question)
+        {
+            var p = Ama();
+            Assert.IsTrue(WakeWord.Match(heard, p.CalledBy(), out var rest), heard);
+            Assert.AreEqual(question, rest);
+        }
+
+        [Test] public void WakeWord_SoundKey_TreatsTheUsualMishearingsAlike()
+        {
+            foreach (var w in new[] { "ama", "anna", "emma", "amma", "amer" }) Assert.AreEqual("VM", WakeWord.Sound(w), w);
+            Assert.AreNotEqual(WakeWord.Sound("ama"), WakeWord.Sound("anyone"));
+            Assert.AreEqual(WakeWord.Sound("kofi"), WakeWord.Sound("kofy"));
         }
 
         [Test] public void WakeWord_OnlyAQuestionOfTwoWordsOrMore_IsAnsweredStraightAway()
@@ -315,7 +346,7 @@ namespace HypaStories.Tests
         {
             var p = Ama();
             p.WakeNames = new[] { "Auntie Ama", " " };
-            CollectionAssert.AreEqual(new[] { "Ama", "Auntie Ama" }, p.CalledBy().ToArray());
+            CollectionAssert.AreEqual(new[] { "Ama", "weaver", "Auntie Ama" }, p.CalledBy().ToArray());
         }
 
         sealed class FakeWake : IWakeListener

@@ -42,7 +42,7 @@ namespace HypaStories
         [TextArea(2, 4)] public string Greeting = "";
         [Tooltip("Three questions to pick when there's no microphone or key (also shown while listening).")]
         public string[] Suggested = new string[3];
-        [Tooltip("Other names they answer to when called (the wake word), e.g. \"Auntie Ama\". Their name always works.")]
+        [Tooltip("Other names they answer to when called (the wake word), e.g. \"Auntie Ama\". Their name and role always work.")]
         public string[] WakeNames = new string[0];
 
         [Header("Offline answers")]
@@ -63,10 +63,14 @@ namespace HypaStories
             return missing.Count == 0 ? null : $"{(string.IsNullOrWhiteSpace(DisplayName) ? name : DisplayName)} needs {string.Join(", ", missing)}.";
         }
 
-        /// <summary>The names that wake them: their name, then <see cref="WakeNames"/>. Pure.</summary>
+        /// <summary>
+        /// The names that wake them: their name, their role ("Hey weaver", which transcription always gets right, unlike unfamiliar
+        /// names), then <see cref="WakeNames"/>. Pure.
+        /// </summary>
         public IEnumerable<string> CalledBy()
         {
             if (!string.IsNullOrWhiteSpace(DisplayName)) yield return DisplayName;
+            if (!string.IsNullOrWhiteSpace(Role)) yield return Role;
             foreach (var n in WakeNames ?? new string[0]) if (!string.IsNullOrWhiteSpace(n)) yield return n;
         }
 

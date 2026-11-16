@@ -77,11 +77,14 @@ one after about 2 s while they think. They remember the last 4 exchanges of the 
   15% (the camp's wind and fire from the speakers otherwise reach the microphone and drown you out); the listening cue is
   ignored by the microphone for its first 0.35 s. The console says which microphone she uses. **In the editor on a Mac**, allow
   Unity in System Settings > Privacy & Security > Microphone.
-- **Wake word (Meta Voice SDK):** near a local, say their name: "Ama?" and she listens; "Hey Ama, what do you weave?" and she
-  answers straight away. The Voice SDK's dictation (`Runtime/Voice/VoiceSdkWakeListener.cs`, its own assembly) runs only while
-  you're within talking distance of an idle local, and stops before her microphone opens; when you only say the name, the question
-  still goes through Hypa `speech_to_text`. The name must be the first word (after "hey", "excuse me"...), with one letter of
-  slack for names of four letters or more; add other names in the persona's `WakeNames`. Dictation streams audio to Wit.ai, so it
+- **Wake word (Meta Voice SDK):** near a local, say their name: "Hey Ama." and she listens; "Hey Ama, what do you weave?" and she
+  answers straight away. Their role works too ("Hey weaver, ..."), and Wit always spells that right. The Voice SDK's dictation
+  (`Runtime/Voice/VoiceSdkWakeListener.cs`, its own assembly) starts the first time a local wants it, runs only while you're within
+  talking distance of an idle local, and stops before her microphone opens; when you only say the name, the question still goes
+  through Hypa `speech_to_text`. The name must be the first word (after "hey", "excuse me"...). Wit rarely spells an unfamiliar
+  name right ("Ama" came back as Anna, Emma, Amma, Amer, "Hayama"), so a word that sounds the same counts (`WakeWord.Sound`); add
+  other names in the persona's `WakeNames`. Tested in the editor, spoken aloud: all three ways worked, first audio 6.4–7.4 s in
+  English. Wit sometimes drops the end of the last word ("what do you we"); the brain still understood. Dictation streams audio to Wit.ai, so it
   needs a free Wit client token as `WIT_CLIENT_TOKEN` in `.env` (see `.env.example`; on Quest, the pushed `.env`). No token: the
   console says the wake word is off, and raise a hand / Talk work as before. Uncheck `WakeWordEnabled` on a `Local` to turn it off.
 - **Add a local to your place (3H, 3M):** add a `Local` to the character, give it a `LocalPersona` (Assets > Create > Hypa >
@@ -106,8 +109,7 @@ Done: real chat call documented, `Local`, `LocalPersona`, `ILocalBrain` (chat, s
 in-character prompt with visit memory, faster speech models, the test local, the wake word (Meta Voice SDK), EditMode tests
 (`LocalTests`, `ChatTests`).
 Not done: the 3 s target (see above); answers stream sentence by sentence only after the whole reply arrives (chat streaming
-saved ~0.4 s at best); canned offline answers are English; the wake word hasn't been tried with a live Wit token yet (its
-matching and on/off switching are unit tested).
+saved ~0.4 s at best); canned offline answers are English; the wake word is tested in the editor only, not yet on the Quest.
 
 ## What came across from the prototype
 
