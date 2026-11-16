@@ -7,15 +7,20 @@ namespace HypaStories.Tests
     {
         static void Run(HatRules r, float seconds) { for (var t = 0f; t < seconds; t += 0.05f) r.Tick(0.05f); }
 
-        /// <summary>Waits for friend <paramref name="i"/> to pause (at most a while).</summary>
-        static void UntilPausing(HatRules r, int i) { for (var k = 0; k < 400 && !r.Pausing(i); k++) r.Tick(0.05f); Assert.IsTrue(r.Pausing(i), $"friend {i} pauses"); }
+        /// <summary>Holds a colour on the listener until something happens (at most a few seconds).</summary>
+        static ShowResult HoldOn(HatRules r, bool red)
+        {
+            for (var k = 0; k < 100; k++) { var s = r.Face(red, 0.05f); r.Tick(0.05f); if (s != ShowResult.Nothing) return s; }
+            return ShowResult.Nothing;
+        }
 
         static void PlayRound(HatRules r)
         {
-            for (var i = 0; i < HatRules.Friends; i++)
+            for (var n = 0; n < HatRules.Friends; n++)
             {
-                UntilPausing(r, i);
-                Assert.AreEqual(ShowResult.Seen, r.Show(i, !HatRules.ShoutsRed(i)), $"friend {i}");
+                var i = r.Listener;
+                Assert.GreaterOrEqual(i, 0);
+                Assert.AreEqual(ShowResult.Seen, HoldOn(r, !HatRules.ShoutsRed(i)), $"friend {i}");
             }
         }
 
@@ -25,66 +30,66 @@ namespace HypaStories.Tests
             Assert.AreEqual(HatPhase.Intro, r.Phase);
             Run(r, HatRules.IntroTime + 0.1f);
             Assert.AreEqual(HatPhase.Round, r.Phase);
+            Assert.AreEqual(0, r.Listener, "the left friend listens first");
             PlayRound(r);
             Assert.AreEqual(1, r.Round);
-            Assert.AreEqual(HatPhase.Round, r.Phase);
+            Assert.AreEqual(1, r.Listener, "round two starts with the other friend");
             PlayRound(r);
             Assert.AreEqual(HatPhase.Swap, r.Phase, "Eshu's trick before the last round");
-            Assert.IsFalse(r.Swapped);
             Run(r, HatRules.SwapTime + 0.1f);
             Assert.IsTrue(r.Swapped);
-            Assert.AreEqual(2, r.Round);
             PlayRound(r);
             Assert.AreEqual(HatPhase.Cup, r.Phase);
             Assert.IsTrue(r.CupLanded());
+            Assert.AreEqual(HatPhase.Drink, r.Phase, "they come and drink before anything else");
+            Run(r, HatRules.DrinkTime + 0.1f);
             Assert.AreEqual(HatPhase.Offering, r.Phase);
             Assert.IsTrue(r.OfferingLeft());
             Assert.IsTrue(r.Over);
         }
 
-        [Test] public void OwnColour_OrWhileShouting_FeedsTheQuarrel_OtherSideWhilePausing_IsSeen()
+        [Test] public void Holding_Counts_AWobbleOnlyDrainsIt()
         {
             var r = new HatRules();
             Run(r, HatRules.IntroTime + 0.1f);
-            var q0 = r.Quarrel;
-            Assert.AreEqual(ShowResult.NotLooking, r.Show(0, false), "white to the red friend while he still shouts");
-            Assert.Greater(r.Quarrel, q0);
-            UntilPausing(r, 0);
-            var q1 = r.Quarrel;
-            Assert.AreEqual(ShowResult.Wrong, r.Show(0, true), "his own colour");
-            Assert.Greater(r.Quarrel, q1 + 0.2f);
-            Assert.IsFalse(r.Seen(0));
-            Assert.AreEqual(ShowResult.Seen, r.Show(0, false), "the other side, while he holds still");
+            Assert.AreEqual(ShowResult.Nothing, r.Face(false, HatRules.HoldTime * 0.6f, true), "white on the red friend: counting, even while you hold the hat");
+            Assert.AreEqual(ShowResult.Nothing, r.Face(null, 0.05f), "a wobble out of line");
+            Assert.Greater(r.Hold, 0.45f, "it only drains a little");
+            Assert.AreEqual(ShowResult.Seen, r.Face(false, HatRules.HoldTime * 0.5f), "back in line: done");
             Assert.IsTrue(r.Seen(0));
-            Assert.AreEqual(ShowResult.Ignored, r.Show(0, false), "once is enough");
         }
 
-        [Test] public void WindowsGetShorter_EachRound()
-        {
-            Assert.Greater(HatRules.Window[0], HatRules.Window[1]);
-            Assert.Greater(HatRules.Window[1], HatRules.Window[2]);
-            Assert.Greater(HatRules.Window[2], 1.5f, "still long enough to turn a hat");
-        }
-
-        [Test] public void AMissedPause_ComesAgain()
+        [Test] public void HisOwnColour_OnlyCounts_OnceYouLetGo_AndOnlyOnce()
         {
             var r = new HatRules();
             Run(r, HatRules.IntroTime + 0.1f);
-            UntilPausing(r, 0);
-            Run(r, HatRules.Window[0] + 0.1f);
-            Assert.IsFalse(r.Pausing(0), "the window closed");
-            UntilPausing(r, 0);
+            var q = r.Quarrel;
+            Assert.AreEqual(ShowResult.Nothing, r.Face(true, 3f, true), "red swings past the red friend while you turn it: no harm");
+            Assert.Less(r.Quarrel - q, 0.01f);
+            Assert.AreEqual(ShowResult.Wrong, HoldOn(r, true), "left on him");
+            Assert.Greater(r.Quarrel, q + 0.2f);
+            q = r.Quarrel;
+            Assert.AreEqual(ShowResult.Nothing, HoldOn(r, true), "it doesn't shout again and again");
+            Assert.Less(r.Quarrel - q, 0.1f);
+            Assert.AreEqual(ShowResult.Seen, HoldOn(r, false), "turned round: he sees");
+        }
+
+        [Test] public void NoTimer_TheListenerWaits_ButTheQuarrelSimmers()
+        {
+            var r = new HatRules();
+            Run(r, HatRules.IntroTime + 20f);
+            Assert.AreEqual(0, r.Listener, "still listening after 20 s");
+            Assert.Greater(r.Quarrel, 0.2f);
+            Assert.AreEqual(HatPhase.Round, r.Phase, "long before a fight");
+            Assert.Greater(HatRules.Simmer[2], HatRules.Simmer[0], "later rounds are hotter");
         }
 
         [Test] public void TheQuarrelBoilsOver_TheyFight_TheRoundStartsAgain_NoLives()
         {
             var r = new HatRules();
             Run(r, HatRules.IntroTime + 0.1f);
-            UntilPausing(r, 0);
-            r.Show(0, false);
-            Assert.IsTrue(r.Seen(0));
-            // keep showing the white-shouting friend his own colour whenever he pauses
-            for (var k = 0; k < 4000 && r.Phase == HatPhase.Round; k++) { if (r.Pausing(1)) r.Show(1, false); r.Tick(0.05f); }
+            Assert.AreEqual(ShowResult.Seen, HoldOn(r, false));
+            for (var k = 0; k < 10 && r.Phase == HatPhase.Round; k++) { HoldOn(r, HatRules.ShoutsRed(r.Listener)); r.Face(null, 0.05f); } // keep showing the right friend his own colour
             Assert.AreEqual(HatPhase.Fight, r.Phase);
             Assert.AreEqual(1, r.Fights);
             Run(r, HatRules.FightTime + 0.1f);
@@ -93,15 +98,15 @@ namespace HypaStories.Tests
             Assert.IsFalse(r.Seen(0), "they both have to see again");
             Assert.Less(r.Quarrel, 0.5f);
         }
-    
+
         [Test] public void Hat_WhichSideFacesWhom()
         {
             var right = UnityEngine.Vector3.right;
             Assert.IsTrue(HatGame.RedFaces(90f, right), "red turned to the right friend");
             Assert.IsFalse(HatGame.RedFaces(-90f, right), "white turned to him");
-            Assert.IsFalse(HatGame.RedFaces(180f, right) && HatGame.OffSquare(180f, right) < 45f, "side-on: neither faces him squarely");
             Assert.AreEqual(20f, HatGame.OffSquare(110f, right), 1e-3f);
             Assert.AreEqual(20f, HatGame.OffSquare(-70f, right), 1e-3f, "white, 20 degrees off");
+            Assert.AreEqual(90f, HatGame.OffSquare(180f, right), 1e-3f, "side-on");
         }
-}
+    }
 }
