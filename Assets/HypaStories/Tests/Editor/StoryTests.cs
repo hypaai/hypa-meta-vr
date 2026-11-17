@@ -114,9 +114,10 @@ namespace HypaStories.Tests
             Assert.IsEmpty(heard, "never twice for the same moment");
         }
 
-        [Test] public void Eshu_IsTheThirdCard_HisLightTurnsWithTheHat_AndHeLaughsLast()
+        [Test] public void Eshu_IsTheSecondCard_HisLightTurnsWithTheHat_AndHeLaughsLast()
         {
-            Assert.AreEqual("eshu-crossroads", StoryLibrary.All[2].Id);
+            Assert.AreEqual("eshu-crossroads", StoryLibrary.All[1].Id);
+            Assert.AreEqual("marlow-street", StoryLibrary.All[2].Id);
             var tl = StoryLibrary.Find("eshu-crossroads").Timeline;
             var d = new StoryDirector(tl);
             Assert.AreEqual(0f, d.Sample(Line(tl, "road").Until).Spirit, 1e-4f, "no god's light before Eshu");
