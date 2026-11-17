@@ -32,6 +32,14 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 
 ## Places (ticket 3F): camp, hut, gathering
 
+### Stories beside the elder
+
+Walk close to the elder inside the village, or use **Meet the locals** at the gate. Within 2.2 metres, the same place-button row appears with **Narrate story** as its main action. It opens the existing floating story list with **The Death of the Rice Farmer** and **The Girl Who Chose Hare** only. The fireside continues to offer its original three stories.
+
+The list, language controls, narration, Ask, replay, and Try Hypa Translate are shared with the fireside. Opening or backing out of the elder's list does not recenter the world. Normal completion leaves the player panel and its existing ending options in place; Back returns to the two-story list. The elder is unchanged, and narration uses the existing voice source. Enter/Space near the elder opens the same list in the editor. Proximity rows hide while a list or story is open.
+
+Both new stories include English plus French, Spanish, Hausa, Igbo, Pidgin, Swahili, and Yoruba scripts, suggested questions, and three practice words per language. See [story sources and attribution](Resources/Stories/SOURCES.md) for the source accounts and adaptation notes.
+
 `Places.GoTo("camp" | "hut" | "gathering")` (`Runtime/Core/Places.cs`) fades through the warm veil, switches place and fades back.
 Each place is its own scene: `HypaStory` (the camp), `HypaStoryHut`, `HypaStoryGathering`.
 

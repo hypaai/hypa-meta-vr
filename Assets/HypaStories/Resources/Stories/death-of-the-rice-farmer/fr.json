@@ -1,0 +1,30 @@
+{
+  "words": [
+    "riz",
+    "oiseaux",
+    "cultivateur"
+  ],
+  "field": "Un cultivateur de riz travaillait dur dans son champ, espérant une bonne récolte.",
+  "birds": "Mais des oiseaux venaient sans cesse manger le riz qu'il avait cultivé.",
+  "guard": "Il surveillait le champ, mais les oiseaux revenaient dès qu'ils le pouvaient.",
+  "plan": "Le cultivateur décida d'employer une ruse au lieu de les chasser encore.",
+  "animal": "Il tua un animal et posa ses entrailles sur son propre ventre.",
+  "still": "Puis il s'allongea dans le champ et fit semblant d'être mort.",
+  "watch": "Les oiseaux observèrent la silhouette immobile parmi le riz.",
+  "quiet": "Le cultivateur attendit sans bouger.",
+  "closer": "Le croyant mort, les oiseaux s'approchèrent.",
+  "caught": "Quand ils furent à sa portée, il bondit et les attrapa.",
+  "safe": "Dès lors, son champ de riz fut à l'abri de ces oiseaux.",
+  "title": "Le titre parle de la mort du cultivateur, mais il n'avait fait que semblant.",
+  "lesson": "La leçon est qu'une réflexion attentive peut résoudre ce que la poursuite seule ne résout pas.",
+  "end": "Voilà comment le cultivateur protégea la récolte pour laquelle il avait travaillé.",
+  "field.ask": [
+    "Que cultive le cultivateur ?"
+  ],
+  "still.ask": [
+    "Pourquoi fait-il semblant d'être mort ?"
+  ],
+  "caught.ask": [
+    "Comment protège-t-il son champ ?"
+  ]
+}

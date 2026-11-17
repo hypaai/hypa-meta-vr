@@ -1,0 +1,32 @@
+{
+  "words": [
+    "ọhịa",
+    "nkwa",
+    "obiọma"
+  ],
+  "wood": "Otu nwa agbọghọ so ndị enyi ya banye n'ọhịa ịchịkọta nkụ.",
+  "tree": "Ọ rịgoro osisi, zọchapụ ụkwụ, aka ya wee rapara n'ime osisi ahụ.",
+  "left": "Ndị enyi ya nwere anyaụfụ n'ihi nka ya n'ịchọta nkụ. Ha hapụrụ ya, wee sị na ha ahụghị ya.",
+  "song": "Naanị ya n'ọhịa, nwa agbọghọ ahụ na-abụ abụ mgbe ọ bụla ọ nụrụ ụda.",
+  "hunter": "Otu dinta nụrụ abụ ya. Mgbe e mesịrị, ọ kpọghachiri abụ ahụ n'obodo, ezinụlọ ya wee mata olu ya.",
+  "rescue": "Ndị obodo buuru ngwa ọrụ gaa n'ọhịa wee tọhapụ nwa agbọghọ ahụ n'osisi.",
+  "wound": "Ma aka ya nke rapaara n'osisi emerụala ahụ nke ukwuu.",
+  "promise": "Nne ya kwere nkwa na onye ọ bụla gwọrọ nwa ya ga-enwe ike ịlụ ya.",
+  "animals": "Enwe, Agụ, Ọdụm na ndị ọzọ nwara, ma ọ dịghị onye nwere ike ịgwọ ọnya ahụ.",
+  "hare": "N'ikpeazụ, ha kwere ka Oke Oyibo nwaa. O jiri ọgwụ ndị sitere n'ala gbara ha gburugburu.",
+  "healed": "Oke Oyibo mere nke ọma, nwa agbọghọ ahụ wee gbakee.",
+  "suitors": "Mgbe ndị chọrọ ịlụ ya bịara, ọ jụrụ ọbụna ndị nwere akụ na ọkwá dị elu.",
+  "choice": "Ọ họọrọ Oke Oyibo, onye nyeere ya aka mgbe ndị ọzọ na-enweghị ike ime ya.",
+  "gratitude": "O chetara obiọma ya wee mezuo nkwa nne ya kwere.",
+  "lesson": "Ihe mmụta ya bụ iji enyemaka, ntụkwasị obi na eziokwu kpọrọ ihe karịa akụ ma ọ bụ ọkwá.",
+  "end": "Nke a bụ akụkọ nwa agbọghọ họọrọ Oke Oyibo.",
+  "wood.ask": [
+    "Gịnị mere nwa agbọghọ ahụ ji gaa n'ọhịa?"
+  ],
+  "rescue.ask": [
+    "Olee otú ezinụlọ ya si chọta ya?"
+  ],
+  "choice.ask": [
+    "Gịnị mere o ji họrọ Oke Oyibo?"
+  ]
+}

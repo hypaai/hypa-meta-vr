@@ -1,0 +1,32 @@
+{
+  "words": [
+    "bosque",
+    "promesa",
+    "bondad"
+  ],
+  "wood": "Una muchacha fue al bosque con sus compañeras para recoger leña.",
+  "tree": "Subió a un árbol, resbaló y se le quedó la mano atrapada en la madera.",
+  "left": "Sus compañeras envidiaban su habilidad para encontrar leña. La abandonaron y negaron haberla visto.",
+  "song": "Sola en el bosque, la muchacha cantaba cada vez que oía un ruido.",
+  "hunter": "Un cazador oyó su canto. Más tarde lo llevó al pueblo, donde su familia reconoció su voz.",
+  "rescue": "Los habitantes llevaron herramientas al bosque y liberaron a la muchacha del árbol.",
+  "wound": "Pero la mano atrapada había quedado gravemente herida.",
+  "promise": "Su madre prometió que quien curara a su hija podría casarse con ella.",
+  "animals": "Mono, Pantera, León y otros lo intentaron, pero ninguno pudo curar la herida.",
+  "hare": "Al fin dejaron que Liebre lo intentara. Usó remedios de las tierras cercanas.",
+  "healed": "Liebre lo consiguió, y la muchacha se recuperó.",
+  "suitors": "Cuando llegaron pretendientes, rechazó incluso a los ricos y nobles.",
+  "choice": "Eligió a Liebre, que la había ayudado cuando los demás no pudieron.",
+  "gratitude": "Recordó su bondad y cumplió la promesa que había hecho su madre.",
+  "lesson": "La lección es valorar la ayuda, la lealtad y la honradez por encima de la riqueza o el rango.",
+  "end": "Esta es la historia de la muchacha que eligió a Liebre.",
+  "wood.ask": [
+    "¿Por qué va la muchacha al bosque?"
+  ],
+  "rescue.ask": [
+    "¿Cómo la encuentra su familia?"
+  ],
+  "choice.ask": [
+    "¿Por qué elige a Liebre?"
+  ]
+}

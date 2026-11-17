@@ -31,6 +31,7 @@ namespace HypaStories
         public readonly KitGroup Chrome;
         public readonly FollowView Follow;
         readonly List<Card> _cards = new List<Card>();
+        readonly List<Card> _catalog = new List<Card>();
         readonly List<KitPanel> _dots = new List<KitPanel>();
         readonly List<(StoryLanguage lang, KitButton btn)> _chips = new List<(StoryLanguage, KitButton)>();
         readonly Action<int> _begin;
@@ -44,6 +45,7 @@ namespace HypaStories
 
         public int Index => Mathf.RoundToInt(_target);
         public int Count => _cards.Count;
+        public StoryInfo StoryAt(int index) => _cards[index].Story;
 
         public StoryListView(Transform uiRoot, StoryAssets a, Action<int> begin, Action back, Action toggleSound, Action<StoryLanguage> pickLanguage)
         {
@@ -69,10 +71,13 @@ namespace HypaStories
                 c.Art.sortingOrder = 10;
                 c.Hit = art.AddComponent<BoxCollider>();
                 ((BoxCollider)c.Hit).size = new Vector3(CardW, CardH, 0.02f);
-                var index = i;
                 var pt = art.AddComponent<PinchTarget>();
                 pt.OnHover = on => c.HoverTarget = on ? 1f : 0f;
-                pt.OnPinch = k => { if (k == PinchKind.Short) { if (Index == index) Begin(index); else Focus(index); } };
+                pt.OnPinch = k =>
+                {
+                    var index = _cards.IndexOf(c);
+                    if (k == PinchKind.Short && index >= 0) { if (Index == index) Begin(index); else Focus(index); }
+                };
 
                 var text = new GameObject("Text").transform;
                 text.SetParent(c.Root, false);
@@ -84,10 +89,10 @@ namespace HypaStories
                     TextAlignmentOptions.BottomLeft, KitFont.Serif).lineSpacing = -18f;
                 Kit.Text(text, st.Desc, 0.0165f, new Vector3(x0 + w / 2f, -0.18f, 0f), new Vector2(w, 0.08f), new Color(0.92f, 0.89f, 0.84f, 0.92f),
                     TextAlignmentOptions.TopLeft);
-                Kit.Button(text, new Vector3(0f, -0.268f, -0.002f), new Vector2(0.21f, 0.056f), "Begin story", "play", KitStyle.Primary, () => Begin(index));
+                Kit.Button(text, new Vector3(0f, -0.268f, -0.002f), new Vector2(0.21f, 0.056f), "Begin story", "play", KitStyle.Primary, () => Begin(_cards.IndexOf(c)));
                 c.Text = text.gameObject.AddComponent<KitGroup>();
                 c.Text.Refresh();
-                _cards.Add(c);
+                _catalog.Add(c);
             }
 
             // under the row: pager, language, way back and sound
@@ -97,10 +102,10 @@ namespace HypaStories
             _chrome.localScale = Vector3.one * 1.15f;
             Kit.Button(_chrome, new Vector3(-0.11f, 0f, 0f), new Vector2(0.05f, 0.05f), null, "chevron-left", KitStyle.Ghost, () => Focus(Index - 1));
             Kit.Button(_chrome, new Vector3(0.11f, 0f, 0f), new Vector2(0.05f, 0.05f), null, "chevron-right", KitStyle.Ghost, () => Focus(Index + 1));
-            for (var i = 0; i < _cards.Count; i++)
+            for (var i = 0; i < _catalog.Count; i++)
             {
                 var index = i;
-                var dot = Kit.Panel(_chrome, "Dot", new Vector3((i - (_cards.Count - 1) / 2f) * 0.028f, 0f, 0f), new Vector2(0.012f, 0.012f), 0.006f,
+                var dot = Kit.Panel(_chrome, "Dot", Vector3.zero, new Vector2(0.012f, 0.012f), 0.006f,
                     KitTheme.Dim, KitTheme.Dim, KitTheme.Clear, 12, 0f);
                 var col = dot.gameObject.AddComponent<BoxCollider>();
                 col.size = new Vector3(0.6f, 0.6f, 0.5f); // in the dot's (padded) scale: about 2.5 cm
@@ -129,6 +134,36 @@ namespace HypaStories
             PaintLanguage(StoryLanguages.Current);
             Chrome = _chrome.gameObject.AddComponent<KitGroup>();
             Chrome.Refresh();
+            SetStories(StoryLibrary.Campfire);
+        }
+
+        /// <summary>Reuse the same cards and controls for a place's stories. Hidden cards and dots cannot receive pinches.</summary>
+        public void SetStories(IReadOnlyList<StoryInfo> stories)
+        {
+            if (stories == null || stories.Count == 0) throw new ArgumentException("A story list must not be empty.", nameof(stories));
+            var selected = new List<Card>();
+            foreach (var story in stories)
+            {
+                var card = _catalog.Find(c => c.Story == story);
+                if (card == null || selected.Contains(card)) throw new ArgumentException("Stories must be distinct catalog entries.", nameof(stories));
+                selected.Add(card);
+            }
+            foreach (var card in _catalog)
+            {
+                card.Root.gameObject.SetActive(false);
+                card.Hover = card.HoverTarget = card.Press = card.Reveal = card.TiltX = card.TiltY = 0f;
+                card.Pointer = card.PointerTarget = new Vector2(0.5f, 0.35f);
+                card.Text.Set(0f);
+            }
+            _cards.Clear();
+            _cards.AddRange(selected);
+            foreach (var card in _cards) card.Root.gameObject.SetActive(true);
+            for (var i = 0; i < _dots.Count; i++)
+            {
+                _dots[i].gameObject.SetActive(i < Count);
+                _dots[i].transform.localPosition = new Vector3((i - (Count - 1) / 2f) * 0.028f, 0f, 0f);
+            }
+            _pos = _target = 0f;
             Layout(0f, true);
         }
 
@@ -144,6 +179,7 @@ namespace HypaStories
 
         public void Begin(int i)
         {
+            if (i < 0 || i >= Count) return;
             if (i != Index) { Focus(i); return; }
             _cards[i].Press = 1f;
             _begin(i);
@@ -210,6 +246,7 @@ namespace HypaStories
             }
             for (var i = 0; i < _dots.Count; i++)
             {
+                if (i >= Count) continue;
                 var on = Mathf.Abs(i - _pos) < 0.5f;
                 _dots[i].Top = _dots[i].Bottom = on ? KitTheme.Ember : KitTheme.Faint;
                 _dots[i].Resize(on ? new Vector2(0.026f, 0.012f) : new Vector2(0.012f, 0.012f));

@@ -1,0 +1,32 @@
+{
+  "words": [
+    "daji",
+    "alkawari",
+    "alheri"
+  ],
+  "wood": "Wata yarinya ta tafi da ƙawayenta cikin daji domin tara itacen girki.",
+  "tree": "Ta hau bishiya, ta zame, hannunta ya maƙale a jikin itacen.",
+  "left": "Ƙawayenta suna kishin ƙwarewarta wajen neman itace. Sun bar ta a can, suka musanta ganin ta.",
+  "song": "Ita kaɗai a cikin daji, yarinyar tana waƙa duk lokacin da ta ji wani sauti.",
+  "hunter": "Wani mafarauci ya ji waƙarta. Daga baya ya kawo ta ƙauyen, inda iyalinta suka gane muryarta.",
+  "rescue": "Mutanen ƙauyen suka ɗauki kayan aiki zuwa daji, suka kuɓutar da yarinyar daga bishiyar.",
+  "wound": "Amma hannunta da ya maƙale ya yi mugun rauni.",
+  "promise": "Mahaifiyarta ta yi alkawarin cewa duk wanda ya warkar da ɗiyarta zai iya aurenta.",
+  "animals": "Biri, Damisa, Zaki da wasu suka gwada, amma babu wanda ya iya warkar da raunin.",
+  "hare": "A ƙarshe aka bar Zomo ya gwada. Ya yi amfani da magunguna daga ƙasar da ke kewaye da su.",
+  "healed": "Zomo ya yi nasara, yarinyar kuma ta warke.",
+  "suitors": "Da masu neman aure suka zo, ta ƙi har masu dukiya da daraja.",
+  "choice": "Ta zaɓi Zomo, wanda ya taimake ta lokacin da sauran suka kasa.",
+  "gratitude": "Ta tuna alherinsa, ta cika alkawarin da mahaifiyarta ta yi.",
+  "lesson": "Darasin shi ne a daraja taimako, aminci da gaskiya fiye da dukiya ko matsayi.",
+  "end": "Wannan shi ne labarin yarinyar da ta zaɓi Zomo.",
+  "wood.ask": [
+    "Me ya sa yarinyar ta shiga daji?"
+  ],
+  "rescue.ask": [
+    "Ta yaya iyalinta suka same ta?"
+  ],
+  "choice.ask": [
+    "Me ya sa ta zaɓi Zomo?"
+  ]
+}

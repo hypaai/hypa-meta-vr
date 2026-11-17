@@ -1,0 +1,30 @@
+{
+  "words": [
+    "arroz",
+    "pájaros",
+    "agricultor"
+  ],
+  "field": "Un agricultor de arroz trabajaba mucho en su campo, esperando una buena cosecha.",
+  "birds": "Pero los pájaros volvían una y otra vez para comerse el arroz que había cultivado.",
+  "guard": "Vigilaba el campo, pero los pájaros regresaban en cuanto podían.",
+  "plan": "El agricultor decidió usar un truco en vez de perseguirlos otra vez.",
+  "animal": "Mató un animal y se puso sus entrañas sobre el vientre.",
+  "still": "Después se acostó en el campo y fingió estar muerto.",
+  "watch": "Los pájaros observaron la figura inmóvil entre el arroz.",
+  "quiet": "El agricultor esperó sin moverse.",
+  "closer": "Creyendo que estaba muerto, los pájaros se acercaron.",
+  "caught": "Cuando estuvieron a su alcance, se levantó de un salto y los atrapó.",
+  "safe": "Desde entonces, aquellos pájaros dejaron su campo de arroz a salvo.",
+  "title": "El título habla de la muerte del agricultor, pero él solo había fingido.",
+  "lesson": "La lección es que pensar con cuidado puede resolver lo que perseguir sin más no consigue.",
+  "end": "Así protegió el agricultor la cosecha por la que había trabajado.",
+  "field.ask": [
+    "¿Qué cultiva el agricultor?"
+  ],
+  "still.ask": [
+    "¿Por qué finge estar muerto?"
+  ],
+  "caught.ask": [
+    "¿Cómo protege su campo?"
+  ]
+}

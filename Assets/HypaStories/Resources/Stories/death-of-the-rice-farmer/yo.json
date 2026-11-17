@@ -1,0 +1,30 @@
+{
+  "words": [
+    "ìrẹsì",
+    "ẹyẹ",
+    "àgbẹ̀"
+  ],
+  "field": "Àgbẹ̀ ìrẹsì kan ṣiṣẹ́ takuntakun nínú oko rẹ̀, ó ń retí ìkórè tó dára.",
+  "birds": "Ṣùgbọ́n àwọn ẹyẹ ń padà wá láti jẹ ìrẹsì tó gbìn.",
+  "guard": "Ó ń ṣọ́ oko náà, síbẹ̀ àwọn ẹyẹ ń padà nígbàkigbà tí wọ́n bá rí àǹfààní.",
+  "plan": "Àgbẹ̀ náà pinnu láti lo ọgbọ́n dípò kí ó tún lé wọn.",
+  "animal": "Ó pa ẹranko kan, ó sì gbé ìfun rẹ̀ lé ikùn ara rẹ̀.",
+  "still": "Lẹ́yìn náà, ó dùbúlẹ̀ nínú oko, ó sì ṣe bí ẹni pé ó ti kú.",
+  "watch": "Àwọn ẹyẹ wo ẹni tí kò rìn nínú ìrẹsì náà.",
+  "quiet": "Àgbẹ̀ náà dúró láìṣe ìṣípò kankan.",
+  "closer": "Nítorí wọ́n gbà pé ó ti kú, àwọn ẹyẹ sún mọ́ ọn.",
+  "caught": "Nígbà tí wọ́n dé ibi tí ọwọ́ rẹ̀ lè kàn wọ́n, ó fò dìde, ó sì mú wọn.",
+  "safe": "Láti ìgbà náà, oko ìrẹsì rẹ̀ wà láìléwu lọ́wọ́ àwọn ẹyẹ yẹn.",
+  "title": "Àkọlé ìtàn náà sọ nípa ikú àgbẹ̀, ṣùgbọ́n ó kàn ṣe bí ẹni pé ó kú ni.",
+  "lesson": "Ẹ̀kọ́ náà ni pé ìrònú jinlẹ̀ lè yanjú ìṣòro tí lílé nìkan kò lè yanjú.",
+  "end": "Bẹ́ẹ̀ ni àgbẹ̀ ìrẹsì náà ṣe dáàbò bo ìkórè tó ṣiṣẹ́ fún.",
+  "field.ask": [
+    "Kí ni àgbẹ̀ náà ń gbìn?"
+  ],
+  "still.ask": [
+    "Kí ló dé tí àgbẹ̀ náà ṣe bí ẹni pé ó kú?"
+  ],
+  "caught.ask": [
+    "Báwo ni àgbẹ̀ náà ṣe dáàbò bo oko rẹ̀?"
+  ]
+}

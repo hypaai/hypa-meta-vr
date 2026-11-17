@@ -1,0 +1,32 @@
+{
+  "words": [
+    "forêt",
+    "promesse",
+    "bonté"
+  ],
+  "wood": "Une jeune fille alla dans la forêt avec ses compagnes pour ramasser du bois de chauffage.",
+  "tree": "Elle grimpa à un arbre, glissa et se coinça la main dans le bois.",
+  "left": "Ses compagnes étaient jalouses de son talent pour trouver du bois. Elles l'abandonnèrent et nièrent l'avoir vue.",
+  "song": "Seule dans la forêt, la jeune fille chantait chaque fois qu'elle entendait un bruit.",
+  "hunter": "Un chasseur entendit son chant. Plus tard, il le rapporta au village, où sa famille reconnut sa voix.",
+  "rescue": "Les habitants prirent des outils, allèrent dans la forêt et libérèrent la jeune fille de l'arbre.",
+  "wound": "Mais sa main coincée était gravement blessée.",
+  "promise": "Sa mère promit que celui qui guérirait sa fille pourrait l'épouser.",
+  "animals": "Singe, Panthère, Lion et d'autres essayèrent, mais aucun ne put guérir la blessure.",
+  "hare": "Enfin, on laissa Lièvre essayer. Il utilisa des remèdes provenant des environs.",
+  "healed": "Lièvre réussit, et la jeune fille guérit.",
+  "suitors": "Lorsque des prétendants vinrent, elle refusa même les plus riches et les plus nobles.",
+  "choice": "Elle choisit Lièvre, qui l'avait aidée quand les autres n'y parvenaient pas.",
+  "gratitude": "Elle se souvint de sa bonté et respecta la promesse de sa mère.",
+  "lesson": "La leçon est de préférer l'entraide, la fidélité et l'honnêteté à la richesse ou au rang.",
+  "end": "Voilà l'histoire de la jeune fille qui choisit Lièvre.",
+  "wood.ask": [
+    "Pourquoi va-t-elle dans la forêt ?"
+  ],
+  "rescue.ask": [
+    "Comment sa famille la retrouve-t-elle ?"
+  ],
+  "choice.ask": [
+    "Pourquoi choisit-elle Lièvre ?"
+  ]
+}

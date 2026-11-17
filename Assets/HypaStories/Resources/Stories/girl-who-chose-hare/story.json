@@ -1,0 +1,93 @@
+{
+  "theme": 0,
+  "accent": "#E8B15A",
+  "eyebrow": "Medumba, Cameroon folk tale",
+  "title": "The Girl Who\nChose Hare",
+  "description": "Abandoned in the forest and rescued with a wounded hand, a girl remembers who helped her when others could not.",
+  "words": [
+    "forest",
+    "promise",
+    "kindness"
+  ],
+  "voices": [],
+  "source": {
+    "url": "https://doi.org/10.4314/jcas.v21i3.4",
+    "tradition": "Medumba, Cameroon",
+    "adaptation": "Original Hypa retelling of the documented folktale; see SOURCES.md."
+  },
+  "lines": [
+    {
+      "id": "wood",
+      "text": "A girl went into the forest with her companions to gather firewood.",
+      "ask": [
+        "Why does the girl go into the forest?"
+      ]
+    },
+    {
+      "id": "tree",
+      "text": "She climbed a tree, slipped, and trapped her hand in the wood."
+    },
+    {
+      "id": "left",
+      "text": "Her companions were jealous of her skill at finding wood. They left her behind and denied seeing her."
+    },
+    {
+      "id": "song",
+      "text": "Alone in the forest, the girl sang whenever she heard a sound."
+    },
+    {
+      "id": "hunter",
+      "text": "A hunter heard her song. Later he brought it back to the village, where her family recognized her voice."
+    },
+    {
+      "id": "rescue",
+      "text": "People took tools into the forest and freed the girl from the tree.",
+      "ask": [
+        "How does her family find her?"
+      ]
+    },
+    {
+      "id": "wound",
+      "text": "But her trapped hand had become badly wounded."
+    },
+    {
+      "id": "promise",
+      "text": "Her mother promised that whoever healed her daughter could marry her."
+    },
+    {
+      "id": "animals",
+      "text": "Monkey, Panther, Lion, and others tried, but none could heal the wound."
+    },
+    {
+      "id": "hare",
+      "text": "At last Hare was allowed to try. He used remedies from the land around them."
+    },
+    {
+      "id": "healed",
+      "text": "Hare succeeded, and the girl recovered."
+    },
+    {
+      "id": "suitors",
+      "text": "When suitors came, she refused even those with wealth and noble standing."
+    },
+    {
+      "id": "choice",
+      "text": "She chose Hare, who had helped her when others could not.",
+      "ask": [
+        "Why does she choose Hare?"
+      ]
+    },
+    {
+      "id": "gratitude",
+      "text": "She remembered his kindness and honoured the promise her mother had made."
+    },
+    {
+      "id": "lesson",
+      "text": "The lesson is to value help, loyalty, and honesty above riches or rank."
+    },
+    {
+      "id": "end",
+      "text": "That is the story of the girl who chose Hare."
+    }
+  ]
+}

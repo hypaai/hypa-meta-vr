@@ -1,0 +1,32 @@
+{
+  "words": [
+    "igbó",
+    "ìlérí",
+    "inú rere"
+  ],
+  "wood": "Ọmọbìnrin kan lọ sínú igbó pẹ̀lú àwọn ẹlẹgbẹ́ rẹ̀ láti kó igi ìdáná.",
+  "tree": "Ó gun igi, ó yọ̀, ọwọ́ rẹ̀ sì há sínú igi náà.",
+  "left": "Àwọn ẹlẹgbẹ́ rẹ̀ ń jowú bí ó ṣe mọ igi kó. Wọ́n fi í sílẹ̀ níbẹ̀, wọ́n sì sẹ́ pé àwọn rí i.",
+  "song": "Nígbà tí ó dá wà nínú igbó, ọmọbìnrin náà ń kọrin nígbàkigbà tí ó bá gbọ́ ohùn kan.",
+  "hunter": "Ọdẹ kan gbọ́ orin rẹ̀. Lẹ́yìn náà, ó mú orin náà padà sí abúlé, níbi tí ìdílé rẹ̀ ti dá ohùn rẹ̀ mọ̀.",
+  "rescue": "Àwọn ará abúlé mú irinṣẹ́ lọ sínú igbó, wọ́n sì yọ ọmọbìnrin náà kúrò nínú igi.",
+  "wound": "Ṣùgbọ́n ọwọ́ tó há náà ti ní ọgbẹ́ tó burú.",
+  "promise": "Ìyá rẹ̀ ṣèlérí pé ẹnikẹ́ni tó bá wo ọmọ rẹ̀ sàn lè fẹ́ ẹ.",
+  "animals": "Ọ̀bọ, Ẹkùn, Kìnnìún àti àwọn mìíràn gbìyànjú, ṣùgbọ́n kò sí ẹni tó lè wo ọgbẹ́ náà sàn.",
+  "hare": "Ní ìkẹyìn, wọ́n jẹ́ kí Ehoro gbìyànjú. Ó lo oògùn láti inú àyíká wọn.",
+  "healed": "Ehoro ṣàṣeyọrí, ọmọbìnrin náà sì sàn.",
+  "suitors": "Nígbà tí àwọn olùfẹ́ rẹ̀ wá, ó kọ̀ fún àwọn ọlọ́rọ̀ àti àwọn ẹni gíga pàápàá.",
+  "choice": "Ó yan Ehoro, tó ràn án lọ́wọ́ nígbà tí àwọn mìíràn kò lè ṣe é.",
+  "gratitude": "Ó rántí inú rere rẹ̀, ó sì mú ìlérí tí ìyá rẹ̀ ṣe ṣẹ.",
+  "lesson": "Ẹ̀kọ́ náà ni láti fi ìrànlọ́wọ́, ìṣòtítọ́ àti òtítọ́ ṣáájú ọrọ̀ tàbí ipò.",
+  "end": "Èyí ni ìtàn ọmọbìnrin tó yan Ehoro.",
+  "wood.ask": [
+    "Kí ló dé tí ọmọbìnrin náà fi lọ sínú igbó?"
+  ],
+  "rescue.ask": [
+    "Báwo ni ìdílé rẹ̀ ṣe rí i?"
+  ],
+  "choice.ask": [
+    "Kí ló dé tó fi yan Ehoro?"
+  ]
+}

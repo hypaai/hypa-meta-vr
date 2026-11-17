@@ -1,0 +1,32 @@
+{
+  "words": [
+    "msitu",
+    "ahadi",
+    "wema"
+  ],
+  "wood": "Msichana mmoja alienda msituni na wenzake kukusanya kuni.",
+  "tree": "Alipanda mti, akateleza, na mkono wake ukakwama ndani ya mti.",
+  "left": "Wenzake walionea wivu ustadi wake wa kupata kuni. Walimwacha huko na kukana kumwona.",
+  "song": "Akiwa peke yake msituni, msichana aliimba kila aliposikia sauti.",
+  "hunter": "Mwindaji alisikia wimbo wake. Baadaye aliupeleka kijijini, ambako familia yake ilitambua sauti yake.",
+  "rescue": "Wanakijiji walipeleka vifaa msituni na kumwokoa msichana kutoka kwenye mti.",
+  "wound": "Lakini mkono uliokwama ulikuwa umejeruhiwa vibaya.",
+  "promise": "Mama yake aliahidi kwamba yeyote atakayemponya binti yake angeweza kumwoa.",
+  "animals": "Tumbili, Chui, Simba na wengine walijaribu, lakini hakuna aliyeweza kuponya jeraha.",
+  "hare": "Hatimaye Sungura aliruhusiwa kujaribu. Alitumia dawa kutoka katika mazingira yao.",
+  "healed": "Sungura alifaulu, na msichana akapona.",
+  "suitors": "Wachumba walipokuja, aliwakataa hata matajiri na wenye hadhi kubwa.",
+  "choice": "Alimchagua Sungura, aliyemsaidia wakati wengine hawakuweza.",
+  "gratitude": "Alikumbuka wema wake na akatimiza ahadi ambayo mama yake alikuwa ameitoa.",
+  "lesson": "Funzo ni kuthamini msaada, uaminifu na ukweli kuliko utajiri au cheo.",
+  "end": "Hiyo ndiyo hadithi ya msichana aliyemchagua Sungura.",
+  "wood.ask": [
+    "Kwa nini msichana anaenda msituni?"
+  ],
+  "rescue.ask": [
+    "Familia yake inampataje?"
+  ],
+  "choice.ask": [
+    "Kwa nini anamchagua Sungura?"
+  ]
+}

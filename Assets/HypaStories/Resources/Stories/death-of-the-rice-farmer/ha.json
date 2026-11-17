@@ -1,0 +1,30 @@
+{
+  "words": [
+    "shinkafa",
+    "tsuntsaye",
+    "manomi"
+  ],
+  "field": "Wani manomin shinkafa ya yi aiki tuƙuru a gonarsa, yana fatan samun girbi mai kyau.",
+  "birds": "Amma tsuntsaye suna ta zuwa suna cin shinkafar da ya noma.",
+  "guard": "Ya tsare gonar, duk da haka tsuntsayen suna dawowa duk lokacin da suka samu dama.",
+  "plan": "Manomin ya yanke shawarar yin dabara maimakon ya sake korarsu.",
+  "animal": "Ya kashe dabba, ya ɗora hanjinta a kan cikinsa.",
+  "still": "Sa'an nan ya kwanta a gonar, ya yi kamar ya mutu.",
+  "watch": "Tsuntsayen suka kalli mutumin da ba ya motsi a cikin shinkafar.",
+  "quiet": "Manomin ya jira ba tare da motsawa ba.",
+  "closer": "Da suka ɗauka ya mutu, tsuntsayen suka matso kusa.",
+  "caught": "Da suka zo inda zai iya kai musu hannu, sai ya tashi farat ɗaya ya kama su.",
+  "safe": "Tun daga lokacin, gonarsa ta tsira daga waɗannan tsuntsaye.",
+  "title": "Sunan labarin ya ambaci mutuwar manomin, amma ya yi kamar ne kawai.",
+  "lesson": "Darasin shi ne tunani mai kyau zai iya warware matsalar da kora kaɗai ba ta iya warwarewa.",
+  "end": "Haka manomin shinkafa ya kare girbin da ya yi wa aiki.",
+  "field.ask": [
+    "Me manomin yake nomawa?"
+  ],
+  "still.ask": [
+    "Me ya sa manomin ya yi kamar ya mutu?"
+  ],
+  "caught.ask": [
+    "Ta yaya manomin ya kare gonarsa?"
+  ]
+}

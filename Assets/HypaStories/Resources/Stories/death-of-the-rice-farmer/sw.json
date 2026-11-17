@@ -1,0 +1,30 @@
+{
+  "words": [
+    "mpunga",
+    "ndege",
+    "mkulima"
+  ],
+  "field": "Mkulima wa mpunga alifanya kazi kwa bidii shambani mwake, akitarajia mavuno mazuri.",
+  "birds": "Lakini ndege waliendelea kuja kula mpunga aliokuwa ameupanda.",
+  "guard": "Alilinda shamba, lakini ndege walirudi kila walipopata nafasi.",
+  "plan": "Mkulima aliamua kutumia hila badala ya kuwafukuza tena.",
+  "animal": "Aliua mnyama na kuweka matumbo yake juu ya tumbo lake mwenyewe.",
+  "still": "Kisha akalala shambani na kujifanya amekufa.",
+  "watch": "Ndege walimtazama mtu asiyejongea katikati ya mpunga.",
+  "quiet": "Mkulima alisubiri bila kusogea.",
+  "closer": "Wakiamini kwamba amekufa, ndege walikaribia.",
+  "caught": "Walipofika karibu kiasi cha kufikiwa na mikono yake, aliruka na kuwakamata.",
+  "safe": "Tangu hapo, shamba lake la mpunga lilikuwa salama dhidi ya ndege hao.",
+  "title": "Kichwa cha hadithi kinazungumzia kifo cha mkulima, lakini alikuwa akijifanya tu.",
+  "lesson": "Funzo ni kwamba kufikiri kwa makini kunaweza kutatua tatizo ambalo kufukuza pekee hakuwezi kulitatua.",
+  "end": "Hivyo ndivyo mkulima wa mpunga alivyolinda mavuno aliyoyafanyia kazi.",
+  "field.ask": [
+    "Mkulima analima nini?"
+  ],
+  "still.ask": [
+    "Kwa nini mkulima anajifanya amekufa?"
+  ],
+  "caught.ask": [
+    "Mkulima analindaje shamba lake?"
+  ]
+}

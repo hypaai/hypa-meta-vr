@@ -21,11 +21,11 @@ namespace HypaStories
         /// The row under <paramref name="parent"/>, centred on the place you are in. <paramref name="camp"/>, <paramref name="hut"/>
         /// and <paramref name="village"/>: for the place you are in, its start; for the others, going there.
         /// </summary>
-        public static void Add(Transform parent, string here, Action back, Action camp, Action hut, Action village)
+        public static void Add(Transform parent, string here, Action back, Action camp, Action hut, Action village, string mainLabel = null)
         {
             var (left, right) = Sides(here);
             var hereW = Width(here, true);
-            Button(parent, here, true, 0f, hereW, For(here, camp, hut, village));
+            Button(parent, here, true, 0f, hereW, For(here, camp, hut, village), mainLabel);
 
             var x = -hereW / 2f - Gap;
             if (For(left, camp, hut, village) != null)
@@ -73,10 +73,10 @@ namespace HypaStories
         static Action For(string id, Action camp, Action hut, Action village) =>
             id == PlaceIds.Camp ? camp : id == PlaceIds.Hut ? hut : id == PlaceIds.Gathering ? village : null;
 
-        static void Button(Transform parent, string id, bool here, float x, float width, Action act)
+        static void Button(Transform parent, string id, bool here, float x, float width, Action act, string label = null)
         {
             if (act == null) return;
-            Kit.Button(parent, new Vector3(x, 0f, 0f), new Vector2(width, Height), Label(id, here), Icon(id),
+            Kit.Button(parent, new Vector3(x, 0f, 0f), new Vector2(width, Height), label ?? Label(id, here), Icon(id),
                 here ? KitStyle.Primary : KitStyle.Ghost, act, null, Em);
         }
     }

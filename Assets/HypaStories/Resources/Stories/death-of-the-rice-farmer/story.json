@@ -1,0 +1,85 @@
+{
+  "theme": 0,
+  "accent": "#E8B15A",
+  "eyebrow": "Nso, Cameroon folk tale",
+  "title": "The Death of the\nRice Farmer",
+  "description": "Birds keep eating a farmer's rice. He lies still in his field and uses a surprising trick to protect his harvest.",
+  "words": [
+    "rice",
+    "birds",
+    "farmer"
+  ],
+  "voices": [],
+  "source": {
+    "url": "https://doi.org/10.3389/fpsyg.2023.1049691",
+    "tradition": "Nso, Cameroon",
+    "adaptation": "Original Hypa retelling of the documented folktale; see SOURCES.md."
+  },
+  "lines": [
+    {
+      "id": "field",
+      "text": "A rice farmer worked hard in his field, hoping to gather a good harvest.",
+      "ask": [
+        "What does the farmer grow?"
+      ]
+    },
+    {
+      "id": "birds",
+      "text": "But birds kept coming to eat the rice he had grown."
+    },
+    {
+      "id": "guard",
+      "text": "He guarded the field, yet the birds returned whenever they could."
+    },
+    {
+      "id": "plan",
+      "text": "The farmer decided to use a trick instead of chasing them again."
+    },
+    {
+      "id": "animal",
+      "text": "He killed an animal and laid its entrails across his own belly."
+    },
+    {
+      "id": "still",
+      "text": "Then he lay down in the field and pretended to be dead.",
+      "ask": [
+        "Why does the farmer pretend to be dead?"
+      ]
+    },
+    {
+      "id": "watch",
+      "text": "The birds watched the still figure among the rice."
+    },
+    {
+      "id": "quiet",
+      "text": "The farmer waited without moving."
+    },
+    {
+      "id": "closer",
+      "text": "Believing he was dead, the birds came close."
+    },
+    {
+      "id": "caught",
+      "text": "When they were within reach, he sprang up and caught them.",
+      "ask": [
+        "How does the farmer protect his field?"
+      ]
+    },
+    {
+      "id": "safe",
+      "text": "After that, his rice field was safe from those birds."
+    },
+    {
+      "id": "title",
+      "text": "The title speaks of the farmer's death, but he had only pretended."
+    },
+    {
+      "id": "lesson",
+      "text": "The lesson is that careful thought can solve a problem that chasing alone cannot."
+    },
+    {
+      "id": "end",
+      "text": "That is how the rice farmer protected the harvest he had worked for."
+    }
+  ]
+}
