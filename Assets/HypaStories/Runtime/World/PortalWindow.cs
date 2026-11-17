@@ -27,7 +27,7 @@ namespace HypaStories
         /// Draws the view for the camera <paramref name="main"/> is drawing now. <paramref name="link"/> takes a point on your side of the
         /// doorway to the destination. Returns false (nothing drawn) when you are on the far side of the doorway or no camera could be made.
         /// </summary>
-        public bool Render(Camera main, Matrix4x4 link, PortalPlan plan, Material glass, bool fog)
+        public bool Render(Camera main, Matrix4x4 link, PortalPlan plan, Material glass, Vector2? fog)
         {
             if (_rendering || main == null) return false;
             EnsureCamera(main);
@@ -37,7 +37,7 @@ namespace HypaStories
             var keep = link.MultiplyVector(-plan.Normal).normalized;   // into the destination
             var door = link.MultiplyPoint(plan.Base);
             var inv = link.inverse;
-            var oldFog = RenderSettings.fog;
+            var oldStart = RenderSettings.fogStartDistance; var oldEnd = RenderSettings.fogEndDistance;
             var drew = false;
             _rendering = true;
             try
@@ -59,14 +59,14 @@ namespace HypaStories
                     _pc.cullingMatrix = proj * vview;
                     _pc.projectionMatrix = _pc.CalculateObliqueMatrix(new Vector4(n.x, n.y, n.z, d));
                     _pc.targetTexture = _rt[eye];
-                    RenderSettings.fog = fog;
+                    if (fog.HasValue) { RenderSettings.fogStartDistance = fog.Value.x; RenderSettings.fogEndDistance = fog.Value.y; }
                     _pc.Render();
                     drew = true;
                 }
             }
             finally
             {
-                RenderSettings.fog = oldFog;
+                RenderSettings.fogStartDistance = oldStart; RenderSettings.fogEndDistance = oldEnd;
                 _rendering = false;
                 _pc.targetTexture = null;
             }

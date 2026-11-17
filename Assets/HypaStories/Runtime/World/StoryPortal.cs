@@ -28,8 +28,8 @@ namespace HypaStories
         public System.Func<Matrix4x4?> Link;
         /// <summary>True while the glass shows the live view.</summary>
         public bool Live { get; private set; }
-        /// <summary>The fog the destination is drawn with (the forest has fog; your room does not).</summary>
-        public System.Func<bool> Fog;
+        /// <summary>The forest's fog range (start, end) the destination is drawn with; null for none.</summary>
+        public System.Func<Vector2?> Fog;
         PinchTarget _pinch;
 
         /// <summary>Builds a closed portal at <paramref name="plan"/>. <paramref name="stepThrough"/> runs when the glass is pinched.</summary>
@@ -118,7 +118,7 @@ namespace HypaStories
             if (link.HasValue)
             {
                 if (_window == null) _window = new PortalWindow();
-                ok = _window.Render(cam, link.Value, Plan, _mat, Fog != null && Fog());
+                ok = _window.Render(cam, link.Value, Plan, _mat, Fog?.Invoke());
             }
             Live = ok;
             _mat.SetFloat("_UseWindow", ok ? 1f : 0f);
