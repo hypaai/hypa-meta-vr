@@ -100,17 +100,20 @@ need a Quest 3 pass.
 In your room (**In my room**) a doorway goes on **every real door** the room scan found (MRUK `DOOR_FRAME` anchors), at the door's real size and
 position (`PortalSpot.Doors`; no walking-room tests, a door is where it is). Only with no door in the scan does it use a clear stretch of **wall**,
 and with no scan at all it stands 2 m in front of you. Each doorway is open and shows **where it leads, live**: stand in front of a door and you
-see the hut, the village or the camp. Three chips beside it (**Hut**, **Village**, **Camp**) switch the place; the hut is the default.
+see the hut, the village or the camp. **A sign mounted over the door** (solid glass, like the other menus: "Where to?" then **Hut**, **Village**, **Campfire**, the chosen one lit)
+picks the place; it is about as wide as the door, sits just above it, turns to face you and grows a little with distance. Pinching the door
+itself also turns it to the next place, and a **long pinch** on it goes through (for anyone seated). The
+hut is the default.
 
 - **One step in:** step through a door (0.3 m past it) and, after a soft flash, you are in that place, just inside its doorway, which is laid
   exactly on the real door.
 - **In the place the doorway stays on your real door:** its frame glows there and the opening is a hole onto your room (`Shaders/StoryPortalHole`;
   passthrough runs underneath the app and the camera clears to see-through), so you see your real room through it.
 - **One step back:** step back over the doorway and your room is back (passthrough), the doorways where they were. The story never stops.
-- **Editor:** **P** steps through (into your room first), **G** steps through or back. Pinching a door's glass does the same; from afar the
+- **Editor:** **P** steps through (into your room first), **G** steps through or back. A long pinch on the glass goes through; from afar the
   doorway comes to you.
-- **The look:** plain and real: a clean opening with dark wooden trim (grain, a lit inner edge), a soft shadow on the wall and a little shade
-  just inside the edge. No glow, sparks or ripples.
+- **The look:** a clean opening with a thin dark trim and a soft warm glow at its edges (a rim just inside, a halo just outside, breathing
+  slowly). No sparks, ripples or colour effects.
 - **The live view:** `World/PortalWindow` draws the place once per eye with a hidden camera, from where your eye would be on the far side of the
   doorway (`PortalDestinations.Link`), with everything on your side cut off by an oblique near plane. While you are in your room the camp's
   scenery moves to layer 30 (`CampWorld.DestLayer`): your camera skips it, the portal camera draws it, its sounds are muted.

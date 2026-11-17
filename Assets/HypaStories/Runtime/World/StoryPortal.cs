@@ -11,7 +11,7 @@ namespace HypaStories
     /// </summary>
     public sealed class StoryPortal : MonoBehaviour
     {
-        const float FrameMargin = 0.14f;
+        const float FrameMargin = 0.22f;
 
         public PortalPlan Plan { get; private set; }
         /// <summary>0 shut .. 1 fully open (eases toward the target).</summary>
@@ -21,7 +21,7 @@ namespace HypaStories
 
         Material _mat, _holeMat;
         Renderer _r;
-        float _target, _pull, _pullSmooth;
+        float _target, _pull, _pullSmooth, _dip;
         PortalWindow _window;
 
         /// <summary>The link from your side of this doorway to the destination (see <see cref="PortalDestinations.Link"/>), or null for none (the painted glimpse shows).</summary>
@@ -33,7 +33,7 @@ namespace HypaStories
         PinchTarget _pinch;
 
         /// <summary>Builds a closed portal at <paramref name="plan"/>. <paramref name="stepThrough"/> runs when the glass is pinched.</summary>
-        public static StoryPortal Create(Shader shader, Shader holeShader, PortalPlan plan, Action stepThrough)
+        public static StoryPortal Create(Shader shader, Shader holeShader, PortalPlan plan, Action stepThrough, Action change = null)
         {
             var go = new GameObject("Hypa Portal");
             go.transform.SetPositionAndRotation(plan.Base, Quaternion.LookRotation(plan.Normal));
@@ -48,6 +48,7 @@ namespace HypaStories
             p._mat.SetVector("_Size", new Vector4(plan.Width, plan.Height, 0f, 0f));
             p._mat.SetFloat("_Margin", FrameMargin);
             p._mat.SetColor("_Glow", new Color(0.2f, 0.13f, 0.08f, 1f));
+            p._mat.SetColor("_Edge", new Color(1f, 0.62f, 0.28f, 1f));
             p._mat.SetFloat("_Open", 0f);
             p._r.sharedMaterial = p._mat;
             if (holeShader != null)
@@ -65,7 +66,12 @@ namespace HypaStories
             glass.transform.localPosition = new Vector3(0f, plan.Height * 0.5f, 0f);
             glass.AddComponent<BoxCollider>().size = new Vector3(plan.Width, plan.Height, 0.12f);
             p._pinch = glass.AddComponent<PinchTarget>();
-            p._pinch.OnPinch = k => { if (k == PinchKind.Short) stepThrough?.Invoke(); }; // armed or open: pinching the door is the way in
+            // pinch the door: a short pinch turns it to the next place, a long one goes through (in a place, either takes you home)
+            p._pinch.OnPinch = k =>
+            {
+                if (p.Hole || k == PinchKind.Long || change == null) stepThrough?.Invoke();
+                else if (k == PinchKind.Short) { change(); p._dip = 1f; }
+            };
             glass.SetActive(false);
             return p;
         }
@@ -82,6 +88,9 @@ namespace HypaStories
             if (Hole) { Open = 1f; _target = 1f; _mat.SetFloat("_Open", 1f); _r.enabled = true; }
         }
 
+        /// <summary>The view dips and comes back (the place was changed).</summary>
+        public void Dip() => _dip = 1f;
+
         public void Show() { _target = 1f; _r.enabled = true; _pinch.gameObject.SetActive(true); }
         public void Hide() { _target = 0f; _pinch.gameObject.SetActive(false); }
 
@@ -92,7 +101,8 @@ namespace HypaStories
         {
             Open = Mathf.MoveTowards(Open, _target, Time.unscaledDeltaTime / (_target > Open ? 0.9f : 0.5f));
             _pullSmooth = Mathf.MoveTowards(_pullSmooth, _pull, Time.unscaledDeltaTime * 3f);
-            _mat.SetFloat("_Open", Open);
+            _dip = Mathf.MoveTowards(_dip, 0f, Time.unscaledDeltaTime / 0.45f);
+            _mat.SetFloat("_Open", Open * (1f - 0.9f * _dip)); // a pinch dips the view, and it comes back as the next place
             _mat.SetFloat("_Pull", _pullSmooth);
             if (Shut) _r.enabled = false;
         }

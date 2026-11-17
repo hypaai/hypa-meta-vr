@@ -846,7 +846,7 @@ namespace HypaStories
         {
             var d = new DoorPortal { Plan = plan };
             d.Portal = StoryPortal.Create(assets.portal != null ? assets.portal : Shader.Find("HypaStories/Portal"),
-                assets.portalHole != null ? assets.portalHole : Shader.Find("HypaStories/PortalHole"), plan, () => UseDoor(d));
+                assets.portalHole != null ? assets.portalHole : Shader.Find("HypaStories/PortalHole"), plan, () => UseDoor(d), CycleDestination);
             d.Portal.Link = () => PortalLink(d);
             d.Portal.Fog = () => _camp.FogForForest;
             d.Portal.Show();
@@ -862,29 +862,61 @@ namespace HypaStories
             return PortalDestinations.Link(real, PortalDestinations.DoorWorld(_world.localToWorldMatrix, _dest));
         }
 
-        // the three chips beside a door: Hut, Village, Camp
+        // the sign over a door: Hut, Village, Campfire (solid glass, like the other menus), mounted just above the door. It turns to face you.
         void BuildChips(DoorPortal d)
         {
             var p = d.Plan;
-            d.Chips = new GameObject("Portal Destinations").transform;
+            const float W = 0.64f, H = 0.17f;
+            d.Chips = new GameObject("Portal Bar").transform;
             d.Chips.SetParent(d.Portal.transform, false);
-            d.Chips.localPosition = new Vector3(p.Width * 0.5f + 0.42f, 1.2f, 0.02f);
-            d.Chips.localRotation = Quaternion.Euler(0f, 180f, 0f); // panels face away from the one reading them: this one faces you
+            d.Chips.localPosition = new Vector3(0f, p.Height + 0.1f + H * 0.5f, 0.04f); // a sign over the door (FaceBars keeps it just above the top)
+            Kit.Panel(d.Chips, "Bar", Vector3.zero, new Vector2(W, H), 0.05f, KitTheme.GlassTop, KitTheme.GlassBottom, KitTheme.Hairline, 10, 0.5f);
+            Kit.Text(d.Chips, "Where to?", 0.02f, new Vector3(0f, 0.056f, -0.004f), new Vector2(0.5f, 0.035f), KitTheme.Dim);
             d.Buttons = new KitButton[PortalDestinations.All.Length];
             for (var i = 0; i < d.Buttons.Length; i++)
             {
                 var dest = PortalDestinations.All[i];
-                d.Buttons[i] = Kit.Button(d.Chips, new Vector3(0f, 0.07f - i * 0.075f, 0f), new Vector2(0.2f, 0.06f), PortalDestinations.Label(dest),
-                    PortalDestinations.Icon(dest), KitStyle.Ghost, () => ChooseDestination(dest), null, 0.02f);
+                d.Buttons[i] = Kit.Button(d.Chips, new Vector3((i - 1) * 0.205f, -0.012f, -0.004f), new Vector2(0.195f, 0.075f), PortalDestinations.Label(dest),
+                    PortalDestinations.Icon(dest), KitStyle.Ghost, () => ChooseDestination(dest), null, 0.022f);
             }
             PaintChips();
         }
 
         void ChooseDestination(PortalDestination dest)
         {
-            if (_busy || _roomBusy || !_room) return;
-            if (_dest != dest) _audio.Tap();
+            if (_busy || _roomBusy || !_room || _dest == dest) return;
             _dest = dest;
+            _audio.Tap();
+            foreach (var d in _doors) if (d.Portal != null) d.Portal.Dip();
+            PaintChips();
+        }
+
+        /// <summary>Turns each bar toward you (level) and makes it bigger the further you are, so it reads from across the room.</summary>
+        void FaceBars()
+        {
+            var head = _cam.position;
+            foreach (var d in _doors)
+            {
+                if (d.Chips == null || !d.Chips.gameObject.activeInHierarchy) continue;
+                var to = d.Chips.position - head;
+                var dist = to.magnitude;
+                to.y = 0f;
+                if (to.sqrMagnitude > 1e-4f) d.Chips.rotation = Quaternion.LookRotation(to.normalized);
+                var k = Mathf.Clamp(dist / 2.5f, 0.85f, 1.4f);                     // about the door's width at a few metres
+                d.Chips.localScale = Vector3.one * k;
+                var lp = d.Chips.localPosition;
+                d.Chips.localPosition = new Vector3(0f, d.Plan.Height + 0.1f + 0.085f * k, lp.z);   // its bottom edge stays just over the door
+            }
+        }
+
+        /// <summary>The door itself was pinched: the next place (hut, village, campfire, round again).</summary>
+        void CycleDestination()
+        {
+            if (_busy || _roomBusy || !_room) return;
+            var all = PortalDestinations.All;
+            _dest = all[(System.Array.IndexOf(all, _dest) + 1) % all.Length];
+            _audio.Tap();
+            foreach (var d in _doors) if (d.Portal != null) d.Portal.Dip();
             PaintChips();
         }
 
@@ -931,6 +963,7 @@ namespace HypaStories
             var head = _cam.position;
             if (_room && _doors.Count > 0)
             {
+                FaceBars();
                 var near = NearestDoor();
                 var link = near != null ? PortalLink(near) : null;
                 _camp.SetViewer(link.HasValue ? _world.InverseTransformPoint(link.Value.MultiplyPoint(head)) : (Vector3?)null);
@@ -1000,7 +1033,7 @@ namespace HypaStories
                 if (d != door) { d.Portal.gameObject.SetActive(false); continue; }
                 d.Portal.transform.position = at.Base;
                 d.Portal.SetHole(true);
-                if (d.Chips != null) d.Chips.gameObject.SetActive(false);
+                if (d.Chips != null) d.Chips.gameObject.SetActive(false); // the plate
             }
             _returnToRoom = true; _prevDepth = float.NaN; _portalQuietUntil = Time.time + 0.8f;
             SnapPanels();

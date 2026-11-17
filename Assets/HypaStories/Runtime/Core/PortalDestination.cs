@@ -19,7 +19,7 @@ namespace HypaStories
 
         public static readonly PortalDestination[] All = { PortalDestination.Hut, PortalDestination.Village, PortalDestination.Camp };
 
-        public static string Label(PortalDestination d) => d == PortalDestination.Hut ? "Hut" : d == PortalDestination.Village ? "Village" : "Camp";
+        public static string Label(PortalDestination d) => d == PortalDestination.Hut ? "Hut" : d == PortalDestination.Village ? "Village" : "Campfire";
         public static string Icon(PortalDestination d) => d == PortalDestination.Hut ? "house" : d == PortalDestination.Village ? "users" : "flame";
 
         /// <summary>The doorway (camp ground x, z) of the place.</summary>

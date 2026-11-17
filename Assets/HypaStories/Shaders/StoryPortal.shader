@@ -10,6 +10,7 @@ Shader "HypaStories/Portal"
         _Open ("Open (0 shut .. 1 open)", Range(0, 1)) = 1
         _Pull ("Pull (0 far .. 1 at the glass)", Range(0, 1)) = 0
         _Glow ("Trim colour (dark wood)", Color) = (0.2, 0.13, 0.08, 1)
+        _Edge ("Edge glow colour", Color) = (1, 0.62, 0.28, 1)
         _WindowL ("Hut, left eye", 2D) = "black" {}
         _WindowR ("Hut, right eye", 2D) = "black" {}
         _UseWindow ("Use the live view", Range(0, 1)) = 0
@@ -33,7 +34,7 @@ Shader "HypaStories/Portal"
 
             float4 _Size;
             float _Margin, _Open, _Pull, _UseWindow, _Hole, _EnvironmentDepthBias;
-            fixed4 _Glow;
+            fixed4 _Glow, _Edge;
             sampler2D _WindowL, _WindowR;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
@@ -88,19 +89,22 @@ Shader "HypaStories/Portal"
                 col *= 1.0 - 0.28 * exp(-inner * 22.0);
                 float alpha = inside > 0.0 ? 1.0 : 0.0;
 
-                // the trim: a plain dark wooden architrave round the opening, with grain, a lit inner edge, and a soft shadow on the wall
-                const float trim = 0.055;
+                // the edges glow softly: a warm rim just inside the opening and a halo just outside it, breathing slowly
+                float breathe = 0.85 + 0.15 * sin(t * 1.6);
+                float glowIn = exp(-inner * 14.0) * 1.35 * breathe;
+                float glowOut = exp(-outside * 9.0) * 1.3 * breathe;
+                col += _Edge.rgb * glowIn;
+
+                // a thin dark trim right at the edge, so it still reads as a door
+                const float trim = 0.03;
                 if (inside <= 0.0)
                 {
-                    float grainAlong = (abs(p.x) > W * 0.5 ? p.y : p.x) * 60.0;
-                    float grain = 0.88 + 0.12 * noise(float2(grainAlong * 0.12, (abs(p.x) > W * 0.5 ? p.x : p.y) * 3.0));
-                    float across = saturate(outside / trim);                                   // 0 at the opening .. 1 at the trim's outer edge
-                    float bevel = 0.8 + 0.35 * smoothstep(0.0, 0.25, across) - 0.3 * smoothstep(0.75, 1.0, across);
-                    float3 wood = _Glow.rgb * grain * bevel;
+                    float grain = 0.88 + 0.12 * noise(float2((abs(p.x) > W * 0.5 ? p.y : p.x) * 7.0, (abs(p.x) > W * 0.5 ? p.x : p.y) * 3.0));
                     float inTrim = outside < trim ? 1.0 : 0.0;
-                    float shadow = smoothstep(m, trim, outside) * 0.38;                         // falls away over the wall
-                    col = lerp(float3(0, 0, 0), wood, inTrim);
-                    alpha = inTrim > 0.5 ? 1.0 : shadow;
+                    float3 wood = _Glow.rgb * grain;
+                    float fade = 1.0 - smoothstep(m * 0.35, m, outside);                                // gone by the quad's edge
+                    col = wood * inTrim + _Edge.rgb * glowOut * 1.3;
+                    alpha = saturate(max(inTrim, glowOut)) * fade;
                     if (p.y > H + m) alpha = 0.0;
                 }
 
