@@ -59,8 +59,11 @@ namespace HypaStories
         /// <summary>The first lines to fetch before the story starts, so it doesn't open on a pause.</summary>
         public Task PrepareAsync(CancellationToken ct)
         {
+            // the opening line asks Auto first, so the voice locked for the story is the one that speaks it; the next line then
+            // asks for that same voice instead of waiting on a filler
+            var first = _voice.PrepareAsync(Text(0), _lang(), ct);
             _voice.Prefetch(Text(1), _lang());
-            return _voice.PrepareAsync(Text(0), _lang(), ct);
+            return first;
         }
 
         public void Start(float from = 0f)
