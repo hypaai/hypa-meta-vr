@@ -1,7 +1,7 @@
 # Hypa Story (tickets 3A-3C, 3F, 3K)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
-Same three screens, three stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, and *Eshu at the Crossroads* is a third card), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
+Same three screens, four stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, *Eshu at the Crossroads* is a third card and the Efik tale *The King's Magic Drum* a fourth), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
 moves, pinch instead of click. Uses HypaCore only and never references HypaLens.
 
 ## Run it
@@ -158,7 +158,7 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
   story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
   (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
-  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for all three stories also comes from that auto router and needs the same native check.
+  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for the first three stories also comes from that auto router and needs the same native check. *The King's Magic Drum* is retold from the Calabar (Efik) folk tale of Efriam Duke's drum and Tortoise (in Elphinstone Dayrell's *Folk Stories from Southern Nigeria*, 1910), drum and fufu tree both; all seven translations are machine translations (Claude) and need the same native check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
@@ -192,12 +192,9 @@ the translations are matched on.
 
 - Committed: shaders and code (original), Poly Haven props and forest floor (`Art/PolyHaven`, CC0), Camp Fire by JalenJacobson
   (`Art/Models/camp_fire.glb`, **CC BY 4.0, credit required**, re-encoded without meshopt / WebP so glTFast imports it), the Hypa
-  Reality mark (`Art/hypa-reality.png`, team-supplied).
-- **Not committed** (`Assets/HypaStories/Local/`, git-ignored, because this repo is public): the Epidemic Sound beds
-  (`amb-1/2`, `fire-1/2`, `wolf-1`; subscription licence, no redistribution) and the storyteller avatar
-  (`Models/storyteller.glb`; a Ready Player Me placeholder from the three.js examples).
-  Copy them from `Ideation/public/{audio,models}` into `Local/Audio` and `Local/Models`, then rerun **Create Story Scene**.
-  Without them: synthesised wind and fire and a stand-in storyteller.
+  Reality mark (`Art/hypa-reality.png`, team-supplied), the witch song after the drum game (`Art/Audio/witch-song.mp3`,
+  team-supplied), the storyteller avatar (`Art/Models/storyteller.glb`; a Ready Player Me placeholder from the three.js
+  examples), and the Epidemic Sound camp beds (`Art/Audio/amb-1/2`, `fire-1/2`, `wolf-1`; team's Epidemic Sound subscription).
 - Before release: replace the avatar with one from the team's own Ready Player Me account (or any humanoid with `Hips`/`Spine`/
   `Head`/`LeftArm`… bones and a `mouthOpen` blend shape).
 
@@ -241,3 +238,34 @@ When *Seven Hot Stones* ends, **Face Dodo** appears above the player panel: you 
 Hands first; controllers work the same way (trigger = pinch). Rules: `Core/DodoRules` (unit tested). Game: `World/DodoGame`,
 creature: `World/DodoCreature`. In the editor: **P** puts a stone in the fire, **T** throws into the mouth, **M** throws wide,
 **Space** shouts.
+
+## The drum game (after *The King's Magic Drum*)
+
+When *The King's Magic Drum* ends, **Play the drum** appears above the player panel: you have the king's drums, a big low drum on
+your left and a small high one on your right, waist high in front of where you are (lower if you sit).
+
+- **Listen:** the ogene bell counts a bar in (a shaker on the eighths), then the drums play a one-bar beat by themselves, each skin
+  lighting as it sounds. The HUD writes the beat on the bar: a big ember dot for the low drum, a small pale one for the high drum,
+  with a tick under each beat that flashes with the bell.
+- **Play it back:** the bell keeps going. Bring a hand down on the big drum for the low note, on the small drum for the high one
+  (a controller works the same way; pinching while pointing at a skin also strikes it). The edge of either drum gives a sharper
+  slap, which still counts as that drum. Only the gaps between your strokes count, so come in whenever you like.
+- **The feast:** each beat played back brings a dish by the fire, in the story's order: fish, fufu, yams, okra, palm-oil soup,
+  palm wine. A wrong drum, or a stroke too quick or too slow, makes the guests laugh and the drums play the beat again (no lives).
+  Six beats at 96 beats a minute, easiest first: on the beat, then the 3+3+2 tresillo against the bell, then the off-beats filled.
+  The last dish brings dawn, and the villagers come out of the trees to dance.
+- **Free drum:** then the witch song plays (`Art/Audio/witch-song.mp3`, `StoryAssets.witchSong`; instead of the village's
+  drums) and you drum along freely, nothing counted. It fades in at the top and out over its last 14 seconds. **Play again**
+  restarts the game; **The story** and **Stories** as after the other games. Without
+  the recording you can still drum freely.
+
+The bell, the shaker and the drums' own strokes are scheduled on the audio clock (`AudioSettings.dspTime`), so the groove holds
+whatever the frame rate. Rules: `Core/DrumRules` (unit tested with the strike detection: `DrumRulesTests`). Game: `World/DrumGame`
+(the drums are built in code: a footed Efik standing drum with carved bands and laced pegs, and a goblet drum with diamond
+lacing and cowries). `DrumVisuals` builds continuous worn-hide heads, woven mats, whole grilled fish, cut yam,
+open serving bowls and soup ingredients. `Resources/DrumSurface` uses one small generated detail texture for wood grain,
+hide mottling and food surfaces; meshes and materials are generated once, and reward halos fade to a faint glow.
+Hand positions come from `StoryInput.Hand` (each tracked hand's palm, else the controllers; set by
+`Quest/QuestStoryInput`). Sounds: `ProceduralClips.DrumStrokeSamples` (each drum open and slapped, two takes each),
+`OgeneSamples`, `ShakerSamples`. In the editor: pinch (click) a drum, or **B** for the low drum, **N** for the high one, **P** to
+play the beat back for you.

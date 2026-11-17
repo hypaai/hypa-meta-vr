@@ -1,0 +1,130 @@
+{
+  "words": [
+    "ganga",
+    "kunkuru",
+    "kwakwa"
+  ],
+  "calabar": "Tun da daɗewa, a Calabar, akwai wani sarki mai suna Efriam Duke, wanda ba ya son yaƙi.",
+  "calabar.ask": [
+    "Ina Calabar take?"
+  ],
+  "drum": "Yana da wata ganga, kuma duk lokacin da ya buga ta, sai liyafa ta bayyana.",
+  "drum.ask": [
+    "Me gangar take yi?"
+  ],
+  "feast": "Kifi da fufu, doya da kubewa, miyar manja da giyar kwakwa, isasshe ga kowa.",
+  "enemies": "Idan abokan gaba suka zo, ba ya yaƙi da su. Sai ya gayyace su su ci abinci.",
+  "enemies.ask": [
+    "Me ya sa sarkin yake gayyatar abokan gabansa?"
+  ],
+  "animals": "Yakan ciyar da jama'arsa ma, har da dabbobi, domin a wancan zamanin duk suna cin abinci tare cikin lumana.",
+  "rule": "Amma gangar tana da doka ɗaya.",
+  "stick": "Idan mai ita ya taɓa tsallake sanda da ke kwance a kan hanya, gangar ba za ta ƙara ba da abinci ba.",
+  "stick.ask": [
+    "Mece ce dokar gangar?"
+  ],
+  "egbo": "A maimakon haka, mutanen Egbo ɗari uku za su zo da sanduna da bulala, su doke shi da dukkan baƙinsa.",
+  "egbo.ask": [
+    "Su wane ne mutanen Egbo?"
+  ],
+  "wanted": "Mutane da yawa sun so wannan ganga. Sarki ya ƙi ya rabu da ita.",
+  "tortoise": "Wanda ya fi kowa son ta kuwa shi ne Kunkuru.",
+  "tortoise.ask": [
+    "Wane ne Kunkuru?"
+  ],
+  "spring": "Wata safiya, Ikwor Edem, ɗaya daga cikin matan sarki, ta kai ƙaramar 'yarta wani maɓuɓɓugar ruwa don ta yi mata wanka.",
+  "palm": "A samansu, a kan bishiyar kwakwa, Kunkuru yana yanka 'ya'yan kwakwa.",
+  "nut": "Ɗaya daga cikin 'ya'yan ya faɗi a ƙafar yarinyar.",
+  "cried": "Ta yi kuka tana son sa, sai mahaifiyarta ta ba ta.",
+  "mine": "Kunkuru ya sauko. Wannan ɗan kwakwar nawa ne, in ji shi.",
+  "mine.ask": [
+    "Me ya sa Kunkuru ya fusata haka?"
+  ],
+  "idea": "Ikwor Edem ta yi bayani, amma Kunkuru tunanin gangar yake yi.",
+  "justice": "Matarka ta ɗauki abincina, ya gaya wa sarki. Ina son a yi min adalci.",
+  "offers": "Sarki ya ba shi kuɗi. Zane. Ƙwallon kwakwa. Manja.",
+  "no": "Kunkuru ya ƙi duka.",
+  "choose": "A ƙarshe sarki ya ce, to, zaɓi duk abin da kake so.",
+  "point": "Kunkuru ya nuna gangar kai tsaye.",
+  "point.ask": [
+    "Me Kunkuru ya zaɓa?"
+  ],
+  "gave": "Don a kawo ƙarshen rigimar, sarki ya ba shi ita. Amma bai gaya masa dokar ba.",
+  "gave.ask": [
+    "Me ya sa sarki bai gaya masa dokar ba?"
+  ],
+  "home": "Kunkuru ya ɗauki gangar zuwa gida. Ba za mu ƙara aiki don abinci ba, ya gaya wa iyalinsa.",
+  "beat": "Ya buga gangar, sai abinci ya cika ƙasa.",
+  "three-days": "Kwana uku iyalin suka ci, suka yi dariya, suka sake ci.",
+  "invite": "Sai ya gayyaci sarki, da dukan gari, da dabbobi zuwa babbar liyafa.",
+  "laughed": "Mutane da yawa suka yi dariya. Kunkuru, wanda ya fi kowa talauci, zai yi liyafa?",
+  "few": "Kaɗan ne kawai suka zo. Amma sarki ya zo.",
+  "appeared": "Kunkuru ya buga gangar, sai liyafar ta bayyana a gabansu duka.",
+  "amazed": "Baƙin suka koma gida cike da mamaki. Waɗanda ba su zo ba suka rantse za su zo a gaba.",
+  "amazed.ask": [
+    "Me mutane suke tunani game da Kunkuru yanzu?"
+  ],
+  "boastful": "Kunkuru ya zama malalaci mai taƙama, kuma yana shan giyar kwakwa fiye da kima.",
+  "farm": "Wata maraice, yana dawowa gida daga gonarsa, bai kalli inda yake tafiya ba.",
+  "stepped": "Wani sanda yana kwance a kan hanya, sai ya tsallake shi.",
+  "stepped.ask": [
+    "Wane laifi Kunkuru ya yi?"
+  ],
+  "nothing": "Babu abin da ya faru. Bai ma lura ba.",
+  "breakfast": "Washegari da safe, iyalinsa masu yunwa suka nemi abincin safe.",
+  "beat-again": "Ya buga gangar.",
+  "egbo-came": "Abinci bai zo ba. Mutanen Egbo ɗari uku ne suka zo, da sanduna da bulala.",
+  "beaten": "Suka doki Kunkuru da dukan iyalinsa.",
+  "furious": "Kunkuru ya fusata ƙwarai. Amma bai zargi kansa ba.",
+  "furious.ask": [
+    "Me Kunkuru zai yi yanzu?"
+  ],
+  "plan": "Idan za a doke ni, ya yi tunani, to a doki waɗanda suka yi min dariya ma.",
+  "second": "Ya gayyaci kowa zuwa wata babbar liyafa.",
+  "crowds": "A wannan karon dukan gari ya zo, da kowace dabba, babu mai son a bar shi a baya.",
+  "stayed": "Sarki da matansa suka zauna a gida. Kunkuru ya riga ya tura iyalinsa nesa.",
+  "stayed.ask": [
+    "Me ya sa sarki bai zo ba?"
+  ],
+  "doors": "Da dukan baƙin suka shiga, aka rufe ƙofofi.",
+  "bench": "Kunkuru ya buga gangar, ya laɓe a ƙarƙashin wani benci.",
+  "burst": "Mutanen Egbo suka kutso da sandunansu da bulalansu.",
+  "nowhere": "Baƙin suka gudu, amma babu inda za su gudu.",
+  "leopard": "Damisa ce kaɗai ta tsira, ta yi tsalle ta haye katangar gidan.",
+  "leopard.ask": [
+    "Yaya Damisa ta tsira?"
+  ],
+  "opened": "A ƙarshe Kunkuru ya buɗe ƙofofi, ya buga gangar ta wata hanya ta musamman, sai mutanen Egbo suka ɓace.",
+  "limped": "Baƙin suka koma gida suna dingisa, cike da raunuka da fushi.",
+  "return": "Don haka washegari da safe, Kunkuru ya mayar wa sarki gangar.",
+  "exchange": "Karɓi ta, ya ce, ka ba ni gonaki ko zane a maimakon ta.",
+  "fufu-tree": "Sarki ya ƙi musaya. Amma ya ji tausayin Kunkuru, ya ba shi wata bishiyar fufu ta sihiri.",
+  "fufu-tree.ask": [
+    "Mece ce bishiyar fufu?"
+  ],
+  "tree-rule": "Kowace rana tana ba da sabon fufu da miya. Amma sau ɗaya kawai a rana za su ɗiba daga gare ta, ba sau biyu ba.",
+  "tree-rule.ask": [
+    "Mece ce dokar bishiyar fufu?"
+  ],
+  "calabashes": "Kowace safiya Kunkuru da matarsa suna cika ƙwaryoyinsu, kuma iyalin suka sami wadataccen abinci.",
+  "son": "Amma ɗaya daga cikin 'ya'yansa yana son ya san inda abincin yake fitowa.",
+  "secret": "Kunkuru ya ƙi ya faɗa. Idan yaran suka gano ta, in ji mahaifiyarsu, za su ɓata ta.",
+  "ashes": "Sai yaron ya cika wata ƙwarya da toka, ya ɓoye ta a cikin jakar mahaifinsa, a kan wani ƙaramin rami.",
+  "ashes.ask": [
+    "Wace dabara yaron ya yi?"
+  ],
+  "trail": "Yayin da Kunkuru yake tafiya, toka kaɗan-kaɗan tana zuba a bayansa.",
+  "followed": "Yaron ya bi sawun tokar, ya yi kallo daga cikin daji, bai ce komai ba.",
+  "twice": "Washegari, bayan mahaifinsa ya riga ya ɗibi abincin, yaron ya kai 'yan'uwansa wajen bishiyar, suka sake ɗiba.",
+  "twice.ask": [
+    "Wane laifi yaran suka yi?"
+  ],
+  "gone": "Washegari da safe, bishiyar ta ɓace.",
+  "thicket": "Daji mai kauri ya tsiro cikin dare. Kunkuru ba ya ganin komai sai kwakwar daji masu ƙaya.",
+  "nobody": "Ya tambayi iyalinsa wa ya karya dokar. Babu wanda ya amsa.",
+  "live-here": "Sai ya kai su wurin. Kun karya dokar, ya ce, don haka a nan za mu zauna.",
+  "why": "Shi ya sa, in ji tsofaffi, kunkuru yake zaune a ƙarƙashin kwakwar daji masu ƙaya.",
+  "why.ask": [
+    "Me ya sa kunkuru yake zama a ƙarƙashin kwakwa?"
+  ]
+}

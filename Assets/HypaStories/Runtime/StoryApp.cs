@@ -80,8 +80,11 @@ namespace HypaStories
         HatGame _hatGame;        // the playable scene after Eshu at the Crossroads
         KitButton _turnHat;
         const string EshuStory = "eshu-crossroads";
-        bool Playing => (_game != null && _game.Active) || (_hatGame != null && _hatGame.Active);
-        void EndGames() { if (_game != null) _game.End(); if (_hatGame != null) _hatGame.End(); }
+        DrumGame _drumGame;      // the playable scene after The King's Magic Drum
+        KitButton _playDrum;
+        const string DrumStory = "kings-drum";
+        bool Playing => (_game != null && _game.Active) || (_hatGame != null && _hatGame.Active) || (_drumGame != null && _drumGame.Active);
+        void EndGames() { if (_game != null) _game.End(); if (_hatGame != null) _hatGame.End(); if (_drumGame != null) _drumGame.End(); }
 
         void Start()
         {
@@ -152,6 +155,7 @@ namespace HypaStories
             BuildDoorRows();
             BuildDodoGame();
             BuildHatGame();
+            BuildDrumGame();
             Places.EnsureRunner();
             Places.Leaving += OnLeavingPlace;
             Places.Arrived += OnArrivedPlace;
@@ -405,6 +409,41 @@ namespace HypaStories
             _hatGame.Begin();
         }
 
+        // ---------- the drum game (after The King's Magic Drum) ----------
+
+        void BuildDrumGame()
+        {
+            _drumGame = gameObject.AddComponent<DrumGame>();
+            _drumGame.Init(_camp, assets, _audio, StoryMeshes.Glow(), transform, () =>
+            {
+                _player.Root.gameObject.SetActive(true);
+                _player.Follow.Snap();
+                _story.Live = true;
+                _endNoted = false;
+                _story.Start(0f);
+            }, () =>
+            {
+                _player.Root.gameObject.SetActive(true);
+                ExitPlay();
+            }, () =>
+            {
+                _voice.StopAll();
+                _player.Root.gameObject.SetActive(true);
+                _player.Follow.Snap();
+            });
+            _playDrum = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Play the drum", "hand", KitStyle.Primary, PlayDrum, null, 0.022f);
+            _playDrum.gameObject.SetActive(false);
+        }
+
+        void PlayDrum()
+        {
+            if (_busy || Playing || _screen != Screen.Play) return;
+            _ask.Cancel();
+            _audio.Tap();
+            _player.Root.gameObject.SetActive(false);
+            _drumGame.Begin();
+        }
+
         /// <summary>A line of Seven Hot Stones in the listener's language (Dodo's challenge, Auta's "I am."), by its id.</summary>
         string DodoLine(string id)
         {
@@ -611,6 +650,7 @@ namespace HypaStories
 
             if (_hatGame != null) _turnHat.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == EshuStory && !_busy);
             if (_game != null) _faceDodo.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == DodoStory && !_busy);
+            if (_drumGame != null) _playDrum.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == DrumStory && !_busy);
             if (_story.Live && !Playing)
             {
                 var s = _story.Update(dt);

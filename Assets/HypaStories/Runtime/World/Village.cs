@@ -50,8 +50,9 @@ namespace HypaStories
         /// <summary>
         /// Villagers come out of the trees round the campfire and dance (Dodo is dead). Off: they go. Built once, the first time.
         /// They live at the camp, not in the village, so they show however far away the village is.
+        /// <paramref name="drums"/> false: without the village's drums (the drum game's song is playing; the dancers keep their own time).
         /// </summary>
-        public void Celebrate(bool on)
+        public void Celebrate(bool on, bool drums = true)
         {
             if (!on)
             {
@@ -94,7 +95,8 @@ namespace HypaStories
             }
             _party.gameObject.SetActive(true);
             _partyT = 0f;
-            _partyDrums.volume = 0.9f; _partyDrums.time = 0f; _partyDrums.Play();
+            _partyDrums.volume = 0.9f; _partyDrums.time = 0f;
+            if (drums) _partyDrums.Play(); else _partyDrums.Stop();
             _partyCrowd.volume = 0.55f; _partyCrowd.Play();
             _partyCheer.PlayOneShot(_cheerClip, 1f);
             _nextCheer = _t + 6f;

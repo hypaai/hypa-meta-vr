@@ -6,7 +6,7 @@ namespace HypaStories
     /// Everything the story scene loads, referenced from one asset so it ends up in the build. Filled by
     /// Hypa > Stories > Create Story Scene (StorySceneBuilder). Any field may be empty: the scene falls back to procedural
     /// stand-ins (no models: primitive rocks and logs; no recorded beds: synthesised wind and fire; no narration: TTS).
-    /// The recorded audio and the storyteller avatar live in the git-ignored Assets/HypaStories/Local folder (licences).
+    /// The recorded audio is under Assets/HypaStories/Art/Audio, the storyteller avatar under Art/Models.
     /// </summary>
     public sealed class StoryAssets : ScriptableObject
     {
@@ -44,7 +44,9 @@ namespace HypaStories
         public GameObject grass;
         public GameObject[] rocks = new GameObject[0];
 
-        [Header("Audio (Local, not in git)")]
+        [Header("Audio (Art/Audio)")]
+        [Tooltip("The witch song played after the drum game, to drum along with (witch-song.mp3).")]
+        public AudioClip witchSong;
         public AudioClip ambienceSplash;
         public AudioClip ambienceStory;
         public AudioClip fireFar;

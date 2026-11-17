@@ -126,6 +126,22 @@ namespace HypaStories.Tests
             Assert.AreEqual("laugh", tl.Sounds[tl.Sounds.Length - 1].Name, "the last sound is Eshu's laugh");
         }
 
+        [Test] public void Drum_IsTheFourthCard_TheFeastRaisesTheFire_AndTheEgboMenComeInTheDark()
+        {
+            Assert.AreEqual("kings-drum", StoryLibrary.All[3].Id);
+            var tl = StoryLibrary.Find("kings-drum").Timeline;
+            var d = new StoryDirector(tl);
+            Assert.Greater(d.Sample(Line(tl, "appeared").Until).Fire, 1.4f, "the feast roars up the fire");
+            Assert.Greater(d.Sample(Line(tl, "burst").Until).Dark, 0.5f, "the night deepens when the Egbo men burst in");
+            Assert.Greater(d.Sample(Line(tl, "burst").At + 0.5f).Flash, 0.3f);
+            Assert.AreEqual(0f, d.Sample(Line(tl, "opened").Until).Spirit, 1e-4f, "gone with the Egbo men");
+            Assert.AreEqual(0f, d.Sample(tl.Duration).Rain, 1e-4f);
+            Assert.Greater(d.Sample(tl.Duration).Dawn, 0.4f, "it ends at daybreak among the palms");
+            Assert.GreaterOrEqual(tl.Sounds.Count(x => x.Name == "drums"), 5, "the drum is heard each time it is beaten");
+            Assert.AreEqual("Tortoise chose the drum.", StubStoryQa.AnswerFor("What did Tortoise choose?", 20, "en", "kings-drum")[0]);
+            StringAssert.StartsWith("Hmm", StubStoryQa.AnswerFor("What did the boys do wrong?", 40, "en", "kings-drum")[0], "no spoilers");
+        }
+
         [Test] public void Director_WithoutAFireTrack_KeepsTheFireAsItIs()
         {
             var d = new StoryDirector(new StoryTimeline { Fire = new Vector2[0] });

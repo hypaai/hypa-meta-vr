@@ -66,7 +66,7 @@ namespace HypaStories
             }
             else
             {
-                Debug.Log("Hypa Stories: recorded beds not found (Assets/HypaStories/Local/Audio); using the synthesised wind and fire.");
+                Debug.Log("Hypa Stories: recorded beds not found (Assets/HypaStories/Art/Audio); using the synthesised wind and fire.");
                 AddBed(ProceduralClips.Clip("wind", ProceduralClips.WindSamples()), null, 0.9f, null);
                 AddBed(ProceduralClips.Clip("fire", ProceduralClips.FireSamples()), null, 0.9f, fire);
             }
