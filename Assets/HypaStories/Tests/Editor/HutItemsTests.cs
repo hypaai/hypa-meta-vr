@@ -37,7 +37,10 @@ namespace HypaStories.Tests
                 {
                     Assert.AreNotEqual(c.Text, c.TextFor("fr"), $"{s.Id}/{c.Id}: French");
                     Assert.AreNotEqual(c.Text, c.TextFor("es"), $"{s.Id}/{c.Id}: Spanish");
-                    Assert.AreEqual(c.Text, c.TextFor("zz"), "an untranslated language falls back to English");
+                    foreach (var l in StoryLanguages.All)
+                        Assert.IsTrue(c.Has(l.Code), $"{s.Id}/{c.Id}: told in {l.Code}, like the campfire's stories");
+                    Assert.IsFalse(c.Has("zz"), "a language the app doesn't have");
+                    Assert.AreEqual(c.Text, c.TextFor("zz"), "is told in English");
                 }
         }
 

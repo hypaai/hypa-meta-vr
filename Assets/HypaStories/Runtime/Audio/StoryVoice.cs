@@ -87,7 +87,8 @@ namespace HypaStories
         {
             var voices = Voices?.Invoke(language.Code) ?? new VoiceOption[0];
             var key = voices.FirstOrDefault() + "|" + language.HypaLabel + "|" + text;
-            if (_cache.TryGetValue(key, out var t) && !t.IsFaulted && !t.IsCanceled) return t;
+            // a fetch that failed, or came back with no sound, is asked again
+            if (_cache.TryGetValue(key, out var t) && !t.IsFaulted && !t.IsCanceled && !(t.IsCompleted && t.Result == null)) return t;
             return _cache[key] = FetchAsync(text, language, voices);
         }
 
@@ -125,9 +126,17 @@ namespace HypaStories
                 return clip != null ? new SpeechLine { Text = text, Clip = clip, Seconds = clip.length } : Silent(text);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-            catch (Exception e)
+            catch (Exception first)
             {
-                Warn($"no voice could speak {language.HypaLabel}, lines play silently: {e.Message}");
+                // once more (a failed fetch isn't kept in the cache, so this asks again) before the line plays silently
+                try
+                {
+                    var clip = await WithCancellation(Fetch(text, language), ct);
+                    if (clip != null) return new SpeechLine { Text = text, Clip = clip, Seconds = clip.length };
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+                catch (Exception e) { first = e; }
+                Warn($"no voice could speak this {language.HypaLabel} line, it plays silently: {first.Message}");
                 return Silent(text);
             }
         }
@@ -192,7 +201,8 @@ namespace HypaStories
     /// Keeps the storyteller on one voice for a story. Hypa's Auto routes every request on its own (and fails over to another model,
     /// with another voice, when one fails), so line by line the voice could change mid-story. The first Auto line in a language picks;
     /// every later line in that language asks for that provider/model and voice. <see cref="Reset"/> (a story opened) lets Auto pick
-    /// again. A line in the locked voice that fails is not sent to Auto, so it never comes back in another voice. Pure, unit tested.
+    /// again. A locked voice the service then refuses (it spoke, but will not take that voice by name) is dropped, and this line
+    /// and the rest of that language go back to Auto, so the line is never left silent. Pure, unit tested.
     /// </summary>
     public sealed class VoiceLock
     {
@@ -218,7 +228,26 @@ namespace HypaStories
                 VoiceOption pick;
                 try { pick = await pending; }
                 catch (OperationCanceledException) { return await SpeakAsync(picks, lang, speak); } // the first call failed: pick again
-                return await speak(pick);
+                if (pick == null) return await speak(null);
+                try { return await speak(pick); }
+                catch (HypaException e) when (Refused(e))
+                {
+                    // the voice Auto used can't be asked for by name in this language (seen 2026-11-17: Auto speaks Spanish with
+                    // google/gemini-2.5-pro-tts, then refuses it by name, "cannot speak Spanish"). Never fall silent for it: this
+                    // line and the rest of the story in this language go to Auto.
+                    picks[lang] = Task.FromResult<VoiceOption>(null);
+                    return await speak(null);
+                }
+                catch (HypaException e) when (Transient(e))
+                {
+                    try { return await speak(pick); }                                  // a blip: the same voice once more
+                    catch (HypaException e2) when (Refused(e2))
+                    {
+                        picks[lang] = Task.FromResult<VoiceOption>(null);
+                        return await speak(null);
+                    }
+                    catch (HypaException e2) when (Transient(e2)) { return await speak(null); } // then Auto, this line only
+                }
             }
             var made = new TaskCompletionSource<VoiceOption>();
             picks[lang] = made.Task;
@@ -235,6 +264,14 @@ namespace HypaStories
                 throw;
             }
         }
+
+        /// <summary>The service turned the request down (that model or voice can't be used for this language).</summary>
+        static bool Refused(HypaException e) => e.Kind == HypaErrorKind.BadRequest || e.Kind == HypaErrorKind.ToolError;
+
+        /// <summary>A passing failure worth one more try.</summary>
+        static bool Transient(HypaException e) => e.Kind == HypaErrorKind.Timeout || e.Kind == HypaErrorKind.Offline
+            || e.Kind == HypaErrorKind.Unavailable || e.Kind == HypaErrorKind.Server || e.Kind == HypaErrorKind.RateLimited
+            || e.Kind == HypaErrorKind.InvalidResponse;
 
         /// <summary>The voice Auto used, as a model and voice to ask for again. Null when the reply doesn't name them.</summary>
         public static VoiceOption Pick(HypaSpeech speech)

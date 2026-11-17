@@ -42,16 +42,43 @@ namespace HypaStories
         // ---------- the celebration at the campfire (after the Dodo game) ----------
 
         Transform _party;
+        bool _placeWanted = true;
         readonly List<(Figure f, Vector3 from, Vector3 to)> _celebrants = new List<(Figure, Vector3, Vector3)>();
         float _partyT = -1f, _nextCheer;
         AudioSource _partyDrums, _partyCrowd, _partyCheer;
         AudioClip _murmurClip, _cheerClip;
 
+        /// <summary>The huts and their sounds. Off in your room: the script stays awake so a celebration at the fire can still run.</summary>
+        public void SetPlaceShown(bool on)
+        {
+            _placeWanted = on;
+            if (!on && _root != null) _root.gameObject.SetActive(false);
+            foreach (var s in GetComponentsInChildren<AudioSource>(true))
+            {
+                if (_party != null && s.transform.IsChildOf(_party)) continue;
+                s.mute = !on;
+            }
+        }
+
+        CampWorld _camp;
+        bool InRoom => (_camp != null ? _camp : (_camp = GetComponentInParent<CampWorld>())) is CampWorld camp && camp.Room;
+
+        /// <summary>A forest point round the fire, pulled to just outside the stones when the camp is in a room.</summary>
+        static Vector3 NearTheFire(Vector3 forest)
+        {
+            var flat = new Vector2(forest.x, forest.z);
+            var m = flat.magnitude;
+            if (m < 1e-3f) return forest;
+            var r = Mathf.Lerp(GameFit.StoneEdge + 0.45f, GameFit.StoneEdge + 1.05f, Mathf.InverseLerp(5.6f, 12.5f, m));
+            return new Vector3(flat.x / m * r, forest.y, flat.y / m * r);
+        }
+
         /// <summary>
         /// Villagers come out of the trees round the campfire and dance (Dodo is dead). Off: they go. Built once, the first time.
         /// They live at the camp, not in the village, so they show however far away the village is.
+        /// <paramref name="drums"/> false: without the village's drums (the drum game's song is playing; the dancers keep their own time).
         /// </summary>
-        public void Celebrate(bool on)
+        public void Celebrate(bool on, bool drums = true)
         {
             if (!on)
             {
@@ -94,7 +121,8 @@ namespace HypaStories
             }
             _party.gameObject.SetActive(true);
             _partyT = 0f;
-            _partyDrums.volume = 0.9f; _partyDrums.time = 0f; _partyDrums.Play();
+            _partyDrums.volume = 0.9f; _partyDrums.time = 0f;
+            if (drums) _partyDrums.Play(); else _partyDrums.Stop();
             _partyCrowd.volume = 0.55f; _partyCrowd.Play();
             _partyCheer.PlayOneShot(_cheerClip, 1f);
             _nextCheer = _t + 6f;
@@ -118,8 +146,11 @@ namespace HypaStories
                 _masqYaw += dt * _masqSpin * 720f;
                 var arrive = Mathf.Clamp01(_partyT / 2.5f);
                 // back and forth along the far side of the fire, facing you: never close to your seat
-                var swing = Mathf.Sin(_masqAngle * 0.8f) * 1.15f;
-                var around = new Vector2(Mathf.Sin(swing), Mathf.Cos(swing)) * Mathf.Lerp(9f, 2.5f, Mathf.SmoothStep(0f, 1f, arrive));
+                var swing = Mathf.Sin(_masqAngle * 0.8f) * (InRoom ? 0.65f : 1.15f); // a wide swing at room size would cross the stones
+                var reach = InRoom
+                    ? Mathf.Lerp(GameFit.StoneEdge + 0.9f, GameFit.StoneEdge + 0.45f, Mathf.SmoothStep(0f, 1f, arrive))
+                    : Mathf.Lerp(9f, 2.5f, Mathf.SmoothStep(0f, 1f, arrive));
+                var around = new Vector2(Mathf.Sin(swing), Mathf.Cos(swing)) * reach;
                 _masq.localPosition = X0Z(around, Mathf.Abs(Mathf.Sin(loopT * Mathf.PI * 2f)) * 0.08f);
                 _masq.localRotation = Quaternion.Euler(0f, _masqYaw, 0f);
                 UpdateMasqueradeMesh(_masqSpin * 0.85f);
@@ -128,7 +159,9 @@ namespace HypaStories
             {
                 var (f, from, to) = _celebrants[i];
                 var walk = Mathf.Clamp01((_partyT - i * 0.15f) / 3.2f);         // out of the trees, one after another
-                var at = Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, walk));
+                var fromP = InRoom ? NearTheFire(from) : from;
+                var toP = InRoom ? NearTheFire(to) : to;
+                var at = Vector3.Lerp(fromP, toP, Mathf.SmoothStep(0f, 1f, walk));
                 var bob = walk < 1f ? Mathf.Abs(Mathf.Sin(_t * 8f + i)) * 0.05f : Mathf.Abs(Mathf.Sin(beat + f.Ph)) * 0.07f;
                 f.Root.localPosition = at + Vector3.up * bob;
                 var face = -new Vector3(to.x, 0f, to.z);
@@ -983,7 +1016,7 @@ namespace HypaStories
             var dist = Vector2.Distance(Viewer, VillageLayout.Plaza);
             // the drums come clear as you come out of the trees
             _drumsMuffle.cutoffFrequency = Mathf.Lerp(900f, 22000f, Mathf.Pow(Mathf.Clamp01(1f - (dist - 8f) / 26f), 2f));
-            var seen = dist < ShowWithin;
+            var seen = _placeWanted && dist < ShowWithin;
             if (_root.gameObject.activeSelf != seen) _root.gameObject.SetActive(seen);
             if (!seen) return;
 

@@ -1,0 +1,130 @@
+{
+  "words": [
+    "ịgba",
+    "mbe",
+    "nkwụ"
+  ],
+  "calabar": "Ogologo oge gara aga, na Calabar, e nwere otu eze aha ya bụ Efriam Duke, onye na-adịghị ahụ agha n'anya.",
+  "calabar.ask": [
+    "Ebee ka Calabar dị?"
+  ],
+  "drum": "O nwere otu ịgba, mgbe ọ bụla ọ kụrụ ya, oriri na-apụta.",
+  "drum.ask": [
+    "Gịnị ka ịgba ahụ na-eme?"
+  ],
+  "feast": "Azụ na akpụ, ji na okwuru, ofe mmanụ nkwụ na mmanya nkwụ, nke ga-ezuru onye ọ bụla.",
+  "enemies": "Mgbe ndị iro bịara, ọ dịghị alụ ọgụ. Ọ na-akpọ ha ka ha bịa rie nri.",
+  "enemies.ask": [
+    "Gịnị mere eze ji akpọ ndị iro ya?"
+  ],
+  "animals": "O na-enyekwa ndị ya nri, ọbụna anụmanụ, n'ihi na n'oge ahụ ha niile na-eri nri ọnụ n'udo.",
+  "rule": "Ma ịgba ahụ nwere otu iwu.",
+  "stick": "Ọ bụrụ na onye nwe ya agafee osisi dina n'ụzọ, ịgba ahụ agaghị enye nri ọzọ.",
+  "stick.ask": [
+    "Gịnị bụ iwu ịgba ahụ?"
+  ],
+  "egbo": "Kama nke ahụ, narị ndị ikom Egbo atọ ga-abịa were osisi na ụtarị tie ya na ndị ọbịa ya niile.",
+  "egbo.ask": [
+    "Ndị bụ ndị Egbo?"
+  ],
+  "wanted": "Ọtụtụ mmadụ chọrọ ịgba ahụ. Eze ekweghị ịhapụ ya.",
+  "tortoise": "Onye chọrọ ya karịa mmadụ niile bụ Mbe.",
+  "tortoise.ask": [
+    "Onye bụ Mbe?"
+  ],
+  "spring": "Otu ụtụtụ, Ikwor Edem, otu n'ime ndị nwunye eze, kpọọrọ obere nwa ya nwanyị gaa n'otu isi iyi ka ọ saa ya ahụ.",
+  "palm": "N'elu ha, n'elu osisi nkwụ, Mbe na-egbu mkpụrụ nkwụ.",
+  "nut": "Otu mkpụrụ nkwụ dara n'ụkwụ obere nwa agbọghọ ahụ.",
+  "cried": "O bere ákwá maka ya, nne ya wee nye ya ya.",
+  "mine": "Mbe rịdata. Mkpụrụ nkwụ ahụ bụ nke m, ka o kwuru.",
+  "mine.ask": [
+    "Gịnị mere iwe ji were Mbe otú a?"
+  ],
+  "idea": "Ikwor Edem kọwara, ma ọ bụ ịgba ahụ ka Mbe na-eche.",
+  "justice": "Nwunye gị weere nri m, ka ọ gwara eze. Achọrọ m ikpe ziri ezi.",
+  "offers": "Eze nyere ya ego. Akwa. Akụ nkwụ. Mmanụ nkwụ.",
+  "no": "Mbe jụrụ ha niile.",
+  "choose": "N'ikpeazụ eze sịrị, ya bụrụ, họrọ ihe ọ bụla ị chọrọ.",
+  "point": "Mbe tụrụ aka n'ịgba ahụ ozugbo.",
+  "point.ask": [
+    "Gịnị ka Mbe họọrọ?"
+  ],
+  "gave": "Ka esemokwu ahụ kwụsị, eze nyere ya ya. Ma ọ gwaghị ya iwu ahụ.",
+  "gave.ask": [
+    "Gịnị mere eze agwaghị ya iwu ahụ?"
+  ],
+  "home": "Mbe bugara ịgba ahụ n'ụlọ. Anyị agaghị arụ ọrụ maka nri ọzọ, ka ọ gwara ezinụlọ ya.",
+  "beat": "Ọ kụrụ ịgba ahụ, oriri wee kpuchie ala.",
+  "three-days": "Ụbọchị atọ, ezinụlọ ahụ riri nri, chịa ọchị, rikwaa ọzọ.",
+  "invite": "Mgbe ahụ ọ kpọrọ eze, obodo niile na anụmanụ ka ha bịa nnukwu oriri.",
+  "laughed": "Ọtụtụ mmadụ chịrị ọchị. Mbe, onye kacha daa ogbenye, ga-eme oriri?",
+  "few": "Naanị mmadụ ole na ole bịara. Ma eze bịara.",
+  "appeared": "Mbe kụrụ ịgba ahụ, oriri wee pụta n'ihu ha niile.",
+  "amazed": "Ndị ọbịa laara n'ụlọ, ihe ahụ na-eju ha anya. Ndị na-abịaghị ṅụrụ iyi na ha ga-abịa oge ọzọ.",
+  "amazed.ask": [
+    "Gịnị ka ndị mmadụ na-eche maka Mbe ugbu a?"
+  ],
+  "boastful": "Mbe ghọrọ onye umengwụ na onye mpako, ọ na-aṅụkwa mmanya nkwụ karịa akarị.",
+  "farm": "Otu mgbede, ka ọ na-esi n'ugbo ya ala, o leghị anya ebe ọ na-aga.",
+  "stepped": "Otu osisi dina n'ụzọ, o wee gafee ya.",
+  "stepped.ask": [
+    "Gịnị ka Mbe mere nke na-adịghị mma?"
+  ],
+  "nothing": "Ọ dịghị ihe mere. Ọ chọpụtaghịdị ya.",
+  "breakfast": "N'ụtụtụ echi ya, ezinụlọ ya agụụ na-agụ rịọrọ nri ụtụtụ.",
+  "beat-again": "Ọ kụrụ ịgba ahụ.",
+  "egbo-came": "Nri abịaghị. Kama nke ahụ, narị ndị ikom Egbo atọ bịara, jiri osisi na ụtarị.",
+  "beaten": "Ha tiri Mbe na ezinụlọ ya niile.",
+  "furious": "Iwe were Mbe nke ukwuu. Ma ọ taghị onwe ya ụta.",
+  "furious.ask": [
+    "Gịnị ka Mbe ga-eme ugbu a?"
+  ],
+  "plan": "Ọ bụrụ na a ga-eti m, ka o chere, a ga-etikwa ndị chịrị m ọchị.",
+  "second": "Ọ kpọrọ mmadụ niile ka ha bịa nnukwu oriri ọzọ.",
+  "crowds": "Oge a, obodo niile bịara, na anụmanụ niile, ọ dịghị onye chọrọ ka ọ gafere ya ọzọ.",
+  "stayed": "Eze na ndị nwunye ya nọrọ n'ụlọ. Mbe ezigalarị ezinụlọ ya ebe dị anya.",
+  "stayed.ask": [
+    "Gịnị mere eze abịaghị?"
+  ],
+  "doors": "Mgbe ndị ọbịa niile banyere, e mechiri ụzọ niile.",
+  "bench": "Mbe kụrụ ịgba ahụ, wee zoo n'okpuru otu oche ogologo.",
+  "burst": "Ndị Egbo ji osisi na ụtarị ha gbaba n'ime.",
+  "nowhere": "Ndị ọbịa gbara ọsọ, ma ọ dịghị ebe ha ga-agbaga.",
+  "leopard": "Naanị Agụ gbapụrụ, wụfee mgbidi ezi ahụ.",
+  "leopard.ask": [
+    "Olee otú Agụ si gbapụ?"
+  ],
+  "opened": "N'ikpeazụ, Mbe meghere ụzọ, kụọ ịgba ahụ n'ụzọ pụrụ iche, ndị Egbo wee pụọ n'anya.",
+  "limped": "Ndị ọbịa ji ngwụrọ laa n'ụlọ, ahụ ha merụrụ emerụ, iwe na-ewekwa ha nke ukwuu.",
+  "return": "Ya mere, n'ụtụtụ echi ya, Mbe bulaghachiri ịgba ahụ nye eze.",
+  "exchange": "Nara ya, ka o kwuru, nye m ala ugbo ma ọ bụ akwa kama.",
+  "fufu-tree": "Eze ekweghị ịgbanwe ya. Ma o meere Mbe ebere, nye ya osisi akpụ nwere anwansi.",
+  "fufu-tree.ask": [
+    "Gịnị bụ osisi akpụ?"
+  ],
+  "tree-rule": "Kwa ụbọchị, ọ na-enye akpụ ọhụrụ na ofe. Ma naanị otu ugboro n'ụbọchị ka ha ga-ewere nri n'ebe ọ nọ, ọ bụghị ugboro abụọ.",
+  "tree-rule.ask": [
+    "Gịnị bụ iwu osisi akpụ ahụ?"
+  ],
+  "calabashes": "Kwa ụtụtụ, Mbe na nwunye ya na-eju oba ha, ezinụlọ ahụ wee nwee nri bara ụba.",
+  "son": "Ma otu n'ime ụmụ ya nwoke chọrọ ịma ebe nri ahụ si abịa.",
+  "secret": "Mbe ekweghị ikwu. Ọ bụrụ na ụmụaka ahụ achọta ya, ka nne ha kwuru, ha ga-emebi ya.",
+  "ashes": "Ya mere, nwata nwoke ahụ jupụtara otu oba n'ntụ, zoo ya n'akpa nna ya, n'elu obere oghere.",
+  "ashes.ask": [
+    "Gịnị bụ aghụghọ nwata ahụ?"
+  ],
+  "trail": "Ka Mbe na-aga, ntụ na-adaba n'azụ ya nwayọọ nwayọọ.",
+  "followed": "Nwata ahụ sooro ntụ ahụ, lee anya site n'ọhịa, ma o kwughị ihe ọ bụla.",
+  "twice": "N'echi ya, mgbe nna ya weresịrị nri ahụ, nwata ahụ kpọọrọ ụmụnne ya gaa n'osisi ahụ, ha wee were ọzọ.",
+  "twice.ask": [
+    "Gịnị ka ụmụ nwoke ahụ mere nke na-adịghị mma?"
+  ],
+  "gone": "N'ụtụtụ echi ya, osisi ahụ efuola.",
+  "thicket": "Ọhịa dị ukwuu etoola n'abalị. Ihe Mbe na-ahụ bụ naanị nkwụ ọhịa nwere ogwu.",
+  "nobody": "Ọ jụrụ ezinụlọ ya onye mebiri iwu ahụ. Ọ dịghị onye zara.",
+  "live-here": "Ya mere, o duru ha gaa ebe ahụ. Unu mebiri iwu ahụ, ka o kwuru, ya mere ebe a ka anyị ga-ebi.",
+  "why": "Ọ bụ ya mere, ka ndị okenye na-ekwu, mbe ji ebi n'okpuru nkwụ ọhịa nwere ogwu.",
+  "why.ask": [
+    "Gịnị mere mbe ji ebi n'okpuru nkwụ?"
+  ]
+}

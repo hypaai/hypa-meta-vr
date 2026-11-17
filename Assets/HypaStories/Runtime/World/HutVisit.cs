@@ -120,7 +120,7 @@ namespace HypaStories
 
             // the same panel the campfire's story plays in, in front of you (not under the campfire's UI, which is put away out here)
             _ui = new GameObject("Hypa Stories Hut UI").transform;
-            _panel = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1), () => { }, AskTap, Close,
+            _panel = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1), null /* no Try Hypa in the hut: it stays on the campfire's stories */, AskTap, Close,
                 toggleSound, q => _ask.SubmitText(q));
             _panel.Follow.Height = -0.55f; // lower than by the fire: she sits just beyond it, and her face stays in view over its top edge
             _ask = new AskFlow(_story, _voice, mic, qa, _panel, lang, _ => { });
