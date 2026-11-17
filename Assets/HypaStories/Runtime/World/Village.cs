@@ -20,6 +20,23 @@ namespace HypaStories
     public sealed class Village : TrailBuilder
     {
         const float ShowWithin = 40f;
+        public Transform ElderMouth => _local?.Mouth;
+        bool _narrationFocus;
+        float _performanceLevel = 1f;
+        AudioSource _crowd;
+
+        public void SetNarrationFocus(bool on) => _narrationFocus = on;
+
+        /// <summary>Fade performance audio without stopping the drum clock used by the dancers.</summary>
+        public void UpdatePerformanceAudio(float dt)
+        {
+            var target = _narrationFocus ? 0.15f : 1f;
+            _performanceLevel = Mathf.Lerp(_performanceLevel, target,
+                1f - Mathf.Exp(-Mathf.Max(0f, dt) / (_narrationFocus ? 0.2f : 0.7f)));
+            if (_drums != null) _drums.volume = 0.85f * _performanceLevel;
+            if (_crowd != null) _crowd.volume = 0.45f * _performanceLevel;
+            if (_thud != null) _thud.volume = _performanceLevel;
+        }
 
         Transform _root;   // everything you see (hidden when far)
         StoryFire _fire;
@@ -921,7 +938,7 @@ namespace HypaStories
             _drums.time = 0f;
             _drumsMuffle = _drums.gameObject.AddComponent<AudioLowPassFilter>();
             _murmurClip = ProceduralClips.Clip("murmur", ProceduralClips.MurmurSamples());
-            Bed("Crowd", _murmurClip, X0Z(VillageLayout.YamPile, 1.4f), 0.45f, 3f, 22f);
+            _crowd = Bed("Crowd", _murmurClip, X0Z(VillageLayout.YamPile, 1.4f), 0.45f, 3f, 22f);
             Bed("Village Fire", ProceduralClips.Clip("village fire", ProceduralClips.FireSamples()), X0Z(VillageLayout.Fire, 0.4f), 0.6f, 1.5f, 12f);
             _thudClip = ProceduralClips.Clip("pestle", ProceduralClips.StepSamples(151));
             _thud = Voice("Pestles", _root, 18f);
@@ -932,6 +949,7 @@ namespace HypaStories
 
         void Update()
         {
+            UpdatePerformanceAudio(Time.unscaledDeltaTime);
             var cam = Tick();
             if (cam == null) return;
             var dt = Time.deltaTime;

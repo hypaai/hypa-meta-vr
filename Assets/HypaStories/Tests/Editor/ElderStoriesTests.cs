@@ -9,6 +9,71 @@ namespace HypaStories.Tests
 {
     public class ElderStoriesTests
     {
+        [TestCase(true, true, false, false, false, false, true)] // between lines, buffering or paused
+        [TestCase(true, true, true, false, false, false, false)] // ended
+        [TestCase(true, true, true, true, false, false, true)] // final audio still finishing
+        [TestCase(true, false, false, false, true, false, true)] // microphone / question
+        [TestCase(true, true, true, false, false, true, true)] // translation after the end
+        [TestCase(true, false, false, false, false, false, false)] // left the player
+        [TestCase(false, true, false, true, true, true, false)] // fireside unaffected
+        public void VillageQuiet_CoversTheSessionAndPostStorySpeech(bool elder, bool live, bool ended,
+            bool speaking, bool asking, bool translating, bool expected)
+            => Assert.AreEqual(expected, StoryApp.NeedsVillageQuiet(elder, live, ended, speaking, asking, translating));
+
+        [Test] public void VoiceOrigin_MovesOnlyTheAudio_AndCanReturnToTheFire()
+        {
+            var root = new GameObject("Voice origin test");
+            try
+            {
+                var fire = new GameObject("Fire mouth").transform; fire.SetParent(root.transform);
+                var elder = new GameObject("Elder mouth").transform; elder.SetParent(root.transform);
+                elder.position = new Vector3(40f, 1.5f, 8f);
+                var voice = root.AddComponent<StoryVoice>(); voice.Init(fire);
+                var source = fire.GetComponentInChildren<AudioSource>();
+                voice.SetOrigin(elder);
+                Assert.AreSame(source, elder.GetComponentInChildren<AudioSource>());
+                Assert.AreEqual(elder.position, source.transform.position);
+                Assert.AreEqual(0.6f, source.spatialBlend);
+                Assert.AreEqual(2f, source.minDistance);
+                Assert.AreEqual(30f, source.maxDistance);
+                voice.SetOrigin(fire);
+                Assert.AreSame(source, fire.GetComponentInChildren<AudioSource>());
+                Assert.AreEqual(fire.position, source.transform.position);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
+        [Test] public void VillagePerformance_FadesOnlySelectedSources_AndRestoresTheirBaseVolumes()
+        {
+            var root = new GameObject("Village audio test");
+            try
+            {
+                var village = root.AddComponent<Village>();
+                AudioSource Source(string field)
+                {
+                    var go = new GameObject(field); go.transform.SetParent(root.transform);
+                    var source = go.AddComponent<AudioSource>(); source.loop = true;
+                    typeof(Village).GetField(field, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(village, source);
+                    return source;
+                }
+                var drums = Source("_drums"); var crowd = Source("_crowd"); var pestles = Source("_thud");
+                var fire = root.AddComponent<AudioSource>(); fire.volume = 0.6f;
+                village.SetNarrationFocus(true); village.UpdatePerformanceAudio(0.1f);
+                Assert.That(drums.volume, Is.InRange(0.128f, 0.849f), "fade instead of an abrupt cut");
+                village.UpdatePerformanceAudio(10f);
+                Assert.AreEqual(0.85f * 0.15f, drums.volume, 0.0001f);
+                Assert.AreEqual(0.45f * 0.15f, crowd.volume, 0.0001f);
+                Assert.AreEqual(0.15f, pestles.volume, 0.0001f);
+                Assert.AreEqual(0.6f, fire.volume, "other ambience is untouched");
+                Assert.IsTrue(drums.loop);
+                village.SetNarrationFocus(false); village.UpdatePerformanceAudio(10f);
+                Assert.AreEqual(0.85f, drums.volume, 0.0001f);
+                Assert.AreEqual(0.45f, crowd.volume, 0.0001f);
+                Assert.AreEqual(1f, pestles.volume, 0.0001f);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
         static StoryAssets UiAssets()
         {
             var source = AssetDatabase.LoadAssetAtPath<StoryAssets>("Assets/HypaStories/StoryAssets.asset");

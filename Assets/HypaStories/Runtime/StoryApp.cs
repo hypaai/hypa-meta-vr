@@ -293,6 +293,7 @@ namespace HypaStories
             if (_busy || _screen != Screen.Splash) return;
             if (elder && (_room || !VillageLayout.AtLocal(ViewerOnGround))) return;
             _elderSession = elder;
+            UpdateNarrationAudio();
             _list.SetStories(elder ? StoryLibrary.Elder : StoryLibrary.Campfire);
             _prepText.text = elder ? "Preparing the story..." : "Gathering around the fire…";
             Go(Screen.List);
@@ -610,9 +611,21 @@ namespace HypaStories
 
         static float Approach(float cur, float target, float rate, float dt) => cur + (target - cur) * (1f - Mathf.Exp(-rate * dt));
 
+        public static bool NeedsVillageQuiet(bool elder, bool live, bool ended, bool speaking, bool asking, bool translating)
+            => elder && ((live && !ended) || speaking || asking || translating);
+
+        void UpdateNarrationAudio()
+        {
+            _voice.SetOrigin(_elderSession && !_room ? _camp.Village.ElderMouth : _camp.Teller.Mouth);
+            _camp.Village.SetNarrationFocus(NeedsVillageQuiet(_elderSession, _story.Live, _story.Ended,
+                _voice.IsSpeaking, _ask.State != AskState.Idle,
+                _tryOpen && (_tryFlow.Status != TryStatus.Idle || _tryFlow.ActiveAudio != null)));
+        }
+
         void Update()
         {
             if (_away) return; // at another place: the camp waits, hidden
+            UpdateNarrationAudio();
             var dt = Time.deltaTime;
             _hover = Approach(_hover, _portalHover && _screen == Screen.Splash && !_busy ? 1f : 0f, 5f, dt);
             _camp.Boost = _boost * (1f + 0.3f * _hover);
@@ -829,6 +842,7 @@ namespace HypaStories
             _room = true;
             _roomPlan = plan;
             _roomFloorY = floorY;
+            _voice.SetOrigin(_camp.Teller.Mouth); // move before the outdoor village is hidden
             _camp.SetRoom(true);
             StoryRoom.Depth?.Invoke(true);
             PlaceInRoom();
