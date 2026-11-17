@@ -51,6 +51,8 @@ namespace HypaCore
         public string Mime;
         public int SampleRate;
         public string Voice;
+        /// <summary>The provider and model that spoke (with model "auto", the one Auto picked), e.g. "hypaai" + "hypa-orpheus-3b-tts-vc-flt".</summary>
+        public string Provider, Model;
     }
 
     /// <summary>A line of a dictionary entry with its label, e.g. type "noun", text "an animal that lives in water".</summary>

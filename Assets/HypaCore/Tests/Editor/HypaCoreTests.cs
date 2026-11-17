@@ -420,7 +420,16 @@ namespace HypaCore.Tests
             Assert.Greater(HypaMcpClient.TimeoutFor("text_to_speech").TotalSeconds, 60, "speech for a few lines can pass 30 s");
             Assert.AreEqual(30, HypaMcpClient.TimeoutFor("translate_message").TotalSeconds, 0.01);
         }
-    
+
+        [Test] public void ParseSpeech_KeepsTheModelAutoPicked()
+        {
+            var s = HypaMcpClient.ParseSpeech(JObject.Parse(
+                "{\"audioUrl\":\"https://x.test/a.wav\",\"mime\":\"audio/wav\",\"voice\":\"Eniola\",\"provider\":\"hypaai\",\"model\":\"hypa-orpheus-3b-tts-vc-flt\"}"));
+            Assert.AreEqual("Eniola", s.Voice);
+            Assert.AreEqual("hypaai", s.Provider);
+            Assert.AreEqual("hypa-orpheus-3b-tts-vc-flt", s.Model);
+        }
+
         [Test] public void TtsArgs_AutoRouter_WithoutAVoice_AndAVoiceOnlyWithItsOwnModel()
         {
             var auto = HypaMcpClient.TtsArgs("hi", "Yoruba", null, null);
@@ -440,5 +449,5 @@ namespace HypaCore.Tests
             Assert.AreEqual("hypaai/m1", HypaMcpClient.ModelForVoice(opts, "toyin"));
             Assert.IsNull(HypaMcpClient.ModelForVoice(opts, "Nobody"));
         }
-}
+    }
 }

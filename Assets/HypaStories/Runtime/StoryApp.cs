@@ -444,8 +444,8 @@ namespace HypaStories
             _endNoted = false;
             _player.SetTryOffer(false);
             MicListener.RequestPermission();
+            var ready = _story.PrepareAsync(_cts.Token); // the opening line locks the voice; the fillers below speak in it
             PrefetchLines();
-            var ready = _story.PrepareAsync(_cts.Token);
             for (var c = 0; c < _list.Count; c++) { var k = c; Run(0f, 0.9f, u => _list.SetReveal(k, 1f - u), In); }
             Run(0f, 0.8f, u => _list.Chrome.Set(1f - u), In);
             StartCoroutine(PlaySequence(ready));
