@@ -95,21 +95,31 @@ Tested: the spot finder (`RoomTests`: open room, small room, furniture, no spot,
 restoring, material swap) in the editor. **Not tried on a headset** (none here): the scan, the depth hiding and the passthrough look
 need a Quest 3 pass.
 
-## Portal to the hut (ticket 3L)
+## Portal: hut, village or camp (ticket 3L)
 
-In your room (**In my room**), your real **door** gets a faint ember outline: it is live. If the scan found no door, the same outline
-goes on a clear stretch of **wall** you can walk up to (open floor in front, away from the fire, never over a window); with no scan
-it stands 2 m in front of you. There is no button: **pinch the door**, or walk into it (editor: **P**).
+In your room (**In my room**) a doorway goes on **every real door** the room scan found (MRUK `DOOR_FRAME` anchors), at the door's real size and
+position (`PortalSpot.Doors`; no walking-room tests, a door is where it is). Only with no door in the scan does it use a clear stretch of **wall**,
+and with no scan at all it stands 2 m in front of you. Each doorway is open and shows **where it leads, live**: stand in front of a door and you
+see the hut, the village or the camp. Three chips beside it (**Hut**, **Village**, **Camp**) switch the place; the hut is the default.
 
-- **The fall:** the glass opens and pulls, then you fall down a tunnel of light (`Shaders/StoryFall`, a sphere that follows your head).
-  Part-way down a panel asks **Where to?**: **Hut**, **Village**, **Campfire** (or **Back to my room**). Pick one and the fall rushes
-  toward it, a soft flash, and you are there in full VR. It keeps falling until you choose.
-- **Hut:** you land in its doorway (the camp's world is laid so the hut's door sits exactly on the doorway). Walk out of the hut's door
-  (editor **G**) and your room is back with the doorway where it was. The story never stops.
-- **Code:** `Core/PortalSpot` (placement and stepping, unit tested in `PortalTests`), `World/StoryPortal` (the door), `World/StoryFall`
-  (the tunnel), `Shaders/StoryPortal` and `StoryFall`, `StoryApp` (the flow), `QuestRoomScan` (doors, windows, walls from MRUK).
-- **Not yet:** the glass shows a painted glimpse of the hut, not a live view; several doors at once (it uses the best one); windows.
-  Only a Quest 3 shows the real passthrough, depth hiding and frame rate.
+- **One step in:** step through a door (0.3 m past it) and, after a soft flash, you are in that place, just inside its doorway, which is laid
+  exactly on the real door.
+- **In the place the doorway stays on your real door:** its frame glows there and the opening is a hole onto your room (`Shaders/StoryPortalHole`;
+  passthrough runs underneath the app and the camera clears to see-through), so you see your real room through it.
+- **One step back:** step back over the doorway and your room is back (passthrough), the doorways where they were. The story never stops.
+- **Editor:** **P** steps through (into your room first), **G** steps through or back. Pinching a door's glass does the same; from afar the
+  doorway comes to you.
+- **The look:** plain and real: a clean opening with dark wooden trim (grain, a lit inner edge), a soft shadow on the wall and a little shade
+  just inside the edge. No glow, sparks or ripples.
+- **The live view:** `World/PortalWindow` draws the place once per eye with a hidden camera, from where your eye would be on the far side of the
+  doorway (`PortalDestinations.Link`), with everything on your side cut off by an oblique near plane. While you are in your room the camp's
+  scenery moves to layer 30 (`CampWorld.DestLayer`): your camera skips it, the portal camera draws it, its sounds are muted.
+  `DistanceCull.Viewer` measures what to draw from the far side. If the camera can't draw, the glass shows a painted glimpse of the hut.
+- **Code:** `Core/PortalSpot` (doors, placement, stepping), `Core/PortalDestination` (the places' doorways, the link maths), `World/StoryPortal`
+  (the door), `World/PortalWindow` (the live view), `Shaders/StoryPortal` + `StoryPortalHole`, `StoryApp` (the flow), `QuestRoomScan` (MRUK).
+  Unit tests: `PortalTests`, `PortalLinkTests`.
+- **Not yet checked on a Quest 3:** the live view and its frame rate (it draws the forest a second time), the hole onto your room, the doors
+  from a real scan. Windows are avoided, not used.
 
 ## What came across from the prototype
 

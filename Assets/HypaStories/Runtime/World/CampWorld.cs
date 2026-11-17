@@ -33,9 +33,19 @@ namespace HypaStories
         /// <summary>Ticket 3K: the camp is in your real room (passthrough): no sky, trees, ground, trails, mist or rain; the fire and the storyteller stay.</summary>
         public bool Room { get; private set; }
 
+        /// <summary>Layer the camp's scenery sits on while you are in your room: the main camera skips it, the portal's camera draws it (3L).</summary>
+        public const int DestLayer = 30;
+        DistanceCull _cull;
+        int _camMask;
+        readonly Dictionary<GameObject, int> _layers = new Dictionary<GameObject, int>();
+        readonly List<(AudioSource s, bool mute)> _muted = new List<(AudioSource, bool)>();
+
+        /// <summary>While the portal shows a place, measure what to draw from there (camp ground space); null = from the camera.</summary>
+        public void SetViewer(Vector3? local) { if (_cull != null) _cull.Viewer = local; }
+
         StoryAssets _a;
         readonly List<GameObject> _scenery = new List<GameObject>();   // everything that goes away in the room
-        readonly List<GameObject> _hidden = new List<GameObject>();    // the part of it that was showing
+        bool _rainWas;
         readonly Dictionary<Renderer, Material[]> _litOriginal = new Dictionary<Renderer, Material[]>();
         readonly Dictionary<Material, Material> _litMade = new Dictionary<Material, Material>();
         Transform _firePool, _ringHolder;
@@ -119,7 +129,7 @@ namespace HypaStories
             Teller.Build(a.storyteller, a.lit);
 
             // don't draw what the fog hides: the far ends of the trails, the hut, the pines round them (the village has its own)
-            var cull = gameObject.AddComponent<DistanceCull>();
+            var cull = _cull = gameObject.AddComponent<DistanceCull>();
             cull.Collect(transform, t => Village != null && t == Village.transform || t == Fire.Root || t == PortalRing || t == Teller.transform,
                 14f, n => n == "Wolf" || n == "Owl" || n == "Bat" || n == "Bushbaby" || n == "Frog", 16f);
         }
@@ -556,24 +566,41 @@ namespace HypaStories
         {
             if (on == Room) return;
             Room = on;
+            var cam = Camera.main;
             if (on)
             {
-                _hidden.Clear();
+                // the scenery stays alive but moves to its own layer: your camera skips it (the room shows through), and the portal's camera
+                // draws it, so the doorway can show the hut, the village or the camp. Its sounds are muted, so the room stays quiet.
+                _layers.Clear(); _muted.Clear();
                 foreach (var go in _scenery)
-                    if (go != null && go.activeSelf) { _hidden.Add(go); go.SetActive(false); }
+                {
+                    if (go == null || !go.activeSelf) continue;
+                    foreach (var t in go.GetComponentsInChildren<Transform>(true)) { _layers[t.gameObject] = t.gameObject.layer; t.gameObject.layer = DestLayer; }
+                    foreach (var src in go.GetComponentsInChildren<AudioSource>(true)) { _muted.Add((src, src.mute)); src.mute = true; }
+                }
+                if (cam != null) { _camMask = cam.cullingMask; cam.cullingMask &= ~(1 << DestLayer); }
                 _fogWas = RenderSettings.fog;
                 RenderSettings.fog = false;
+                _rainWas = _rainT.gameObject.activeSelf;
                 _rainT.gameObject.SetActive(false);
             }
             else
             {
-                foreach (var go in _hidden) if (go != null) go.SetActive(true);
-                _hidden.Clear();
+                foreach (var kv in _layers) if (kv.Key != null) kv.Key.layer = kv.Value;
+                _layers.Clear();
+                foreach (var (src, mute) in _muted) if (src != null) src.mute = mute;
+                _muted.Clear();
+                if (cam != null) cam.cullingMask = _camMask != 0 ? _camMask : cam.cullingMask | (1 << DestLayer);
+                SetViewer(null);
                 RenderSettings.fog = _fogWas;
+                _rainT.gameObject.SetActive(_rainWas);
                 ResetTeller();
             }
             SwapLit(on);
         }
+
+        /// <summary>Whether the fog was on before the room (the portal's camera draws its view with it).</summary>
+        public bool FogForForest => _fogWas;
 
         /// <summary>In the room the storyteller sits straight across the fire from you, <paramref name="gap"/> metres from it (the world's +Z is away from you).</summary>
         public void SetTellerGap(float gap) => Teller.transform.localPosition = new Vector3(0f, 0f, gap);

@@ -40,12 +40,39 @@ namespace HypaStories
     /// </summary>
     public static class PortalSpot
     {
-        public const float DoorWidthMin = 0.8f, DoorWidthMax = 1.1f, DoorHeightMin = 1.9f, DoorHeightMax = 2.2f;
+        public const float DoorWidthMin = 0.6f, DoorWidthMax = 1.7f, DoorHeightMin = 1.7f, DoorHeightMax = 2.5f;
         public const float WallWidth = 0.95f, WallHeight = 2.05f;
         public const float InFrontDistance = 2f;
 
         const float Step = 0.5f, EdgeMargin = 0.6f, FrontNear = 0.9f, FrontFar = 1.6f, FrontClear = 0.35f, FromFire = 1.4f, WindowKeepOut = 0.7f;
         const float MinFromUser = 0.9f, MaxFromUser = 6f;
+
+        /// <summary>How far past the doorway (m) your head goes to count as stepping through it, and so the same line you step back over.</summary>
+        public const float Through = 0.3f;
+
+        /// <summary>
+        /// Every real door the scan found, nearest to you first, each laid on the door itself at its real size (within sane limits). No
+        /// walking-room tests: a door is where it is. Pure, unit tested.
+        /// </summary>
+        public static List<PortalPlan> Doors(Vector2 user, IList<PortalSurface> surfaces, float floorY)
+        {
+            var list = new List<PortalPlan>();
+            if (surfaces == null) return list;
+            foreach (var s in surfaces)
+            {
+                if (s.Kind != PortalKind.Door) continue;
+                var n = new Vector3(s.Normal.x, 0f, s.Normal.z);
+                if (n.sqrMagnitude < 1e-6f) continue;
+                list.Add(new PortalPlan
+                {
+                    Base = new Vector3(s.Center.x, floorY, s.Center.z), Normal = n.normalized,
+                    Width = Mathf.Clamp(s.Width, DoorWidthMin, DoorWidthMax), Height = Mathf.Clamp(s.Height, DoorHeightMin, DoorHeightMax),
+                    Kind = PortalKind.Door, Scanned = true,
+                });
+            }
+            list.Sort((a, b) => Vector2.Distance(user, new Vector2(a.Base.x, a.Base.z)).CompareTo(Vector2.Distance(user, new Vector2(b.Base.x, b.Base.z))));
+            return list;
+        }
 
         /// <summary>A door if there is a usable one, else open wall. Null when nothing in the room fits.</summary>
         public static PortalPlan? Find(Vector2 user, Vector2 forward, IList<PortalSurface> surfaces, float floorY,
@@ -144,8 +171,8 @@ namespace HypaStories
         }
 
         /// <summary>You went from your side to the far side of the doorway, through the opening (not round it). Pure.</summary>
-        public static bool SteppedIn(float prevDepth, float depth, float across, float up, float width, float height)
-            => prevDepth > 0f && depth <= 0f && prevDepth - depth < 1f && Mathf.Abs(across) <= width * 0.5f + 0.15f && up >= 0f && up <= height + 0.6f;
+        public static bool SteppedIn(float prevDepth, float depth, float across, float up, float width, float height, float through = 0f)
+            => prevDepth > through && depth <= through && prevDepth - depth < 1f && Mathf.Abs(across) <= width * 0.5f + 0.15f && up >= 0f && up <= height + 0.6f;
 
         /// <summary>The same the other way: coming out through the hut's door (depth is measured on the door's outside, + = outside). Pure.</summary>
         public static bool SteppedOut(float prevDepth, float depth, float across, float width)

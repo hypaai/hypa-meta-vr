@@ -1,4 +1,4 @@
-// The portal to the hut (ticket 3L): a doorway of warm light with a glass-like skin that ripples and pulls as you come near.
+// The doorway (ticket 3L): a plain opening onto the place it leads to, with dark wooden trim and a soft shadow on the wall. No glow, no effects.
 // One quad, bottom-anchored: the opening is _Size.xy minus the frame margin; the frame glows just outside it.
 // _Window: when set (the live view of the hut, one picture per eye), the glass shows it instead of the painted glimpse.
 Shader "HypaStories/Portal"
@@ -9,11 +9,11 @@ Shader "HypaStories/Portal"
         _Margin ("Frame margin", Float) = 0.14
         _Open ("Open (0 shut .. 1 open)", Range(0, 1)) = 1
         _Pull ("Pull (0 far .. 1 at the glass)", Range(0, 1)) = 0
-        _Glow ("Frame colour", Color) = (1, 0.55, 0.18, 1)
+        _Glow ("Trim colour (dark wood)", Color) = (0.2, 0.13, 0.08, 1)
         _WindowL ("Hut, left eye", 2D) = "black" {}
         _WindowR ("Hut, right eye", 2D) = "black" {}
         _UseWindow ("Use the live view", Range(0, 1)) = 0
-        _Hint ("Faint frame while shut (0 none .. 1 shown)", Range(0, 1)) = 0
+        _Hole ("In a place: the opening shows your room (1)", Range(0, 1)) = 0
         _EnvironmentDepthBias ("Environment Depth Bias (room)", Float) = 0.06
     }
     SubShader
@@ -32,7 +32,7 @@ Shader "HypaStories/Portal"
             #include "Packages/com.meta.xr.sdk.core/Shaders/EnvironmentDepth/BiRP/EnvironmentOcclusionBiRP.cginc"
 
             float4 _Size;
-            float _Margin, _Open, _Pull, _UseWindow, _Hint, _EnvironmentDepthBias;
+            float _Margin, _Open, _Pull, _UseWindow, _Hole, _EnvironmentDepthBias;
             fixed4 _Glow;
             sampler2D _WindowL, _WindowR;
 
@@ -70,45 +70,41 @@ Shader "HypaStories/Portal"
                 float2 q = (p - c) / float2(W * 0.5, H * 0.5);
                 float r = length(q);
 
-                // opening: an iris from the middle
-                float reveal = smoothstep(0.0, 0.25, _Open * 1.7 - r);
-                // shut but armed: only a faint ember outline, so you know the door is live (it brightens as you come near)
-                float hint = _Hint * (1.0 - _Open) * (0.55 + 0.25 * sin(t * 2.0) + 0.5 * _Pull);
-                if (reveal <= 0.001 && (hint <= 0.001 || inside > 0.0)) discard;
+                // opening: a plain fade in
+                float reveal = smoothstep(0.0, 1.0, _Open);
+                if (reveal <= 0.001) discard;
+                float outside = max(-inside, 0.0);
+                float inner = max(inside, 0.0);
+                if (_Hole > 0.5 && inside > 0.0) discard;           // in a place, the opening is a hole onto your real room (the other shader)
 
-                // the skin: slow ripples, stronger as you come near
-                float amp = 0.25 + 0.75 * _Pull;
-                float ripple = sin(r * 9.0 - t * (2.2 + 3.0 * _Pull) + noise(q * 3.0 + t * 0.3) * 3.0) * 0.5 + 0.5;
-
-                // the painted glimpse of the hut: dusk above, a warm hearth glow low in the middle
+                // the view: the live picture, one per eye (the painted dusk only if there is none)
                 float3 dusk = lerp(float3(0.30, 0.17, 0.08), float3(0.05, 0.08, 0.18), saturate(p.y / H));
-                float hearth = exp(-dot((p - float2(0.0, H * 0.3)) * float2(1.3, 1.0), (p - float2(0.0, H * 0.3)) * float2(1.3, 1.0)) * 2.2);
-                float3 glimpse = dusk + float3(1.0, 0.55, 0.2) * hearth * 0.9;
-                glimpse *= 0.85 + 0.3 * ripple * amp;
-
-                // the live view, when there is one (one picture per eye)
+                float2 hp = (p - float2(0.0, H * 0.3)) * float2(1.3, 1.0);
+                float3 glimpse = dusk + float3(1.0, 0.55, 0.2) * exp(-dot(hp, hp) * 2.2) * 0.6;
                 float2 suv = i.scr.xy / max(i.scr.w, 1e-4);
-                suv += (ripple - 0.5) * 0.006 * amp; // the glass bends the view
                 float3 live = unity_StereoEyeIndex == 0 ? tex2D(_WindowL, suv).rgb : tex2D(_WindowR, suv).rgb;
-                float3 view = lerp(glimpse, live, _UseWindow);
+                float3 col = lerp(glimpse, live, _UseWindow);
+                // a little shade just inside the edge, where the opening has thickness (the reveal of a real doorway)
+                col *= 1.0 - 0.28 * exp(-inner * 22.0);
+                float alpha = inside > 0.0 ? 1.0 : 0.0;
 
-                // pulled toward you: streaks of light run in from the edge, and the glass brightens
-                float ang = atan2(q.y, q.x);
-                float streak = pow(abs(sin(ang * 14.0 + t * 2.0 + noise(float2(ang * 3.0, t)) * 4.0)), 10.0) * smoothstep(0.2, 1.0, r);
-                float3 col = view + float3(1.0, 0.72, 0.4) * (streak * _Pull * 0.9 + _Pull * 0.25);
+                // the trim: a plain dark wooden architrave round the opening, with grain, a lit inner edge, and a soft shadow on the wall
+                const float trim = 0.055;
+                if (inside <= 0.0)
+                {
+                    float grainAlong = (abs(p.x) > W * 0.5 ? p.y : p.x) * 60.0;
+                    float grain = 0.88 + 0.12 * noise(float2(grainAlong * 0.12, (abs(p.x) > W * 0.5 ? p.x : p.y) * 3.0));
+                    float across = saturate(outside / trim);                                   // 0 at the opening .. 1 at the trim's outer edge
+                    float bevel = 0.8 + 0.35 * smoothstep(0.0, 0.25, across) - 0.3 * smoothstep(0.75, 1.0, across);
+                    float3 wood = _Glow.rgb * grain * bevel;
+                    float inTrim = outside < trim ? 1.0 : 0.0;
+                    float shadow = smoothstep(m, trim, outside) * 0.38;                         // falls away over the wall
+                    col = lerp(float3(0, 0, 0), wood, inTrim);
+                    alpha = inTrim > 0.5 ? 1.0 : shadow;
+                    if (p.y > H + m) alpha = 0.0;
+                }
 
-                // the edge of the opening glows into the frame
-                float edge = exp(-max(inside, 0.0) * 9.0);
-                col += _Glow.rgb * edge * (0.7 + 0.5 * ripple);
-                float alpha = inside > 0.0 ? lerp(0.9, 1.0, _Pull) : 0.0;
-
-                // the frame: a band of ember light just outside the opening, with sparks
-                float band = saturate(1.0 + inside / m); // 1 at the opening's edge .. 0 at the margin
-                float spark = step(0.965, noise(p * 38.0 + float2(0.0, -t * 1.5)));
-                float3 frame = _Glow.rgb * (pow(band, 2.2) * (0.9 + 0.4 * sin(t * 3.0 + p.y * 5.0)) + spark * 1.2);
-                if (inside <= 0.0) { col = frame; alpha = saturate(pow(band, 1.6) + spark) * (p.y <= H + m ? 1.0 : 0.0); }
-
-                fixed4 o = fixed4(col, alpha * (inside > 0.0 ? reveal : max(reveal, hint)));
+                fixed4 o = fixed4(col, alpha * reveal);
                 META_DEPTH_OCCLUDE_OUTPUT_PREMULTIPLY(i, o, _EnvironmentDepthBias); // a real chair in front of the doorway hides it
                 return o;
             }
