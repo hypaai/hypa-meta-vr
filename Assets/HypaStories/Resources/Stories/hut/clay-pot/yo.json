@@ -1,0 +1,32 @@
+{
+  "words": ["ìkòkò", "omi", "amọ̀"],
+  "greet": "Máa bọ̀ sún mọ́ mi, ọmọ mi. Ìkòkò amọ̀ wa nìyí. A ń pè é ní ìkòkò.",
+  "greet.ask": [
+    "Kí ni a ń pe ìkòkò náà?"
+  ],
+  "made": "Amọ̀kòkò kan fi ọwọ́ rẹ̀ mọ ọ́ láti inú amọ̀ odò, lẹ́yìn náà ó sun un títí ó fi le nínú iná tí kò ní ìbòrí.",
+  "made.ask": [
+    "Báwo ni wọ́n ṣe ń ṣe ìkòkò náà?"
+  ],
+  "old": "Àwọn obìnrin ní àwọn ilẹ̀ wọ̀nyí ti ń mọ ìkòkò bí èyí fún ẹgbẹẹgbẹ̀rún ọdún. A máa ń rí àwọn àjẹ́kù wọn níbi tí àwọn ìlú àtijọ́ jù lọ ti wà rí.",
+  "old.ask": [
+    "Ọmọ ọdún mélòó ni àwọn ìkòkò amọ̀?"
+  ],
+  "potters": "Iṣẹ́ ọnà náà ń kọjá láti ọ̀dọ̀ ìyá sí ọmọbìnrin. Amọ̀kòkò kọ̀ọ̀kan ní àmì tirẹ̀, nítorí náà o lè mọ ọwọ́ ẹni tó mọ ìkòkò kan.",
+  "potters.ask": [
+    "Ta ló ń kọ́ni ní iṣẹ́ ọnà náà?"
+  ],
+  "mother": "Èyí jẹ́ ti ìyá mi. Ó máa ń fi ru omi láti odò lórí rẹ̀, ó sì fún mi ní ọjọ́ ìgbéyàwó mi.",
+  "mother.ask": [
+    "Ìkòkò ta ni?"
+  ],
+  "water": "A máa ń fi omi tá a ń mu sínú rẹ̀. Amọ̀ náà máa ń jẹ́ kí afẹ́fẹ́ máa kọjá, nítorí náà omi náà máa ń tutù, kódà ní ọ̀sán gangan.",
+  "water.ask": [
+    "Kí ló dé tí omi náà fi máa ń tutù?"
+  ],
+  "cook": "Ìkòkò mìíràn bí èyí wà lórí òkúta mẹ́ta lórí iná, ọbẹ̀ wa sì ń jinná nínú rẹ̀.",
+  "cook.ask": [
+    "Kí ni o máa ń se nínú rẹ̀?"
+  ],
+  "care": "Gbé e sókè pẹ̀lẹ́pẹ̀lẹ́, kí o sì fi ọwọ́ méjèèjì dì í mú. Ìkòkò amọ̀ tí ó bá ṣubú kì í tún dìde."
+}

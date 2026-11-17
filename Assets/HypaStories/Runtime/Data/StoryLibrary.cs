@@ -38,7 +38,11 @@ namespace HypaStories
 
         public static StoryInfo Find(string id) => All.FirstOrDefault(s => s.Id == id);
 
-        static StoryInfo Load(string id)
+        /// <summary>
+        /// A story from its folder under Resources/Stories. The campfire's cards are <see cref="All"/>; other cards (the hut's
+        /// household items, <see cref="HutItems"/>) load theirs here, in the same format, without joining the campfire's row.
+        /// </summary>
+        public static StoryInfo Load(string id)
         {
             var story = Resources.Load<TextAsset>($"Stories/{id}/story");
             if (story == null) throw new InvalidOperationException($"Hypa Stories: no Resources/Stories/{id}/story.json.");

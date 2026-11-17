@@ -1,0 +1,28 @@
+{
+  "words": ["balai", "palmier", "matin"],
+  "greet": "Et celui-ci, c'est le balai. Nous l'appelons igbale.",
+  "greet.ask": [
+    "Comment s'appelle le balai ?"
+  ],
+  "made": "Il est fait des fines nervures des feuilles de palmier, séchées et liées ensemble à un bout.",
+  "made.ask": [
+    "En quoi est fait le balai ?"
+  ],
+  "sweep": "Chaque matin, avant que le soleil soit haut, nous nous penchons pour balayer la maison et la cour.",
+  "sweep.ask": [
+    "Quand balayez-vous ?"
+  ],
+  "one": "Une nervure seule se casse facilement. Liées ensemble, elles sont solides. Une famille, c'est pareil.",
+  "one.ask": [
+    "Pourquoi les nervures sont-elles liées ?"
+  ],
+  "back": "Quand tu l'auras regardé, remets-le là où tu l'as trouvé.",
+  "olden": "On attachait des balais comme celui-ci bien avant que quiconque aujourd'hui s'en souvienne, avec les mêmes palmiers qui nous donnent l'huile et le vin.",
+  "olden.ask": [
+    "De quand date ce genre de balai ?"
+  ],
+  "festival": "Avant une fête, tout le village balaie ses chemins et ses cours, pour que les anciens et les visiteurs marchent sur une terre propre.",
+  "festival.ask": [
+    "Quand tout le monde balaie-t-il ensemble ?"
+  ]
+}

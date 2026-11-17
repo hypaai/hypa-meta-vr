@@ -19,7 +19,11 @@ namespace HypaStories
         public Dictionary<string, string[]> AskTr = new Dictionary<string, string[]>();
 
         public string TextFor(string lang)
-            => lang != "en" && Tr != null && Tr.TryGetValue(lang, out var s) && !string.IsNullOrEmpty(s) ? s : Text;
+            => Has(lang) && lang != "en" ? Tr[lang] : Text;
+
+        /// <summary>This line has its own words in <paramref name="lang"/>. English always does.</summary>
+        public bool Has(string lang)
+            => lang == "en" || (lang != null && Tr != null && Tr.TryGetValue(lang, out var s) && !string.IsNullOrEmpty(s));
 
         public string[] AskFor(string lang)
             => lang != "en" && AskTr != null && AskTr.TryGetValue(lang, out var a) && a.Length > 0 ? a : Ask;

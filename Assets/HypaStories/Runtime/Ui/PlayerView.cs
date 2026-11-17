@@ -106,9 +106,13 @@ namespace HypaStories
             // made with the longest word it shows ("Speak", while translating) so the label never runs into the icon
             _ask = Kit.Button(Root, new Vector3(W / 2f - 0.1f, cy, 0f), new Vector2(0.14f, 0.056f), "Speak", "mic", KitStyle.Primary, () => _askTap(), null, 0.02f);
             _ask.SetLabel("Ask");
-            // only at the end of a story: opens Hypa Translate in this same panel
-            _tryOffer = Kit.Button(Root, new Vector3(0f, -0.074f, -0.012f), new Vector2(0.36f, 0.04f), "Try Hypa Translate", "languages", KitStyle.Primary, () => _tryHypa(), null, 0.015f);
-            _tryOffer.gameObject.SetActive(false);
+            // only at the end of a campfire story: opens Hypa Translate in this same panel. A panel made without it (the hut's)
+            // has no such button at all
+            if (tryHypa != null)
+            {
+                _tryOffer = Kit.Button(Root, new Vector3(0f, -0.074f, -0.012f), new Vector2(0.36f, 0.04f), "Try Hypa Translate", "languages", KitStyle.Primary, () => _tryHypa(), null, 0.015f);
+                _tryOffer.gameObject.SetActive(false);
+            }
             _hintIcon = Kit.Icon(Root, "hand", new Vector3(-W / 2f + 0.05f, cy, 0f), 0.024f, KitTheme.Dim);
             _hint = Kit.Text(Root, "", 0.0145f, new Vector3(-W / 2f + 0.145f, cy, 0f), new Vector2(0.16f, 0.05f), KitTheme.Dim, TextAlignmentOptions.Left);
 
@@ -209,9 +213,13 @@ namespace HypaStories
             _pause.SetIcon(s == "Pause" ? "pause" : s == "Replay" ? "rotate-ccw" : "play");
         }
 
-        /// <summary>The end-of-story button. Hidden while a question or the translation is open.</summary>
+        /// <summary>Whether this panel offers Try Hypa at all (the campfire's does; the hut's doesn't).</summary>
+        public bool OffersTry => _tryOffer != null;
+
+        /// <summary>The end-of-story button. Hidden while a question or the translation is open. Nothing on a panel without it.</summary>
         public void SetTryOffer(bool on)
         {
+            if (_tryOffer == null) return;
             Nudge(on);
             _offer = on;
             _tryOffer.gameObject.SetActive(on && !_translateOpen && !_asking);
@@ -223,7 +231,7 @@ namespace HypaStories
             if (on) SetHidden(false);
             _translateOpen = on;
             _lines.gameObject.SetActive(!on && !_asking);
-            _tryOffer.gameObject.SetActive(!on && _offer && !_asking);
+            _tryOffer?.gameObject.SetActive(!on && _offer && !_asking);
             if (on) SetCorner("Speak", "mic");
             else if (!_asking) SetCorner("Ask", "mic");
         }
@@ -267,7 +275,7 @@ namespace HypaStories
             _asking = asking;
             _lines.gameObject.SetActive(!asking && !_translateOpen);
             _qa.gameObject.SetActive(asking);
-            _tryOffer.gameObject.SetActive(!asking && !_translateOpen && _offer);
+            _tryOffer?.gameObject.SetActive(!asking && !_translateOpen && _offer);
             _state.text = text ?? "";
             var listening = state == AskState.Listening || state == AskState.Interrupt;
             _level.gameObject.SetActive(state == AskState.Listening);

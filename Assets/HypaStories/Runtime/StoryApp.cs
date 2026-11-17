@@ -83,6 +83,7 @@ namespace HypaStories
         DrumGame _drumGame;      // the playable scene after The King's Magic Drum
         KitButton _playDrum;
         const string DrumStory = "kings-drum";
+        HutVisit _hut;           // the hut's household things, their cards and the old woman who tells you about them
         bool Playing => (_game != null && _game.Active) || (_hatGame != null && _hatGame.Active) || (_drumGame != null && _drumGame.Active);
         void EndGames() { if (_game != null) _game.End(); if (_hatGame != null) _hatGame.End(); if (_drumGame != null) _drumGame.End(); }
 
@@ -156,6 +157,7 @@ namespace HypaStories
             BuildDodoGame();
             BuildHatGame();
             BuildDrumGame();
+            BuildHutVisit();
             Places.EnsureRunner();
             Places.Leaving += OnLeavingPlace;
             Places.Arrived += OnArrivedPlace;
@@ -178,6 +180,7 @@ namespace HypaStories
             if (id != PlaceIds.Camp || _away) return;
             if (_room) ExitRoomNow(); // the hut and the village are out in the forest: back to it, unseen, before the camp is put away
             _wasPlaying = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
+            if (_hut != null && _hut.enabled) _hut.Close();
             _ask.Cancel();
             if (_story.Live) _story.Pause();
             _resumeLoops.Clear();
@@ -373,6 +376,29 @@ namespace HypaStories
             _game.Begin();
         }
 
+        // ---------- the hut's household things ----------
+
+        /// <summary>
+        /// Inside the hut: things to pick up, a story card over each and the old woman who tells you about them, through the same
+        /// card, voice, panel and questions as the campfire's stories (its own instances: the story by the fire only pauses).
+        /// </summary>
+        void BuildHutVisit()
+        {
+            var go = new GameObject("Hut Visit");
+            go.transform.SetParent(transform, false);
+            _hut = go.AddComponent<HutVisit>();
+            try
+            {
+                _hut.Init(_camp, assets, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, () => _lang,
+                    () => { if (_story.Live) _story.Pause(); }, ToggleSound);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Hypa Stories: the hut's things couldn't be built: " + e);
+                _hut.enabled = false;
+            }
+        }
+
         // ---------- the hat game (after Eshu at the Crossroads) ----------
 
         void BuildHatGame()
@@ -564,6 +590,7 @@ namespace HypaStories
             AudioListener.volume = muted ? 0f : 1f;
             _list.SetSound(muted);
             _player.SetSound(muted);
+            if (_hut != null) _hut.SetSound(muted);
         }
 
         // ---------- asking ----------
@@ -678,7 +705,7 @@ namespace HypaStories
                 _player.SetCorner(_tryFlow.Listening ? "Done" : "Speak", _tryFlow.Listening ? "check" : "mic");
             }
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
-            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && !_tryOpen && _ask.State == AskState.Idle && !Playing) _ = _ask.BeginAsync();
+            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && !_tryOpen && _ask.State == AskState.Idle && !Playing && !InHutTelling()) _ = _ask.BeginAsync();
             if (Application.isEditor) EditorKeys();
         }
 
@@ -719,7 +746,7 @@ namespace HypaStories
                     if (Input.GetKeyDown(KeyCode.Space)) _story.TogglePause();
                     if (Input.GetKeyDown(KeyCode.RightArrow)) _story.Jump(1);
                     if (Input.GetKeyDown(KeyCode.LeftArrow)) _story.Jump(-1);
-                    if (Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
+                    if (Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle && !InHutTelling()) _ = _ask.BeginAsync();
                     if (Input.GetKeyDown(KeyCode.T)) OpenTry();
                     if (Input.GetKeyDown(KeyCode.Q)) { _qDown = Time.time; AskTap(); }
                     if (Input.GetKeyUp(KeyCode.Q) && Time.time - _qDown > 0.5f && _ask.State == AskState.Listening) _ask.StopListening(); // hold-to-talk
@@ -739,6 +766,9 @@ namespace HypaStories
         }
 
         float _qDown;
+
+        /// <summary>The old woman in the hut is telling you about a thing, or you're out on the trails: a raised hand is not for the fire.</summary>
+        bool InHutTelling() => (_hut != null && _hut.Telling) || !_ui.gameObject.activeSelf;
 
         // Headset off, system menu or app switch: pause the story. It never resumes on its own.
         void OnApplicationPause(bool paused) { if (paused) _story?.Pause(); }
@@ -1036,7 +1066,7 @@ namespace HypaStories
             else BackToTheFire();
         }
 
-        /// <summary>Step inside, at the door: a step into the empty room. The hut's visit is not built yet.</summary>
+        /// <summary>Step inside, at the door: a step into the room, facing the old woman and her household things (<see cref="HutVisit"/>).</summary>
         void StepInside() => TravelTo(HutTrailLayout.Hut + HutTrailLayout.DoorDir * 1.15f, HutTrailLayout.Hut - HutTrailLayout.DoorDir);
 
         /// <summary>Meet the locals, at the gate: in front of the elder by the fence. Talking to them comes later.</summary>

@@ -1,0 +1,28 @@
+{
+  "words": ["lampe", "huile", "flamme"],
+  "greet": "Ah, tu as trouvé ma lampe. Nous l'appelons fitila.",
+  "greet.ask": [
+    "Comment s'appelle la lampe ?"
+  ],
+  "made": "Elle est façonnée dans la même argile de rivière que le pot, assez petite pour tenir dans ta paume.",
+  "made.ask": [
+    "En quoi est-elle faite ?"
+  ],
+  "oil": "Nous y versons de l'huile de palme et posons une mèche de coton tordu dans son bec. Puis nous allumons la mèche.",
+  "oil.ask": [
+    "Que brûle-t-elle ?"
+  ],
+  "night": "Quand le soleil se couche, sa petite flamme nous aide à trouver nos nattes, et à raconter des histoires tard dans la nuit.",
+  "night.ask": [
+    "Quand l'allumez-vous ?"
+  ],
+  "care": "Porte-la droite et doucement, mon enfant, sinon l'huile se renversera et noiera la flamme.",
+  "before": "Avant les lanternes et l'électricité, chaque maison allumait une de ces lampes au crépuscule. Toute une rue brillait de petites flammes.",
+  "before.ask": [
+    "Qu'utilisait-on avant l'électricité ?"
+  ],
+  "grandmother": "Ma grand-mère racontait ses histoires à la lumière de cette même lampe, comme je te raconte les miennes.",
+  "grandmother.ask": [
+    "À qui était cette lampe ?"
+  ]
+}

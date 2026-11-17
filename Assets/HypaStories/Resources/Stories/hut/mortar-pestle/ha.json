@@ -1,0 +1,32 @@
+{
+  "words": ["turmi", "doya", "taɓarya"],
+  "greet": "Ah, ka sami turmi da taɓaryarsa. Turmin odo ne, taɓaryar kuma ɗansa ce.",
+  "greet.ask": [
+    "Me ake kira turmi?"
+  ],
+  "carved": "Wani masassaƙi ya sassaƙa turmin daga guntun itace mai tauri guda ɗaya, don haka zai iya jure shekaru da yawa ana daka a cikinsa.",
+  "carved.ask": [
+    "Da me aka yi shi?"
+  ],
+  "family": "Mahaifin mijina ya sassaka shi a shekarar da aka haifi mijina. Tsararraki uku na wannan iyali sun ci abinci daga cikinsa.",
+  "family.ask": [
+    "Wa ya sassaka shi?"
+  ],
+  "rhythm": "A da can, da yamma, ana iya jin ƙarar daka daga kowane gida a ko’ina cikin ƙauyen. Salon bugunsa yana sanar da kowa cewa gida ya kusa.",
+  "rhythm.ask": [
+    "Me ya sa dakan yake na musamman?"
+  ],
+  "together": "Mata biyu za su iya daka a turmi ɗaya, suna karɓa-karɓa da taɓarya biyu, ba tare da sun taɓa kauce wa kari ba. Muna rera waƙa yayin da muke aiki.",
+  "together.ask": [
+    "Mutum biyu za su iya daka tare?"
+  ],
+  "yam": "Muna zuba dafaffen doya a ciki, mu daka ta har sai ta yi laushi sosai. Wannan shi ne dakkakkiyar doya.",
+  "yam.ask": [
+    "Me kuke daka a cikinsa?"
+  ],
+  "more": "Muna kuma daka barkono, hatsi da ganyaye domin girki.",
+  "more.ask": [
+    "Me kuma ake amfani da shi?"
+  ],
+  "sound": "Idan ka ji taɓarya tana faɗuwa sau da yawa, ka san cewa abinci yana zuwa."
+}

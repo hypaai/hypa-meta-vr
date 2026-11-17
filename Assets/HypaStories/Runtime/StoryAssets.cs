@@ -26,6 +26,8 @@ namespace HypaStories
         public Shader uiIcon;
         [Tooltip("Meta's depth-occlusion surface shader (Core SDK): the storyteller and the fire's stones use it in the room, so a real table or body in front hides them.")]
         public Shader depthLit;
+        [Tooltip("Dust kicked up by the hut's broom (a ParticleSystem): soft, alpha blended, faded by vertex colour.")]
+        public Shader dust;
 
         [Header("Materials")]
         [Tooltip("Standard material used as the template for runtime lit materials (keeps the Standard shader in the build).")]
@@ -45,8 +47,24 @@ namespace HypaStories
         public GameObject grass;
         public GameObject[] rocks = new GameObject[0];
 
+        [Header("Meta XR Interaction SDK (the hut's household items can be picked up)")]
+        [Tooltip("OVRInteraction (Interaction SDK): the camera rig reference the grab interactors read from.")]
+        public GameObject grabInteraction;
+        [Tooltip("OVRHandsDataSource: tracked hands for the Interaction SDK.")]
+        public GameObject grabHands;
+        [Tooltip("OVRControllersDataSource: controllers for the Interaction SDK.")]
+        public GameObject grabControllers;
+        [Tooltip("HandGrabInteractor: one per hand (pinch or palm grab).")]
+        public GameObject grabHandInteractor;
+        [Tooltip("ControllerGrabInteractor: one per controller (grip button).")]
+        public GameObject grabControllerInteractor;
+        [Tooltip("DistanceHandGrabInteractor: point a hand at a thing and pinch, and it comes to your hand.")]
+        public GameObject grabDistanceHandInteractor;
+        [Tooltip("ControllerDistanceGrabInteractor: point a controller at a thing and press the grip.")]
+        public GameObject grabDistanceControllerInteractor;
+
         [Header("Audio")]
-        [Tooltip("The witch song played after the drum game, to drum along with (witch-song.mp3).")]
+        [Tooltip("The witch song played after the drum game, to drum along with (Art/Audio/witch-song.mp3). The camp beds stay in the git-ignored Local folder.")]
         public AudioClip witchSong;
         public AudioClip ambienceSplash;
         public AudioClip ambienceStory;

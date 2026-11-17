@@ -45,6 +45,16 @@ namespace HypaStories
 
         Caption[] Caps => Story.Timeline.Captions;
         string Text(int i) => Caps[i].TextFor(_lang().Code);
+
+        /// <summary>
+        /// The language a line is spoken in. A line with no translation is told in English, so a Yoruba (or any other) listener
+        /// hears English words in an English voice instead of those words forced through the other language's voice.
+        /// </summary>
+        StoryLanguage Spoken(int i)
+        {
+            var lang = _lang();
+            return Caps[i].Has(lang.Code) ? lang : StoryLanguages.Find("en") ?? lang;
+        }
         int IdxAt(float t) => Mathf.Max(StoryDirector.IndexAt(Caps, t + 0.001f), 0);
 
         public void Load(StoryInfo story)
@@ -64,8 +74,8 @@ namespace HypaStories
         {
             // the opening line asks Auto first, so the voice locked for the story is the one that speaks it; the next line then
             // asks for that same voice instead of waiting on a filler
-            var first = _voice.PrepareAsync(Text(0), _lang(), ct);
-            for (var k = 1; k <= Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), _lang()); // they wait for the opening line's voice
+            var first = _voice.PrepareAsync(Text(0), Spoken(0), ct);
+            for (var k = 1; k <= Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), Spoken(k)); // they wait for the opening line's voice
             return first;
         }
 
@@ -81,7 +91,6 @@ namespace HypaStories
         {
             var token = ++_ttsToken;
             var ct = _tts.Token;
-            var lang = _lang();
             try
             {
                 for (var i = idx; i < Caps.Length; i++)
@@ -89,9 +98,9 @@ namespace HypaStories
                     if (token != _ttsToken) return;
                     T = _lastT = Caps[i].At;
                     _hold = Caps[i].At;                       // wait at the line's start until its audio starts
-                    var line = await PrepareLine(Text(i), lang, ct);
+                    var line = await PrepareLine(Text(i), Spoken(i), ct);
                     if (token != _ttsToken) return;
-                    for (var k = i + 1; k <= i + Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), lang);
+                    for (var k = i + 1; k <= i + Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), Spoken(k));
                     var next = i + 1 < Caps.Length ? Caps[i + 1].At : Caps[i].Until + 1f;
                     await _voice.PlayAsync(line, _ => _hold = next - 0.01f, ct);
                     if (token != _ttsToken) return;
