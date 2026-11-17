@@ -38,7 +38,7 @@ namespace HypaStories
         [Tooltip("How close you must be to talk, metres. 4.5: the camp's test local stands ~2.9 m from the seat, and on the headset a step or a lean took you past 3 m (she then never greeted or heard you).")]
         public float TalkDistance = 4.5f;
         [Tooltip("Height of the panel above this object's origin, metres.")]
-        public float PanelHeight = 1.9f;
+        public float PanelHeight = 1.8f;
         public bool GreetOnApproach = true;
         [Tooltip("Say their name to talk to them (Meta Voice SDK + WIT_CLIENT_TOKEN). Raise a hand and Talk always work too.")]
         public bool WakeWordEnabled = true;
@@ -143,6 +143,7 @@ namespace HypaStories
             if (brain is StubLocalBrain stub) stub.Mode = string.IsNullOrEmpty(StubMode) ? "stub" : StubMode;
             Talk = new LocalTalk(_voice, _mic, brain, _view, () => StoryLanguages.Current, () => Persona, on => _engaged = on);
             Talk.Logged += e => Debug.Log($"Hypa Stories local {Persona.DisplayName} {e}");
+            Talk.SuggestionsNeeded = on => _view.WantSuggestions = on;
             _view.SetState(AskState.Idle, lines.Prompt);
             _ = ApplyLanguageAsync(lang);
             if (WakeWordEnabled)
@@ -191,7 +192,7 @@ namespace HypaStories
             if (!Debug.isDebugBuild || Time.unscaledTime < _devLogAt) return;
             _devLogAt = Time.unscaledTime + 3f;
             Debug.Log($"Hypa dev: {Persona.DisplayName} dist {distance:0.00} m angle {angle:0}° near={near} focused={Focused == this} " +
-                      $"state={Talk.State} greeted={_greeted} wake={(WakeWord.Listener == null ? "none" : WakeWord.Listener.Listening ? "listening" : WakeWord.Listener.Available ? "idle" : "off: " + WakeWord.Listener.Problem)}");
+                      $"state={Talk.State} greeted={_greeted} raised={(RaiseHand.Probe != null && RaiseHand.Probe())} wake={(WakeWord.Listener == null ? "none" : WakeWord.Listener.Listening ? "listening" : WakeWord.Listener.Available ? "idle" : "off: " + WakeWord.Listener.Problem)}");
         }
 
         string _langCode;

@@ -157,6 +157,11 @@ namespace HypaStories
         /// at once (not after the phrase is transcribed), then <see cref="AskAsync"/> or <see cref="BeginAsync"/> takes over.
         /// </summary>
         public bool WakeOpen { get; private set; }
+        /// <summary>
+        /// true when the local can't hear you (no microphone, no permission, no key): show the suggested questions. Ticket 3I: they are
+        /// for when there's no mic or key, so they stay hidden while speaking works.
+        /// </summary>
+        public Action<bool> SuggestionsNeeded;
         /// <summary>The greeting in the story language (set by the Local once translated); empty = the persona's own.</summary>
         public string GreetingText;
 
@@ -286,6 +291,7 @@ namespace HypaStories
                 try
                 {
                     s.Rec = _listener.Listen(_language(), _view.SetLevel);
+                    SuggestionsNeeded?.Invoke(false);
                     s.FillerSaid = false;
                     // The moment you stop talking: "Got it. Thinking…" and the filler, while speech-to-text runs (~4 s on a Quest).
                     s.Rec.Recorded += () =>
@@ -302,6 +308,7 @@ namespace HypaStories
                 {
                     if (s.Cancelled) return;
                     Debug.LogWarning("Hypa Stories: the local couldn't listen: " + e.Message);
+                    SuggestionsNeeded?.Invoke(true);
                     _view.SetState(State, Unavailable(e)); // a suggested question still works
                     r = await typed.Task;
                 }
