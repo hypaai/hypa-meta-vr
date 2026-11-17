@@ -262,7 +262,10 @@ your left and a small high one on your right, waist high in front of where you a
 The bell, the shaker and the drums' own strokes are scheduled on the audio clock (`AudioSettings.dspTime`), so the groove holds
 whatever the frame rate. Rules: `Core/DrumRules` (unit tested with the strike detection: `DrumRulesTests`). Game: `World/DrumGame`
 (the drums are built in code: a footed Efik standing drum with carved bands and laced pegs, and a goblet drum with diamond
-lacing and cowries). Hand positions come from `StoryInput.Hand` (each tracked hand's palm, else the controllers; set by
+lacing and cowries). `DrumVisuals` builds continuous worn-hide heads, woven mats, whole grilled fish, cut yam,
+open serving bowls and soup ingredients. `Resources/DrumSurface` uses one small generated detail texture for wood grain,
+hide mottling and food surfaces; meshes and materials are generated once, and reward halos fade to a faint glow.
+Hand positions come from `StoryInput.Hand` (each tracked hand's palm, else the controllers; set by
 `Quest/QuestStoryInput`). Sounds: `ProceduralClips.DrumStrokeSamples` (each drum open and slapped, two takes each),
 `OgeneSamples`, `ShakerSamples`. In the editor: pinch (click) a drum, or **B** for the low drum, **N** for the high one, **P** to
 play the beat back for you.

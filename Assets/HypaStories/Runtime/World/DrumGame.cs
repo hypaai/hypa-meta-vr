@@ -57,7 +57,7 @@ namespace HypaStories
 
         DrumRules _rules;
         Transform _root, _rig;
-        Material _vc;
+        Material _vc, _wood, _hide;
         float _skinY = 0.8f;
         readonly Drum[] _drums = new Drum[2];
 
@@ -155,6 +155,20 @@ namespace HypaStories
             _root.SetParent(_camp.transform, false);
             _vc = new Material(_a.pine) { name = "Drum Game" };
             _vc.SetFloat("_Sway", 0f);
+            var surface = Resources.Load<Shader>("DrumSurface");
+            if (surface != null)
+            {
+                Destroy(_vc);
+                _vc = new Material(surface) { name = "Feast surfaces" };
+            }
+            _wood = new Material(_vc) { name = "Drum wood grain" };
+            _hide = new Material(_vc) { name = "Drum natural hide" };
+            if (surface != null)
+            {
+                var detail = DrumVisuals.SurfaceTexture();
+                _vc.mainTexture = detail; _wood.mainTexture = detail; _hide.mainTexture = detail;
+                _wood.SetFloat("_Surface", 1f); _hide.SetFloat("_Surface", 2f);
+            }
 
             _rig = new GameObject("King's Drums").transform;
             _rig.SetParent(_root, false);
@@ -181,7 +195,7 @@ namespace HypaStories
             for (var i = 0; i < _dishes.Length; i++)
             {
                 var a = DishAngles[i] * Mathf.Deg2Rad;
-                var d = Node(DrumRules.Dishes[i], DishMesh(i), _vc);
+                var d = Node(DrumRules.Dishes[i], DrumVisuals.Dish(i), _vc);
                 d.SetParent(_root, false);
                 d.localPosition = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * DishRing;
                 d.localRotation = Quaternion.Euler(0f, DishAngles[i] + 180f, 0f);
@@ -198,9 +212,9 @@ namespace HypaStories
             var d = new Drum { Tone = tone, R = r, Lift = lift, Side = side, Col = col, Root = new GameObject(name).transform };
             d.Root.SetParent(_rig, false);
             d.Root.localPosition = new Vector3(side, 0f, 0f);
-            var body = Node("Body", null, _vc); body.SetParent(d.Root, false);
+            var body = Node("Body", null, _wood); body.SetParent(d.Root, false);
             d.Body = body.GetComponent<MeshFilter>();
-            d.Skin = Node("Skin", SkinMesh(r, tone == Tone.Low), _vc); d.Skin.SetParent(d.Root, false);
+            d.Skin = Node("Skin", DrumVisuals.Skin(r, tone == Tone.Low), _hide); d.Skin.SetParent(d.Root, false);
             // the skin's lights, just above it: the middle, and a ring of small ones round the edge
             d.Mid = new Material(_a.additive) { mainTexture = _glow, color = col };
             var mid = Node("Middle Glow", StoryMeshes.Quad(r * 1.5f, r * 1.5f), d.Mid);
@@ -240,7 +254,13 @@ namespace HypaStories
             foreach (var d in _drums)
             {
                 var y = _skinY + d.Lift;
-                if (Mathf.Abs(d.BuiltY - y) > 0.03f) { d.Body.sharedMesh = d.Tone == Tone.Low ? LowBody(y, d.R) : HighBody(y, d.R); d.BuiltY = y; }
+                if (Mathf.Abs(d.BuiltY - y) > 0.03f)
+                {
+                    var oldBody = d.Body.sharedMesh;
+                    d.Body.sharedMesh = d.Tone == Tone.Low ? LowBody(y, d.R) : HighBody(y, d.R);
+                    if (oldBody != null) Destroy(oldBody);
+                    d.BuiltY = y;
+                }
                 d.Skin.localPosition = Vector3.up * y;
             }
         }
@@ -248,24 +268,23 @@ namespace HypaStories
         // ---------- the drums' bodies ----------
 
         /// <summary>
-        /// A turned body: <paramref name="prof"/> (height, radius) from top to bottom, faceted, each column its own shade of the
-        /// wood so the grain runs down it. Outside faces out.
+        /// A turned body: <paramref name="prof"/> (height, radius) from top to bottom, with shared vertices and subtle longitudinal
+        /// wood variation. Outside faces out.
         /// </summary>
         static void Turned(TrailBuilder.MeshKit mk, (float y, float r)[] prof, int seg, Color wood, int seed)
         {
-            var rnd = new System.Random(seed);
-            var shade = new float[seg];
-            for (var j = 0; j < seg; j++) shade[j] = 0.84f + 0.16f * (float)rnd.NextDouble() - (j % 5 == 0 ? 0.1f : 0f);
-            for (var i = 0; i + 1 < prof.Length; i++)
-                for (var j = 0; j < seg; j++)
-                {
-                    float a0 = j / (float)seg * Mathf.PI * 2f, a1 = (j + 1) / (float)seg * Mathf.PI * 2f;
-                    Vector3 P(float a, int k) => new Vector3(Mathf.Cos(a) * prof[k].r, prof[k].y, Mathf.Sin(a) * prof[k].r);
-                    var c = wood * shade[j]; c.a = 1f;
-                    var lit = c * (0.92f + 0.08f * (i % 2)); lit.a = 1f;
-                    mk.Tri(P(a0, i), P(a1, i), P(a0, i + 1), lit, lit, c);
-                    mk.Tri(P(a1, i), P(a1, i + 1), P(a0, i + 1), lit, c, c);
-                }
+            var start = mk.V.Count;
+            var profile = new (float, float, float)[prof.Length];
+            for (var i = 0; i < prof.Length; i++) profile[i] = (prof[i].y, prof[i].r, prof[i].r);
+            mk.Lathe(Vector3.zero, Quaternion.identity, profile, wood, seg);
+            // Subtle longitudinal variation, with shared vertices for a round carved shell.
+            for (var i = start; i < mk.V.Count; i++)
+            {
+                var v = mk.V[i];
+                var grain = Mathf.PerlinNoise(v.x * 55f + seed, v.z * 55f + seed);
+                var c = wood * (0.88f + grain * 0.18f); c.a = 1f;
+                mk.C[i] = c;
+            }
         }
 
         /// <summary>A carved band of triangles between <paramref name="y0"/> and <paramref name="y1"/>: points up in one colour, down in the other.</summary>
@@ -308,7 +327,7 @@ namespace HypaStories
                 (h - 0.008f, R + 0.01f), (h - 0.07f, R + 0.03f), (h * 0.78f, R + 0.042f), (h * 0.55f, R * 0.96f), (h * 0.34f, R * 0.84f),
                 (foot + 0.06f, R * 0.82f), (foot + 0.02f, R * 0.9f), (foot, R * 0.9f),
             };
-            Turned(mk, prof, 26, wood, 7);
+            Turned(mk, prof, 64, wood, 7);
             // the bands, a hair proud of the wood
             float yA = h * 0.6f, yB = h * 0.69f;
             Ring(mk, yB, 0.012f, RadiusAt(prof, yB) + 0.006f, dark, 26);
@@ -342,7 +361,7 @@ namespace HypaStories
                 foreach (var side in new[] { -0.5f, 0.5f })
                 {
                     var a2 = (k + side) / 12f * Mathf.PI * 2f;
-                    mk.Beam(new Vector3(Mathf.Sin(a2), 0f, Mathf.Cos(a2)) * (R + 0.026f) + Vector3.up * (h - 0.04f), root + o * 0.015f, 0.007f, cord);
+                    mk.Limb(new Vector3(Mathf.Sin(a2), 0f, Mathf.Cos(a2)) * (R + 0.026f) + Vector3.up * (h - 0.04f), root + o * 0.015f, 0.0035f, 0.0035f, cord, 6, null, false);
                 }
             }
             return mk.Build("Low Drum");
@@ -364,7 +383,7 @@ namespace HypaStories
                 (h - 0.008f, R + 0.008f), (h - 0.04f, R + 0.012f), (waist, R * 0.46f), (h * 0.46f, R * 0.42f), (h * 0.28f, R * 0.55f),
                 (h * 0.09f, R * 0.92f), (0.02f, R * 1.0f), (0f, R * 0.98f),
             };
-            Turned(mk, prof, 22, wood, 11);
+            Turned(mk, prof, 64, wood, 11);
             Zigzag(mk, h * 0.12f, RadiusAt(prof, h * 0.12f) + 0.004f, h * 0.2f, RadiusAt(prof, h * 0.2f) + 0.004f, 16, new Color(0.7f, 0.24f, 0.08f), dark);
             Ring(mk, h * 0.1f - 0.01f, 0.01f, RadiusAt(prof, h * 0.1f) + 0.006f, dark, 22);
             // the hoop, the rope ring at the waist, and the diamonds of lacing between them
@@ -377,10 +396,10 @@ namespace HypaStories
                 Vector3 Top(float a) => new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * (R + 0.024f) + Vector3.up * (h - 0.036f);
                 Vector3 Low(float a) => new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * (R * 0.46f + 0.016f) + Vector3.up * (waist + 0.006f);
                 Vector3 Mid(float a) => new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * ((R + 0.024f + R * 0.46f + 0.016f) * 0.5f + 0.006f) + Vector3.up * ((h - 0.036f + waist) * 0.5f);
-                mk.Beam(Top(a0), Mid(a1), 0.006f, rope);
-                mk.Beam(Top(a2), Mid(a1), 0.006f, rope);
-                mk.Beam(Mid(a1), Low(a0), 0.006f, rope);
-                mk.Beam(Mid(a1), Low(a2), 0.006f, rope);
+                mk.Limb(Top(a0), Mid(a1), 0.003f, 0.003f, rope, 6, null, false);
+                mk.Limb(Top(a2), Mid(a1), 0.003f, 0.003f, rope, 6, null, false);
+                mk.Limb(Mid(a1), Low(a0), 0.003f, 0.003f, rope, 6, null, false);
+                mk.Limb(Mid(a1), Low(a2), 0.003f, 0.003f, rope, 6, null, false);
             }
             for (var k = 0; k < 18; k++)
             {
@@ -389,82 +408,6 @@ namespace HypaStories
                 mk.Ellipsoid(o * (R + 0.03f) + Vector3.up * (h - 0.056f), new Vector3(0.011f, 0.016f, 0.008f), Quaternion.LookRotation(o), new Color(0.95f, 0.92f, 0.84f), 6, 4);
             }
             return mk.Build("High Drum");
-        }
-
-        /// <summary>A skin of pale hide, darker where hands have played it for years in the middle; a thin dark edge where it meets the hoop.</summary>
-        static Mesh SkinMesh(float R, bool low)
-        {
-            var mk = new TrailBuilder.MeshKit();
-            var hide = low ? new Color(0.84f, 0.73f, 0.55f) : new Color(0.9f, 0.82f, 0.66f);
-            mk.Cylinder(Vector3.zero, R, R, 0.012f, hide * 0.7f, hide, 32);
-            mk.Cylinder(Vector3.up * 0.012f, R * RimFrom, R * RimFrom, 0.0012f, hide * 0.8f, hide * 0.88f, 32);
-            mk.Cylinder(Vector3.up * 0.012f, R * 0.32f, R * 0.32f, 0.0024f, hide * 0.72f, hide * 0.78f, 24);
-            return mk.Build("Drum Skin");
-        }
-
-        /// <summary>A dish of the feast on its woven mat, about 0.4 m across (scaled up by <see cref="DishScale"/> so it reads across the fire).</summary>
-        static Mesh DishMesh(int i)
-        {
-            var mk = new TrailBuilder.MeshKit();
-            var up = Vector3.up;
-            mk.Cylinder(Vector3.zero, 0.26f, 0.26f, 0.012f, new Color(0.62f, 0.5f, 0.26f), new Color(0.76f, 0.64f, 0.36f), 16); // the mat
-            var clay = new Color(0.52f, 0.28f, 0.16f);
-            var plate = new Color(0.74f, 0.6f, 0.44f);
-            switch (i)
-            {
-                case 0: // two grilled fish on a plate, pepper by them
-                    mk.Cylinder(up * 0.012f, 0.18f, 0.2f, 0.022f, plate * 0.85f, plate, 16);
-                    for (var f = 0; f < 2; f++)
-                    {
-                        var c = new Vector3(0.02f * (f == 0 ? -1f : 1f), 0.075f, f == 0 ? -0.05f : 0.06f);
-                        var fish = new Color(0.46f, 0.38f, 0.28f);
-                        mk.Ellipsoid(c, new Vector3(0.14f, 0.04f, 0.05f), Quaternion.identity, fish, 12, 6);
-                        mk.Tri(c + new Vector3(-0.12f, 0f, 0f), c + new Vector3(-0.2f, 0.035f, 0f), c + new Vector3(-0.2f, -0.03f, 0f), fish * 0.8f, fish * 0.7f, fish * 0.7f);
-                        mk.Tri(c + new Vector3(-0.12f, 0f, 0f), c + new Vector3(-0.2f, -0.03f, 0f), c + new Vector3(-0.2f, 0.035f, 0f), fish * 0.8f, fish * 0.7f, fish * 0.7f);
-                        mk.Ellipsoid(c + new Vector3(0.1f, 0.012f, 0.03f), Vector3.one * 0.009f, Quaternion.identity, new Color(0.05f, 0.04f, 0.03f), 6, 4);
-                    }
-                    for (var p = 0; p < 4; p++) mk.Ellipsoid(new Vector3(0.12f - p * 0.025f, 0.045f, -0.14f + p * 0.01f), new Vector3(0.016f, 0.012f, 0.016f), Quaternion.identity, new Color(0.8f, 0.12f, 0.06f), 6, 4);
-                    break;
-                case 1: // three balls of fufu in a wooden bowl
-                    mk.Cylinder(up * 0.012f, 0.12f, 0.19f, 0.08f, new Color(0.4f, 0.24f, 0.12f), new Color(0.28f, 0.16f, 0.08f), 16);
-                    foreach (var o in new[] { new Vector3(-0.06f, 0f, -0.03f), new Vector3(0.06f, 0f, -0.03f), new Vector3(0f, 0.01f, 0.06f) })
-                        mk.Ellipsoid(o + up * 0.115f, new Vector3(0.07f, 0.055f, 0.07f), Quaternion.identity, new Color(0.95f, 0.92f, 0.84f), 12, 7);
-                    break;
-                case 2: // boiled yam on a plate, and two whole tubers
-                    mk.Cylinder(up * 0.012f, 0.16f, 0.18f, 0.022f, plate * 0.85f, plate, 16);
-                    for (var k = 0; k < 5; k++)
-                        mk.Box(new Vector3(-0.08f + k * 0.04f, 0.06f, (k % 2) * 0.05f - 0.02f), new Vector3(0.05f, 0.05f, 0.11f), Quaternion.Euler(0f, k * 23f, 0f), new Color(0.94f, 0.9f, 0.74f));
-                    mk.Limb(new Vector3(-0.2f, 0.035f, 0.17f), new Vector3(0.12f, 0.04f, 0.2f), 0.035f, 0.045f, new Color(0.4f, 0.28f, 0.18f), 8);
-                    mk.Limb(new Vector3(0.14f, 0.035f, -0.2f), new Vector3(0.24f, 0.03f, 0.06f), 0.03f, 0.036f, new Color(0.36f, 0.25f, 0.16f), 8);
-                    break;
-                case 3: // a pot of green okra soup, pods by it
-                    mk.Cylinder(up * 0.012f, 0.13f, 0.17f, 0.14f, clay, new Color(0.34f, 0.5f, 0.14f), 16);
-                    mk.Lathe(Vector3.zero, Quaternion.identity, new (float, float, float)[] { (0.165f, 0.18f, 0.18f), (0.15f, 0.18f, 0.18f) }, clay * 0.8f, 16);
-                    for (var k = 0; k < 4; k++)
-                    {
-                        var a = (150f + k * 22f) * Mathf.Deg2Rad;
-                        var o = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 0.23f;
-                        mk.Limb(o + up * 0.025f, o + new Vector3(Mathf.Cos(a), 0f, -Mathf.Sin(a)) * 0.08f + up * 0.02f, 0.02f, 0.008f, new Color(0.3f, 0.55f, 0.18f), 6);
-                    }
-                    break;
-                case 4: // a big pot of palm-oil soup, red-gold, meat and leaves in it
-                    mk.Cylinder(up * 0.012f, 0.15f, 0.2f, 0.16f, clay * 0.9f, new Color(0.86f, 0.3f, 0.05f), 18);
-                    mk.Lathe(Vector3.zero, Quaternion.identity, new (float, float, float)[] { (0.185f, 0.21f, 0.21f), (0.168f, 0.21f, 0.21f) }, clay * 0.75f, 18);
-                    for (var k = 0; k < 5; k++)
-                    {
-                        var a = k * 1.3f;
-                        mk.Ellipsoid(new Vector3(Mathf.Sin(a) * 0.09f, 0.172f, Mathf.Cos(a) * 0.09f), new Vector3(0.03f, 0.014f, 0.025f), Quaternion.identity, k % 2 == 0 ? new Color(0.36f, 0.18f, 0.1f) : new Color(0.2f, 0.4f, 0.12f), 6, 4);
-                    }
-                    break;
-                default: // a gourd of palm wine, frothing, and a cup
-                    var gourd = new Color(0.72f, 0.56f, 0.3f);
-                    mk.Ellipsoid(up * 0.15f, new Vector3(0.13f, 0.14f, 0.13f), Quaternion.identity, gourd, 14, 8);
-                    mk.Limb(up * 0.26f, up * 0.36f, 0.05f, 0.035f, gourd * 0.95f, 10, null, false);
-                    mk.Ellipsoid(up * 0.365f, new Vector3(0.04f, 0.022f, 0.04f), Quaternion.identity, new Color(0.96f, 0.95f, 0.9f), 10, 5);
-                    mk.Cylinder(new Vector3(0.18f, 0.012f, -0.1f), 0.04f, 0.06f, 0.06f, gourd * 0.85f, new Color(0.92f, 0.9f, 0.84f), 12);
-                    break;
-            }
-            return mk.Build("Dish");
         }
 
         static Transform Node(string name, Mesh mesh, Material mat)
@@ -757,7 +700,7 @@ namespace HypaStories
                 var u = Mathf.Clamp01(_dishT[i] / 0.55f);
                 var s = 1f + 2.2f * Mathf.Pow(u - 1f, 3f) + 1.2f * Mathf.Pow(u - 1f, 2f);
                 _dishes[i].localScale = Vector3.one * DishScale * Mathf.Max(0.001f, s);
-                _haloM[i].SetFloat("_Opacity", Mathf.Lerp(0.18f, 0.9f, Mathf.Exp(-_dishT[i] * 1.6f)));
+                _haloM[i].SetFloat("_Opacity", Mathf.Lerp(0.035f, 0.65f, Mathf.Exp(-_dishT[i] * 2.8f)));
             }
         }
 
