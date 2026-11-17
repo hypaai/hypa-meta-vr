@@ -22,11 +22,18 @@ namespace HypaStories
         public readonly KitGroup Text;
         public float Hover, HoverTarget, Reveal, Press, TiltX, TiltY;
         public Vector2 Pointer = new Vector2(0.5f, 0.35f), PointerTarget = new Vector2(0.5f, 0.35f);
+        /// <summary>
+        /// A picture of what the card is about (with alpha), shown instead of the story's <see cref="StoryInfo.Theme"/> art: the
+        /// hut's household items. Null (the campfire's stories) keeps the theme.
+        /// </summary>
+        public Texture Picture;
 
         readonly MaterialPropertyBlock _mpb = new MaterialPropertyBlock();
 
         static readonly int HoverId = Shader.PropertyToID("_Hover"), PressId = Shader.PropertyToID("_Press"), RevealId = Shader.PropertyToID("_Reveal"),
-            DimId = Shader.PropertyToID("_Dim"), ThemeId = Shader.PropertyToID("_Theme"), PointerId = Shader.PropertyToID("_Pointer");
+            DimId = Shader.PropertyToID("_Dim"), ThemeId = Shader.PropertyToID("_Theme"), PointerId = Shader.PropertyToID("_Pointer"),
+            PictureId = Shader.PropertyToID("_Picture");
+        const float PictureTheme = 2f;
 
         /// <summary>The material every card of a view shares (per-card values go through a property block).</summary>
         public static Material NewMaterial(StoryAssets a) => new Material(a.card) { name = "Story Card" };
@@ -99,7 +106,8 @@ namespace HypaStories
             Art.transform.localRotation = Quaternion.Euler(-TiltX * Mathf.Rad2Deg * 0.5f, TiltY * Mathf.Rad2Deg * 0.5f, 0f);
 
             Art.GetPropertyBlock(_mpb);
-            _mpb.SetFloat(ThemeId, Story.Theme);
+            _mpb.SetFloat(ThemeId, Picture != null ? PictureTheme : Story.Theme);
+            if (Picture != null) _mpb.SetTexture(PictureId, Picture);
             _mpb.SetFloat(HoverId, Hover);
             _mpb.SetFloat(PressId, Press);
             _mpb.SetFloat(RevealId, Reveal);

@@ -471,7 +471,7 @@ namespace HypaStories
         }
 
         /// <summary>
-        /// The old woman of the hut (she tells you about its household things): seated on her stool, grey under her head
+        /// The old woman of the hut (she tells you about its household things): sitting on her mat, legs out, grey under her head
         /// wrap, in an indigo print. Built like the village's people, under <paramref name="parent"/>, in its own space.
         /// </summary>
         public Figure MakeElderWoman(Transform parent, Vector2 at, Vector2 facing, float scale = 0.92f)
@@ -485,7 +485,7 @@ namespace HypaStories
                     Hat = new Color(0.62f, 0.3f, 0.12f), Hair = new Color(0.6f, 0.58f, 0.55f), TopPrint = 4, WrapPrint = 4, HatPrint = 6,
                     Headwear = 1, Wrapper = true, Woman = true,
                 };
-                return Person("The Old Woman", at, facing, look, scale, true, true);
+                return Person("The Old Woman", at, facing, look, scale, false, true, true);
             }
             finally { _root = keep; }
         }
@@ -515,7 +515,7 @@ namespace HypaStories
         /// bend at the shoulder and the elbow, and hands. Six meshes, so a crowd stays cheap. <paramref name="ownHead"/> gives
         /// the head (and its eyes and mouth) their own transforms, to turn, blink and, later, talk.
         /// </summary>
-        Figure Person(string name, Vector2 at, Vector2 facing, Look look, float scale = 1f, bool seated = false, bool ownHead = false)
+        Figure Person(string name, Vector2 at, Vector2 facing, Look look, float scale = 1f, bool seated = false, bool ownHead = false, bool onFloor = false)
         {
             var f = new Figure { Ph = R() * 6.28f };
             f.Root = Node(name, _root);
@@ -523,7 +523,7 @@ namespace HypaStories
             f.Root.localRotation = Quaternion.LookRotation(Face(facing));
             f.Root.localScale = Vector3.one * scale;
             f.Home = f.Root.localPosition;
-            var hipY = seated ? 0.5f : 0.9f;
+            var hipY = onFloor ? 0.13f : seated ? 0.5f : 0.9f; // on the floor (a mat): no stool, the legs straight out in front
             var id = Quaternion.identity;
             var skin = look.Skin;
             var sole = skin * 0.7f; sole.a = 1f;
@@ -532,7 +532,16 @@ namespace HypaStories
 
             // ---- legs, wrapper or robe, feet (and the stool) ----
             var legs = new MeshKit();
-            if (seated)
+            if (onFloor)
+            {
+                foreach (var k in new[] { -1f, 1f })
+                {
+                    legs.Limb(new Vector3(k * 0.1f, 0.12f, 0f), new Vector3(k * 0.115f, 0.1f, 0.46f), 0.092f, 0.07f, wrap, 8, wrapTile);
+                    legs.Limb(new Vector3(k * 0.115f, 0.1f, 0.46f), new Vector3(k * 0.115f, 0.075f, 0.86f), 0.066f, 0.048f, wrap, 8, wrapTile);
+                    legs.Ellipsoid(new Vector3(k * 0.115f, 0.1f, 0.9f), new Vector3(0.045f, 0.085f, 0.035f), Quaternion.Euler(0f, 0f, k * -12f), sole, 8, 5); // feet, toes up
+                }
+            }
+            else if (seated)
             {
                 foreach (var k in new[] { -1f, 1f })
                 {

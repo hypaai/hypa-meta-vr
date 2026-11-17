@@ -34,13 +34,16 @@ namespace HypaStories
 
         // ---------- where things stand, in the hut's own space (x, z; the door on +Z, the centre at the origin) ----------
 
-        /// <summary>How far from the centre the items' benches stand, and where the old woman sits (at the back, facing the door).</summary>
-        public const float BenchRadius = 1.62f, WomanRadius = 1.45f;
-        /// <summary>Bench top above the floor, and the card's middle above the floor: over the item, clear of a raised hand.</summary>
-        public const float BenchHeight = 0.46f, CardHeight = 1.42f;
+        /// <summary>How far from the centre the items stand (on the floor, by the wall), and where the old woman sits on her mat (at the back, facing the door).</summary>
+        public const float ItemRadius = 1.95f, WomanRadius = 1.75f;
+        /// <summary>The gap between the top of an item and the bottom of its card: the card sits right over the thing it is about.</summary>
+        public const float CardGap = 0.04f;
 
-        /// <summary>Angles round the wall from the door (degrees, clockwise from above): the sides first, then beside the old woman, then by the door.</summary>
-        static readonly float[] Angles = { 108f, -108f, 144f, -144f, 68f, -68f };
+        /// <summary>
+        /// Angles round the wall from the door (degrees, clockwise from above): the two sides, then just inside the door (where a
+        /// broom is kept in a house: the third item), then the other side of the door, then beside the old woman.
+        /// </summary>
+        static readonly float[] Angles = { 108f, -108f, 58f, -58f, 144f, -144f };
 
         /// <summary>How many items have a place.</summary>
         public static int Places => Angles.Length;
@@ -52,7 +55,7 @@ namespace HypaStories
         public static Vector2 Spot(int index)
         {
             var a = AngleOf(index) * Mathf.Deg2Rad;
-            return new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * BenchRadius;
+            return new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * ItemRadius;
         }
 
         /// <summary>Where the old woman sits: at the back of the room, opposite the door.</summary>

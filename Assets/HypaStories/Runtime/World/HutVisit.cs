@@ -10,8 +10,8 @@ using MeshKit = HypaStories.TrailBuilder.MeshKit;
 namespace HypaStories
 {
     /// <summary>
-    /// Inside the hut: household things on low benches round the wall, a story card hovering over each, and the old woman
-    /// at the back who tells you about them.
+    /// Inside the hut: household things on the earth floor by the wall (the broom leaning on it), a story card hovering over each, and the old woman
+    /// on her mat at the back who tells you about them.
     ///
     /// Nothing here is a new card or a new way of telling. The cards are the campfire's <see cref="StoryCard"/>; an item's
     /// content is a story (<see cref="HutItems"/>, the same story.json format); pinching a card plays it through the same
@@ -20,11 +20,11 @@ namespace HypaStories
     ///
     /// The items can be picked up (<see cref="StoryGrab"/>: the Meta XR Interaction SDK on the headset). A card hangs from a
     /// fixed anchor in the hut, not from its item, so it stays over the item's place whatever happens to the item, and it can
-    /// still be pinched while the item is held or lies somewhere else. An item that leaves the room goes back to its bench.
+    /// still be pinched while the item is held or lies somewhere else. An item that leaves the room goes back to its place.
     /// </summary>
     public sealed class HutVisit : MonoBehaviour
     {
-        const float CardScale = 0.6f, NearMetres = 7f, BuiltMetres = 30f, LostSeconds = 2.5f, LetGoSeconds = 0.3f;
+        const float FloorY = 0.017f, CardScale = 0.5f, NearMetres = 7f, BuiltMetres = 30f, LostSeconds = 2.5f, LetGoSeconds = 0.3f;
 
         sealed class Item
         {
@@ -90,15 +90,13 @@ namespace HypaStories
 
             var cardMat = StoryCard.NewMaterial(a);
             var quad = StoryMeshes.Quad(StoryCard.W, StoryCard.H);
-            var benches = new MeshKit();
             for (var i = 0; i < HutItems.Entries.Length; i++)
             {
                 StoryInfo story;
                 try { story = HutItems.All[i]; }
                 catch (Exception e) { Debug.LogWarning($"Hypa Stories: hut item {HutItems.Entries[i].Id} has no content: {e.Message}"); continue; }
-                BuildItem(i, HutItems.Entries[i], story, a, vc, cardMat, quad, benches);
+                BuildItem(i, HutItems.Entries[i], story, a, vc, cardMat, quad);
             }
-            Mesh(_inside, "Benches", benches.Build("Hut Benches"), vc);
             _inside.gameObject.SetActive(false); // shown when you come near (see Update)
         }
 
@@ -123,43 +121,55 @@ namespace HypaStories
         void BuildWoman(CampWorld camp, Material vc)
         {
             if (camp.Village == null) return; // no village, no villagers: the voice comes from the back of the room
-            try { _woman = camp.Village.MakeElderWoman(_inside, HutItems.Woman, -HutItems.Woman); }
+            // her mat: woven straw in two colours, long enough for her legs
+            var mat = new MeshKit();
+            var toRoom = Quaternion.LookRotation(X0Z(-HutItems.Woman).normalized);
+            const int strips = 14; const float mw = 1.05f, ml = 1.7f;
+            for (var i = 0; i < strips; i++)
+            {
+                var straw = i % 2 == 0 ? new Color(0.72f, 0.6f, 0.34f) : new Color(0.52f, 0.33f, 0.17f);
+                mat.Box(X0Z(HutItems.Woman, FloorY + 0.006f) + toRoom * new Vector3(0f, 0f, 0.45f - ml / 2f + (i + 0.5f) * ml / strips),
+                    new Vector3(mw, 0.012f, ml / strips), toRoom, straw);
+            }
+            Mesh(_inside, "Mat", mat.Build("Hut Mat"), vc);
+            try
+            {
+                _woman = camp.Village.MakeElderWoman(_inside, HutItems.Woman, -HutItems.Woman);
+                _woman.Root.localPosition = X0Z(HutItems.Woman, FloorY + 0.012f); // on the mat
+            }
             catch (Exception e) { Debug.LogWarning("Hypa Stories: couldn't make the old woman: " + e.Message); }
         }
 
-        void BuildItem(int index, HutItems.Entry entry, StoryInfo story, StoryAssets a, Material vc, Material cardMat, Mesh quad, MeshKit benches)
+        void BuildItem(int index, HutItems.Entry entry, StoryInfo story, StoryAssets a, Material vc, Material cardMat, Mesh quad)
         {
             var spot = HutItems.Spot(index);
-            var inward = Quaternion.LookRotation(X0Z(-spot).normalized); // the bench's long side along the wall
+            var inward = Quaternion.LookRotation(X0Z(-spot).normalized); // +Z into the room, the wall behind
 
-            // its bench: a plank on four legs, and one box to stand things on
-            var wood = new Color(0.33f, 0.22f, 0.13f);
-            const float w = 0.74f, d = 0.4f, h = HutItems.BenchHeight;
-            benches.Box(X0Z(spot, h - 0.025f), new Vector3(w, 0.05f, d), inward, wood);
-            foreach (var kx in new[] { -1f, 1f })
-                foreach (var kz in new[] { -1f, 1f })
-                    benches.Box(X0Z(spot, (h - 0.05f) / 2f) + inward * new Vector3(kx * (w / 2f - 0.05f), 0f, kz * (d / 2f - 0.05f)),
-                        new Vector3(0.05f, h - 0.05f, 0.05f), inward, new Color(wood.r * 0.8f, wood.g * 0.8f, wood.b * 0.8f));
-            var bench = new GameObject("Bench Collider " + entry.Prop);
-            bench.transform.SetParent(_inside, false);
-            bench.transform.SetLocalPositionAndRotation(X0Z(spot, h / 2f), inward);
-            bench.AddComponent<BoxCollider>().size = new Vector3(w, h, d);
+            // the wall behind it (the hut's wall has no collider of its own): what leans there stays, and nothing is pushed through
+            var toWall = HutTrailLayout.WallInner - spot.magnitude;
+            var wall = new GameObject("Wall Collider " + entry.Prop);
+            wall.transform.SetParent(_inside, false);
+            wall.transform.SetLocalPositionAndRotation(X0Z(spot, 1.1f) + inward * new Vector3(0f, 0f, -(toWall + 0.15f)), inward);
+            wall.AddComponent<BoxCollider>().size = new Vector3(1.3f, 2.2f, 0.3f);
 
-            // the thing itself: a rigidbody on the bench, never a parent of its card
+            // the thing itself, on the earth floor by the wall: a rigidbody, never a parent of its card
             var mk = new MeshKit();
             var boxes = new List<Bounds>();
             if (!HutProps.Build(entry.Prop, mk, boxes))
                 Debug.Log($"Hypa Stories: no shape for hut item '{entry.Prop}' yet; showing a crate (add it to HutProps).");
-            var prop = Mesh(_inside, "Item " + entry.Prop, mk.Build("Hut " + entry.Prop), vc);
-            // the broom lies along the bench; the others face into the room
-            prop.SetLocalPositionAndRotation(X0Z(spot, h + 0.002f), inward * Quaternion.Euler(0f, entry.Prop == "broom" ? 90f : 0f, 0f));
+            var shape = mk.Build("Hut " + entry.Prop);
+            var prop = Mesh(_inside, "Item " + entry.Prop, shape, vc);
+            var size = HutProps.Size(entry.Prop);
+            prop.localScale = Vector3.one * size;
+            var rest = HutProps.Rest(entry.Prop, toWall);
+            prop.SetLocalPositionAndRotation(X0Z(spot, FloorY) + inward * rest.position, inward * rest.rotation);
             foreach (var b in boxes)
             {
                 var c = prop.gameObject.AddComponent<BoxCollider>();
                 c.center = b.center; c.size = b.size;
             }
             var body = prop.gameObject.AddComponent<Rigidbody>();
-            body.mass = 1.2f;
+            body.mass = 1.2f * size;
             body.linearDamping = 0.2f; body.angularDamping = 1.5f;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             body.Sleep(); // it rests until you touch it
@@ -167,10 +177,21 @@ namespace HypaStories
             // the card: on a fixed point over the item's place
             var anchor = new GameObject("Card Anchor " + entry.Prop).transform;
             anchor.SetParent(_inside, false);
-            anchor.localPosition = X0Z(spot, HutItems.CardHeight);
+            // just over the top of the thing as it rests (its mesh's highest corner), so card and thing read as one
+            var top = 0f;
+            var mb = prop.GetComponent<MeshFilter>().sharedMesh.bounds;
+            for (var k = 0; k < 8; k++)
+            {
+                var corner = mb.center + Vector3.Scale(mb.extents, new Vector3((k & 1) == 0 ? -1f : 1f, (k & 2) == 0 ? -1f : 1f, (k & 4) == 0 ? -1f : 1f));
+                top = Mathf.Max(top, (prop.localPosition + prop.localRotation * (corner * size)).y);
+            }
+            anchor.localPosition = X0Z(spot, top + HutItems.CardGap + StoryCard.H * CardScale / 2f);
             anchor.localRotation = inward * Quaternion.Euler(0f, 180f, 0f); // its face to the room
             var i = _items.Count;
             var card = new StoryCard(anchor, story, cardMat, quad, "Hear about it", "volume-2", () => Play(i), () => Play(i));
+            // the card shows the thing it is about (drawn from its own shape, standing as it stands here), not a story's scene
+            try { card.Picture = HutProps.Picture(shape, rest.rotation); }
+            catch (Exception e) { Debug.LogWarning($"Hypa Stories: no picture for {entry.Prop}'s card: {e.Message}"); }
             card.Root.localScale = Vector3.one * CardScale;
             card.SetReveal(0f);
 
@@ -273,8 +294,11 @@ namespace HypaStories
                 if (!on) continue;
                 if (reveal) it.Card.SetReveal(_shown);
                 it.Card.Root.localPosition = new Vector3(0f, Mathf.Sin(_t * 0.6f + it.Ph) * 0.012f, 0f);
-                var to = it.Anchor.position - cam.position; to.y = 0f;
-                if (to.sqrMagnitude > 0.01f)
+                // low over its thing, so it tips up to face you as well as turning (never past 50 degrees)
+                var to = it.Anchor.position - cam.position;
+                var flat = new Vector2(to.x, to.z).magnitude;
+                to.y = Mathf.Clamp(to.y, -flat * 1.19f, flat * 1.19f);
+                if (flat > 0.1f)
                     it.Anchor.rotation = Quaternion.Slerp(it.Anchor.rotation, Quaternion.LookRotation(to), 1f - Mathf.Exp(-5f * dt));
                 it.Card.Aim(hasRay, ray);
                 it.Card.Animate(dt, false, _current >= 0 && _current != i ? 0.6f : 0f); // the others dim while one is told
@@ -300,7 +324,7 @@ namespace HypaStories
             var to = _inside.InverseTransformPoint(cam.position) - _woman.Root.localPosition;
             var dir = Quaternion.Inverse(_woman.Root.localRotation) * to;
             var yaw = Mathf.Clamp(Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg, -65f, 65f);
-            var pitch = Mathf.Clamp(-Mathf.Atan2(dir.y - 1.1f, new Vector2(dir.x, dir.z).magnitude) * Mathf.Rad2Deg, -22f, 18f);
+            var pitch = Mathf.Clamp(-Mathf.Atan2(dir.y - 0.75f, new Vector2(dir.x, dir.z).magnitude) * Mathf.Rad2Deg, -22f, 18f);
             var talk = _voice.Level;
             _woman.Head.localRotation = Quaternion.Slerp(_woman.Head.localRotation,
                 Quaternion.Euler(pitch + Mathf.Sin(_t * 5f) * 1.5f * talk, yaw, 0f), 1f - Mathf.Exp(-3f * dt));
@@ -315,7 +339,7 @@ namespace HypaStories
             _woman.ForeR.localRotation = Quaternion.Euler(-55f - lift * 30f, 0f, 14f);
         }
 
-        /// <summary>Held, resting, or gone astray: a thing that has left the room goes back to its bench.</summary>
+        /// <summary>Held, resting, or gone astray: a thing that has left the room goes back to its place.</summary>
         void Things(float dt)
         {
             foreach (var it in _items)

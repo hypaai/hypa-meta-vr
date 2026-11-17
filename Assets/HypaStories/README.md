@@ -133,8 +133,8 @@ Yoruba tone marks, Igbo dots and Hausa hooks can be drawn; the story fonts are L
 
 ## In the hut: household things, their cards and the old woman
 
-**Step inside** at the hut's door (or walk in). Round the wall, on low benches: a clay pot, a mortar with its pestle and a
-palm-rib broom. A story card hovers over each, and an old woman sits at the back. Pinch a card (or its **Hear about it**
+**Step inside** at the hut's door (or walk in). On the earth floor by the wall: a clay pot, a mortar with its pestle and a
+palm-rib broom leaning on the wall. A story card hovers over each, and an old woman sits on her mat at the back. Pinch a card (or its **Hear about it**
 button) and she tells you what the thing is and what it is for.
 
 - **The same card and the same telling as the campfire.** The card is `Ui/StoryCard` (the campfire's row,
@@ -148,12 +148,12 @@ button) and she tells you what the thing is and what it is for.
   (referenced on **StoryAssets**; re-run **Hypa > Stories > Create Story Scene** if those five fields are empty). No SDK rays,
   poke or locomotion are added. In the editor without a headset rig, things just sit there.
 - **The card stays put.** A card hangs from a fixed anchor in the hut, over the item's starting place: never from the item.
-  It can be pinched while the item is held or lies elsewhere. The floor and the benches have colliders; an item that leaves
-  the room (thrown out, or through the wall) goes back to its bench after a moment.
+  It can be pinched while the item is held or lies elsewhere. The floor and the wall behind each item have colliders; an item that leaves
+  the room (thrown out, or through the wall elsewhere) goes back to its place after a moment.
 - **Add an item:** make `Resources/Stories/hut/{id}/story.json` (copy one; at least two lines), then add one line to
   `HutItems.Entries` (`Data/HutItems.cs`): `new Entry("hut/{id}", "{shape}")`. It takes the next place round the wall (six
-  places; add an angle to `HutItems.Angles` for more). The shape is a case in `World/HutProps.Build`; a name it doesn't know
-  shows a small crate, so content can go in before the shape is made.
+  places; add an angle to `HutItems.Angles` for more). The shape is a case in `World/HutProps.Build` (and `HutProps.Rest` if it should lean or lie
+  rather than stand); a name it doesn't know shows a small crate, so content can go in before the shape is made.
 - Tests: `HutItemsTests` (content loads in the story format, places fit the room, the lost rule, the shapes).
 
 ## Stories

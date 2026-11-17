@@ -22,11 +22,13 @@ namespace HypaStories.Quest
     /// The app's camera rig (the Building Blocks rig in HypaShell, or a scene's own) carries no Interaction SDK interactors, so
     /// the first thing made grabbable adds a small set under it, from the SDK's prefabs (<see cref="StoryAssets"/>): the camera
     /// rig reference, the hand and controller data sources, a hand grab interactor per hand and a grab interactor per
-    /// controller. Only grab: no SDK rays, poke or locomotion, so HypaCore's pinch pointer and the camp's walking are untouched.
+    /// controller. Only grab: no SDK rays, poke or locomotion, and its colliders sit on the Ignore Raycast layer, so HypaCore's pinch
+    /// pointer and the camp's walking are untouched.
     /// A scene that already has the SDK's interactors keeps its own.
     /// </summary>
     public static class QuestGrab
     {
+        const int IgnoreRaycast = 2; // Unity's built-in "Ignore Raycast" layer
         static GameObject _rig;
         static bool _failed;
 
@@ -122,6 +124,10 @@ namespace HypaStories.Quest
                     grab.GetComponentInChildren<ControllerRef>(true).InjectController(controller);
                 }
 
+                // The interactors carry trigger colliders at the hands, and HypaCore's pinch ray starts just behind the hand: on the
+                // default layer they would be the first thing it hits, and no button or card could be pinched. Physics.Raycast
+                // skips the Ignore Raycast layer, which still touches the things to be grabbed.
+                foreach (var t in root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = IgnoreRaycast;
                 root.SetActive(true);
                 _rig = root;
                 return true;
