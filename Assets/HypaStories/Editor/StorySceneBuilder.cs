@@ -129,6 +129,7 @@ namespace HypaStories.EditorTools
             a.sky = S("StorySky"); a.flame = S("StoryFlame"); a.particles = S("StoryParticles"); a.rain = S("StoryRain");
             a.mist = S("StoryMist"); a.additive = S("StoryAdditive"); a.card = S("StoryCard"); a.cutout = S("StoryCutout");
             a.veil = S("StoryVeil"); a.pine = S("StoryPine"); a.uiPanel = S("StoryUIPanel"); a.uiIcon = S("StoryUIIcon");
+            a.depthLit = AssetDatabase.LoadAssetAtPath<Shader>("Packages/com.meta.xr.sdk.core/Shaders/EnvironmentDepth/BiRP/OcclusionSurfaceLit.shader"); // room mode (3K)
 
             a.lit = Material($"{Materials}/StoryLit.mat", m => { m.color = Color.white; m.SetFloat("_Glossiness", 0.1f); });
             a.ground = Material($"{Materials}/ForestGround.mat", m =>

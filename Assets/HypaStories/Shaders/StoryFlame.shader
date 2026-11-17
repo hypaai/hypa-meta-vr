@@ -6,6 +6,7 @@ Shader "HypaStories/Flame"
     {
         _Intensity ("Intensity", Float) = 1
         _Seed ("Seed", Float) = 0
+        _EnvironmentDepthBias ("Environment Depth Bias (room)", Float) = 0.06
     }
     SubShader
     {
@@ -18,13 +19,15 @@ Shader "HypaStories/Flame"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma multi_compile _ HARD_OCCLUSION SOFT_OCCLUSION
             #include "UnityCG.cginc"
+            #include "Packages/com.meta.xr.sdk.core/Shaders/EnvironmentDepth/BiRP/EnvironmentOcclusionBiRP.cginc"
             #include "HypaStoriesCommon.cginc"
 
-            float _Intensity, _Seed;
+            float _Intensity, _Seed, _EnvironmentDepthBias;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float facing : TEXCOORD1; UNITY_VERTEX_OUTPUT_STEREO };
+            struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float facing : TEXCOORD1; META_DEPTH_VERTEX_OUTPUT(2) UNITY_VERTEX_OUTPUT_STEREO };
 
             v2f vert(appdata v)
             {
@@ -36,11 +39,13 @@ Shader "HypaStories/Flame"
                 o.facing = abs(dot(n, normalize(_WorldSpaceCameraPos - w)));
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
+                META_DEPTH_INITIALIZE_VERTEX_OUTPUT(o, v.vertex);
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float x = (i.uv.x - 0.5) * 2.0, y = i.uv.y, t = _Time.y * 1.5 + _Seed;
                 // sway grows with height; two noise scales give broad lobes plus fast licking edges
                 float n1 = fbm(float2(x * 1.8 + _Seed, y * 1.6 - t * 1.5));
@@ -59,7 +64,9 @@ Shader "HypaStories/Flame"
                 c = lerp(c, float3(1.0, 0.93, 0.7), smoothstep(0.82, 1.0, heat) * 0.7);
                 c = lerp(c, float3(0.12, 0.02, 0.0), smoothstep(0.55, 0.95, y) * 0.55);
                 float k = min(_Intensity, 1.25) * smoothstep(0.1, 0.55, i.facing);
-                return fixed4(ToOutput(c) * k * 1.05, a * (0.45 + 0.55 * heat) * k);
+                fixed4 col = fixed4(ToOutput(c) * k * 1.05, a * (0.45 + 0.55 * heat) * k);
+                META_DEPTH_OCCLUDE_OUTPUT_PREMULTIPLY(i, col, _EnvironmentDepthBias); // hidden by a real table or body in front (room mode)
+                return col;
             }
             ENDCG
         }

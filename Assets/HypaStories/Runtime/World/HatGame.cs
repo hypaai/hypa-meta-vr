@@ -18,14 +18,29 @@ namespace HypaStories
     /// </summary>
     public sealed class HatGame : MonoBehaviour
     {
-        // the camp's ground: the fire at the origin, you at the story seat on -Z
-        static readonly Vector3 Post = new Vector3(0f, 0f, -1.45f);
-        static readonly Vector3 FriendLeft = new Vector3(-1.75f, 0f, -1.25f), FriendRight = new Vector3(1.75f, 0f, -1.25f);
-        static readonly Vector3 EshuAt = new Vector3(1.15f, 0f, 1.45f);
-        static readonly Vector3 Slab = new Vector3(0.62f, 0f, -2.35f), Bowl = new Vector3(-0.78f, 0f, -2.15f);
+        // the camp's ground as laid out in the forest: the fire at the origin, you at the story seat on -Z. In your room the same
+        // layout is pulled in to fit (see GameFit), so everything below goes through _fit.
+        static readonly Vector3 FPost = new Vector3(0f, 0f, -1.45f);
+        static readonly Vector3 FFriendLeft = new Vector3(-1.75f, 0f, -1.25f), FFriendRight = new Vector3(1.75f, 0f, -1.25f);
+        static readonly Vector3 FEshu = new Vector3(1.15f, 0f, 1.45f);
+        static readonly Vector3 FSlab = new Vector3(0.62f, 0f, -2.35f), FBowl = new Vector3(-0.78f, 0f, -2.15f);
+        GameFit _fit = GameFit.Forest;
+        // In your room you sit right at the stones, so there's no ground between you and the fire for a post: the hat floats over
+        // the fire itself, and Eshu sits across the stones where the storyteller does.
+        Vector3 Post => _fit.Room ? Vector3.zero : _fit.At(FPost);
+        /// <summary>Just outside the stones on the far side, where the storyteller sits in your room.</summary>
+        float FarStones => Mathf.Max(_fit.Gap, GameFit.StoneEdge + 0.15f);
+        // in your room the friends stand either side of the fire, just outside the stones, facing the hat over it
+        Vector3 FriendLeft => _fit.Room ? new Vector3(-(GameFit.StoneEdge + 0.35f), 0f, 0f) : _fit.At(FFriendLeft);
+        Vector3 FriendRight => _fit.Room ? new Vector3(GameFit.StoneEdge + 0.35f, 0f, 0f) : _fit.At(FFriendRight);
+        Vector3 EshuAt => _fit.Room ? new Vector3(0.35f, 0f, FarStones) : _fit.At(FEshu);
+        Vector3 Slab => _fit.At(FSlab);
+        Vector3 Bowl => _fit.At(FBowl);
+        /// <summary>Where you sit: the forest seat, or how far from the fire your room put you.</summary>
+        Vector3 Seat => _fit.At(new Vector3(0f, 0f, -GameFit.ForestSeat));
         const float SlabTop = 0.62f, PostTop = 1.0f, HatFloat = 0.38f, IdleSpin = 24f, Snap = 65f, ReturnSpeed = 220f;
         /// <summary>Where the open calabash sits: on the post's cap, in sight, under the floating hat.</summary>
-        static readonly Vector3 CupSpot = new Vector3(0f, PostTop + 0.085f, -1.45f);
+        Vector3 CupSpot => Post + new Vector3(0f, PostTop + 0.085f, 0f);
         /// <summary>Tipped toward the seat, so the wine is a face you can see and not a line at eye level.</summary>
         static readonly Quaternion CupSit = Quaternion.Euler(-22f, 0f, 0f);
 
@@ -33,7 +48,7 @@ namespace HypaStories
         StoryAssets _a;
         StoryAudio _audio;
         Texture2D _glow;
-        Action _restartStory, _back, _return;
+        Action _restartStory, _back, _return, _toggleRoom;
 
         HatRules _rules;
         Transform _root, _hat;
@@ -70,16 +85,16 @@ namespace HypaStories
         TextMeshPro _title, _sub;
         KitPanel _meter;
         Transform _meterFill, _meterTrack, _meterLabel;
-        KitButton _retry, _restart, _leave, _quit;
+        KitButton _retry, _restart, _leave, _quit, _room;
 
         public bool Active { get; private set; }
         public HatPhase Phase => _rules?.Phase ?? HatPhase.Intro;
         public bool AnyListening => _rules != null && _rules.Listener >= 0 && _returnTo == null && Time.time > _holdUntil;
 
-        public void Init(CampWorld camp, StoryAssets a, StoryAudio audio, Texture2D glow, Transform uiRoot, Action restartStory, Action back, Action returnToStory)
+        public void Init(CampWorld camp, StoryAssets a, StoryAudio audio, Texture2D glow, Transform uiRoot, Action restartStory, Action back, Action returnToStory, Action toggleRoom = null)
         {
             _camp = camp; _a = a; _audio = audio; _glow = glow;
-            _restartStory = restartStory; _back = back; _return = returnToStory;
+            _restartStory = restartStory; _back = back; _return = returnToStory; _toggleRoom = toggleRoom;
             BuildHud(uiRoot);
         }
 
@@ -88,6 +103,7 @@ namespace HypaStories
         public void Begin()
         {
             if (_root == null) Build();
+            Fit(_fit); // the props at their spots for the forest or your room
             _root.gameObject.SetActive(true);
             Active = true;
             _rules = new HatRules();
@@ -127,20 +143,24 @@ namespace HypaStories
             // the post, and the hat floating over it
             var post = new TrailBuilder.MeshKit();
             var wood = new Color(0.3f, 0.2f, 0.12f);
-            post.Limb(Post, Post + Vector3.up * PostTop, 0.07f, 0.055f, wood, 8);
-            post.Cylinder(Post + Vector3.up * PostTop, 0.16f, 0.18f, 0.045f, wood * 1.1f, wood * 1.2f, 10); // a platform under the hat, wide enough for the bowl
+            post.Limb(Vector3.zero, Vector3.up * PostTop, 0.07f, 0.055f, wood, 8);
+            post.Cylinder(Vector3.up * PostTop, 0.16f, 0.18f, 0.045f, wood * 1.1f, wood * 1.2f, 10); // a platform under the hat, wide enough for the bowl
+            _postT = Node("Post", post.Build("Post"), _vc); _postT.SetParent(_root, false);
+            var shrine = new TrailBuilder.MeshKit();
             // a little crossroads shrine by your left hand: three paths meeting, a short post, a calabash bowl on top
             var ground = new Color(0.32f, 0.2f, 0.12f);
             for (var k = 0; k < 3; k++)
             {
                 var a = (k * 120f + 30f) * Mathf.Deg2Rad;
-                post.Box(Bowl + new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 0.35f + Vector3.up * 0.01f, new Vector3(0.14f, 0.01f, 0.7f), Quaternion.Euler(0f, k * 120f + 30f, 0f), ground);
+                shrine.Box(new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * 0.35f + Vector3.up * 0.01f, new Vector3(0.14f, 0.01f, 0.7f), Quaternion.Euler(0f, k * 120f + 30f, 0f), ground);
             }
-            post.Limb(Bowl, Bowl + Vector3.up * 0.55f, 0.05f, 0.04f, wood, 8);
-            post.Ellipsoid(Bowl + Vector3.up * 0.6f, new Vector3(0.13f, 0.06f, 0.13f), Quaternion.identity, new Color(0.62f, 0.46f, 0.24f), 12, 5, null, 100f);
+            shrine.Limb(Vector3.zero, Vector3.up * 0.55f, 0.05f, 0.04f, wood, 8);
+            shrine.Ellipsoid(Vector3.up * 0.6f, new Vector3(0.13f, 0.06f, 0.13f), Quaternion.identity, new Color(0.62f, 0.46f, 0.24f), 12, 5, null, 100f);
             // the slab by your right hand, where the calabash and the cowrie wait
-            post.Cylinder(Slab, 0.36f, 0.3f, SlabTop, new Color(0.26f, 0.25f, 0.24f), new Color(0.34f, 0.33f, 0.31f), 9);
-            Node("Shrine Props", post.Build("Shrine Props"), _vc).SetParent(_root, false);
+            _shrineT = Node("Shrine", shrine.Build("Shrine"), _vc); _shrineT.SetParent(_root, false);
+            var slab = new TrailBuilder.MeshKit();
+            slab.Cylinder(Vector3.zero, 0.36f, 0.3f, SlabTop, new Color(0.26f, 0.25f, 0.24f), new Color(0.34f, 0.33f, 0.31f), 9);
+            _slabT = Node("Slab", slab.Build("Slab"), _vc); _slabT.SetParent(_root, false);
 
             _hat = Node("Eshu's Hat", HatMesh(), _vc);
             _hat.SetParent(_root, false);
@@ -149,8 +169,8 @@ namespace HypaStories
             var lamp = new GameObject("Hat Light").AddComponent<Light>();
             lamp.type = LightType.Point; lamp.range = 1.6f; lamp.intensity = 1.8f; lamp.color = new Color(1f, 0.9f, 0.75f);
             lamp.shadows = LightShadows.None; lamp.renderMode = LightRenderMode.ForceVertex;
-            lamp.transform.SetParent(_root, false);
-            lamp.transform.localPosition = Post + new Vector3(0f, PostTop + HatFloat + 0.25f, -0.55f);
+            lamp.transform.SetParent(_postT, false);
+            lamp.transform.localPosition = new Vector3(0f, PostTop + HatFloat + 0.25f, -0.55f);
 
             // the friends, either side of the post, and Eshu by the fire
             var v = _camp.Village;
@@ -159,7 +179,7 @@ namespace HypaStories
             {
                 _friends[0] = v.MakePerson(people, "Left Friend", new Vector2(FriendLeft.x, FriendLeft.z), Vector2.right, false);
                 _friends[1] = v.MakePerson(people, "Right Friend", new Vector2(FriendRight.x, FriendRight.z), Vector2.left, false);
-                _eshu = v.MakeEshu(people, new Vector2(EshuAt.x, EshuAt.z), new Vector2(-EshuAt.x, -3.1f - EshuAt.z));
+                _eshu = v.MakeEshu(people, new Vector2(EshuAt.x, EshuAt.z), new Vector2(Seat.x - EshuAt.x, Seat.z - EshuAt.z));
                 // his staff, strung with cowries: taller than he is (built in his own scale, so ~2.1 m in the world)
                 var st = new TrailBuilder.MeshKit();
                 var k2 = 1f / _eshu.Root.localScale.y;
@@ -309,7 +329,26 @@ namespace HypaStories
         }
 
         /// <summary>Where friend <paramref name="i"/> (0 shouts red) stands: left or right of the post (swapped in the last round).</summary>
-        static Vector3 Spot(int i, bool swapped) => (i == 0) != swapped ? FriendLeft : FriendRight;
+        Vector3 Spot(int i, bool swapped) => (i == 0) != swapped ? FriendLeft : FriendRight;
+
+        Transform _postT, _shrineT, _slabT;
+
+        /// <summary>
+        /// Lays the game out for the forest or your room (see <see cref="GameFit"/>). Can be called mid-game when you switch:
+        /// the props move, the friends walk to their new spots, and the game carries on where it was.
+        /// </summary>
+        public void Fit(GameFit fit)
+        {
+            _fit = fit;
+            if (_root == null) return;
+            _postT.localPosition = Post; _shrineT.localPosition = Bowl; _slabT.localPosition = Slab;
+            _postT.GetComponent<Renderer>().enabled = !_fit.Room; // in the room the hat floats over the flames on its own (its light stays)
+            // in the room the hat floats where the panel used to be (over the fire, 1.15 m away): the panel comes nearer, above it
+            var follow = _hud.GetComponent<FollowView>();
+            follow.Distance = _fit.Room ? 0.6f : 1.15f; follow.Height = _fit.Room ? 0.28f : 0.4f;
+            if (_eshu != null) Place(_eshu, EshuAt, Seat);
+            if (_cup != null && _rules != null && _rules.Phase >= HatPhase.Drink) _cup.localPosition = CupSpot;
+        }
 
         // ---------- the hat: which side faces whom ----------
 
@@ -427,7 +466,7 @@ namespace HypaStories
             var slide = cam != null ? Vector3.Dot(hold, cam.right) : hold.x;
             Track(hold, dt);
 
-            if (pinch && !_wasPinching)
+            if (pinch && !_wasPinching && !DodoGame.OnPanel()) // a pinch on a panel button is for the button, not the hat or the cup
             {
                 // the cup or the cowrie, if one is waiting; else the hat
                 var things = new List<Vector3>(); var ok = new List<bool>();
@@ -557,7 +596,7 @@ namespace HypaStories
             if (p == HatPhase.Round) Facing(dt);
             var bob = Mathf.Sin(Time.time * 1.4f) * 0.035f;
             var away = p == HatPhase.Cup || p == HatPhase.Drink || p == HatPhase.Offering || p == HatPhase.Won;
-            _hat.localPosition = Post + Vector3.up * (PostTop + HatFloat + bob + (away ? 0.3f : 0f));
+            _hat.localPosition = Post + Vector3.up * (PostTop + HatFloat + bob + (away ? 0.3f : 0f) - (_fit.Room ? 0.3f : 0f)); // in the room: lower, under the nearer panel
             _hat.localRotation = Quaternion.Slerp(_hat.localRotation, Quaternion.Euler(0f, _yaw, 0f), 1f - Mathf.Exp(-14f * dt));
         }
 
@@ -598,15 +637,21 @@ namespace HypaStories
                     var u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((T - 0.5f) / 2.2f));
                     var from = Spot(i, false); var to = Spot(i, true);
                     // two lanes so they pass each other: one just behind the post (still clear of the fire's stones, ~1 m out), one just in front
-                    var mid = new Vector3(0f, 0f, i == 0 ? Post.z + 0.4f : Post.z - 0.4f);
+                    Vector3 mid;
+                    if (_fit.Room) mid = new Vector3(0f, 0f, FarStones + (i == 0 ? 0.4f : 0.8f)); // round the far side of the stones, behind Eshu
+                    else
+                    {
+                        var behind = Post.z + 0.4f < -0.95f; // room between the post and the fire's stones for a lane
+                        mid = new Vector3(0f, 0f, i == 0 ? (behind ? Post.z + 0.4f : Post.z - 0.35f) : (behind ? Post.z - 0.4f : Post.z - 0.8f));
+                    }
                     at = u < 0.5f ? Vector3.Lerp(from, mid, u * 2f) : Vector3.Lerp(mid, to, (u - 0.5f) * 2f);
                 }
-                else if (p == HatPhase.Fight && T < HatRules.FightTime - 0.8f) at = Vector3.Lerp(spot, new Vector3(spot.x * 0.35f, 0f, spot.z + 0.35f), Mathf.Clamp01(T * 2f));
+                else if (p == HatPhase.Fight && T < HatRules.FightTime - 0.8f && !_fit.Room) at = Vector3.Lerp(spot, new Vector3(spot.x * 0.35f, 0f, spot.z + 0.35f), Mathf.Clamp01(T * 2f));
                 else if (drinking)
                 {
                     var u = p == HatPhase.Drink ? Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(T / 1.4f)) : 1f;
                     var side = spot.x < 0f ? -1f : 1f;
-                    at = Vector3.Lerp(spot, Post + new Vector3(side * 0.78f, 0f, 0.04f), u); // in from either side, far enough that their heads don't meet over the bowl
+                    at = Vector3.Lerp(spot, Post + new Vector3(side * (_fit.Room ? GameFit.StoneEdge + 0.4f : 0.78f), 0f, 0.04f), u); // in from either side, far enough that their heads don't meet over the bowl
                 }
                 else at = spot;
                 var holding = p == HatPhase.Round && Time.time < _poseUntil[i];
@@ -839,6 +884,11 @@ namespace HypaStories
             _meterFill = _meter.transform;
             _meterLabel = Kit.Text(_hud, "Quarrel", 0.012f, new Vector3(-0.14f, -0.04f, 0f), new Vector2(0.1f, 0.02f), KitTheme.Dim, TextAlignmentOptions.Right).transform;
             _quit = Kit.Button(_hud, new Vector3(-0.2f, 0.055f, 0f), new Vector2(0.09f, 0.038f), "Back", "arrow-left", KitStyle.Ghost, () => { End(); _return?.Invoke(); }, null, 0.015f);
+            if (_toggleRoom != null)
+            {
+                _room = Kit.Button(_hud, new Vector3(0f, -0.115f, 0f), new Vector2(0.28f, 0.04f), "Back to the forest", "house", KitStyle.Ghost, _toggleRoom, null, 0.014f);
+                _room.SetLabel("In my room");
+            }
             _retry = Kit.Button(_hud, new Vector3(-0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Play again", "rotate-ccw", KitStyle.Primary, () => { End(); Begin(); });
             _restart = Kit.Button(_hud, new Vector3(0f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "The story", "play", KitStyle.Ghost, () => { End(); _restartStory?.Invoke(); });
             _leave = Kit.Button(_hud, new Vector3(0.15f, -0.048f, 0f), new Vector2(0.14f, 0.046f), "Stories", "arrow-left", KitStyle.Ghost, () => { End(); _back?.Invoke(); });
@@ -881,6 +931,15 @@ namespace HypaStories
             var over = _rules.Over && _rules.T > 3.5f;
             _retry.gameObject.SetActive(over); _restart.gameObject.SetActive(over); _leave.gameObject.SetActive(over);
             _quit.gameObject.SetActive(!over);
+        }
+
+        /// <summary>The same room switch as the story: the fire, the hat and the friends in your real room.</summary>
+        public void SetInRoom(bool inRoom)
+        {
+            if (_room == null) return;
+            _room.SetLabel(inRoom ? "Back to the forest" : "In my room");
+            _room.Style = inRoom ? KitStyle.Primary : KitStyle.Ghost;
+            _room.Selected = inRoom;
         }
     }
 }

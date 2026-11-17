@@ -1,0 +1,17 @@
+{
+  "name": "HypaStories.Quest.Mruk",
+  "rootNamespace": "HypaStories.Quest.Mruk",
+  "references": [ "HypaStories.Runtime", "Oculus.VR", "meta.xr.mrutilitykit" ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [ "HYPA_META_XR", "HYPA_MRUK" ],
+  "versionDefines": [
+    { "name": "com.meta.xr.sdk.core", "expression": "207.0.0", "define": "HYPA_META_XR" },
+    { "name": "com.meta.xr.mrutilitykit", "expression": "0.0.0", "define": "HYPA_MRUK" }
+  ],
+  "noEngineReferences": false
+}
