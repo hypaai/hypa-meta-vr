@@ -37,7 +37,7 @@ namespace HypaStories
         /// <summary>How far from the centre the items stand (on the floor, by the wall), and where the old woman sits on her mat (at the back, facing the door).</summary>
         public const float ItemRadius = 1.95f, WomanRadius = 1.75f;
         /// <summary>The gap between the top of an item and the bottom of its card: the card sits right over the thing it is about.</summary>
-        public const float CardGap = 0.04f;
+        public const float CardGap = 0.07f;
 
         /// <summary>
         /// Angles round the wall from the door (degrees, clockwise from above): the two sides, then just inside the door (where a

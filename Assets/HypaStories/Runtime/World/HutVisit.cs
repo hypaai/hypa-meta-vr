@@ -24,7 +24,7 @@ namespace HypaStories
     /// </summary>
     public sealed class HutVisit : MonoBehaviour
     {
-        const float FloorY = 0.017f, CardScale = 0.5f, NearMetres = 7f, BuiltMetres = 30f, LostSeconds = 2.5f, LetGoSeconds = 0.3f;
+        const float FloorY = 0.017f, CardScale = 0.9f, NearMetres = 7f, BuiltMetres = 30f, LostSeconds = 2.5f, LetGoSeconds = 0.3f;
 
         sealed class Item
         {
@@ -40,6 +40,10 @@ namespace HypaStories
         }
 
         readonly List<Item> _items = new List<Item>();
+        readonly RaiseHandGesture _raise = new RaiseHandGesture();
+        HutInterior.Fire _fire;
+        /// <summary>A card's middle above its anchor: the anchor is the card's bottom edge, so it turns and tips about that edge and never swings down over its thing.</summary>
+        static float CardHalf => StoryCard.H * CardScale / 2f;
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _hut, _inside, _ui;
         Village.Figure _woman;
@@ -76,6 +80,7 @@ namespace HypaStories
             fc.size = new Vector3(7f, 0.23f, 7f); // its top at the hut's earth floor (1.5 cm up)
 
             BuildWoman(camp, vc);
+            _fire = HutInterior.Build(_inside, vc, a, FloorY); // rafters, the painted wall, the ledge, the hearth, the things of the house
             _voice = gameObject.AddComponent<StoryVoice>();
             _voice.Init(_woman != null && _woman.Mouth != null ? _woman.Mouth : _inside);
             _story = new StoryPlayer(_voice, lang);
@@ -124,11 +129,11 @@ namespace HypaStories
             // her mat: woven straw in two colours, long enough for her legs
             var mat = new MeshKit();
             var toRoom = Quaternion.LookRotation(X0Z(-HutItems.Woman).normalized);
-            const int strips = 14; const float mw = 1.05f, ml = 1.7f;
+            const int strips = 12; const float mw = 1.05f, ml = 1.25f;
             for (var i = 0; i < strips; i++)
             {
                 var straw = i % 2 == 0 ? new Color(0.72f, 0.6f, 0.34f) : new Color(0.52f, 0.33f, 0.17f);
-                mat.Box(X0Z(HutItems.Woman, FloorY + 0.006f) + toRoom * new Vector3(0f, 0f, 0.45f - ml / 2f + (i + 0.5f) * ml / strips),
+                mat.Box(X0Z(HutItems.Woman, FloorY + 0.006f) + toRoom * new Vector3(0f, 0f, 0.22f - ml / 2f + (i + 0.5f) * ml / strips),
                     new Vector3(mw, 0.012f, ml / strips), toRoom, straw);
             }
             Mesh(_inside, "Mat", mat.Build("Hut Mat"), vc);
@@ -185,7 +190,7 @@ namespace HypaStories
                 var corner = mb.center + Vector3.Scale(mb.extents, new Vector3((k & 1) == 0 ? -1f : 1f, (k & 2) == 0 ? -1f : 1f, (k & 4) == 0 ? -1f : 1f));
                 top = Mathf.Max(top, (prop.localPosition + prop.localRotation * (corner * size)).y);
             }
-            anchor.localPosition = X0Z(spot, top + HutItems.CardGap + StoryCard.H * CardScale / 2f);
+            anchor.localPosition = X0Z(spot, top + HutItems.CardGap); // the card's bottom edge, a hand's width over the top of its thing
             anchor.localRotation = inward * Quaternion.Euler(0f, 180f, 0f); // its face to the room
             var i = _items.Count;
             var card = new StoryCard(anchor, story, cardMat, quad, "Hear about it", "volume-2", () => Play(i), () => Play(i));
@@ -193,6 +198,7 @@ namespace HypaStories
             try { card.Picture = HutProps.Picture(shape, rest.rotation); }
             catch (Exception e) { Debug.LogWarning($"Hypa Stories: no picture for {entry.Prop}'s card: {e.Message}"); }
             card.Root.localScale = Vector3.one * CardScale;
+            card.Root.localPosition = new Vector3(0f, CardHalf, 0f);
             card.SetReveal(0f);
 
             var item = new Item
@@ -212,6 +218,7 @@ namespace HypaStories
         {
             if (i < 0 || i >= _items.Count) return;
             if (Time.time - _letGo < LetGoSeconds) return; // the pinch that just put an item down, not one meant for the card
+            foreach (var other in _items) if (other.WasHeld) return; // still in the hand: this pinch is the release
             var item = _items[i];
             item.Card.Press = 1f;
             _pauseCamp?.Invoke();
@@ -221,7 +228,7 @@ namespace HypaStories
             var lang = _lang();
             _story.Load(item.Story);
             _panel.Load(item.Story, lang);
-            _panel.SetNote("Ask her about it");
+            _panel.SetNote(""); // the panel's own hint: raise a hand to ask
             _panel.ShowLine(0, 0f);
             _panel.Root.gameObject.SetActive(true);
             _panel.Follow.Snap();
@@ -293,7 +300,7 @@ namespace HypaStories
                 if (it.Card.Root.gameObject.activeSelf != on) it.Card.Root.gameObject.SetActive(on);
                 if (!on) continue;
                 if (reveal) it.Card.SetReveal(_shown);
-                it.Card.Root.localPosition = new Vector3(0f, Mathf.Sin(_t * 0.6f + it.Ph) * 0.012f, 0f);
+                it.Card.Root.localPosition = new Vector3(0f, CardHalf + 0.006f + Mathf.Sin(_t * 0.6f + it.Ph) * 0.006f, 0f); // bobs gently, never down onto its thing
                 // low over its thing, so it tips up to face you as well as turning (never past 50 degrees)
                 var to = it.Anchor.position - cam.position;
                 var flat = new Vector2(to.x, to.z).magnitude;
@@ -313,6 +320,12 @@ namespace HypaStories
                 _panel.SetPauseLabel(_story.Ended ? "Replay" : _story.Paused ? "Resume" : "Pause");
             }
 
+            // raise a hand to ask her about the thing, as by the fire
+            var raised = RaiseHand.Probe != null && RaiseHand.Probe();
+            if (_raise.Update(raised, dt) && _current >= 0 && _story.Live && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
+            if (Application.isEditor && _current >= 0 && Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
+
+            HutInterior.Tick(_fire, cam, _t);
             Woman(cam, dt);
             Things(dt);
         }

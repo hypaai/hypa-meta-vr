@@ -664,7 +664,7 @@ namespace HypaStories
                 _player.SetCorner(_tryFlow.Listening ? "Done" : "Speak", _tryFlow.Listening ? "check" : "mic");
             }
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
-            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && !_tryOpen && _ask.State == AskState.Idle && !Playing) _ = _ask.BeginAsync();
+            if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && !_tryOpen && _ask.State == AskState.Idle && !Playing && !InHutTelling()) _ = _ask.BeginAsync();
             if (Application.isEditor) EditorKeys();
         }
 
@@ -705,7 +705,7 @@ namespace HypaStories
                     if (Input.GetKeyDown(KeyCode.Space)) _story.TogglePause();
                     if (Input.GetKeyDown(KeyCode.RightArrow)) _story.Jump(1);
                     if (Input.GetKeyDown(KeyCode.LeftArrow)) _story.Jump(-1);
-                    if (Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
+                    if (Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle && !InHutTelling()) _ = _ask.BeginAsync();
                     if (Input.GetKeyDown(KeyCode.T)) OpenTry();
                     if (Input.GetKeyDown(KeyCode.Q)) { _qDown = Time.time; AskTap(); }
                     if (Input.GetKeyUp(KeyCode.Q) && Time.time - _qDown > 0.5f && _ask.State == AskState.Listening) _ask.StopListening(); // hold-to-talk
@@ -725,6 +725,9 @@ namespace HypaStories
         }
 
         float _qDown;
+
+        /// <summary>The old woman in the hut is telling you about a thing, or you're out on the trails: a raised hand is not for the fire.</summary>
+        bool InHutTelling() => (_hut != null && _hut.Telling) || !_ui.gameObject.activeSelf;
 
         // Headset off, system menu or app switch: pause the story. It never resumes on its own.
         void OnApplicationPause(bool paused) { if (paused) _story?.Pause(); }

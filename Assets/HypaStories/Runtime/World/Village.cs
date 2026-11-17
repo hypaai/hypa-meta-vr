@@ -431,6 +431,8 @@ namespace HypaStories
             public int Headwear;  // 0 short hair, 1 a tall head wrap (gele), 2 a soft cap (fila)
             public bool Wrapper;  // a wrapper or robe to the ankles (else trousers)
             public bool Woman, Elder;
+            /// <summary>An older woman of the house (the hut's storyteller): a fuller figure, gold earrings, a shawl over one shoulder.</summary>
+            public bool Matron;
         }
 
         static readonly Color[] Cloth =
@@ -471,7 +473,8 @@ namespace HypaStories
         }
 
         /// <summary>
-        /// The old woman of the hut (she tells you about its household things): sitting on her mat, legs out, grey under her head
+        /// The old woman of the hut (she tells you about its household things): sitting on her mat with her legs folded to one side
+        /// under her wrapper, as village women sit, grey under her head
         /// wrap, in an indigo print. Built like the village's people, under <paramref name="parent"/>, in its own space.
         /// </summary>
         public Figure MakeElderWoman(Transform parent, Vector2 at, Vector2 facing, float scale = 0.92f)
@@ -483,7 +486,7 @@ namespace HypaStories
                 {
                     Skin = new Color(0.26f, 0.165f, 0.11f), Top = new Color(0.15f, 0.2f, 0.45f), Wrap = new Color(0.15f, 0.2f, 0.45f),
                     Hat = new Color(0.62f, 0.3f, 0.12f), Hair = new Color(0.6f, 0.58f, 0.55f), TopPrint = 4, WrapPrint = 4, HatPrint = 6,
-                    Headwear = 1, Wrapper = true, Woman = true,
+                    Headwear = 1, Wrapper = true, Woman = true, Matron = true,
                 };
                 return Person("The Old Woman", at, facing, look, scale, false, true, true);
             }
@@ -534,12 +537,14 @@ namespace HypaStories
             var legs = new MeshKit();
             if (onFloor)
             {
-                foreach (var k in new[] { -1f, 1f })
-                {
-                    legs.Limb(new Vector3(k * 0.1f, 0.12f, 0f), new Vector3(k * 0.115f, 0.1f, 0.46f), 0.092f, 0.07f, wrap, 8, wrapTile);
-                    legs.Limb(new Vector3(k * 0.115f, 0.1f, 0.46f), new Vector3(k * 0.115f, 0.075f, 0.86f), 0.066f, 0.048f, wrap, 8, wrapTile);
-                    legs.Ellipsoid(new Vector3(k * 0.115f, 0.1f, 0.9f), new Vector3(0.045f, 0.085f, 0.035f), Quaternion.Euler(0f, 0f, k * -12f), sole, 8, 5); // feet, toes up
-                }
+                // sitting on the floor as village women do: the legs folded to one side under the wrapper, which spreads on the mat;
+                // only the feet show, tucked behind on that side
+                legs.Ellipsoid(new Vector3(0f, 0.12f, 0.03f), new Vector3(0.21f, 0.12f, 0.19f), id, wrap, 14, 8, wrapTile);                           // hips and lap
+                legs.Ellipsoid(new Vector3(0.13f, 0.085f, 0.22f), new Vector3(0.25f, 0.085f, 0.17f), Quaternion.Euler(0f, -28f, 0f), wrap, 14, 7, wrapTile); // the folded thighs
+                legs.Ellipsoid(new Vector3(0.29f, 0.06f, 0.02f), new Vector3(0.12f, 0.06f, 0.21f), Quaternion.Euler(0f, 18f, 0f), wrap, 12, 6, wrapTile);   // the shins, drawn back
+                legs.Lathe(new Vector3(0.07f, 0f, 0.07f), id, new[] { (0.15f, 0.2f, 0.18f), (0.07f, 0.31f, 0.28f), (0.01f, 0.36f, 0.32f) }, wrap, 18, wrapTile); // the hem spread on the mat
+                legs.Ellipsoid(new Vector3(0.36f, 0.03f, -0.16f), new Vector3(0.04f, 0.03f, 0.085f), Quaternion.Euler(0f, 65f, 0f), sole, 8, 5);           // feet
+                legs.Ellipsoid(new Vector3(0.28f, 0.028f, -0.2f), new Vector3(0.038f, 0.028f, 0.08f), Quaternion.Euler(0f, 80f, 0f), sole, 8, 5);
             }
             else if (seated)
             {
@@ -582,6 +587,15 @@ namespace HypaStories
             foreach (var k in new[] { -1f, 1f }) body.Ellipsoid(new Vector3(k * 0.2f * w, 0.46f, 0f), new Vector3(0.072f, 0.066f, 0.075f), id, top, 10, 6, topTile);
             if (look.Elder) body.Ellipsoid(new Vector3(0f, 0.44f, 0.105f), new Vector3(0.075f, 0.12f, 0.03f), Quaternion.Euler(-8f, 0f, 0f), new Color(0.85f, 0.65f, 0.25f), 10, 6, WaxPrints.Tile(7)); // embroidery
             if (look.Woman || look.Elder) Beads(body, look.Woman);
+            if (look.Matron)
+            {
+                foreach (var k in new[] { -1f, 1f })
+                    body.Ellipsoid(new Vector3(k * 0.072f, 0.335f, 0.11f), new Vector3(0.074f, 0.068f, 0.062f), Quaternion.Euler(-12f, 0f, 0f), top, 10, 6, topTile); // bust
+                // an iborun, the shawl worn over one shoulder, across the body to the other hip
+                var shawl = ClothColour(look.HatPrint, look.Hat); var shawlTile = PrintTile(look.HatPrint);
+                body.Limb(new Vector3(0.16f * w, 0.5f, 0.03f), new Vector3(-0.15f * w, 0.06f, 0.11f), 0.042f, 0.05f, shawl, 10, shawlTile);
+                body.Limb(new Vector3(0.16f * w, 0.5f, 0.03f), new Vector3(0.12f * w, 0.2f, -0.12f), 0.04f, 0.035f, shawl, 10, shawlTile); // its end hanging behind
+            }
             body.Limb(new Vector3(0f, 0.54f, 0f), new Vector3(0f, 0.68f, 0.008f), 0.049f, 0.046f, skin, 10);
             var hc = new Vector3(0f, 0.78f, 0.012f);
             if (ownHead)
@@ -649,6 +663,7 @@ namespace HypaStories
             foreach (var k in new[] { -1f, 1f })
             {
                 m.Ellipsoid(c + new Vector3(k * 0.09f, -0.004f, -0.006f), new Vector3(0.016f, 0.03f, 0.022f), id, shade, 8, 5); // ears
+                if (look.Matron) m.Ellipsoid(c + new Vector3(k * 0.094f, -0.042f, 0f), new Vector3(0.01f, 0.014f, 0.01f), id, new Color(0.95f, 0.72f, 0.22f), 6, 4); // gold earrings
                 m.Ellipsoid(c + new Vector3(k * 0.036f, 0.044f, 0.088f), new Vector3(0.023f, 0.0055f, 0.009f), Quaternion.Euler(0f, 0f, k * -8f), look.Elder ? new Color(0.5f, 0.48f, 0.45f) : look.Hair, 8, 4); // brows
                 if (eyes)
                 {

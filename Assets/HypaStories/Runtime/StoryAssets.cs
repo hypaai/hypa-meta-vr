@@ -55,6 +55,10 @@ namespace HypaStories
         public GameObject grabHandInteractor;
         [Tooltip("ControllerGrabInteractor: one per controller (grip button).")]
         public GameObject grabControllerInteractor;
+        [Tooltip("DistanceHandGrabInteractor: point a hand at a thing and pinch, and it comes to your hand.")]
+        public GameObject grabDistanceHandInteractor;
+        [Tooltip("ControllerDistanceGrabInteractor: point a controller at a thing and press the grip.")]
+        public GameObject grabDistanceControllerInteractor;
 
         [Header("Audio (Local, not in git)")]
         public AudioClip ambienceSplash;

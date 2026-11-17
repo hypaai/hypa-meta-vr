@@ -27,6 +27,11 @@ namespace HypaStories
         public const float WallInner = 2.32f;   // inside of the wall
         public const float DoorHalfAngle = 13f; // degrees either side of the door's middle (about 1.2 m wide)
         public const float DoorHeight = 1.95f, WallHeight = 2.2f;
+        /// <summary>The thatched cone: its eave (radius and height) and its apex. The rafters inside follow it.</summary>
+        public const float RoofEave = 3.2f, RoofEaveY = 1.95f, RoofApexY = 4.5f;
+
+        /// <summary>The underside of the thatch at <paramref name="r"/> metres from the hut's centre.</summary>
+        public static float RoofY(float r) => Mathf.Lerp(RoofApexY, RoofEaveY, Mathf.Clamp01(r / RoofEave));
         /// <summary>Half the width of the trail you see, and of the strip you can walk on (a little wider, so the edge is soft).</summary>
         public const float PathHalf = 0.8f, WalkHalf = 1.25f;
         /// <summary>Where the signpost stands: by the log, at the mouth of the trail, readable from the seat.</summary>

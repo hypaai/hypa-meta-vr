@@ -173,6 +173,8 @@ namespace HypaStories.EditorTools
             a.grabControllers = M(isdkOvr + "Controller/OVRControllersDataSource.prefab");
             a.grabHandInteractor = M(isdk + "HandGrab/HandGrabInteractor.prefab");
             a.grabControllerInteractor = M(isdk + "Grab/ControllerGrabInteractor.prefab");
+            a.grabDistanceHandInteractor = M(isdk + "DistanceHandGrab/DistanceHandGrabInteractor.prefab");
+            a.grabDistanceControllerInteractor = M(isdk + "DistanceHandGrab/ControllerDistanceGrabInteractor.prefab");
 
             AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>($"{Local}/Audio/{file}");
             a.ambienceSplash = C("amb-1.mp3"); a.ambienceStory = C("amb-2.mp3");

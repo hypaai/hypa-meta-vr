@@ -76,11 +76,11 @@ namespace HypaStories
 
             float rOut = HutTrailLayout.HutRadius;
             var gap = HutTrailLayout.DoorHalfAngle * Mathf.Deg2Rad;
-            const float apexY = 4.5f;
+            const float apexY = HutTrailLayout.RoofApexY;
             RoundHut(hut, new HutShape
             {
                 RIn = HutTrailLayout.WallInner, ROut = rOut, WallH = HutTrailLayout.WallHeight, DoorH = HutTrailLayout.DoorHeight,
-                DoorHalfAngle = HutTrailLayout.DoorHalfAngle, Eave = 3.2f, EaveY = 1.95f, ApexY = apexY,
+                DoorHalfAngle = HutTrailLayout.DoorHalfAngle, Eave = HutTrailLayout.RoofEave, EaveY = HutTrailLayout.RoofEaveY, ApexY = apexY,
                 Mud = new Color(0.47f, 0.33f, 0.22f), MudDark = new Color(0.3f, 0.21f, 0.14f), Thatch = new Color(0.74f, 0.55f, 0.29f), Floor = true,
             });
             Vector3 At(float ang, float r, float y) => new Vector3(Mathf.Sin(ang) * r, y, Mathf.Cos(ang) * r);
