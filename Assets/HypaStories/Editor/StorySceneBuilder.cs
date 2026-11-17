@@ -12,14 +12,14 @@ namespace HypaStories.EditorTools
     /// <summary>
     /// Hypa > Stories > Create Story Scene: gathers the story's shaders, models (glTF via glTFast), audio and logo into
     /// Assets/HypaStories/StoryAssets.asset, sets their import settings for Quest, and (re)builds the HypaStory scene: a camera for
-    /// standalone play (removed under the shell) and the StoryApp. Missing optional assets (the git-ignored Local folder) just leave
-    /// fields empty; the scene falls back to procedural stand-ins.
+    /// standalone play (removed under the shell) and the StoryApp. Missing optional assets just leave fields empty; the scene
+    /// falls back to procedural stand-ins.
     /// </summary>
     public static class StorySceneBuilder
     {
         const string Root = "Assets/HypaStories";
         const string AssetsPath = Root + "/StoryAssets.asset";
-        const string Art = Root + "/Art", Local = Root + "/Local", Shaders = Root + "/Shaders", Materials = Root + "/Materials";
+        const string Art = Root + "/Art", Shaders = Root + "/Shaders", Materials = Root + "/Materials";
         static readonly string[] Rocks = { "rock_moss_set_01", "rock_moss_set_02", "boulder_01" };
 
         [MenuItem("Hypa/Stories/Create Story Scene")]
@@ -161,13 +161,14 @@ namespace HypaStories.EditorTools
             GameObject Ph(string id) => M($"{Art}/PolyHaven/{id}/{id}_1k.gltf");
             a.campFire = M($"{Art}/Models/camp_fire.glb");
             a.dodo = M($"{Art}/Models/dodo_demon.glb");
-            a.storyteller = M($"{Local}/Models/storyteller.glb");
+            a.storyteller = M($"{Art}/Models/storyteller.glb");
             a.deadTrunk = Ph("dead_tree_trunk"); a.stump = Ph("tree_stump_02"); a.fern = Ph("fern_02"); a.grass = Ph("grass_medium_01");
             a.rocks = Rocks.Select(Ph).Where(r => r != null).ToArray();
 
-            AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>($"{Local}/Audio/{file}");
+            AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>($"{Art}/Audio/{file}");
             a.ambienceSplash = C("amb-1.mp3"); a.ambienceStory = C("amb-2.mp3");
             a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3");
+            a.witchSong = C("witch-song.mp3");
             a.logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Art}/hypa-reality.png");
 
             EditorUtility.SetDirty(a);
@@ -175,7 +176,7 @@ namespace HypaStories.EditorTools
             var missing = new (Object asset, string name)[] { (a.campFire, "camp fire"), (a.storyteller, "storyteller"), (a.ambienceStory, "ambience") }
                 .Where(x => x.asset == null).Select(x => x.name).ToArray();
             Debug.Log("Hypa Stories: StoryAssets updated." + (missing.Length > 0
-                ? " Missing (fallbacks will be used): " + string.Join(", ", missing) + ". Models need glTFast; audio and the avatar live in the git-ignored " + Local + "."
+                ? " Missing (fallbacks will be used): " + string.Join(", ", missing) + ". Models need glTFast; audio lives in " + Art + "/Audio."
                 : ""));
             return a;
         }
@@ -292,7 +293,7 @@ namespace HypaStories.EditorTools
         /// <summary>Quest-friendly import settings: compressed audio (narration stays exact for the story clock), ground textures tiled.</summary>
         static void ConfigureImports()
         {
-            foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { Local + "/Audio" }))
+            foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { Art + "/Audio" }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (!(AssetImporter.GetAtPath(path) is AudioImporter imp)) continue;

@@ -141,7 +141,7 @@ namespace HypaStories
 
         void BuildFigure(Material lit)
         {
-            Debug.Log("Hypa Stories: storyteller model not found (Assets/HypaStories/Local/Models/storyteller.glb); using a stand-in figure.");
+            Debug.Log("Hypa Stories: storyteller model not found (Assets/HypaStories/Art/Models/storyteller.glb); using a stand-in figure.");
             var cloth = new Material(lit) { color = new Color(0.28f, 0.2f, 0.14f) };
             var skin = new Material(lit) { color = new Color(0.45f, 0.3f, 0.22f) };
             GameObject Part(PrimitiveType type, string name, Transform parent, Vector3 pos, Vector3 scale, Material mat)
