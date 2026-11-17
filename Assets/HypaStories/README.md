@@ -1,7 +1,7 @@
 # Hypa Story (tickets 3A-3C, 3F)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
-Same three screens, three stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, and *Eshu at the Crossroads* is a third card), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
+Same three screens, four stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, *Eshu at the Crossroads* is a third card and the Efik tale *The King's Magic Drum* a fourth), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
 moves, pinch instead of click. Uses HypaCore only and never references HypaLens.
 
 ## Run it
@@ -122,7 +122,7 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
   story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
   (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
-  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for all three stories also comes from that auto router and needs the same native check.
+  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for the first three stories also comes from that auto router and needs the same native check. *The King's Magic Drum* is retold from the Calabar (Efik) folk tale of Efriam Duke's drum and Tortoise (in Elphinstone Dayrell's *Folk Stories from Southern Nigeria*, 1910), drum and fufu tree both; all seven translations are machine translations (Claude) and need the same native check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
