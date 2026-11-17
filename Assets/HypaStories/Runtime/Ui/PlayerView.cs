@@ -99,7 +99,7 @@ namespace HypaStories
 
             // 3K: below the panel, so it never crowds the transport. "In my room" brings the fire into your real room; again, back to the forest.
             if (toggleRoom != null)
-                _room = Kit.Button(Root, new Vector3(togglePortal != null ? -0.16f : 0f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), InMyRoom, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+                _room = Kit.Button(Root, new Vector3(0f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), InMyRoom, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
             if (togglePortal != null)
                 _portal = Kit.Button(Root, new Vector3(0.16f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), HutPortal, "flame", KitStyle.Ghost, togglePortal, null, 0.017f);
 

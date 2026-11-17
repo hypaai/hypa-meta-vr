@@ -13,6 +13,7 @@ Shader "HypaStories/Portal"
         _WindowL ("Hut, left eye", 2D) = "black" {}
         _WindowR ("Hut, right eye", 2D) = "black" {}
         _UseWindow ("Use the live view", Range(0, 1)) = 0
+        _Hint ("Faint frame while shut (0 none .. 1 shown)", Range(0, 1)) = 0
         _EnvironmentDepthBias ("Environment Depth Bias (room)", Float) = 0.06
     }
     SubShader
@@ -31,7 +32,7 @@ Shader "HypaStories/Portal"
             #include "Packages/com.meta.xr.sdk.core/Shaders/EnvironmentDepth/BiRP/EnvironmentOcclusionBiRP.cginc"
 
             float4 _Size;
-            float _Margin, _Open, _Pull, _UseWindow, _EnvironmentDepthBias;
+            float _Margin, _Open, _Pull, _UseWindow, _Hint, _EnvironmentDepthBias;
             fixed4 _Glow;
             sampler2D _WindowL, _WindowR;
 
@@ -71,7 +72,9 @@ Shader "HypaStories/Portal"
 
                 // opening: an iris from the middle
                 float reveal = smoothstep(0.0, 0.25, _Open * 1.7 - r);
-                if (reveal <= 0.001) discard;
+                // shut but armed: only a faint ember outline, so you know the door is live (it brightens as you come near)
+                float hint = _Hint * (1.0 - _Open) * (0.55 + 0.25 * sin(t * 2.0) + 0.5 * _Pull);
+                if (reveal <= 0.001 && (hint <= 0.001 || inside > 0.0)) discard;
 
                 // the skin: slow ripples, stronger as you come near
                 float amp = 0.25 + 0.75 * _Pull;
@@ -105,7 +108,7 @@ Shader "HypaStories/Portal"
                 float3 frame = _Glow.rgb * (pow(band, 2.2) * (0.9 + 0.4 * sin(t * 3.0 + p.y * 5.0)) + spark * 1.2);
                 if (inside <= 0.0) { col = frame; alpha = saturate(pow(band, 1.6) + spark) * (p.y <= H + m ? 1.0 : 0.0); }
 
-                fixed4 o = fixed4(col, alpha * reveal);
+                fixed4 o = fixed4(col, alpha * (inside > 0.0 ? reveal : max(reveal, hint)));
                 META_DEPTH_OCCLUDE_OUTPUT_PREMULTIPLY(i, o, _EnvironmentDepthBias); // a real chair in front of the doorway hides it
                 return o;
             }

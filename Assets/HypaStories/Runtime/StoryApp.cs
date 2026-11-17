@@ -119,7 +119,7 @@ namespace HypaStories
             HypaShell.Instance?.SetMenuButtonVisible(false); // Back replaces the shell's floating Home button here
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
-                AskTap, AskHold, ExitPlay, ToggleSound, q => _ask.SubmitText(q), ToggleRoom, TogglePortal);
+                AskTap, AskHold, ExitPlay, ToggleSound, q => _ask.SubmitText(q), ToggleRoom);
             _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
             _ask.Logged += e => Debug.Log("Hypa Stories " + e);
 
@@ -146,6 +146,7 @@ namespace HypaStories
             _camp.Teller.gameObject.SetActive(false);
             BuildVeil();
             BuildDoorRows();
+            BuildFallChoice();
             BuildDodoGame();
             BuildHatGame();
             Places.EnsureRunner();
@@ -597,8 +598,8 @@ namespace HypaStories
         void EditorKeys()
         {
             if (Input.GetKeyDown(KeyCode.R)) ToggleRoom(); // In my room / back to the forest
-            if (Input.GetKeyDown(KeyCode.P)) TogglePortal(); // open / close the portal to the hut
-            if (Input.GetKeyDown(KeyCode.G)) StepThroughPortal(); // step through it (in your room) or back out of the hut's door (editor: you can't walk)
+            if (Input.GetKeyDown(KeyCode.P)) { if (_room) UseDoor(); else ToggleRoom(); } // editor: pinch the door (into your room first)
+            if (Input.GetKeyDown(KeyCode.G)) StepThroughPortal(); // pinch the door (in your room) or back out of the hut's door (editor: you can't walk)
             switch (_screen)
             {
                 case Screen.Splash:
@@ -654,6 +655,7 @@ namespace HypaStories
             HypaShell.Instance?.SetMenuButtonVisible(true); // leaving Stories: the shell's Home button is back
             StoryRoom.Depth?.Invoke(false);
             if (_portal != null) Destroy(_portal.gameObject);
+            if (_fall != null) Destroy(_fall.gameObject);
             _cts.Cancel();
             _cts.Dispose();
             _ask?.Cancel();
@@ -756,10 +758,10 @@ namespace HypaStories
             StoryRoom.Depth?.Invoke(true);
             PlaceInRoom();
             _player.SetRoom(true);
-            if (_portal != null) { _portal.gameObject.SetActive(true); _portal.Show(); } // came back from the hut by the button: the doorway is where it was
+            var doorNote = ArmPortal();
             SnapPanels();
             Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
-            if (note != null) ShowRoomNote(note, 7f); else HideRoomNote();
+            if (note != null) ShowRoomNote(note, 7f); else ShowRoomNote(doorNote, 8f);
             yield return new WaitForSeconds(0.8f);
             _roomBusy = false;
         }
@@ -803,48 +805,134 @@ namespace HypaStories
 
         // ---------- portal to the hut (3L) ----------
 
-        /// <summary>The portal button (or P): opens the doorway in your room, or closes it. Outside the room it takes you into the room first.</summary>
-        void TogglePortal()
+        /// <summary>
+        /// Your real door (or a clear wall, or in front of you if there's no scan) gets a faint ember outline: it is live. Pinch it, or walk into
+        /// it, to fall through. Returns a line to show, or null.
+        /// </summary>
+        string ArmPortal()
         {
-            if (_busy || _roomBusy || _away || Playing) return;
-            if (_portal != null && _portal.Opening) { _portal.Hide(); _prevDepth = float.NaN; _player.SetPortal(false); return; }
-            StartCoroutine(OpenPortal());
-        }
-
-        IEnumerator OpenPortal()
-        {
-            if (!_room)
-            {
-                ToggleRoom();
-                var t0 = Time.realtimeSinceStartup;
-                while ((!_room || _roomBusy) && Time.realtimeSinceStartup - t0 < 620f) yield return null; // the room first (it may be scanning)
-                if (!_room) yield break;
-            }
             var head = _cam.position;
             var user = new Vector2(head.x, head.z);
             var fwd3 = _cam.forward; fwd3.y = 0f;
             var fwd = new Vector2(fwd3.x, fwd3.z);
             var fire = _roomPlan.Fire;
             PortalPlan plan;
-            string note = null;
+            string note = "Pinch the glowing doorway to step through.";
             var scanned = _roomScan != null && _roomScan.Result == RoomScanResult.Found && _roomScan.Surfaces != null && _roomScan.Surfaces.Count > 0 && _roomScan.Clearance != null;
             if (scanned)
             {
                 var found = PortalSpot.Find(user, fwd, _roomScan.Surfaces, _roomFloorY, _roomScan.Clearance, fire);
-                if (found.HasValue) plan = found.Value;
-                else { plan = PortalSpot.InFront(user, fwd, _roomFloorY, fire); note = "No clear door or wall to walk up to, so the portal is just in front of you."; }
+                if (found.HasValue)
+                {
+                    plan = found.Value;
+                    if (plan.Kind == PortalKind.Wall) note = "No door in reach, so there's a doorway on your wall. Pinch it to step through.";
+                }
+                else { plan = PortalSpot.InFront(user, fwd, _roomFloorY, fire); note = "No clear door or wall to walk up to, so the doorway is just in front of you. Pinch it to step through."; }
             }
             else plan = PortalSpot.InFront(user, fwd, _roomFloorY, fire);
             Debug.Log($"Hypa Stories portal: {plan.Kind}{(plan.Scanned ? "" : " (in front of you)")} at {plan.Base}, facing {plan.Normal}, {plan.Width:0.00} x {plan.Height:0.00} m");
 
             ClosePortalNow();
             _portalPlan = plan;
-            _portal = StoryPortal.Create(assets.portal != null ? assets.portal : Shader.Find("HypaStories/Portal"), plan, () => StepThroughPortal());
-            _portal.Show();
+            _portal = StoryPortal.Create(assets.portal != null ? assets.portal : Shader.Find("HypaStories/Portal"), plan, UseDoor);
+            _portal.Arm();
             _prevDepth = float.NaN;
+            return note;
+        }
+
+        /// <summary>The door was pinched (or walked into, or P in the editor): open it and fall. From the hut, the door takes you home.</summary>
+        void UseDoor()
+        {
+            if (_busy || _roomBusy || _away || Playing) return;
+            if (_room && _portal != null) StartCoroutine(FallThroughDoor());
+            else if (!_room && _returnToRoom) StartCoroutine(BackToTheRoom());
+        }
+
+        /// <summary>The glass opens, you fall down a tunnel of light, and part-way down it asks where to: the hut, the village or the campfire.</summary>
+        IEnumerator FallThroughDoor()
+        {
+            _roomBusy = true;
+            _picked = null;
+            HideRoomNote();
+            _portal.Show();
             _audio.PortalOpen();
-            _player.SetPortal(true);
-            if (note != null) ShowRoomNote(note, 6f);
+            for (var t = 0f; t < 1.1f; t += Time.unscaledDeltaTime) { _portal.SetPull(Mathf.Clamp01(t / 0.8f)); yield return null; } // the glass opens and pulls
+            _audio.PortalPass();
+            _fall.Begin();
+            yield return new WaitForSeconds(0.55f);
+            _portal.Hide();
+            yield return new WaitForSeconds(1.6f);                       // falling
+            if (_away) { _fall.Stop(); _roomBusy = false; yield break; }
+            _choose.gameObject.SetActive(true);
+            _choose.GetComponent<FollowView>().Snap();
+            _chooseGroup.Set(1f);
+            var t0 = Time.realtimeSinceStartup;
+            while (_picked == null && !_away && Time.realtimeSinceStartup - t0 < 120f) yield return null; // falls until you choose (or gives up: back to the room)
+            var pick = _picked ?? "room";
+            _chooseGroup.Set(0f);
+            _choose.gameObject.SetActive(false);
+            if (_away) { _fall.Stop(); _roomBusy = false; yield break; }
+
+            if (pick == "room")
+            {
+                _fall.End();
+                _portal.Arm();
+                yield return new WaitForSeconds(0.5f);
+                _roomBusy = false;
+                yield break;
+            }
+            _fall.Rush();
+            _audio.PortalPass();
+            yield return new WaitForSeconds(0.9f);                       // dropping toward it
+            Run(0f, 0.35f, u => SetVeil(u), In);
+            yield return new WaitForSeconds(0.4f);
+            if (_away) { _fall.Stop(); SetVeil(0f); _roomBusy = false; yield break; }
+            if (pick == PlaceIds.Hut)
+            {
+                // the hut's door is laid exactly on the doorway, so you land in it and can walk out again to your room
+                ExitRoomNow(keepPortal: true);
+                var pose = PortalSpot.WorldPose(_portalPlan, HutTrailLayout.Door, HutTrailLayout.DoorDir);
+                _world.SetPositionAndRotation(pose.position, pose.rotation);
+                _portal.gameObject.SetActive(false);
+                _returnToRoom = true; _hutArmed = false; _prevDepth = float.NaN;
+            }
+            else
+            {
+                ExitRoomNow();
+                if (pick == PlaceIds.Gathering) StandAt(VillageLayout.FrontOfGate, VillageLayout.Plaza);
+                else Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
+            }
+            _fall.Stop();
+            SnapPanels();
+            Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
+            yield return new WaitForSeconds(0.8f);
+            _roomBusy = false;
+        }
+
+        // where to, mid-fall
+        Transform _choose;
+        KitGroup _chooseGroup;
+        string _picked;
+        StoryFall _fall;
+
+        /// <summary>The panel that comes up in the fall: Hut, Village, Campfire, and a way back to your room.</summary>
+        void BuildFallChoice()
+        {
+            _fall = StoryFall.Create(assets.fall != null ? assets.fall : Shader.Find("HypaStories/Fall"), _cam);
+            _choose = new GameObject("Fall Choices").transform;
+            _choose.SetParent(transform, false);
+            Kit.Text(_choose, "Where to?", 0.026f, new Vector3(0f, 0.075f, 0f), new Vector2(0.6f, 0.04f), KitTheme.Dim);
+            const float w = 0.19f, gap = 0.02f, h = 0.07f;
+            Kit.Button(_choose, new Vector3(-(w + gap), 0f, 0f), new Vector2(w, h), "Hut", "house", KitStyle.Primary, () => _picked = PlaceIds.Hut, null, 0.022f);
+            Kit.Button(_choose, new Vector3(0f, 0f, 0f), new Vector2(w, h), "Village", "users", KitStyle.Primary, () => _picked = PlaceIds.Gathering, null, 0.022f);
+            Kit.Button(_choose, new Vector3(w + gap, 0f, 0f), new Vector2(w, h), "Campfire", "flame", KitStyle.Primary, () => _picked = PlaceIds.Camp, null, 0.022f);
+            Kit.Button(_choose, new Vector3(0f, -0.085f, 0f), new Vector2(0.26f, 0.05f), "Back to my room", "arrow-left", KitStyle.Ghost, () => _picked = "room", null, 0.017f);
+            var f = _choose.gameObject.AddComponent<FollowView>();
+            f.Distance = 0.8f; f.Height = 0f;
+            _chooseGroup = _choose.gameObject.AddComponent<KitGroup>();
+            _chooseGroup.Refresh();
+            _chooseGroup.Set(0f);
+            _choose.gameObject.SetActive(false);
         }
 
         void ClosePortalNow()
@@ -860,11 +948,11 @@ namespace HypaStories
         {
             if (_busy || _roomBusy) return;
             var head = _cam.position;
-            if (_room && _portal != null && _portal.Opening)
+            if (_room && _portal != null && (_portal.Opening || _portal.Armed))
             {
                 var l = PortalSpot.Local(_portalPlan, head);
                 _portal.SetPull(PortalSpot.Pull(l.z, l.x, _portalPlan.Width));
-                if (!float.IsNaN(_prevDepth) && _portal.Open > 0.9f && PortalSpot.SteppedIn(_prevDepth, l.z, l.x, l.y, _portalPlan.Width, _portalPlan.Height)) { _prevDepth = float.NaN; StepThroughPortal(); return; }
+                if (!float.IsNaN(_prevDepth) && PortalSpot.SteppedIn(_prevDepth, l.z, l.x, l.y, _portalPlan.Width, _portalPlan.Height)) { _prevDepth = float.NaN; UseDoor(); return; }
                 _prevDepth = l.z;
             }
             else if (!_room && _returnToRoom && _camp.Trail != null)
@@ -879,32 +967,8 @@ namespace HypaStories
             }
         }
 
-        /// <summary>Through the doorway (from your room into the hut), or back out of the hut's door (into your room). Both cross a short, soft flash.</summary>
-        void StepThroughPortal()
-        {
-            if (_busy || _roomBusy || _away || Playing) return;
-            if (_room && _portal != null && _portal.Open > 0.9f) StartCoroutine(IntoTheHut());
-            else if (!_room && _returnToRoom) StartCoroutine(BackToTheRoom());
-        }
-
-        IEnumerator IntoTheHut()
-        {
-            _roomBusy = true;
-            _audio.PortalPass();
-            Run(0f, 0.3f, u => SetVeil(u), In);
-            yield return new WaitForSeconds(0.34f);
-            if (_away) { SetVeil(0f); _roomBusy = false; yield break; }
-            // the hut's door is laid exactly on the portal, so you stand in the doorway with nothing jumping
-            ExitRoomNow(keepPortal: true);
-            var pose = PortalSpot.WorldPose(_portalPlan, HutTrailLayout.Door, HutTrailLayout.DoorDir);
-            _world.SetPositionAndRotation(pose.position, pose.rotation);
-            _portal.gameObject.SetActive(false);
-            _returnToRoom = true; _hutArmed = false; _prevDepth = float.NaN;
-            SnapPanels();
-            Run(0.05f, 0.6f, u => SetVeil(1f - u), Out);
-            yield return new WaitForSeconds(0.7f);
-            _roomBusy = false;
-        }
+        /// <summary>Editor key G: the same as pinching the door (in your room), or walking out of the hut's door (back to your room).</summary>
+        void StepThroughPortal() => UseDoor();
 
         IEnumerator BackToTheRoom()
         {
@@ -919,7 +983,7 @@ namespace HypaStories
             StoryRoom.Depth?.Invoke(true);
             PlaceInRoom();
             _player.SetRoom(true);
-            if (_portal != null) { _portal.gameObject.SetActive(true); _portal.Show(); }
+            if (_portal != null) { _portal.gameObject.SetActive(true); _portal.Arm(); }
             _prevDepth = float.NaN;
             SnapPanels();
             Run(0.05f, 0.6f, u => SetVeil(1f - u), Out);

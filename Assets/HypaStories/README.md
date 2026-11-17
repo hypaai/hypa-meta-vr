@@ -97,16 +97,18 @@ need a Quest 3 pass.
 
 ## Portal to the hut (ticket 3L)
 
-In your room (**In my room**), **Hut portal** (or **P** in the editor) opens a doorway of light: on your real **door** if the room scan
-found one, else on a clear stretch of **wall** you can walk up to (open floor in front, away from the fire, never over a window).
-With no scan it stands 2 m in front of you. Walk through it, pinch the glass (sitting), or press **G** in the editor to step in.
+In your room (**In my room**), your real **door** gets a faint ember outline: it is live. If the scan found no door, the same outline
+goes on a clear stretch of **wall** you can walk up to (open floor in front, away from the fire, never over a window); with no scan
+it stands 2 m in front of you. There is no button: **pinch the door**, or walk into it (editor: **P**).
 
-- **Through:** a short soft flash and a whoosh, then you are in the hut's doorway on the camp trail (the camp's world is laid so the
-  hut's door sits exactly on the portal, so nothing jumps). Real furniture hiding things and passthrough end; you are in VR.
-- **Back:** walk out of the hut's door (or **G**) and your room is back, the portal where it was. The story never stops.
-- **Code:** `Core/PortalSpot` (placement and stepping, unit tested in `PortalTests`), `World/StoryPortal` (the doorway),
-  `Shaders/StoryPortal` (frame, glass, pull), `StoryApp` (the flow), `QuestRoomScan` (doors, windows, walls from MRUK).
-- **Not yet:** the glass shows a painted glimpse of the hut; a live, per-eye view of the real hut through it is the next step.
+- **The fall:** the glass opens and pulls, then you fall down a tunnel of light (`Shaders/StoryFall`, a sphere that follows your head).
+  Part-way down a panel asks **Where to?**: **Hut**, **Village**, **Campfire** (or **Back to my room**). Pick one and the fall rushes
+  toward it, a soft flash, and you are there in full VR. It keeps falling until you choose.
+- **Hut:** you land in its doorway (the camp's world is laid so the hut's door sits exactly on the doorway). Walk out of the hut's door
+  (editor **G**) and your room is back with the doorway where it was. The story never stops.
+- **Code:** `Core/PortalSpot` (placement and stepping, unit tested in `PortalTests`), `World/StoryPortal` (the door), `World/StoryFall`
+  (the tunnel), `Shaders/StoryPortal` and `StoryFall`, `StoryApp` (the flow), `QuestRoomScan` (doors, windows, walls from MRUK).
+- **Not yet:** the glass shows a painted glimpse of the hut, not a live view; several doors at once (it uses the best one); windows.
   Only a Quest 3 shows the real passthrough, depth hiding and frame rate.
 
 ## What came across from the prototype
