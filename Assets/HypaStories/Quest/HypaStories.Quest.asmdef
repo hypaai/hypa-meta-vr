@@ -1,7 +1,7 @@
 {
   "name": "HypaStories.Quest",
   "rootNamespace": "HypaStories.Quest",
-  "references": [ "HypaStories.Runtime", "Oculus.VR" ],
+  "references": [ "HypaStories.Runtime", "HypaCore.Quest", "Oculus.VR", "Meta.XR.EnvironmentDepth" ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

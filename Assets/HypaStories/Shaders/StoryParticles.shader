@@ -15,6 +15,7 @@ Shader "HypaStories/Particles"
         _Boost ("Fire boost", Float) = 1
         _Fire ("Gather centre (object space)", Vector) = (0, 0.6, 0, 0)
         _EmberBase ("Ember source (object space)", Vector) = (0, 0.15, 0, 0)
+        _EnvironmentDepthBias ("Environment Depth Bias (room)", Float) = 0.06
     }
     SubShader
     {
@@ -27,14 +28,17 @@ Shader "HypaStories/Particles"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma multi_compile _ HARD_OCCLUSION SOFT_OCCLUSION
             #include "UnityCG.cginc"
+            #include "Packages/com.meta.xr.sdk.core/Shaders/EnvironmentDepth/BiRP/EnvironmentOcclusionBiRP.cginc"
 
             fixed4 _Color;
             float _Size, _Alpha, _Speed, _Blink, _Ember, _Scale, _Gather, _Boost;
             float4 _Fire, _EmberBase;
+            float _EnvironmentDepthBias;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; float4 seed : TEXCOORD1; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float a : TEXCOORD1; UNITY_VERTEX_OUTPUT_STEREO };
+            struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float a : TEXCOORD1; META_DEPTH_VERTEX_OUTPUT(2) UNITY_VERTEX_OUTPUT_STEREO };
 
             v2f vert(appdata v)
             {
@@ -64,14 +68,18 @@ Shader "HypaStories/Particles"
                 o.pos = mul(UNITY_MATRIX_P, float4(view, 1.0));
                 o.uv = v.uv;
                 o.a = a;
+                META_DEPTH_INITIALIZE_VERTEX_OUTPUT(o, float4(p, 1.0));
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float d = length(i.uv - 0.5);
                 float a = pow(smoothstep(0.5, 0.0, d), 2.0);
-                return fixed4(_Color.rgb, a * i.a * _Alpha);
+                fixed4 c = fixed4(_Color.rgb, a * i.a * _Alpha);
+                META_DEPTH_OCCLUDE_OUTPUT_PREMULTIPLY(i, c, _EnvironmentDepthBias); // hidden by a real table or body in front (room mode)
+                return c;
             }
             ENDCG
         }

@@ -177,8 +177,25 @@ namespace HypaStories
             if (st.normalizedTime >= normalized) { st.speed = 0f; st.normalizedTime = normalized; }
         }
 
+        bool _grounded;
+        int _groundFrames;
+        float _lowest = float.MaxValue;
+
         void LateUpdate()
         {
+            // once every baked copy is fitted: stand on the ground. The model's bounds at load are a little loose (and the baked
+            // copy is rescaled about its own origin), which left Dodo floating a few centimetres up. Over a full stride (a run
+            // has moments with both feet up), find the lowest point drawn, then lower Dodo by that much once.
+            if (!_grounded && _baked.Count > 0 && _baked.TrueForAll(x => x.Fitted || x.Skin == null))
+            {
+                foreach (var x in _baked) if (x.Draw != null && x.Draw.enabled) _lowest = Mathf.Min(_lowest, x.Draw.bounds.min.y - transform.position.y);
+                if (++_groundFrames >= 40)
+                {
+                    _grounded = true;
+                    if (_lowest > 0.005f && _lowest < 0.5f && _model != null)
+                        _model.localPosition -= new Vector3(0f, _lowest / Mathf.Max(1e-3f, transform.lossyScale.y), 0f);
+                }
+            }
             foreach (var b in _baked)
             {
                 if (b.Skin == null || !b.Skin.gameObject.activeInHierarchy) continue;
