@@ -18,7 +18,7 @@ namespace HypaStories
     /// When the story ends, Try Hypa Translate appears in the panel. It opens there: words from the story, your voice,
     /// and the translation spoken back. Translation and speech go through Hypa's auto router.
     /// Editor: right mouse = look; Enter = choose; arrows = cards / lines; Space = pause; Q = ask; H = raise a hand; T = translate;
-    /// 1-3 = suggested question, or a suggested word while translating; Esc = back (closes Try Hypa first).
+    /// 1-3 = suggested question, or a suggested word while translating; V = hide / show the panel; Esc = back (closes Try Hypa first).
     /// </summary>
     public sealed class StoryApp : MonoBehaviour
     {
@@ -65,6 +65,13 @@ namespace HypaStories
         readonly RaiseHandGesture _raise = new RaiseHandGesture();
         // Places (3F): away = at another place; the camp stays loaded, hidden and quiet, and picks up when you come back.
         bool _away, _wasPlaying;
+        // In my room (3K): the camp in your real room, on the floor you found, with the story going on as before.
+        bool _room, _roomBusy;
+        RoomSpotPlan _roomPlan;
+        float _roomFloorY;
+        KitGroup _roomNote;
+        TMPro.TextMeshPro _roomNoteText;
+        int _roomNoteId;
         readonly System.Collections.Generic.List<AudioSource> _resumeLoops = new System.Collections.Generic.List<AudioSource>();
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         DodoGame _game;          // the playable scene after Seven Hot Stones
@@ -108,15 +115,14 @@ namespace HypaStories
             _splash = new SplashView(_world, _ui, _camp.Fire.Root, assets.logo, () => Go(Screen.List), on => _portalHover = on,
                 HypaShell.Instance != null ? (System.Action)(() => HypaShell.Instance.ExitToHome()) : null,
                 () => Places.GoTo(PlaceIds.Hut), () => Places.GoTo(PlaceIds.Gathering));
-            HypaShell.Instance?.SetMenuButtonVisible(false); // Back replaces the shell's floating Home button here
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
-                OpenTry, CornerTap, ExitPlay, ToggleSound, q => _ask.SubmitText(q));
+                OpenTry, CornerTap, ExitPlay, ToggleSound, q => _ask.SubmitText(q), ToggleRoom);
             _tryFlow = new TryHypaFlow(new HypaTryApi(), _mic, HypaSettings.TargetLanguage);
             // the same recording as Ask (stops when you stop talking), which is the one proven on the headset; the live
             // stream-until-Done mode gave only silence there
             _tryFlow.LiveText = false;
-            _try = new TryHypaView(_player.Root, _tryFlow, CloseTry);
+            _try = new TryHypaView(_player.Body, _tryFlow, CloseTry);
             _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
             _ask.Logged += e => Debug.Log("Hypa Stories " + e);
 
@@ -128,6 +134,15 @@ namespace HypaStories
             _prep = prep.gameObject.AddComponent<KitGroup>();
             _prep.Refresh();
             _prep.Set(0f);
+
+            var note = new GameObject("Room Note").transform;
+            note.SetParent(_ui, false);
+            _roomNoteText = Kit.Text(note, "", 0.02f, Vector3.zero, new Vector2(0.7f, 0.08f), KitTheme.Paper, TMPro.TextAlignmentOptions.Center, KitFont.SerifItalic);
+            var nf = note.gameObject.AddComponent<FollowView>();
+            nf.Distance = 1.0f; nf.Height = -0.12f;
+            _roomNote = note.gameObject.AddComponent<KitGroup>();
+            _roomNote.Refresh();
+            _roomNote.Set(0f);
 
             _list.Root.gameObject.SetActive(false);
             _player.Root.gameObject.SetActive(false);
@@ -157,6 +172,7 @@ namespace HypaStories
         void OnLeavingPlace(string id)
         {
             if (id != PlaceIds.Camp || _away) return;
+            if (_room) ExitRoomNow(); // the hut and the village are out in the forest: back to it, unseen, before the camp is put away
             _wasPlaying = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
             _ask.Cancel();
             if (_story.Live) _story.Pause();
@@ -200,6 +216,7 @@ namespace HypaStories
         /// <summary>Moves the world so the viewer is at <paramref name="seat"/>, facing the fire. Returns the eye height above the floor.</summary>
         float Recenter(Vector3 seat)
         {
+            if (_room) { PlaceInRoom(); return _cam.position.y - _roomFloorY; } // in your room the fire stays where it is on the real floor
             var head = _cam.position;
             var fwd = _cam.forward; fwd.y = 0f;
             if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.forward;
@@ -336,9 +353,9 @@ namespace HypaStories
                 _voice.StopAll();
                 _player.Root.gameObject.SetActive(true);
                 _player.Follow.Snap();
-            });
+            }, ToggleRoom);
             // above the player panel when Seven Hot Stones ends: step in as Auta
-            _faceDodo = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Face Dodo", "flame", KitStyle.Primary, FaceDodo, null, 0.022f);
+            _faceDodo = Kit.Button(_player.Body, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Face Dodo", "flame", KitStyle.Primary, FaceDodo, null, 0.022f);
             _faceDodo.gameObject.SetActive(false);
         }
 
@@ -348,6 +365,7 @@ namespace HypaStories
             _ask.Cancel();
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
+            _game.Fit(CurrentFit());
             _game.Begin();
         }
 
@@ -372,8 +390,8 @@ namespace HypaStories
                 _voice.StopAll();
                 _player.Root.gameObject.SetActive(true);
                 _player.Follow.Snap();
-            });
-            _turnHat = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Turn the hat", "rotate-ccw", KitStyle.Primary, TurnHat, null, 0.022f);
+            }, ToggleRoom);
+            _turnHat = Kit.Button(_player.Body, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Turn the hat", "rotate-ccw", KitStyle.Primary, TurnHat, null, 0.022f);
             _turnHat.gameObject.SetActive(false);
         }
 
@@ -383,6 +401,7 @@ namespace HypaStories
             _ask.Cancel();
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
+            _hatGame.Fit(CurrentFit());
             _hatGame.Begin();
         }
 
@@ -587,7 +606,7 @@ namespace HypaStories
             _splash.Update(_cam);
             _list.Update(dt);
             Locomotion(dt);
-            if (!_busy) KeepInBounds(); // every frame: head movement (room-scale, or the simulator) can't leave the clearing either
+            if (!_busy && !_room) KeepInBounds(); // every frame: head movement (room-scale, or the simulator) can't leave the clearing either
             TrailPanels(dt);
 
             if (_hatGame != null) _turnHat.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == EshuStory && !_busy);
@@ -596,7 +615,7 @@ namespace HypaStories
             {
                 var s = _story.Update(dt);
                 _camp.SetStory(s);
-                _audio.SetStorm(s.Rain);
+                _audio.SetStorm(_room ? 0f : s.Rain); // no storm in your room (the fire, the story and the thunder carry on)
                 _player.ShowLine(s.Index, s.T);
                 _player.SetProgress(s.T, _story.Duration);
                 _player.SetPauseLabel(_story.Ended ? "Replay" : _story.Paused ? "Resume" : "Pause");
@@ -624,6 +643,8 @@ namespace HypaStories
 
         void EditorKeys()
         {
+            if (Input.GetKeyDown(KeyCode.R)) ToggleRoom(); // In my room / back to the forest
+            if (Input.GetKeyDown(KeyCode.V) && _screen == Screen.Play) _player.SetHidden(!_player.Hidden); // hide / show the story panel
             switch (_screen)
             {
                 case Screen.Splash:
@@ -688,7 +709,7 @@ namespace HypaStories
             Places.Arrived -= OnArrivedPlace;
             if (Places.InCamp == (System.Func<string, bool>)HoldsPlace) { Places.InCamp = null; Places.TravelInCamp = null; }
             if (Places.NumberKeysTaken == (System.Func<bool>)NumberKeysTaken) Places.NumberKeysTaken = null;
-            HypaShell.Instance?.SetMenuButtonVisible(true); // leaving Stories: the shell's Home button is back
+            StoryRoom.Depth?.Invoke(false);
             _cts.Cancel();
             _cts.Dispose();
             _ask?.Cancel();
@@ -706,6 +727,183 @@ namespace HypaStories
             if (_ui != null) Destroy(_ui.gameObject);
         }
 
+        // ---------- in my room (3K) ----------
+
+        /// <summary>
+        /// The room button (or R in the editor): the camp comes into your real room, or goes back to the forest. The story, the voice
+        /// and the fire's sound carry on through both; only the world around the fire changes.
+        /// </summary>
+        void ToggleRoom()
+        {
+            if (_busy || _roomBusy || _away) return; // a story or its game: the fire and the storyteller come into your room either way
+            StartCoroutine(_room ? LeaveRoom() : EnterRoom());
+        }
+
+        /// <summary>The floor under you: the rig's origin, or an eye height below the head when the tracking origin is at the eyes.</summary>
+        float FloorHeight()
+        {
+            var head = _cam.position;
+            var floor = _cam.parent != null ? _cam.root.position.y : head.y - seatedEyeHeight;
+            return head.y - floor < 0.6f ? head.y - seatedEyeHeight : floor;
+        }
+
+        IEnumerator EnterRoom()
+        {
+            _roomBusy = true;
+            if (StoryRoom.Passthrough != null && !StoryRoom.Passthrough())
+            {
+                ShowRoomNote("The headset's see-through view isn't running, so your room can't show.", 5f);
+                _roomBusy = false;
+                yield break;
+            }
+
+            // read the room (Meta's scan; with none, Meta's own set-up flow asks the player to scan it, and we wait for them to come back)
+            Task<RoomScan> scan = null;
+            if (StoryRoom.Scan != null)
+            {
+                try { scan = StoryRoom.Scan(); } catch (Exception e) { Debug.LogWarning("Hypa Stories: room scan: " + e.Message); }
+            }
+            if (scan != null)
+            {
+                ShowRoomNote("Looking at your room…", 0f);
+                var t0 = Time.realtimeSinceStartup;
+                while (!scan.IsCompleted && Time.realtimeSinceStartup - t0 < 600f) yield return null;
+            }
+            if (_away || _busy) { HideRoomNote(); _roomBusy = false; yield break; } // gone elsewhere meanwhile
+            var found = scan != null && scan.Status == TaskStatus.RanToCompletion && scan.Result != null ? scan.Result : null;
+
+            // where the fire goes: an open spot in the scanned room, else in front of you
+            var head = _cam.position;
+            var user = new Vector2(head.x, head.z);
+            var fwd3 = _cam.forward; fwd3.y = 0f;
+            var fwd = new Vector2(fwd3.x, fwd3.z);
+            string note = null;
+            RoomSpotPlan plan;
+            var floorY = FloorHeight();
+            if (found != null && found.Result == RoomScanResult.Found && found.Clearance != null)
+            {
+                floorY = found.FloorY;
+                var spot = RoomSpot.Find(user, fwd, found.Clearance, found.Floor);
+                Debug.Log("Hypa Stories room: " + (spot.HasValue ? $"fire at {spot.Value.Fire}, gap {spot.Value.Gap:0.0} m, clearance {found.Clearance(spot.Value.Fire):0.00} m" : "no open spot found") + $", you at {user}, floor y {found.FloorY:0.00}");
+                if (spot.HasValue) plan = spot.Value;
+                else
+                {
+                    plan = RoomSpot.InFront(user, fwd, RoomSpot.MinGap);
+                    note = "There's no open floor in your room, so the fire is just in front of you.";
+                }
+            }
+            else
+            {
+                plan = RoomSpot.InFront(user, fwd);
+                var why = found != null ? found.Result : RoomScanResult.Unavailable;
+                if (why == RoomScanResult.NoScan) note = "No room scan yet, so the fire is just in front of you. Scan your room in your headset's settings, then try again.";
+                else if (why == RoomScanResult.NoPermission) note = "Allow Hypa to see your room and the fire will find its spot. For now it's just in front of you.";
+            }
+
+            // through the veil: the forest goes, your room shows, the fire is on its floor
+            Run(0f, 0.45f, u => SetVeil(u), In);
+            yield return new WaitForSeconds(0.5f);
+            if (_away) { SetVeil(0f); _roomBusy = false; yield break; }
+            _room = true;
+            _roomPlan = plan;
+            _roomFloorY = floorY;
+            _camp.SetRoom(true);
+            StoryRoom.Depth?.Invoke(true);
+            PlaceInRoom();
+            SetRoomButtons(true);
+            RefitGames();
+            SnapPanels();
+            Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
+            if (note != null) ShowRoomNote(note, 7f); else HideRoomNote();
+            yield return new WaitForSeconds(0.8f);
+            _roomBusy = false;
+        }
+
+        IEnumerator LeaveRoom()
+        {
+            _roomBusy = true;
+            Run(0f, 0.45f, u => SetVeil(u), In);
+            yield return new WaitForSeconds(0.5f);
+            if (_room)
+            {
+                ExitRoomNow();
+                Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
+                RefitGames();
+                SnapPanels();
+            }
+            Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
+            yield return new WaitForSeconds(0.8f);
+            _roomBusy = false;
+        }
+
+        /// <summary>Back to the forest at once (the world around the fire returns; where the camp stands is the caller's to set).</summary>
+        void ExitRoomNow()
+        {
+            if (!_room) return;
+            _room = false;
+            _camp.SetRoom(false);
+            StoryRoom.Depth?.Invoke(false);
+            SetRoomButtons(false);
+            HideRoomNote();
+        }
+
+        /// <summary>Every In my room button: the story panel, and the panels of the games after a story.</summary>
+        void SetRoomButtons(bool inRoom)
+        {
+            _player.SetRoom(inRoom);
+            _game?.SetInRoom(inRoom);
+            _hatGame?.SetInRoom(inRoom);
+        }
+
+        /// <summary>The camp's world on the real floor: the fire at its spot, you behind it, the storyteller across it facing you.</summary>
+        void PlaceInRoom()
+        {
+            var away = new Vector3(_roomPlan.Away.x, 0f, _roomPlan.Away.y);
+            _world.SetPositionAndRotation(new Vector3(_roomPlan.Fire.x, _roomFloorY, _roomPlan.Fire.y), Quaternion.LookRotation(away));
+            _camp.SetTellerGap(_roomPlan.Gap);
+            _camp.FaceTeller(_cam.position);
+        }
+
+        /// <summary>
+        /// How a game should lay itself out now: as built in the forest, or pulled in to your room's real distances. If you've walked
+        /// well round the fire since it was placed, the camp turns (round the fire, which stays put) so the game is in front of you.
+        /// </summary>
+        GameFit CurrentFit()
+        {
+            if (!_room) return GameFit.Forest;
+            var head = new Vector2(_cam.position.x, _cam.position.z);
+            var toFire = _roomPlan.Fire - head;
+            if (toFire.sqrMagnitude > 0.04f && Vector2.Angle(toFire, _roomPlan.Away) > 30f)
+            {
+                _roomPlan = new RoomSpotPlan(_roomPlan.Fire, toFire.normalized, _roomPlan.Gap, _roomPlan.Scanned);
+                PlaceInRoom();
+            }
+            return GameFit.InRoom(toFire.magnitude, _roomPlan.Gap);
+        }
+
+        /// <summary>A game going on when you switch worlds carries on, laid out for the new one.</summary>
+        void RefitGames()
+        {
+            if (_game != null && _game.Active) _game.Fit(CurrentFit());
+            if (_hatGame != null && _hatGame.Active) _hatGame.Fit(CurrentFit());
+        }
+
+        /// <summary>A line in front of you for <paramref name="seconds"/> (0 = until hidden).</summary>
+        void ShowRoomNote(string text, float seconds)
+        {
+            _roomNoteText.text = text;
+            _roomNote.Refresh();
+            _roomNote.Set(1f);
+            var id = ++_roomNoteId;
+            if (seconds > 0f) At(seconds, () => { if (id == _roomNoteId) HideRoomNote(); });
+        }
+
+        void HideRoomNote()
+        {
+            _roomNoteId++;
+            _roomNote.Set(0f);
+        }
+
         // ---------- walking about ----------
 
         /// <summary>
@@ -714,7 +912,7 @@ namespace HypaStories
         /// </summary>
         void Locomotion(float dt)
         {
-            if (_busy || Playing) return; // the fight is staged at the seat
+            if (_busy || _room || Playing) return; // in your room you walk for yourself; the fight is staged at the seat
             var move = StoryInput.Move?.Invoke() ?? Vector2.zero;
             if (Application.isEditor)
             {
@@ -836,6 +1034,7 @@ namespace HypaStories
         /// <summary>Put the head at <paramref name="at"/> on the camp ground, looking toward <paramref name="look"/>. The world moves, not the rig.</summary>
         void StandAt(Vector2 at, Vector2 look)
         {
+            if (_room) ExitRoomNow(); // out on the trails you're in the forest
             var head = _cam.position;
             var floor = _cam.parent != null ? _cam.root.position.y : head.y - seatedEyeHeight;
             if (head.y - floor < 0.6f) floor = head.y - seatedEyeHeight;
@@ -867,7 +1066,7 @@ namespace HypaStories
         {
             var v = _camp.Trail != null ? _camp.Trail.Viewer : Vector2.zero;
             // the fire's panels: shown in the clearing, put away out on the trails
-            var far = v.magnitude > 9f;
+            var far = !_room && v.magnitude > 9f;
             if (_ui.gameObject.activeSelf == far)
             {
                 _ui.gameObject.SetActive(!far);
@@ -876,7 +1075,7 @@ namespace HypaStories
             // a place's row, at its door
             foreach (var d in _doorRows)
             {
-                d.Shown = Approach(d.Shown, d.At(v) ? 1f : 0f, 6f, dt);
+                d.Shown = Approach(d.Shown, !_room && d.At(v) ? 1f : 0f, 6f, dt);
                 var on = d.Shown > 0.01f;
                 if (d.Row.gameObject.activeSelf != on)
                 {

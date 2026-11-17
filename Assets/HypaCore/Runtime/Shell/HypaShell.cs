@@ -47,7 +47,6 @@ namespace HypaCore
         [SerializeField] bool openLastModeOnStart = false;
 
         Transform _cam, _anchor, _menu, _help;
-        GameObject _menuButton;
         TextMesh _status;
         /// <summary>The scene a mode lives in, or null while only the shell is loaded.</summary>
         string _currentMode;
@@ -83,7 +82,7 @@ namespace HypaCore
         void Start()
         {
             if (_cam == null) { Debug.LogError("Hypa shell: no MainCamera."); return; }
-            BuildMenuButton();
+            BuildHomeUi();
             // Wait one frame so the camera rig can turn passthrough on before a mode replaces the scene.
             StartCoroutine(StartNextFrame());
         }
@@ -182,14 +181,12 @@ namespace HypaCore
             FollowHead();
         }
 
-        void BuildMenuButton()
+        void BuildHomeUi()
         {
             _anchor = new GameObject("Hypa Shell UI").transform;
             DontDestroyOnLoad(_anchor.gameObject);
             PlaceInFront();
-            // The Home button: low and close to the middle, big enough to hit with a wobbly hand ray, with a caption.
-            // In a mode it leaves the mode; on its own it opens the Home card. A mode with its own X hides it.
-            _menuButton = Ui.IconButton("house", _anchor, new Vector3(-0.15f, -0.19f, 0f), 0.038f, HomeButton, "Home").transform.parent.gameObject;
+            // No floating Home button: every mode has its own way back (Stories' Back, Lens's X), and Home is the first screen.
 
             // Home: the first thing the user sees. Title row, the modes, how it works, and an X.
             _menu = new GameObject("Home Card").transform;
@@ -274,23 +271,13 @@ namespace HypaCore
             if (open) PlaceInFront();
             _menu.gameObject.SetActive(open);
             if (!open) _help.gameObject.SetActive(false);
-            RefreshMenuButton();
         }
 
         void ShowHelp(bool open)
         {
             _help.gameObject.SetActive(open);
             _menu.gameObject.SetActive(!open);
-            RefreshMenuButton();
         }
-
-        /// <summary>A mode with its own X hides the shell's Home button (and shows it again when it closes).</summary>
-        public void SetMenuButtonVisible(bool visible) { _menuButtonWanted = visible; RefreshMenuButton(); }
-
-        bool _menuButtonWanted = true;
-
-        /// <summary>The Home button steps aside while a Home card is open (it would sit on the card and do nothing new).</summary>
-        void RefreshMenuButton() { if (_menuButton != null) _menuButton.SetActive(_menuButtonWanted && !IsMenuOpen); }
 
         /// <summary>Saved words live in Lens: open Lens (or go back to it) straight onto the practice cards.</summary>
         void OpenSavedWords()
@@ -322,13 +309,6 @@ namespace HypaCore
 #endif
         }
 
-        /// <summary>The Home button: in a mode it leaves the mode; otherwise it opens the Home card.</summary>
-        void HomeButton()
-        {
-            if (_currentMode != null) ExitToHome();
-            else ShowMenu(true);
-        }
-
         const string HomeScene = "HypaHome";
 
         /// <summary>
@@ -347,7 +327,6 @@ namespace HypaCore
                 SceneManager.SetActiveScene(home);
                 SceneManager.UnloadSceneAsync(mode);
             }
-            SetMenuButtonVisible(true);
             ShowMenu(true);
         }
 
