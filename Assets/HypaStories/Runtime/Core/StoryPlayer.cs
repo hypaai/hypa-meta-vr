@@ -20,7 +20,10 @@ namespace HypaStories
         /// A line whose speech takes longer than this is read silently, so a slow TTS call never holds the story. Hypa's own voices
         /// take 5-10 s a line (the next line is fetched while this one plays, so that is mostly hidden).
         /// </summary>
-        const int LineTimeoutMs = 12000;
+        /// <summary>How long a line may take to arrive before it plays silently. The words wait at the line's start meanwhile.</summary>
+        const int LineTimeoutMs = 25000;
+        /// <summary>Lines fetched ahead of the one playing: slow voices (Yoruba ~4-9 s a line) are then ready in time.</summary>
+        const int Ahead = 3;
         CancellationTokenSource _tts = new CancellationTokenSource();
         int _ttsToken;
 
@@ -62,7 +65,7 @@ namespace HypaStories
             // the opening line asks Auto first, so the voice locked for the story is the one that speaks it; the next line then
             // asks for that same voice instead of waiting on a filler
             var first = _voice.PrepareAsync(Text(0), _lang(), ct);
-            _voice.Prefetch(Text(1), _lang());
+            for (var k = 1; k <= Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), _lang()); // they wait for the opening line's voice
             return first;
         }
 
@@ -88,7 +91,7 @@ namespace HypaStories
                     _hold = Caps[i].At;                       // wait at the line's start until its audio starts
                     var line = await PrepareLine(Text(i), lang, ct);
                     if (token != _ttsToken) return;
-                    if (i + 1 < Caps.Length) _voice.Prefetch(Text(i + 1), lang);
+                    for (var k = i + 1; k <= i + Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), lang);
                     var next = i + 1 < Caps.Length ? Caps[i + 1].At : Caps[i].Until + 1f;
                     await _voice.PlayAsync(line, _ => _hold = next - 0.01f, ct);
                     if (token != _ttsToken) return;
