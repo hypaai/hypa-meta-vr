@@ -1,0 +1,15 @@
+{
+  "theme": 0,
+  "accent": "#F0B45A",
+  "eyebrow": "In the hut",
+  "title": "The oil lamp",
+  "description": "A little clay lamp with a cotton wick. Hear how it keeps the night away.",
+  "voices": [],
+  "lines": [
+    {"id": "greet", "text": "Ah, you have found my lamp. We call it fitila.", "ask": ["What is the lamp called?"]},
+    {"id": "made", "text": "It is shaped from the same river clay as the pot, small enough to sit in your palm.", "ask": ["What is it made of?"]},
+    {"id": "oil", "text": "We pour in palm oil and lay a wick of twisted cotton in its spout. Then we light the wick.", "ask": ["What does it burn?"]},
+    {"id": "night", "text": "When the sun goes down, its little flame lets us find our mats, and tell stories late into the night.", "ask": ["When do you light it?"]},
+    {"id": "care", "text": "Carry it upright and slowly, my child, or the oil will spill and drown the flame."}
+  ]
+}

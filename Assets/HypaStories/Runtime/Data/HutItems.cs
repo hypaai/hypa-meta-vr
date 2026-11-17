@@ -13,19 +13,29 @@ namespace HypaStories
     /// </summary>
     public static class HutItems
     {
-        /// <summary>A household item: its story folder under Resources/Stories, and the shape that stands for it (see <c>HutProps</c>).</summary>
+        /// <summary>
+        /// A household item: its story folder under Resources/Stories, the shape that stands for it (see <c>HutProps</c>), and
+        /// whether it is heavy (both hands to lift it, see <see cref="StoryGrab"/>).
+        /// </summary>
         public readonly struct Entry
         {
             public readonly string Id, Prop;
-            public Entry(string id, string prop) { Id = id; Prop = prop; }
+            public readonly bool Heavy;
+            /// <summary>A place of its own (degrees round the wall from the door, metres from the centre, and the height it stands on), instead of the next floor place.</summary>
+            public readonly float Angle, Radius, BaseY;
+            public bool OwnPlace => !float.IsNaN(Angle);
+            public Entry(string id, string prop, bool heavy = false, float angle = float.NaN, float radius = 0f, float baseY = 0f)
+            { Id = id; Prop = prop; Heavy = heavy; Angle = angle; Radius = radius; BaseY = baseY; }
         }
 
         /// <summary>The items, in the order they take their places round the wall.</summary>
         public static readonly Entry[] Entries =
         {
-            new Entry("hut/clay-pot", "clay-pot"),
-            new Entry("hut/mortar-pestle", "mortar-pestle"),
+            new Entry("hut/clay-pot", "clay-pot", heavy: true),
+            new Entry("hut/mortar-pestle", "mortar-pestle", heavy: true),
             new Entry("hut/broom", "broom"),
+            // on the mud ledge at the back, beside the old woman (HutInterior builds the ledge)
+            new Entry("hut/oil-lamp", "oil-lamp", angle: 201f, radius: HutTrailLayout.WallInner - 0.18f, baseY: 0.36f),
         };
 
         static StoryInfo[] _all;
@@ -58,6 +68,23 @@ namespace HypaStories
             return new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * ItemRadius;
         }
 
+        /// <summary>Where item <paramref name="index"/> stands (x, z) and the height of what it stands on (0: the floor). Pure.</summary>
+        public static (Vector2 spot, float baseY) Place(int index)
+        {
+            var e = Entries[index];
+            if (!e.OwnPlace) return (Spot(FloorIndex(index)), 0f);
+            var a = e.Angle * Mathf.Deg2Rad;
+            return (new Vector2(Mathf.Sin(a), Mathf.Cos(a)) * e.Radius, e.BaseY);
+        }
+
+        /// <summary>Which floor place an item takes: items with a place of their own don't use one up.</summary>
+        static int FloorIndex(int index)
+        {
+            var n = 0;
+            for (var i = 0; i < index; i++) if (!Entries[i].OwnPlace) n++;
+            return n;
+        }
+
         /// <summary>Where the old woman sits: at the back of the room, opposite the door.</summary>
         public static Vector2 Woman => new Vector2(0f, -WomanRadius);
 
@@ -67,5 +94,34 @@ namespace HypaStories
         /// </summary>
         public static bool Lost(Vector3 local)
             => local.y < -0.4f || new Vector2(local.x, local.z).magnitude > HutTrailLayout.WallInner + 0.1f;
+    }
+
+    /// <summary>
+    /// What the old woman says when you handle her things: pick one up (<see cref="Care"/>), try a heavy one with one hand
+    /// (<see cref="BothHands"/>), or let one fall hard (<see cref="Careful"/>). One line per language code; a language without
+    /// them uses English. The non-European lines are best checked by a native speaker.
+    /// </summary>
+    public static class HutLines
+    {
+        public enum Kind { Care, BothHands, Careful }
+
+        static readonly System.Collections.Generic.Dictionary<string, string[]> Lines = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            ["en"] = new[] { "Gently, my child. Handle it with care.", "It is heavy. Use both hands.", "Careful! Put it down gently." },
+            ["fr"] = new[] { "Doucement, mon enfant. Prends-en soin.", "C'est lourd. Prends-le à deux mains.", "Attention ! Pose-le doucement." },
+            ["es"] = new[] { "Despacio, hijo mío. Trátalo con cuidado.", "Pesa mucho. Usa las dos manos.", "¡Cuidado! Déjalo con suavidad." },
+            ["pcm"] = new[] { "Gently, my pikin. Handle am with care.", "E heavy. Use your two hand carry am.", "Careful! Put am down gently." },
+            ["yo"] = new[] { "Pẹ̀lẹ́, ọmọ mi. Fi ìṣọ́ra mú un.", "Ó wúwo. Fi ọwọ́ méjèèjì gbé e.", "Ṣọ́ra! Rọra gbé e kalẹ̀." },
+            ["ha"] = new[] { "A hankali, ɗana. Ka riƙe shi da kulawa.", "Yana da nauyi. Yi amfani da hannaye biyu.", "A kula! Ajiye shi a hankali." },
+            ["ig"] = new[] { "Nwayọọ, nwa m. Jiri nlezianya jide ya.", "Ọ dị arọ. Jiri aka abụọ.", "Kpachara anya! Tọgbọ ya nwayọọ." },
+            ["sw"] = new[] { "Polepole, mwanangu. Ishike kwa uangalifu.", "Ni nzito. Tumia mikono yote miwili.", "Angalia! Iweke chini polepole." },
+        };
+
+        /// <summary>The line in <paramref name="lang"/>, and the language it is actually in (English when there is none). Pure.</summary>
+        public static (string text, string lang) For(Kind kind, string lang)
+        {
+            if (lang != null && Lines.TryGetValue(lang, out var l)) return (l[(int)kind], lang);
+            return (Lines["en"][(int)kind], "en");
+        }
     }
 }

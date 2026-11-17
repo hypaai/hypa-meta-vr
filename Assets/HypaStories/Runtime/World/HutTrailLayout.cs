@@ -37,7 +37,9 @@ namespace HypaStories
         /// <summary>Where the signpost stands: by the log, at the mouth of the trail, readable from the seat.</summary>
         public static readonly Vector2 Sign = new Vector2(-3.55f, -1.4f);
 
-        const float FireKeepOut = 1.3f, DoorHalf = 0.45f, InsideMargin = 0.25f, Eps = 1e-3f;
+        // InsideMargin: how close to the wall your head may go inside the hut. Small, so you can lean in over the things that stand
+        // by the wall: with a wider margin, leaning in pushed the whole room away (the item you looked at seemed to slide off).
+        const float FireKeepOut = 1.3f, DoorHalf = 0.45f, InsideMargin = 0.06f, Eps = 1e-3f;
 
         /// <summary>The way out of the door (unit, pointing back down the trail).</summary>
         public static Vector2 DoorDir => (Path[Path.Length - 1] - Hut).normalized;

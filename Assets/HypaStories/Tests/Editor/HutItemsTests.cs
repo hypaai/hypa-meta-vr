@@ -57,6 +57,32 @@ namespace HypaStories.Tests
             Assert.Less(HutItems.Woman.y, 0f, "at the back: the door is on +Z");
         }
 
+        [Test] public void TheLamp_StandsOnTheLedge_AndTheOthersKeepTheirFloorPlaces()
+        {
+            for (var i = 0; i < HutItems.Entries.Length; i++)
+            {
+                var (spot, baseY) = HutItems.Place(i);
+                var e = HutItems.Entries[i];
+                Assert.Less(spot.magnitude, HutTrailLayout.WallInner, e.Id + " stands inside the wall");
+                if (e.OwnPlace) { Assert.Greater(baseY, 0f, e.Id + " stands on something"); continue; }
+                Assert.AreEqual(0f, baseY, e.Id + " stands on the floor");
+            }
+            var lamp = System.Array.FindIndex(HutItems.Entries, e => e.Prop == "oil-lamp");
+            Assert.GreaterOrEqual(lamp, 0, "there is a lamp");
+            Assert.Less(HutItems.Place(lamp).spot.y, -1.5f, "at the back of the room, on the ledge");
+            Assert.IsTrue(HutProps.Flame("oil-lamp").HasValue, "with a flame");
+            Assert.IsFalse(HutItems.Entries[lamp].Heavy, "light: one hand carries it");
+            Assert.IsTrue(HutItems.Entries[0].Heavy && HutItems.Entries[1].Heavy, "the pot and the mortar take both hands");
+        }
+
+        [Test] public void HerLines_FallBackToEnglish()
+        {
+            Assert.AreEqual("en", HutLines.For(HutLines.Kind.Care, "zz").lang);
+            Assert.AreEqual("fr", HutLines.For(HutLines.Kind.BothHands, "fr").lang);
+            foreach (HutLines.Kind k in System.Enum.GetValues(typeof(HutLines.Kind)))
+                foreach (var l in StoryLanguages.All) Assert.IsNotEmpty(HutLines.For(k, l.Code).text, $"{k} in {l.Code}");
+        }
+
         [Test] public void AnItemThatLeavesTheRoom_IsLost()
         {
             Assert.IsFalse(HutItems.Lost(new Vector3(HutItems.Spot(0).x, 0.3f, HutItems.Spot(0).y)), "at its place by the wall");

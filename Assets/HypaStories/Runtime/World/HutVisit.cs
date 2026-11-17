@@ -32,12 +32,33 @@ namespace HypaStories
             public StoryCard Card;
             public Transform Anchor;
             public Rigidbody Body;
-            public Func<bool> Held;
+            /// <summary>How many hands (or controllers) hold it (null: it can't be picked up here).</summary>
+            public Func<int> Hands;
+            public bool Heavy;
             public Vector3 HomePos;
             public Quaternion HomeRot;
-            public float Lost, Ph;
-            public bool WasHeld;
+            public float Lost, Ph, LetGoAt = -10f, OutFor, UpFor;
+            /// <summary>Its flame (the oil lamp), carried with it; null for things without one.</summary>
+            public HutInterior.Fire Flame;
+            public int WasHands;
+            public bool WasHeld => WasHands > 0;
         }
+
+        /// <summary>Tells the hut when a thing hits something hard (dropped, or let go in the air).</summary>
+        sealed class ImpactProbe : MonoBehaviour
+        {
+            public Action<float> Hit;
+            void OnCollisionEnter(Collision c) => Hit?.Invoke(c.relativeVelocity.magnitude);
+        }
+
+        // what she says when you handle her things, shown over her head too
+        const float SayAgainSeconds = 5f, HardHit = 2.2f;
+        readonly Dictionary<HutLines.Kind, float> _saidAt = new Dictionary<HutLines.Kind, float>();
+        TMPro.TextMeshPro _caption;
+        KitGroup _captionGroup;
+        Transform _captionRoot;
+        float _captionUntil;
+        int _sayGen;
 
         readonly List<Item> _items = new List<Item>();
         readonly RaiseHandGesture _raise = new RaiseHandGesture();
@@ -80,7 +101,8 @@ namespace HypaStories
             fc.size = new Vector3(7f, 0.23f, 7f); // its top at the hut's earth floor (1.5 cm up)
 
             BuildWoman(camp, vc);
-            _fire = HutInterior.Build(_inside, vc, a, FloorY); // rafters, the painted wall, the ledge, the hearth, the things of the house
+            _fire = HutInterior.Build(_inside, vc, a, FloorY); // rafters, the painted wall, the ledge, the lamp, the things of the house
+            BuildCaption();
             _voice = gameObject.AddComponent<StoryVoice>();
             _voice.Init(_woman != null && _woman.Mouth != null ? _woman.Mouth : _inside);
             _story = new StoryPlayer(_voice, lang);
@@ -147,7 +169,7 @@ namespace HypaStories
 
         void BuildItem(int index, HutItems.Entry entry, StoryInfo story, StoryAssets a, Material vc, Material cardMat, Mesh quad)
         {
-            var spot = HutItems.Spot(index);
+            var (spot, baseY) = HutItems.Place(index);
             var inward = Quaternion.LookRotation(X0Z(-spot).normalized); // +Z into the room, the wall behind
 
             // the wall behind it (the hut's wall has no collider of its own): what leans there stays, and nothing is pushed through
@@ -167,7 +189,16 @@ namespace HypaStories
             var size = HutProps.Size(entry.Prop);
             prop.localScale = Vector3.one * size;
             var rest = HutProps.Rest(entry.Prop, toWall);
-            prop.SetLocalPositionAndRotation(X0Z(spot, FloorY) + inward * rest.position, inward * rest.rotation);
+            prop.SetLocalPositionAndRotation(X0Z(spot, baseY > 0f ? baseY : FloorY) + inward * rest.position, inward * rest.rotation);
+            if (baseY > 0f)
+            {
+                // what it stands on (the mud ledge) holds it up, and catches it when it is put back
+                var stand = new GameObject("Stand Collider " + entry.Prop);
+                stand.transform.SetParent(_inside, false);
+                stand.transform.SetLocalPositionAndRotation(X0Z(spot, baseY / 2f), inward);
+                stand.AddComponent<BoxCollider>().size = new Vector3(0.8f, baseY, Mathf.Max(0.3f, (toWall + 0.15f) * 2f));
+            }
+            var flameAt = HutProps.Flame(entry.Prop);
             foreach (var b in boxes)
             {
                 var c = prop.gameObject.AddComponent<BoxCollider>();
@@ -206,8 +237,12 @@ namespace HypaStories
                 Story = story, Card = card, Anchor = anchor, Body = body, Ph = index * 1.7f,
                 HomePos = prop.localPosition, HomeRot = prop.localRotation,
             };
-            try { item.Held = StoryGrab.Make?.Invoke(body, a); }
+            item.Heavy = entry.Heavy;
+            var probe = prop.gameObject.AddComponent<ImpactProbe>();
+            probe.Hit = speed => { if (speed > HardHit && !item.WasHeld && Time.time - item.LetGoAt < 3f) Say(HutLines.Kind.Careful); };
+            try { item.Hands = StoryGrab.Make?.Invoke(body, a, entry.Heavy); }
             catch (Exception e) { Debug.LogWarning($"Hypa Stories: {entry.Prop} can't be picked up: {e.Message}"); }
+            if (flameAt.HasValue) item.Flame = HutInterior.Flame(prop, a, flameAt.Value, 1f / size);
             _items.Add(item);
         }
 
@@ -326,6 +361,8 @@ namespace HypaStories
             if (Application.isEditor && _current >= 0 && Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
 
             HutInterior.Tick(_fire, cam, _t);
+            Flames(cam, dt);
+            Caption(cam, dt);
             Woman(cam, dt);
             Things(dt);
         }
@@ -357,14 +394,104 @@ namespace HypaStories
         {
             foreach (var it in _items)
             {
-                var held = it.Held != null && it.Held();
-                if (it.WasHeld && !held) _letGo = Time.time;
-                it.WasHeld = held;
-                if (held) { it.Lost = 0f; continue; }
+                var hands = it.Hands != null ? it.Hands() : 0;
+                if (hands != it.WasHands) Handled(it, it.WasHands, hands);
+                it.WasHands = hands;
+                if (hands > 0) { it.Lost = 0f; continue; }
                 var p = _inside.InverseTransformPoint(it.Body.position);
                 it.Lost = HutItems.Lost(p) ? it.Lost + dt : 0f;
                 if (it.Lost > LostSeconds || p.y < -3f) Home(it);
             }
+        }
+
+        /// <summary>
+        /// The lamp's flame burns while it is carried, and lights the room wherever it goes. Tip it over and the oil drowns the
+        /// flame (she warns you); stood upright again for a moment, it is lit again.
+        /// </summary>
+        void Flames(Transform cam, float dt)
+        {
+            foreach (var it in _items)
+            {
+                if (it.Flame == null) continue;
+                HutInterior.Tick(it.Flame, cam, _t);
+                var upright = it.Body.transform.up.y > 0.55f;
+                if (it.Flame.Lit)
+                {
+                    it.OutFor = upright ? 0f : it.OutFor + dt;
+                    if (it.OutFor > 0.25f) { HutInterior.SetLit(it.Flame, false); it.UpFor = 0f; Say(HutLines.Kind.Careful); }
+                }
+                else
+                {
+                    it.UpFor = upright ? it.UpFor + dt : 0f;
+                    if (it.UpFor > 1.5f) HutInterior.SetLit(it.Flame, true);
+                }
+            }
+        }
+
+        /// <summary>A hand took hold or let go: she minds her things.</summary>
+        void Handled(Item it, int was, int now)
+        {
+            if (now == 0) { _letGo = it.LetGoAt = Time.time; return; }
+            if (was != 0 && !(it.Heavy && was == 1 && now >= 2)) return;
+            if (it.Heavy && now == 1) Say(HutLines.Kind.BothHands);  // one hand on a heavy pot: it won't come up
+            else Say(HutLines.Kind.Care);                           // lifted: handle it with care
+        }
+
+        /// <summary>
+        /// She says a line, in the story language (English where there is none), shown over her head. If she is telling you about
+        /// a thing, the telling waits and picks up again from its line. Lines repeat no more often than every few seconds.
+        /// </summary>
+        async void Say(HutLines.Kind kind)
+        {
+            if (_saidAt.TryGetValue(kind, out var at) && Time.time - at < SayAgainSeconds) return;
+            _saidAt[kind] = Time.time;
+            var (text, code) = HutLines.For(kind, _lang().Code);
+            ShowCaption(text);
+            if (_ask.State != AskState.Idle) return; // a question is open: the words show, she doesn't talk over it
+            var gen = ++_sayGen;
+            var resume = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
+            if (resume) _story.Pause();
+            try
+            {
+                var line = await _voice.PrepareAsync(text, StoryLanguages.Find(code) ?? _lang(), _cts.Token);
+                if (gen != _sayGen) return;
+                await _voice.PlayAsync(line, null, _cts.Token);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception e) { Debug.LogWarning("Hypa Stories: the old woman couldn't speak: " + e.Message); }
+            if (resume && gen == _sayGen && _story.Live && _story.Paused && _ask.State == AskState.Idle) _story.TogglePause();
+        }
+
+        void ShowCaption(string text)
+        {
+            if (_captionRoot == null || !Kit.Ready) return;
+            _caption.text = text;
+            _captionGroup.Refresh();
+            _captionGroup.Set(1f);
+            _captionUntil = Time.time + 2.2f + text.Length * 0.05f;
+        }
+
+        /// <summary>The words over her head face you, and fade when they've been read.</summary>
+        void Caption(Transform cam, float dt)
+        {
+            if (_captionRoot == null || _woman == null) return;
+            _captionRoot.position = _woman.Head.position + Vector3.up * 0.42f;
+            var to = _captionRoot.position - cam.position;
+            if (to.sqrMagnitude > 1e-4f) _captionRoot.rotation = Quaternion.LookRotation(to);
+            if (_captionGroup.Alpha > 0f && Time.time > _captionUntil) _captionGroup.Set(Mathf.Max(0f, _captionGroup.Alpha - dt * 2f));
+        }
+
+        void BuildCaption()
+        {
+            if (!Kit.Ready || _woman == null) return;
+            _captionRoot = new GameObject("Old Woman Says").transform;
+            _captionRoot.SetParent(_inside, false);
+            Kit.Glass(_captionRoot, "Bubble", new Vector3(0f, 0f, 0.004f), new Vector2(0.62f, 0.1f), 0.04f);
+            _caption = Kit.Text(_captionRoot, "", 0.026f, Vector3.zero, new Vector2(0.58f, 0.09f), KitTheme.Paper, TMPro.TextAlignmentOptions.Center, KitFont.SerifItalic);
+            _caption.enableAutoSizing = true; _caption.fontSizeMax = _caption.fontSize; _caption.fontSizeMin = _caption.fontSize * 0.6f;
+            _captionGroup = _captionRoot.gameObject.AddComponent<KitGroup>();
+            _captionGroup.Refresh();
+            _captionGroup.Set(0f);
         }
 
         void Home(Item it)

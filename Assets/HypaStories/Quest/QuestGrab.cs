@@ -47,7 +47,7 @@ namespace HypaStories.Quest
             StoryGrab.Make = Make;
         }
 
-        static Func<bool> Make(Rigidbody body, StoryAssets assets)
+        static Func<int> Make(Rigidbody body, StoryAssets assets, bool heavy)
         {
             if (body == null || !EnsureRig(assets)) return null;
             var go = body.gameObject;
@@ -58,7 +58,15 @@ namespace HypaStories.Quest
                 var grabbable = go.AddComponent<Grabbable>();
                 grabbable.InjectOptionalRigidbody(body);
                 grabbable.InjectOptionalKinematicWhileSelected(true);
-                grabbable.InjectOptionalThrowWhenUnselected(true);
+                grabbable.InjectOptionalThrowWhenUnselected(!heavy); // a heavy pot is set down, not thrown
+                if (heavy)
+                {
+                    // both hands to lift it; one hand only rocks it (QuestCarry)
+                    grabbable.InjectOptionalOneGrabTransformer(go.AddComponent<TooHeavyOneHand>());
+                    grabbable.InjectOptionalTwoGrabTransformer(go.AddComponent<CarryTwoHands>());
+                    grabbable.MaxGrabPoints = 2;
+                    body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ; // let go, it lands upright
+                }
 
                 var forControllers = go.AddComponent<GrabInteractable>();
                 forControllers.InjectAllGrabInteractable(body);
@@ -68,16 +76,20 @@ namespace HypaStories.Quest
                 forHands.InjectAllHandGrabInteractable(GrabTypeFlags.All, body, GrabbingRule.DefaultPinchRule, GrabbingRule.DefaultPalmRule);
                 forHands.InjectOptionalPointableElement(grabbable);
 
-                // from a distance (the default movement: it flies to your hand, then stays in it)
-                var farControllers = go.AddComponent<DistanceGrabInteractable>();
-                farControllers.InjectAllGrabInteractable(body);
-                farControllers.InjectOptionalPointableElement(grabbable);
+                // from a distance (the default movement: it flies to your hand, then stays in it): light things only. A heavy one
+                // pulled to the hand would fly at your face; you go to it and take it in both hands.
+                if (!heavy)
+                {
+                    var farControllers = go.AddComponent<DistanceGrabInteractable>();
+                    farControllers.InjectAllGrabInteractable(body);
+                    farControllers.InjectOptionalPointableElement(grabbable);
 
-                var farHands = go.AddComponent<DistanceHandGrabInteractable>();
-                farHands.InjectAllDistanceHandGrabInteractable(GrabTypeFlags.All, body, GrabbingRule.DefaultPinchRule, GrabbingRule.DefaultPalmRule);
-                farHands.InjectOptionalPointableElement(grabbable);
+                    var farHands = go.AddComponent<DistanceHandGrabInteractable>();
+                    farHands.InjectAllDistanceHandGrabInteractable(GrabTypeFlags.All, body, GrabbingRule.DefaultPinchRule, GrabbingRule.DefaultPalmRule);
+                    farHands.InjectOptionalPointableElement(grabbable);
+                }
 
-                return () => grabbable != null && grabbable.SelectingPointsCount > 0;
+                return () => grabbable != null ? grabbable.SelectingPointsCount : 0;
             }
             finally { go.SetActive(wasActive); }
         }

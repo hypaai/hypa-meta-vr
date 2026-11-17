@@ -7,16 +7,14 @@ namespace HypaStories
     /// <summary>
     /// What makes the hut's room a village home, round its household things (<see cref="HutVisit"/>): the roof's rafters and
     /// the rings of lath under the thatch, a dark plinth and a painted band round the mud wall, a mud ledge at the back with
-    /// calabashes and bowls on it, a three-stone hearth with embers and firelight, firewood against the wall, a woven basket,
-    /// a rolled sleeping mat, a hoe on its peg and calabashes hanging from the roof. All made here like the rest of the camp
-    /// (vertex colours on the pines' shader); only the hearth's glow and its one vertex light move.
+    /// calabashes and bowls on it (and the oil lamp, one of the household items), folded wrappers stacked on a board and cloth bundles tied in their knots,
+    /// grain sacks, a carved stool, a woven basket, a rolled sleeping mat, a hoe on its peg and calabashes hanging from the
+    /// roof. Nobody cooks in here (that is done outside). All made here like the rest of the camp (vertex colours on the pines'
+    /// shader). The lamp's flame (<see cref="Flame"/>) goes with the lamp when it is carried.
     /// Built in the hut's own space: the centre at the origin, the door on +Z, angles round the wall measured from the door.
     /// </summary>
     public static class HutInterior
     {
-        /// <summary>The hearth, in the hut's space (x, z): in front of the old woman, to her side.</summary>
-        public static readonly Vector2 Hearth = new Vector2(0.95f, -0.9f);
-
         /// <summary>The parts that flicker: glow materials (with their base opacity), the fire's light and the cards that face you.</summary>
         public sealed class Fire
         {
@@ -24,6 +22,7 @@ namespace HypaStories
             public readonly List<Transform> Cards = new List<Transform>();
             public Light Light;
             public float LightBase;
+            public bool Lit = true;
         }
 
         static readonly int OpacityId = Shader.PropertyToID("_Opacity");
@@ -45,7 +44,7 @@ namespace HypaStories
             Roof(mk);
             Wall(mk, floorY);
             Ledge(mk, floorY);
-            Hearth3(mk, floorY);
+            Goods(mk, floorY);
             Things(mk, floorY);
             var go = new GameObject("Hut Interior");
             go.transform.SetParent(parent, false);
@@ -56,7 +55,7 @@ namespace HypaStories
             r.receiveShadows = false;
             r.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
             r.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
-            return FireGlow(parent, a, floorY);
+            return null;
         }
 
         // ---------- the roof from inside: rafters to the apex, rings of lath, a ring beam on the wall ----------
@@ -141,11 +140,11 @@ namespace HypaStories
             // on it: two calabashes, a stack of bowls, a small clay jar
             var gourd = new Color(0.78f, 0.6f, 0.3f);
             var rm = (rIn + rOut) * 0.5f;
-            Calabash(mk, At(160f, rm, h), 0.13f, gourd);
-            Calabash(mk, At(170f, rm, h), 0.1f, Shade(gourd, 0.85f));
+            Calabash(mk, At(158f, rm, h), 0.13f, gourd);
+            Calabash(mk, At(167f, rm, h), 0.1f, Shade(gourd, 0.85f));
             for (var k = 0; k < 3; k++)
-                mk.Lathe(At(196f, rm, h + k * 0.035f), Id, new[] { (0.05f, 0.11f, 0.11f), (0.0f, 0.06f, 0.06f) }, Shade(new Color(0.5f, 0.3f, 0.18f), 1f - k * 0.08f), 12);
-            mk.Lathe(At(186f, rm, h), Id, new[] { (0.2f, 0.04f, 0.04f), (0.17f, 0.05f, 0.05f), (0.1f, 0.09f, 0.09f), (0.02f, 0.07f, 0.07f), (0f, 0.05f, 0.05f) }, new Color(0.55f, 0.28f, 0.16f), 12);
+                mk.Lathe(At(187f, rm, h + k * 0.035f), Id, new[] { (0.05f, 0.11f, 0.11f), (0.0f, 0.06f, 0.06f) }, Shade(new Color(0.5f, 0.3f, 0.18f), 1f - k * 0.08f), 12);
+            mk.Lathe(At(176f, rm, h), Id, new[] { (0.2f, 0.04f, 0.04f), (0.17f, 0.05f, 0.05f), (0.1f, 0.09f, 0.09f), (0.02f, 0.07f, 0.07f), (0f, 0.05f, 0.05f) }, new Color(0.55f, 0.28f, 0.16f), 12);
         }
 
         /// <summary>A round gourd, a ridge where it was cut, a lid of the same gourd.</summary>
@@ -155,30 +154,63 @@ namespace HypaStories
             mk.Lathe(at + Vector3.up * r * 1.25f, Id, new[] { (0.035f, r * 0.62f, r * 0.62f), (0f, r * 0.74f, r * 0.74f) }, Shade(c, 0.7f), 12);
         }
 
-        // ---------- the hearth: three stones, ash, embers, the ends of three logs, a pot on the stones ----------
+        // ---------- the household goods: cloth, grain, a stool ----------
 
-        static void Hearth3(MeshKit mk, float floorY)
+        static void Goods(MeshKit mk, float floorY)
         {
-            var c = X0Z(Hearth, floorY);
-            mk.Ellipsoid(c + Vector3.up * 0.004f, new Vector3(0.3f, 0.008f, 0.3f), Id, new Color(0.3f, 0.29f, 0.27f), 14, 4);       // ash
-            mk.Ellipsoid(c + Vector3.up * 0.006f, new Vector3(0.36f, 0.006f, 0.36f), Id, new Color(0.13f, 0.1f, 0.08f), 14, 4);     // the scorched ring
-            var stone = new Color(0.33f, 0.31f, 0.28f);
-            for (var i = 0; i < 3; i++)
+            var wall = HutTrailLayout.WallInner;
+            // folded wrappers stacked on a low board, and two bundles of cloth tied up in a wrapper, by the wall
+            var cloths = new[]
             {
-                var d = i * 120f + 30f;
-                mk.Ellipsoid(c + At(d, 0.19f, 0.075f), new Vector3(0.1f, 0.08f, 0.09f), Quaternion.Euler(0f, d, 8f), Shade(stone, 0.9f + i * 0.08f), 9, 6);
-                // a log between each pair of stones, burnt to coal at the middle
-                var ld = d + 60f;
-                mk.Limb(c + At(ld, 0.55f, 0.05f), c + At(ld, 0.08f, 0.04f), 0.045f, 0.04f, new Color(0.28f, 0.18f, 0.1f), 7);
-                mk.Ellipsoid(c + At(ld, 0.1f, 0.04f), new Vector3(0.045f, 0.035f, 0.045f), Id, new Color(0.08f, 0.05f, 0.04f), 7, 4);
+                new Color(0.16f, 0.22f, 0.5f), new Color(0.72f, 0.18f, 0.12f), new Color(0.9f, 0.68f, 0.18f),
+                new Color(0.18f, 0.45f, 0.26f), new Color(0.88f, 0.84f, 0.74f), new Color(0.5f, 0.16f, 0.38f), new Color(0.85f, 0.4f, 0.12f),
+            };
+            var stackAt = At(-146f, wall - 0.3f, floorY);
+            var face = Quaternion.LookRotation(-new Vector3(stackAt.x, 0f, stackAt.z).normalized);
+            mk.Box(stackAt + Vector3.up * 0.04f, new Vector3(0.66f, 0.08f, 0.46f), face, new Color(0.3f, 0.2f, 0.12f));
+            var y = 0.08f;
+            for (var i = 0; i < cloths.Length; i++)
+            {
+                var h = 0.055f + (i % 3) * 0.012f;
+                var turn = face * Quaternion.Euler(0f, (i % 2 == 0 ? 1f : -1f) * (2f + i * 0.7f), 0f);
+                var c = cloths[i];
+                mk.Box(stackAt + Vector3.up * (y + h / 2f) + face * new Vector3(((i * 37) % 5 - 2) * 0.008f, 0f, 0f), new Vector3(0.56f, h, 0.38f), turn, c, 0.7f);
+                // the fold's edge, a little paler: reads as cloth, not a box
+                mk.Box(stackAt + Vector3.up * (y + h / 2f) + turn * new Vector3(0f, 0f, 0.19f), new Vector3(0.54f, h * 0.7f, 0.012f), turn, Shade(c, 1.25f), 0.9f);
+                y += h;
             }
-            for (var i = 0; i < 9; i++) // embers
-                mk.Ellipsoid(c + At(i * 41f, 0.04f + (i % 3) * 0.035f, 0.02f), new Vector3(0.025f, 0.015f, 0.025f), Id, new Color(0.75f, 0.2f + (i % 3) * 0.08f, 0.05f), 6, 3);
-            // a blackened clay pot sitting on the stones
-            mk.Lathe(c + Vector3.up * 0.12f, Id, new[]
+            foreach (var (deg, r, sz, col) in new[] { (-130f, wall - 0.32f, 0.26f, cloths[1]), (-160f, wall - 0.36f, 0.22f, cloths[0]) })
             {
-                (0.27f, 0.12f, 0.12f), (0.24f, 0.11f, 0.11f), (0.17f, 0.17f, 0.17f), (0.08f, 0.16f, 0.16f), (0.01f, 0.08f, 0.08f), (0f, 0.05f, 0.05f),
-            }, new Color(0.13f, 0.1f, 0.08f), 14);
+                var at = At(deg, r, floorY);
+                mk.Ellipsoid(at + Vector3.up * sz * 0.75f, new Vector3(sz * 1.15f, sz * 0.75f, sz), Quaternion.Euler(0f, deg, 0f), col, 12, 7);
+                // the corners knotted on top, and a band of another cloth showing through
+                mk.Ellipsoid(at + Vector3.up * sz * 1.5f, new Vector3(sz * 0.32f, sz * 0.22f, sz * 0.3f), Id, Shade(col, 0.85f), 8, 5);
+                mk.Ellipsoid(at + Vector3.up * sz * 1.62f + Vector3.right * sz * 0.18f, new Vector3(sz * 0.12f, sz * 0.18f, sz * 0.1f), Quaternion.Euler(0f, 0f, -35f), Shade(col, 0.85f), 6, 4);
+                mk.Lathe(at + Vector3.up * sz * 0.72f, Quaternion.Euler(0f, deg, 0f), new[] { (0.035f, sz * 1.17f, sz * 1.02f), (0f, sz * 1.17f, sz * 1.02f) }, cloths[2], 14);
+            }
+            // grain sacks, tied at the neck; one open, the grain showing
+            var burlap = new Color(0.6f, 0.5f, 0.34f);
+            foreach (var (deg, open) in new[] { (136f, false), (146f, true), (128f, false) })
+            {
+                var at = At(deg, wall - (open ? 0.42f : 0.26f), floorY);
+                var sackH = open ? 0.42f : 0.58f;
+                mk.Lathe(at, Quaternion.Euler(0f, deg * 3f, 0f), new[]
+                {
+                    (sackH, open ? 0.2f : 0.05f, open ? 0.19f : 0.05f), (sackH * 0.86f, open ? 0.22f : 0.1f, open ? 0.21f : 0.1f), (sackH * 0.6f, 0.23f, 0.21f),
+                    (sackH * 0.25f, 0.24f, 0.22f), (0.02f, 0.2f, 0.19f), (0f, 0.16f, 0.15f),
+                }, Shade(burlap, 0.9f + (deg % 3) * 0.05f), 14);
+                if (open) mk.Ellipsoid(at + Vector3.up * sackH * 0.98f, new Vector3(0.19f, 0.05f, 0.18f), Id, new Color(0.86f, 0.74f, 0.42f), 12, 5); // grain
+                else
+                {
+                    mk.Lathe(at + Vector3.up * sackH * 0.86f, Id, new[] { (0.03f, 0.1f, 0.1f), (0f, 0.1f, 0.1f) }, new Color(0.3f, 0.2f, 0.12f), 10); // the cord
+                    mk.Ellipsoid(at + Vector3.up * (sackH + 0.04f), new Vector3(0.07f, 0.06f, 0.07f), Id, burlap, 8, 5);                             // the tuft
+                }
+            }
+            // a carved stool beside her mat, a small bowl on it
+            var stool = At(152f, 1.25f, floorY);
+            var dark = new Color(0.27f, 0.17f, 0.09f);
+            mk.Lathe(stool, Id, new[] { (0.3f, 0.17f, 0.17f), (0.27f, 0.17f, 0.17f), (0.22f, 0.07f, 0.07f), (0.1f, 0.06f, 0.06f), (0.04f, 0.13f, 0.13f), (0f, 0.14f, 0.14f) }, dark, 14);
+            mk.Lathe(stool + Vector3.up * 0.3f, Id, new[] { (0.05f, 0.09f, 0.09f), (0f, 0.05f, 0.05f) }, new Color(0.7f, 0.52f, 0.28f), 12);
         }
 
         // ---------- things of the house round the wall ----------
@@ -186,21 +218,9 @@ namespace HypaStories
         static void Things(MeshKit mk, float floorY)
         {
             var wall = HutTrailLayout.WallInner;
-            // firewood stacked against the wall, near the hearth
-            var wood = new Color(0.36f, 0.24f, 0.14f);
-            var rnd = new System.Random(9);
-            float R() => (float)rnd.NextDouble();
-            for (var row = 0; row < 4; row++)
-                for (var k = 0; k < 5 - row; k++)
-                {
-                    var d = -146f + (k - (4 - row) / 2f) * 3.2f;
-                    var at = At(d, wall - 0.2f, floorY + 0.05f + row * 0.085f);
-                    var along = (At(d + 90f, 1f, 0f)).normalized * (0.35f + R() * 0.1f);
-                    mk.Limb(at - along, at + along, 0.042f, 0.038f, Shade(wood, 0.85f + R() * 0.3f), 7);
-                }
             // a woven basket on the floor
             var straw = new Color(0.7f, 0.55f, 0.3f);
-            var b = At(140f, wall - 0.35f, floorY);
+            var b = At(-124f, wall - 0.35f, floorY);
             mk.Lathe(b, Id, new[] { (0.3f, 0.2f, 0.2f), (0.22f, 0.21f, 0.21f), (0.1f, 0.18f, 0.18f), (0.0f, 0.13f, 0.13f) }, straw, 14);
             foreach (var y in new[] { 0.08f, 0.16f, 0.24f })
                 mk.Lathe(b + Vector3.up * y, Id, new[] { (0.02f, 0.205f + y * 0.05f, 0.205f + y * 0.05f), (0f, 0.205f + y * 0.05f, 0.205f + y * 0.05f) }, Shade(straw, 0.6f), 14);
@@ -229,47 +249,57 @@ namespace HypaStories
             }
         }
 
-        // ---------- the fire's glow: on the ash, two small flames that face you, and a light on the walls ----------
+        // ---------- a flame (the oil lamp's): a small flame and its halo that face you, and a warm light on the walls ----------
 
-        static Fire FireGlow(Transform parent, StoryAssets a, float floorY)
+        /// <summary>
+        /// A flame under <paramref name="parent"/> at <paramref name="local"/> (the lamp's wick), so it goes wherever the lamp is
+        /// carried. <paramref name="unscale"/> undoes the parent's scale, so the flame keeps its size. Its light is per vertex: the
+        /// camp's fire stays the only per-pixel light.
+        /// </summary>
+        public static Fire Flame(Transform parent, StoryAssets a, Vector3 local, float unscale)
         {
             var fire = new Fire();
             if (a == null || a.additive == null) return fire;
             var glowTex = StoryMeshes.Glow();
-            var c = X0Z(Hearth, floorY);
             Material Glow(Color col, float o, float ph)
             {
-                var m = new Material(a.additive) { mainTexture = glowTex, color = col, name = "Hearth Glow" };
+                var m = new Material(a.additive) { mainTexture = glowTex, color = col, name = "Lamp Glow" };
                 m.SetFloat(OpacityId, o);
                 fire.Glows.Add((m, o, ph));
                 return m;
             }
-            Transform Card(string name, Vector3 pos, float size, Material m, bool flat)
+            void Card(string name, float up, float size, Material m)
             {
                 var go = new GameObject(name);
                 go.transform.SetParent(parent, false);
-                go.transform.localPosition = pos;
-                if (flat) go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                go.transform.localPosition = local + Vector3.up * up * unscale;
+                go.transform.localScale = Vector3.one * unscale;
                 go.AddComponent<MeshFilter>().sharedMesh = StoryMeshes.Quad(size, size);
                 var r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = m;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = false;
-                if (!flat) fire.Cards.Add(go.transform);
-                return go.transform;
+                fire.Cards.Add(go.transform);
             }
-            Card("Hearth Ground Glow", c + Vector3.up * 0.03f, 1.6f, Glow(new Color(1f, 0.45f, 0.15f), 0.3f, 0.3f), true);
-            Card("Hearth Embers", c + Vector3.up * 0.035f, 0.42f, Glow(new Color(1f, 0.35f, 0.08f), 0.9f, 1.7f), true);
-            Card("Hearth Flame", c + Vector3.up * 0.13f, 0.32f, Glow(new Color(1f, 0.55f, 0.18f), 0.8f, 2.9f), false);
-            Card("Hearth Flame Core", c + Vector3.up * 0.1f, 0.16f, Glow(new Color(1f, 0.85f, 0.5f), 0.9f, 4.1f), false);
-            var light = new GameObject("Hearth Light").AddComponent<Light>();
+            Card("Lamp Halo", 0.02f, 0.45f, Glow(new Color(1f, 0.55f, 0.2f), 0.35f, 0.7f));
+            Card("Lamp Flame", 0.018f, 0.06f, Glow(new Color(1f, 0.8f, 0.45f), 1f, 2.3f));
+            var light = new GameObject("Lamp Light").AddComponent<Light>();
             light.transform.SetParent(parent, false);
-            light.transform.localPosition = c + Vector3.up * 0.45f;
-            light.type = LightType.Point; light.range = 3.4f; light.color = new Color(1f, 0.55f, 0.24f);
-            light.intensity = fire.LightBase = 1.1f;
-            light.shadows = LightShadows.None; light.renderMode = LightRenderMode.ForceVertex; // per vertex: the camp's fire stays the only per-pixel light
+            light.transform.localPosition = local + Vector3.up * 0.12f * unscale;
+            light.type = LightType.Point; light.range = 3.2f; light.color = new Color(1f, 0.6f, 0.3f);
+            light.intensity = fire.LightBase = 0.9f;
+            light.shadows = LightShadows.None; light.renderMode = LightRenderMode.ForceVertex;
             fire.Light = light;
             return fire;
+        }
+
+        /// <summary>Puts a flame out (the lamp tipped over, the oil drowned it) or lights it again.</summary>
+        public static void SetLit(Fire fire, bool lit)
+        {
+            if (fire == null) return;
+            fire.Lit = lit;
+            foreach (var c in fire.Cards) c.gameObject.SetActive(lit);
+            if (fire.Light != null) fire.Light.enabled = lit;
         }
 
         /// <summary>Per frame: the glows breathe, the flames face the eye, the light flickers.</summary>

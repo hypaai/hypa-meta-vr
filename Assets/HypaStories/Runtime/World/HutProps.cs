@@ -19,6 +19,7 @@ namespace HypaStories
                 case "clay-pot": ClayPot(mk, boxes); return true;
                 case "mortar-pestle": MortarAndPestle(mk, boxes); return true;
                 case "broom": Broom(mk, boxes); return true;
+                case "oil-lamp": OilLamp(mk, boxes); return true;
                 default: Crate(mk, boxes); return false;
             }
         }
@@ -44,7 +45,10 @@ namespace HypaStories
         /// How much bigger than its mesh a thing is shown (the meshes are built small): a big water pot of about 62 cm, a mortar
         /// of 64 cm with its pestle up to your shoulder, a broom of 85 cm. The number to change if a thing looks too small.
         /// </summary>
-        public static float Size(string prop) => prop == "clay-pot" ? 2.4f : prop == "mortar-pestle" ? 2f : prop == "broom" ? 1.4f : 1.7f;
+        public static float Size(string prop) => prop == "clay-pot" ? 2.4f : prop == "mortar-pestle" ? 2f : prop == "broom" ? 1.4f : prop == "oil-lamp" ? 1.6f : 1.7f;
+
+        /// <summary>Where a thing's flame burns, in its own (mesh) space: the oil lamp's wick. Null for things without one.</summary>
+        public static Vector3? Flame(string prop) => prop == "oil-lamp" ? new Vector3(0f, 0.062f, 0.105f) : (Vector3?)null;
 
         /// <summary>
         /// A picture of a thing for its card, drawn here from its own mesh (so a new shape has its picture at once, with no art
@@ -184,6 +188,22 @@ namespace HypaStories
             mk.Limb(new Vector3(0f, 0.03f, -0.27f), new Vector3(0f, 0.03f, -0.22f), 0.022f, 0.024f, cord, 8);
             mk.Limb(new Vector3(0f, 0.03f, -0.14f), new Vector3(0f, 0.03f, -0.11f), 0.028f, 0.03f, cord, 8);
             boxes.Add(new Bounds(new Vector3(0f, 0.032f, 0f), new Vector3(0.15f, 0.064f, 0.62f)));
+        }
+
+        /// <summary>A small clay oil lamp: a shallow round bowl with a pinched spout at the front (+Z) and a cotton wick in it, 13 cm across.</summary>
+        static void OilLamp(MeshKit mk, List<Bounds> boxes)
+        {
+            var clay = new Color(0.58f, 0.3f, 0.17f);
+            mk.Lathe(Vector3.zero, Id, new[]
+            {
+                (0.05f, 0.062f, 0.062f), (0.042f, 0.068f, 0.068f), (0.022f, 0.06f, 0.06f), (0.006f, 0.04f, 0.04f), (0f, 0.032f, 0.032f),
+            }, clay, 14);
+            mk.Ellipsoid(new Vector3(0f, 0.044f, 0f), new Vector3(0.056f, 0.006f, 0.056f), Id, new Color(0.3f, 0.22f, 0.08f), 12, 3);              // the oil
+            mk.Limb(new Vector3(0f, 0.04f, 0.04f), new Vector3(0f, 0.05f, 0.1f), 0.022f, 0.012f, clay, 8);                                         // the spout
+            mk.Limb(new Vector3(0f, 0.045f, 0.05f), new Vector3(0f, 0.058f, 0.104f), 0.005f, 0.004f, new Color(0.85f, 0.8f, 0.68f), 5);            // the wick
+            mk.Ellipsoid(new Vector3(0f, 0.058f, 0.104f), new Vector3(0.005f, 0.006f, 0.005f), Id, new Color(0.12f, 0.08f, 0.06f), 5, 3);           // its burnt tip
+            mk.Limb(new Vector3(0f, 0.04f, -0.055f), new Vector3(0f, 0.052f, -0.085f), 0.012f, 0.01f, clay, 6);                                    // a little handle
+            boxes.Add(new Bounds(new Vector3(0f, 0.025f, 0.015f), new Vector3(0.13f, 0.05f, 0.18f)));
         }
 
         /// <summary>The stand-in for a shape that isn't made yet: a small wooden crate.</summary>
