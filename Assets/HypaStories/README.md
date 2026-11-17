@@ -192,9 +192,13 @@ the translations are matched on.
 
 - Committed: shaders and code (original), Poly Haven props and forest floor (`Art/PolyHaven`, CC0), Camp Fire by JalenJacobson
   (`Art/Models/camp_fire.glb`, **CC BY 4.0, credit required**, re-encoded without meshopt / WebP so glTFast imports it), the Hypa
-  Reality mark (`Art/hypa-reality.png`, team-supplied), the witch song after the drum game (`Art/Audio/witch-song.mp3`,
-  team-supplied), the storyteller avatar (`Art/Models/storyteller.glb`; a Ready Player Me placeholder from the three.js
-  examples), and the Epidemic Sound camp beds (`Art/Audio/amb-1/2`, `fire-1/2`, `wolf-1`; team's Epidemic Sound subscription).
+  Reality mark (`Art/hypa-reality.png`, team-supplied), and the witch song after the drum game (`Art/Audio/witch-song.mp3`,
+  team-supplied).
+- **Not committed** (`Assets/HypaStories/Local/`, git-ignored, because this repo is public): the Epidemic Sound beds
+  (`amb-1/2`, `fire-1/2`, `wolf-1`; subscription licence, no redistribution) and the storyteller avatar
+  (`Models/storyteller.glb`; a Ready Player Me placeholder from the three.js examples).
+  Copy them from `Ideation/public/{audio,models}` into `Local/Audio` and `Local/Models`, then rerun **Create Story Scene**.
+  Without them: synthesised wind and fire and a stand-in storyteller.
 - Before release: replace the avatar with one from the team's own Ready Player Me account (or any humanoid with `Hips`/`Spine`/
   `Head`/`LeftArm`… bones and a `mouthOpen` blend shape).
 
@@ -256,7 +260,8 @@ your left and a small high one on your right, waist high in front of where you a
   The last dish brings dawn, and the villagers come out of the trees to dance.
 - **Free drum:** then the witch song plays (`Art/Audio/witch-song.mp3`, `StoryAssets.witchSong`; instead of the village's
   drums) and you drum along freely, nothing counted. It fades in at the top and out over its last 14 seconds. **Play again**
-  restarts the game; **The story** and **Stories** as after the other games. Without
+  restarts the game; **The story** and **Stories** as after the other games. **In my room** puts the fire and the drums
+  on your real floor, the same switch as the other games. Without
   the recording you can still drum freely.
 
 The bell, the shaker and the drums' own strokes are scheduled on the audio clock (`AudioSettings.dspTime`), so the groove holds
