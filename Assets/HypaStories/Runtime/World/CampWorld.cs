@@ -407,8 +407,7 @@ namespace HypaStories
             VillageTrail.Build(_a, glow);
             var vg = new GameObject("Village");
             vg.transform.SetParent(transform, false);
-            _scenery.Add(vg);
-            Village = vg.AddComponent<Village>();
+            Village = vg.AddComponent<Village>(); // stays awake in the room: only the place hides, so a celebration at the fire still runs
             Village.Build(_a, glow);
             for (var i = 0; i < 48; i++)
             {
@@ -553,6 +552,7 @@ namespace HypaStories
         /// stones, logs, flames, light, sound and embers) and the storyteller in it. The story is not touched.
         /// </summary>
         Vector3 _ringScale = Vector3.one, _fireScale = Vector3.one;
+        float _fogStartWas = 8f, _fogEndWas = 36f;
 
         public void SetRoom(bool on)
         {
@@ -567,16 +567,22 @@ namespace HypaStories
                 _hidden.Clear();
                 foreach (var go in _scenery)
                     if (go != null && go.activeSelf) { _hidden.Add(go); go.SetActive(false); }
+                // no fog in your room, but fog stays switched on and is pushed out of reach: the build keeps only the shader
+                // variants the camp uses (all with fog), so turning it off drew the drums (and anything without a no-fog variant) magenta
                 _fogWas = RenderSettings.fog;
-                RenderSettings.fog = false;
+                _fogStartWas = RenderSettings.fogStartDistance; _fogEndWas = RenderSettings.fogEndDistance;
+                RenderSettings.fogStartDistance = 1000f; RenderSettings.fogEndDistance = 1001f;
                 _rainT.gameObject.SetActive(false);
+                if (Village != null) Village.SetPlaceShown(false);
             }
             else
             {
                 foreach (var go in _hidden) if (go != null) go.SetActive(true);
                 _hidden.Clear();
                 RenderSettings.fog = _fogWas;
+                RenderSettings.fogStartDistance = _fogStartWas; RenderSettings.fogEndDistance = _fogEndWas;
                 ResetTeller();
+                if (Village != null) Village.SetPlaceShown(true);
             }
             SwapLit(on);
         }
@@ -648,7 +654,7 @@ namespace HypaStories
 
         void OnDestroy()
         {
-            if (Room) RenderSettings.fog = _fogWas;
+            if (Room) { RenderSettings.fog = _fogWas; RenderSettings.fogStartDistance = _fogStartWas; RenderSettings.fogEndDistance = _fogEndWas; }
             foreach (var m in _litMade.Values) if (m != null) Destroy(m);
         }
 

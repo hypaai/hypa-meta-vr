@@ -114,10 +114,14 @@ namespace HypaStories.Tests
             Assert.IsEmpty(heard, "never twice for the same moment");
         }
 
-        [Test] public void Eshu_IsTheSecondCard_HisLightTurnsWithTheHat_AndHeLaughsLast()
+        [Test] public void Cards_SevenStones_ThenTheDrum_ThenEshu_ThenMarlow()
         {
-            Assert.AreEqual("eshu-crossroads", StoryLibrary.All[1].Id);
-            Assert.AreEqual("marlow-street", StoryLibrary.All[2].Id);
+            CollectionAssert.AreEqual(new[] { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street" },
+                System.Linq.Enumerable.Select(StoryLibrary.All, s => s.Id));
+        }
+
+        [Test] public void Eshu_HisLightTurnsWithTheHat_AndHeLaughsLast()
+        {
             var tl = StoryLibrary.Find("eshu-crossroads").Timeline;
             var d = new StoryDirector(tl);
             Assert.AreEqual(0f, d.Sample(Line(tl, "road").Until).Spirit, 1e-4f, "no god's light before Eshu");
@@ -126,9 +130,8 @@ namespace HypaStories.Tests
             Assert.AreEqual("laugh", tl.Sounds[tl.Sounds.Length - 1].Name, "the last sound is Eshu's laugh");
         }
 
-        [Test] public void Drum_IsTheFourthCard_TheFeastRaisesTheFire_AndTheEgboMenComeInTheDark()
+        [Test] public void Drum_TheFeastRaisesTheFire_AndTheEgboMenComeInTheDark()
         {
-            Assert.AreEqual("kings-drum", StoryLibrary.All[3].Id);
             var tl = StoryLibrary.Find("kings-drum").Timeline;
             var d = new StoryDirector(tl);
             Assert.Greater(d.Sample(Line(tl, "appeared").Until).Fire, 1.4f, "the feast roars up the fire");
@@ -472,6 +475,42 @@ namespace HypaStories.Tests
             Assert.IsTrue(b.IsCompleted && !b.IsFaulted, "the waiting line asks Auto itself");
             CollectionAssert.AreEqual(new[] { "auto", "auto" }, asked);
             Assert.AreEqual("google/chirp Achernar", vl.PickFor("es").ToString());
+        });
+
+        [Test] public void VoiceLock_ALockedVoiceTheServiceRefuses_GoesToAuto_NeverSilent() => Inline(() =>
+        {
+            // Auto speaks Spanish in a Google voice, then refuses that voice by name ("cannot speak Spanish")
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                if (p != null) throw new HypaCore.HypaException(HypaCore.HypaErrorKind.ToolError, "google/gemini-2.5-pro-tts cannot speak Spanish.");
+                return Task.FromResult(Spoke("google", "gemini-2.5-pro-tts", "Achernar"));
+            }
+            vl.SpeakAsync("es", Speak).Wait();
+            var second = vl.SpeakAsync("es", Speak);
+            Assert.IsTrue(second.IsCompleted && !second.IsFaulted, "the line is spoken, not dropped");
+            vl.SpeakAsync("es", Speak).Wait();
+            CollectionAssert.AreEqual(new[] { "auto", "google/gemini-2.5-pro-tts Achernar", "auto", "auto" }, asked, "refused once, then Auto");
+            Assert.IsNull(vl.PickFor("es"), "Spanish stays on Auto for this story");
+        });
+
+        [Test] public void VoiceLock_ABlipRetriesTheSameVoice_ThenAuto() => Inline(() =>
+        {
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            var fails = 1;
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                if (p != null && fails-- > 0) throw new HypaCore.HypaException(HypaCore.HypaErrorKind.Timeout, "slow");
+                return Task.FromResult(Spoke("hypaai", "orpheus", p?.Voice ?? "Eniola"));
+            }
+            vl.SpeakAsync("yo", Speak).Wait();
+            vl.SpeakAsync("yo", Speak).Wait();
+            CollectionAssert.AreEqual(new[] { "auto", "hypaai/orpheus Eniola", "hypaai/orpheus Eniola" }, asked, "same voice again after a blip");
+            Assert.AreEqual("hypaai/orpheus Eniola", vl.PickFor("yo").ToString(), "still locked");
         });
 
         [Test] public void VoiceLock_PickNeedsProviderModelAndVoice()

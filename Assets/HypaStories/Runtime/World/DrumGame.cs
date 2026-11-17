@@ -15,7 +15,7 @@ namespace HypaStories
     /// the fire, in the story's order: fish, fufu, yams, okra, palm-oil soup, palm wine. A wrong beat makes the guests laugh and
     /// the drums play it again. The last dish brings dawn, and the town comes out of the trees to eat and dance.
     ///
-    /// Then the witch song (<see cref="StoryAssets.witchSong"/>, a licensed recording kept in the git-ignored Local folder)
+    /// Then the witch song (<see cref="StoryAssets.witchSong"/>, `Art/Audio/witch-song.mp3`)
     /// plays and you drum freely along with it, nothing counted; it fades out over its last seconds. <b>Play again</b> restarts
     /// the game. Without the recording the free drumming still works.
     ///
@@ -30,6 +30,7 @@ namespace HypaStories
         public const float RimFrom = 0.62f;
         /// <summary>A hand re-arms this far above a skin; a strike must come down at least this fast, within this much of its edge.</summary>
         public const float ReArm = 0.03f, MinSpeed = 0.3f, Margin = 0.04f;
+        const float Hip = 0.18f, RoomDrum = 0.85f;
         const float Reach = 0.42f, DishRing = 1.3f, DishScale = 1.4f, Lookahead = 0.12f;
         /// <summary>Round the fire, from your left to your right across it (degrees from the far side), clear of your seat.</summary>
         static readonly float[] DishAngles = { -112f, -72f, -34f, 34f, 72f, 112f };
@@ -53,7 +54,7 @@ namespace HypaStories
         StoryAssets _a;
         StoryAudio _audio;
         Texture2D _glow;
-        Action _restartStory, _back, _return;
+        Action _restartStory, _back, _return, _toggleRoom;
 
         DrumRules _rules;
         Transform _root, _rig;
@@ -92,7 +93,8 @@ namespace HypaStories
         TextMeshPro _title, _sub, _count;
         readonly List<KitPanel> _pips = new List<KitPanel>();
         readonly KitPanel[] _beatTicks = new KitPanel[4];
-        KitButton _retry, _restart, _leave, _quit;
+        KitButton _retry, _restart, _leave, _quit, _room;
+        GameFit _fit = GameFit.Forest;
 
         // the witch song after the feast: you drum along freely
         const float SongDelay = 2f, SongFadeIn = 1.5f, SongFadeOut = 14f, SongLevel = 0.9f;
@@ -103,10 +105,10 @@ namespace HypaStories
         public bool Active { get; private set; }
         public DrumPhase Phase => _rules?.Phase ?? DrumPhase.Intro;
 
-        public void Init(CampWorld camp, StoryAssets a, StoryAudio audio, Texture2D glow, Transform uiRoot, Action restartStory, Action back, Action returnToStory)
+        public void Init(CampWorld camp, StoryAssets a, StoryAudio audio, Texture2D glow, Transform uiRoot, Action restartStory, Action back, Action returnToStory, Action toggleRoom = null)
         {
             _camp = camp; _a = a; _audio = audio; _glow = glow;
-            _restartStory = restartStory; _back = back; _return = returnToStory;
+            _restartStory = restartStory; _back = back; _return = returnToStory; _toggleRoom = toggleRoom;
             BuildHud(uiRoot);
         }
 
@@ -117,7 +119,7 @@ namespace HypaStories
             if (_root == null) Build();
             _root.gameObject.SetActive(true);
             Active = true;
-            PlaceDrums();
+            Fit(_fit);
             _rules = new DrumRules();
             _rules.Changed += OnPhase;
             _was = DrumPhase.Intro;
@@ -236,6 +238,34 @@ namespace HypaStories
         }
 
         /// <summary>
+        /// Forest layout, or the same drums in a real room: the dishes sit just outside the stones (the room's fire is smaller),
+        /// and the panel comes in so it stays in front of you.
+        /// </summary>
+        public void Fit(GameFit fit)
+        {
+            _fit = fit;
+            if (_root == null) return;
+            var ring = fit.Room ? GameFit.StoneEdge + 0.3f : DishRing;
+            for (var i = 0; i < _dishes.Length; i++)
+            {
+                var a = DishAngles[i] * Mathf.Deg2Rad;
+                _dishes[i].localPosition = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a)) * ring;
+            }
+            var follow = _hud != null ? _hud.GetComponent<FollowView>() : null;
+            if (follow != null) { follow.Distance = fit.Room ? 0.6f : 1.15f; follow.Height = fit.Room ? 0.28f : 0.42f; }
+            if (Active) PlaceDrums();
+        }
+
+        /// <summary>The same room switch as the story: the fire and the drums in your real room.</summary>
+        public void SetInRoom(bool inRoom)
+        {
+            if (_room == null) return;
+            _room.SetLabel(inRoom ? "Back to the forest" : "In my room");
+            _room.Style = inRoom ? KitStyle.Primary : KitStyle.Ghost;
+            _room.Selected = inRoom;
+        }
+
+        /// <summary>
         /// Sets the drums in front of where you are now, the low drum's skin about at your waist (lower when you sit), and
         /// builds their bodies to that height.
         /// </summary>
@@ -249,8 +279,27 @@ namespace HypaStories
             if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
             fwd.Normalize();
             _skinY = Mathf.Clamp(head.y - 0.74f, 0.5f, 0.92f);
-            _rig.localPosition = new Vector3(head.x, 0f, head.z) + fwd * Reach;
+            var at = new Vector3(head.x, 0f, head.z) + fwd * Reach;
+            if (_fit.Room)
+            {
+                // the room's fire is right in front of you (you sit at its stones): no floor there for drums, so they go either
+                // side of you, at your hips, level with where you sit and clear of the stones, facing the fire
+                var flat = new Vector3(head.x, 0f, head.z);
+                var out_ = flat.sqrMagnitude > 1e-4f ? flat.normalized : -fwd;
+                at = out_ * Mathf.Max(flat.magnitude, GameFit.StoneEdge + 0.15f);
+                fwd = -out_;
+            }
+            _rig.localPosition = at;
             _rig.localRotation = Quaternion.LookRotation(fwd);
+            foreach (var d in _drums)
+            {
+                // in the room they flank you: each drum's inner edge just clear of your hips (a seated body is about 0.36 m
+                // across), and 15% smaller like the room's fire. Outside the stones: the low drum's centre is ~0.94 m from the
+                // fire (needs 0.7 + 0.21), the high one's ~0.91 m (needs 0.7 + 0.14). In the forest, as built.
+                var k = _fit.Room ? RoomDrum : 1f;
+                d.Root.localScale = new Vector3(k, 1f, k);
+                d.Root.localPosition = new Vector3(_fit.Room ? Mathf.Sign(d.Side) * (Hip + d.R * k) : d.Side, 0f, 0f);
+            }
             foreach (var d in _drums)
             {
                 var y = _skinY + d.Lift;
@@ -471,7 +520,7 @@ namespace HypaStories
             // or a pinch while pointing at a skin: whichever the ray meets nearer its middle
             var input = HypaInput.Current;
             var pinch = input.IsPinching;
-            if (pinch && !_wasPinching && Time.time - _lastStrike > 0.2f && input.TryGetRay(out var ray))
+            if (pinch && !_wasPinching && !DodoGame.OnPanel() && Time.time - _lastStrike > 0.2f && input.TryGetRay(out var ray))
             {
                 int hit = -1; var best = float.MaxValue;
                 for (var k = 0; k < 2; k++)
@@ -480,8 +529,9 @@ namespace HypaStories
                     var dn = Vector3.Dot(ray.direction, n);
                     if (dn > -0.05f) continue;
                     var t = Vector3.Dot(top - ray.origin, n) / dn;
-                    var at = Vector3.Distance(ray.origin + ray.direction * t, top) / _drums[k].R;
-                    if (t > 0f && t < 4f && at <= 1f + Margin / _drums[k].R && at < best) { best = at; hit = k; }
+                    var rr = _drums[k].R * _drums[k].Root.localScale.x; // its size as drawn (smaller in the room)
+                    var at = Vector3.Distance(ray.origin + ray.direction * t, top) / rr;
+                    if (t > 0f && t < 4f && at <= 1f + Margin / rr && at < best) { best = at; hit = k; }
                 }
                 if (hit >= 0) Strike(hit, best > RimFrom);
             }
@@ -751,6 +801,11 @@ namespace HypaStories
             _retry = Kit.Button(_hud, new Vector3(-0.15f, -0.052f, 0f), new Vector2(0.14f, 0.046f), "Play again", "rotate-ccw", KitStyle.Primary, () => { End(); Begin(); });
             _restart = Kit.Button(_hud, new Vector3(0f, -0.052f, 0f), new Vector2(0.14f, 0.046f), "The story", "play", KitStyle.Ghost, () => { End(); _restartStory?.Invoke(); });
             _leave = Kit.Button(_hud, new Vector3(0.15f, -0.052f, 0f), new Vector2(0.14f, 0.046f), "Stories", "arrow-left", KitStyle.Ghost, () => { End(); _back?.Invoke(); });
+            if (_toggleRoom != null)
+            {
+                _room = Kit.Button(_hud, new Vector3(0f, -0.115f, 0f), new Vector2(0.28f, 0.04f), "Back to the forest", "house", KitStyle.Ghost, _toggleRoom, null, 0.014f);
+                _room.SetLabel("In my room");
+            }
             _hud.gameObject.AddComponent<KitGroup>().Refresh();
             _hud.gameObject.SetActive(false);
         }

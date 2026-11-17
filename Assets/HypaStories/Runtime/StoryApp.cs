@@ -430,8 +430,8 @@ namespace HypaStories
                 _voice.StopAll();
                 _player.Root.gameObject.SetActive(true);
                 _player.Follow.Snap();
-            });
-            _playDrum = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Play the drum", "hand", KitStyle.Primary, PlayDrum, null, 0.022f);
+            }, ToggleRoom);
+            _playDrum = Kit.Button(_player.Body, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Play the drum", "hand", KitStyle.Primary, PlayDrum, null, 0.022f);
             _playDrum.gameObject.SetActive(false);
         }
 
@@ -441,6 +441,7 @@ namespace HypaStories
             _ask.Cancel();
             _audio.Tap();
             _player.Root.gameObject.SetActive(false);
+            _drumGame.Fit(CurrentFit());
             _drumGame.Begin();
         }
 
@@ -893,6 +894,7 @@ namespace HypaStories
             _player.SetRoom(inRoom);
             _game?.SetInRoom(inRoom);
             _hatGame?.SetInRoom(inRoom);
+            _drumGame?.SetInRoom(inRoom);
         }
 
         /// <summary>The camp's world on the real floor: the fire at its spot, you behind it, the storyteller across it facing you.</summary>
@@ -926,6 +928,7 @@ namespace HypaStories
         {
             if (_game != null && _game.Active) _game.Fit(CurrentFit());
             if (_hatGame != null && _hatGame.Active) _hatGame.Fit(CurrentFit());
+            if (_drumGame != null && _drumGame.Active) _drumGame.Fit(CurrentFit());
         }
 
         /// <summary>A line in front of you for <paramref name="seconds"/> (0 = until hidden).</summary>
