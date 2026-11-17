@@ -131,6 +131,31 @@ Yoruba tone marks, Igbo dots and Hausa hooks can be drawn; the story fonts are L
 | `public/languages.json` | `Data/StoryLanguages`. |
 | Swipe up / `H` to raise a hand | `Core/RaiseHand` + `Quest/QuestStoryInput` (tracked hand or controller above the head, held 0.35 s; thumbsticks walk and snap-turn). |
 
+## In the hut: household things, their cards and the old woman
+
+**Step inside** at the hut's door (or walk in). Round the wall, on low benches: a clay pot, a mortar with its pestle and a
+palm-rib broom. A story card hovers over each, and an old woman sits at the back. Pinch a card (or its **Hear about it**
+button) and she tells you what the thing is and what it is for.
+
+- **The same card and the same telling as the campfire.** The card is `Ui/StoryCard` (the campfire's row,
+  `StoryListView`, builds its cards from the same class). An item's content is a story: `Resources/Stories/hut/{id}/story.json`
+  plus one file per language, loaded by `StoryLibrary.Load` (see Stories below for the format). It plays through the same
+  `StoryPlayer`, `StoryVoice` (from her mouth), `PlayerView` panel and `AskFlow` (the **Ask** button: she answers a question
+  about the thing). The hut has its own instances of these (`World/HutVisit`), so a story by the fire only pauses.
+- **Pick things up.** Each item is a rigidbody with box colliders and the Meta XR Interaction SDK's `Grabbable`,
+  `GrabInteractable` (controllers: grip) and `HandGrabInteractable` (hands: pinch or close your hand round it). The shell's rig
+  has no Interaction SDK interactors, so `Quest/QuestGrab` adds a grab-only set under the camera rig from the SDK's own prefabs
+  (referenced on **StoryAssets**; re-run **Hypa > Stories > Create Story Scene** if those five fields are empty). No SDK rays,
+  poke or locomotion are added. In the editor without a headset rig, things just sit there.
+- **The card stays put.** A card hangs from a fixed anchor in the hut, over the item's starting place: never from the item.
+  It can be pinched while the item is held or lies elsewhere. The floor and the benches have colliders; an item that leaves
+  the room (thrown out, or through the wall) goes back to its bench after a moment.
+- **Add an item:** make `Resources/Stories/hut/{id}/story.json` (copy one; at least two lines), then add one line to
+  `HutItems.Entries` (`Data/HutItems.cs`): `new Entry("hut/{id}", "{shape}")`. It takes the next place round the wall (six
+  places; add an angle to `HutItems.Angles` for more). The shape is a case in `World/HutProps.Build`; a name it doesn't know
+  shows a small crate, so content can go in before the shape is made.
+- Tests: `HutItemsTests` (content loads in the story format, places fit the room, the lost rule, the shapes).
+
 ## Stories
 
 Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `StoryLibrary.Ids`:

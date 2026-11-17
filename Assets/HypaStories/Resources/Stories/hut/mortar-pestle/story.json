@@ -1,0 +1,15 @@
+{
+  "theme": 0,
+  "accent": "#C9A05E",
+  "eyebrow": "In the hut",
+  "title": "The mortar\nand pestle",
+  "description": "Carved from one piece of hardwood. Hear the sound that means food is coming.",
+  "voices": [],
+  "lines": [
+    {"id": "greet", "text": "Ah, you have found the mortar and its pestle. The mortar is odo, and the pestle is its child.", "ask": ["What is the mortar called?"]},
+    {"id": "carved", "text": "A carver cut the mortar from one piece of hardwood, so it can take many years of pounding.", "ask": ["What is it made of?"]},
+    {"id": "yam", "text": "We put boiled yam inside and pound it until it is smooth and soft. That is pounded yam.", "ask": ["What do you pound in it?"]},
+    {"id": "more", "text": "We also pound pepper, grains and leaves for the pot.", "ask": ["What else is it used for?"]},
+    {"id": "sound", "text": "When you hear the pestle fall, again and again, you know that food is coming."}
+  ]
+}

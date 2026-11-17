@@ -1,0 +1,11 @@
+{
+  "greet": "Y esta es la escoba. La llamamos igbale.",
+  "greet.ask": ["¿Cómo se llama la escoba?"],
+  "made": "Está hecha con los nervios finos de las hojas de palma, secos y atados por un extremo.",
+  "made.ask": ["¿De qué está hecha la escoba?"],
+  "sweep": "Cada mañana, antes de que el sol esté alto, nos agachamos y barremos la casa y el patio.",
+  "sweep.ask": ["¿Cuándo barren?"],
+  "one": "Un nervio solo se rompe con facilidad. Atados juntos, son fuertes. Una familia también es así.",
+  "one.ask": ["¿Por qué se atan los nervios?"],
+  "back": "Cuando la hayas mirado, déjala donde la encontraste."
+}

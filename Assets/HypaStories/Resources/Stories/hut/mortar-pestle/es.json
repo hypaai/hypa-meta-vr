@@ -1,0 +1,11 @@
+{
+  "greet": "Ah, has encontrado el mortero y su mano. El mortero se llama odo, y la mano es su hijo.",
+  "greet.ask": ["¿Cómo se llama el mortero?"],
+  "carved": "Un tallador sacó el mortero de una sola pieza de madera dura, para que aguante muchos años de golpes.",
+  "carved.ask": ["¿De qué está hecho?"],
+  "yam": "Ponemos ñame hervido dentro y lo machacamos hasta que queda suave y blando. Eso es el ñame machacado.",
+  "yam.ask": ["¿Qué machacan en él?"],
+  "more": "También machacamos pimienta, granos y hojas para la olla.",
+  "more.ask": ["¿Para qué más se usa?"],
+  "sound": "Cuando oyes caer la mano del mortero, una y otra vez, sabes que la comida está en camino."
+}

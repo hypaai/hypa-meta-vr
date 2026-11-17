@@ -1,0 +1,11 @@
+{
+  "greet": "Approche, mon enfant. Voici notre pot en argile. Nous l'appelons ikoko.",
+  "greet.ask": ["Comment s'appelle le pot ?"],
+  "made": "Une potière l'a façonné à la main avec l'argile de la rivière, puis l'a cuit dans un feu ouvert.",
+  "made.ask": ["Comment fabrique-t-on le pot ?"],
+  "water": "Nous y gardons notre eau à boire. L'argile respire, alors l'eau reste fraîche, même à midi.",
+  "water.ask": ["Pourquoi l'eau reste-t-elle fraîche ?"],
+  "cook": "Un autre pot comme celui-ci repose sur trois pierres au-dessus du feu, et notre soupe y cuit.",
+  "cook.ask": ["Que cuisinez-vous dedans ?"],
+  "care": "Soulève-le doucement et tiens-le à deux mains. Un pot en argile qui tombe ne se relève pas."
+}

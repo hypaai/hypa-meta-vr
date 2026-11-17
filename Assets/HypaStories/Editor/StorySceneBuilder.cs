@@ -166,6 +166,14 @@ namespace HypaStories.EditorTools
             a.deadTrunk = Ph("dead_tree_trunk"); a.stump = Ph("tree_stump_02"); a.fern = Ph("fern_02"); a.grass = Ph("grass_medium_01");
             a.rocks = Rocks.Select(Ph).Where(r => r != null).ToArray();
 
+            // the hut's household items are picked up with the Interaction SDK: its own rig pieces, wired at runtime (QuestGrab)
+            const string isdk = "Packages/com.meta.xr.sdk.interaction/Runtime/Prefabs/", isdkOvr = "Packages/com.meta.xr.sdk.interaction.ovr/Runtime/Prefabs/";
+            a.grabInteraction = M(isdkOvr + "OVRInteraction.prefab");
+            a.grabHands = M(isdkOvr + "Hands/OVRHandsDataSource.prefab");
+            a.grabControllers = M(isdkOvr + "Controller/OVRControllersDataSource.prefab");
+            a.grabHandInteractor = M(isdk + "HandGrab/HandGrabInteractor.prefab");
+            a.grabControllerInteractor = M(isdk + "Grab/ControllerGrabInteractor.prefab");
+
             AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>($"{Local}/Audio/{file}");
             a.ambienceSplash = C("amb-1.mp3"); a.ambienceStory = C("amb-2.mp3");
             a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3");

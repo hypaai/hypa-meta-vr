@@ -39,6 +39,11 @@ MonoBehaviour:
   - {fileID: 8771091787928289351, guid: 69192ca938c5a498c8990ba4c3658989, type: 3}
   - {fileID: 8771091787928289351, guid: a49b58403025e41afb7653f6564790e3, type: 3}
   - {fileID: -2984254379172062463, guid: f57200a0d360f4d5eb2380d4f9990a0f, type: 3}
+  grabInteraction: {fileID: 6678269571562373685, guid: 2f94427b8dd14ea498fd92aee3ec9f0f, type: 3}
+  grabHands: {fileID: 1480221230899931350, guid: 50375bfeeea522849bd08dabcf6aeb83, type: 3}
+  grabControllers: {fileID: 3305808594236175182, guid: b85d72bc453302d4a8170c6af3569a62, type: 3}
+  grabHandInteractor: {fileID: 3282029263655771837, guid: 885ecae56b16f13428a67de5ae482a72, type: 3}
+  grabControllerInteractor: {fileID: 5841275377868706831, guid: bc242319e5f2bd842999ab7665ad2d78, type: 3}
   ambienceSplash: {fileID: 8300000, guid: badde89f108d3498aac62d99d201c661, type: 3}
   ambienceStory: {fileID: 8300000, guid: ae6afe2e43bc94d14bfb9ff1dc5da4bb, type: 3}
   fireFar: {fileID: 8300000, guid: e67c6285202474c50a24ef160c03cd10, type: 3}

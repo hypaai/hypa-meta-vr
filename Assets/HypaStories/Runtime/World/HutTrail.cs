@@ -20,6 +20,9 @@ namespace HypaStories
     {
         Material _smoke;
 
+        /// <summary>The hut itself (its door on local +Z, its floor at local y = 0): what is inside it hangs here (see <see cref="HutVisit"/>).</summary>
+        public Transform HutRoot { get; private set; }
+
         // owl
         Transform _owlHead;
         Material _owlEyes;
@@ -66,6 +69,7 @@ namespace HypaStories
         void BuildHut()
         {
             var hut = Node("Hut");
+            HutRoot = hut;
             hut.localPosition = X0Z(HutTrailLayout.Hut);
             // built with its door on local +Z, then turned to face back down the trail
             hut.localRotation = Quaternion.LookRotation(X0Z(HutTrailLayout.DoorDir));

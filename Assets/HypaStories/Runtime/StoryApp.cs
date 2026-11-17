@@ -80,6 +80,7 @@ namespace HypaStories
         HatGame _hatGame;        // the playable scene after Eshu at the Crossroads
         KitButton _turnHat;
         const string EshuStory = "eshu-crossroads";
+        HutVisit _hut;           // the hut's household things, their cards and the old woman who tells you about them
         bool Playing => (_game != null && _game.Active) || (_hatGame != null && _hatGame.Active);
         void EndGames() { if (_game != null) _game.End(); if (_hatGame != null) _hatGame.End(); }
 
@@ -152,6 +153,7 @@ namespace HypaStories
             BuildDoorRows();
             BuildDodoGame();
             BuildHatGame();
+            BuildHutVisit();
             Places.EnsureRunner();
             Places.Leaving += OnLeavingPlace;
             Places.Arrived += OnArrivedPlace;
@@ -174,6 +176,7 @@ namespace HypaStories
             if (id != PlaceIds.Camp || _away) return;
             if (_room) ExitRoomNow(); // the hut and the village are out in the forest: back to it, unseen, before the camp is put away
             _wasPlaying = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
+            if (_hut != null && _hut.enabled) _hut.Close();
             _ask.Cancel();
             if (_story.Live) _story.Pause();
             _resumeLoops.Clear();
@@ -369,6 +372,29 @@ namespace HypaStories
             _game.Begin();
         }
 
+        // ---------- the hut's household things ----------
+
+        /// <summary>
+        /// Inside the hut: things to pick up, a story card over each and the old woman who tells you about them, through the same
+        /// card, voice, panel and questions as the campfire's stories (its own instances: the story by the fire only pauses).
+        /// </summary>
+        void BuildHutVisit()
+        {
+            var go = new GameObject("Hut Visit");
+            go.transform.SetParent(transform, false);
+            _hut = go.AddComponent<HutVisit>();
+            try
+            {
+                _hut.Init(_camp, assets, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, () => _lang,
+                    () => { if (_story.Live) _story.Pause(); }, ToggleSound);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Hypa Stories: the hut's things couldn't be built: " + e);
+                _hut.enabled = false;
+            }
+        }
+
         // ---------- the hat game (after Eshu at the Crossroads) ----------
 
         void BuildHatGame()
@@ -524,6 +550,7 @@ namespace HypaStories
             AudioListener.volume = muted ? 0f : 1f;
             _list.SetSound(muted);
             _player.SetSound(muted);
+            if (_hut != null) _hut.SetSound(muted);
         }
 
         // ---------- asking ----------
@@ -993,7 +1020,7 @@ namespace HypaStories
             else BackToTheFire();
         }
 
-        /// <summary>Step inside, at the door: a step into the empty room. The hut's visit is not built yet.</summary>
+        /// <summary>Step inside, at the door: a step into the room, facing the old woman and her household things (<see cref="HutVisit"/>).</summary>
         void StepInside() => TravelTo(HutTrailLayout.Hut + HutTrailLayout.DoorDir * 1.15f, HutTrailLayout.Hut - HutTrailLayout.DoorDir);
 
         /// <summary>Meet the locals, at the gate: in front of the elder by the fence. Talking to them comes later.</summary>

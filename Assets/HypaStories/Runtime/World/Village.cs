@@ -470,6 +470,26 @@ namespace HypaStories
             finally { _root = keep; }
         }
 
+        /// <summary>
+        /// The old woman of the hut (she tells you about its household things): seated on her stool, grey under her head
+        /// wrap, in an indigo print. Built like the village's people, under <paramref name="parent"/>, in its own space.
+        /// </summary>
+        public Figure MakeElderWoman(Transform parent, Vector2 at, Vector2 facing, float scale = 0.92f)
+        {
+            var keep = _root; _root = parent;
+            try
+            {
+                var look = new Look
+                {
+                    Skin = new Color(0.26f, 0.165f, 0.11f), Top = new Color(0.15f, 0.2f, 0.45f), Wrap = new Color(0.15f, 0.2f, 0.45f),
+                    Hat = new Color(0.62f, 0.3f, 0.12f), Hair = new Color(0.6f, 0.58f, 0.55f), TopPrint = 4, WrapPrint = 4, HatPrint = 6,
+                    Headwear = 1, Wrapper = true, Woman = true,
+                };
+                return Person("The Old Woman", at, facing, look, scale, true, true);
+            }
+            finally { _root = keep; }
+        }
+
         Look RandomLook(bool woman)
         {
             var wrapPrint = AnyPrint();

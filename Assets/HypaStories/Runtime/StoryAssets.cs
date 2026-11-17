@@ -44,6 +44,18 @@ namespace HypaStories
         public GameObject grass;
         public GameObject[] rocks = new GameObject[0];
 
+        [Header("Meta XR Interaction SDK (the hut's household items can be picked up)")]
+        [Tooltip("OVRInteraction (Interaction SDK): the camera rig reference the grab interactors read from.")]
+        public GameObject grabInteraction;
+        [Tooltip("OVRHandsDataSource: tracked hands for the Interaction SDK.")]
+        public GameObject grabHands;
+        [Tooltip("OVRControllersDataSource: controllers for the Interaction SDK.")]
+        public GameObject grabControllers;
+        [Tooltip("HandGrabInteractor: one per hand (pinch or palm grab).")]
+        public GameObject grabHandInteractor;
+        [Tooltip("ControllerGrabInteractor: one per controller (grip button).")]
+        public GameObject grabControllerInteractor;
+
         [Header("Audio (Local, not in git)")]
         public AudioClip ambienceSplash;
         public AudioClip ambienceStory;
