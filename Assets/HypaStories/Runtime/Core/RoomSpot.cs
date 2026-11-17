@@ -24,18 +24,29 @@ namespace HypaStories
     /// EditMode). The scan is reduced to one question: <c>clearance(p)</c>, how far the floor point <c>p</c> (x, z) is from the
     /// nearest wall or furniture, with zero or less meaning outside the room or inside something.
     /// You, the fire and the storyteller stand in a line, the way the camp always was: you, then the fire, then the storyteller
-    /// across it, facing you. Small rooms squeeze the gap between the fire and the storyteller, down to <see cref="MinGap"/>.
+    /// across it, facing you. You sit just outside the stone ring, and the storyteller sits on the far edge of the same ring,
+    /// so a small room does not leave them standing in the wall. The gap only shrinks further, down to <see cref="MinGap"/>, when
+    /// even that far edge has no floor.
     /// </summary>
     public static class RoomSpot
     {
-        /// <summary>Fire to storyteller in the forest is about 2.1 m; in a room the gap shrinks to fit, but no closer than this.</summary>
-        public const float WoodsGap = 2.1f, MinGap = 1.1f;
-        /// <summary>Open floor needed round the fire (its stone ring is 1 m across) and the storyteller's log, metres.</summary>
-        public const float FireClear = 0.65f, TellerClear = 0.5f;
-        /// <summary>With no scan the fire is put this far in front (2 m, so the player panel floating about 0.9 m ahead stays clear of it) of you, and the storyteller this far behind it.</summary>
-        public const float InFrontDistance = 2f, InFrontGap = 1.6f;
+        /// <summary>
+        /// You, and the storyteller, this far from the fire: just outside the stone ring. In your room the campfire is 70% size
+        /// (<see cref="GameFit.FireScale"/>: the ring 1.4 m across). A tighter room may pull the storyteller in to <see cref="MinGap"/>,
+        /// still outside the stones.
+        /// </summary>
+        public const float SeatDistance = 0.85f, WoodsGap = 0.85f, MinGap = 0.78f;
+        /// <summary>
+        /// Open floor needed round the fire's centre (the whole stone ring, 0.7 m out, plus a little, so it never sits in a sofa)
+        /// and round the storyteller's seat, metres.
+        /// </summary>
+        public const float FireClear = GameFit.StoneEdge + 0.05f, TellerClear = 0.5f;
+        /// <summary>With no scan the fire is put just in front of you, at the stone edge, and the storyteller across that same ring.</summary>
+        public const float InFrontDistance = SeatDistance, InFrontGap = WoodsGap;
 
-        static readonly float[] Distances = { 1.6f, 2f, 2.4f, 2.8f, 3.2f };
+        // nearest first (you at the stones); a crowded room may only have open floor for the whole ring a few steps away, which is
+        // better than a fire drawn into the sofa
+        static readonly float[] Distances = { 0.85f, 1.0f, 1.2f, 1.5f, 1.9f, 2.4f, 2.9f };
         // straight ahead first, then to either side, then behind (a corner room may have nothing but the way you are not facing)
         static readonly float[] Angles = { 0f, 15f, -15f, 30f, -30f, 45f, -45f, 60f, -60f, 90f, -90f, 135f, -135f, 180f };
 
@@ -50,8 +61,9 @@ namespace HypaStories
             if (clearance == null) return null;
             forward = forward.sqrMagnitude < 1e-6f ? Vector2.up : forward.normalized;
             return Search(user, forward, clearance, null, FireClear, TellerClear)
-                   ?? Search(user, forward, clearance, null, 0.45f, 0.3f)
-                   ?? (floor.HasValue ? Search(user, forward, clearance, floor.Value, 0.4f, 0.25f) : null);
+                   // less room round the storyteller, but never less than the whole stone ring round the fire
+                   ?? Search(user, forward, clearance, null, GameFit.StoneEdge, 0.3f)
+                   ?? (floor.HasValue ? Search(user, forward, clearance, floor.Value, GameFit.StoneEdge, 0.25f) : null);
         }
 
         static RoomSpotPlan? Search(Vector2 user, Vector2 forward, Func<Vector2, float> clearance, Rect? floor, float fireClear, float tellerClear)
@@ -61,7 +73,7 @@ namespace HypaStories
             void Try(Vector2 fire, float angle)
             {
                 var toFire = fire - user;
-                if (toFire.magnitude < 1.2f) return;
+                if (toFire.magnitude < GameFit.StoneEdge + 0.05f) return; // inside the ring: you would be sitting in the fire
                 var dir = toFire.normalized;
                 var dist = toFire.magnitude;
                 var fireRoom = clearance(fire);
@@ -78,7 +90,7 @@ namespace HypaStories
                 }
                 if (gap <= 0f) return;
                 var score = gap + Mathf.Min(fireRoom, 1.5f) * 0.8f + Mathf.Min(tellerRoom, 1.5f) * 0.5f
-                            - Mathf.Abs(angle) / 90f * 0.9f - Mathf.Abs(dist - 2.2f) * 0.5f;
+                            - Mathf.Abs(angle) / 90f * 0.9f - Mathf.Abs(dist - SeatDistance) * 2f;
                 if (score > bestScore) { bestScore = score; best = new RoomSpotPlan(fire, dir, gap, true); }
             }
 

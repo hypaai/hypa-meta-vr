@@ -20,12 +20,12 @@ namespace HypaStories
     {
         // where things are on the camp's ground (the fire at the origin, you at the story seat on -Z)
         // Dodo's run in, its spot beyond the fire, and where it stoops over it; the slab by your seat. As laid out in the forest:
-        // in your room (GameFit) Dodo is smaller, waits just past the storyteller's spot and charges in through your far wall.
+        // in your room (GameFit) Dodo is smaller, stoops at the far stones, and charges in from just past the storyteller.
         static readonly Vector3 FSlab = new Vector3(0.62f, 0f, -2.35f);
         GameFit _fit = GameFit.Forest;
-        Vector3 Stoop => new Vector3(0f, 0f, _fit.Room ? Mathf.Max(FireRing + 0.9f, 2.35f * _fit.DodoScale) : 2.35f);
-        Vector3 Home => new Vector3(0f, 0f, _fit.Room ? Mathf.Max(_fit.Gap + 0.9f, Stoop.z + 1f) : 5.4f);
-        Vector3 Lair => new Vector3(0f, 0f, _fit.Room ? Home.z + 6f : 15f);
+        Vector3 Stoop => new Vector3(0f, 0f, _fit.Room ? GameFit.StoneEdge + 0.25f : 2.35f); // in the room: just past the far stones
+        Vector3 Home => new Vector3(0f, 0f, _fit.Room ? _fit.Gap + 0.45f : 5.4f);
+        Vector3 Lair => new Vector3(0f, 0f, _fit.Room ? Home.z + 1.5f : 15f);
         Vector3 Slab => _fit.At(FSlab);
         Transform _slabT;
 
@@ -39,7 +39,10 @@ namespace HypaStories
             if (_root == null) return;
             _slabT.localPosition = Slab;
             for (var i = 0; i < _stones.Count; i++)
+            {
                 if (_stones[i].S == StoneState.Pile && _held != _stones[i]) _stones[i].T.localPosition = PilePos(i);
+                if (_stones[i].S == StoneState.Fire) _stones[i].T.localPosition = FirePos(_stones[i].Slot); // onto the ring as it is now
+            }
             if (_dodo != null) _dodo.transform.localScale = Vector3.one * _fit.DodoScale;
             _homeZ = Mathf.Clamp(_homeZ, Stoop.z + 0.6f, Home.z);
         }
@@ -212,11 +215,12 @@ namespace HypaStories
             return Slab + new Vector3(Mathf.Sin(a) * r, SlabTop + 0.055f + (i == 0 ? 0.04f : 0f), Mathf.Cos(a) * r);
         }
 
-        static Vector3 FirePos(int slot)
+        Vector3 FirePos(int slot)
         {
             var a = slot / (float)DodoRules.Stones * Mathf.PI * 2f + 0.3f;
             // on the ring of fire-pit stones, round the flames, where you can see them glow
-            return new Vector3(Mathf.Sin(a) * FireRing, 0.3f, Mathf.Cos(a) * FireRing);
+            var k = _fit.Room ? GameFit.FireScale : 1f; // on the room fire's smaller ring
+            return new Vector3(Mathf.Sin(a) * FireRing * k, 0.3f * k, Mathf.Cos(a) * FireRing * k);
         }
 
         void SetHeat(Stone s, float heat)
@@ -356,10 +360,21 @@ namespace HypaStories
             }
             _lastHold = hold;
 
-            if (pinch && !_wasPinching && _held == null && hasRay) TryGrab(ray, hold);
+            // a pinch on a panel button ("I am!", Back, the room switch) is for the button: it never picks up or throws a stone
+            if (pinch && !_wasPinching) _pinchOnUi = OnPanel();
+            if (pinch && !_wasPinching && _held == null && hasRay && !_pinchOnUi) TryGrab(ray, hold);
             if (_held != null && _held.S == StoneState.Held) _held.T.position = hold;
             if (!pinch && _wasPinching && _held != null) Release(ray, hasRay);
             _wasPinching = pinch;
+        }
+
+        bool _pinchOnUi;
+
+        /// <summary>The hand's ray is on a panel button, or the pinch started on one. Shared with the hat game.</summary>
+        public static bool OnPanel()
+        {
+            var p = PinchPointer.Instance;
+            return p != null && (p.Hover != null || p.Pressed != null);
         }
 
         bool Grabbable(Stone s)

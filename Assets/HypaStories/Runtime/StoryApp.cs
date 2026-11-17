@@ -18,7 +18,7 @@ namespace HypaStories
     /// When the story ends, Try Hypa Translate appears in the panel. It opens there: words from the story, your voice,
     /// and the translation spoken back. Translation and speech go through Hypa's auto router.
     /// Editor: right mouse = look; Enter = choose; arrows = cards / lines; Space = pause; Q = ask; H = raise a hand; T = translate;
-    /// 1-3 = suggested question, or a suggested word while translating; Esc = back (closes Try Hypa first).
+    /// 1-3 = suggested question, or a suggested word while translating; V = hide / show the panel; Esc = back (closes Try Hypa first).
     /// </summary>
     public sealed class StoryApp : MonoBehaviour
     {
@@ -115,7 +115,6 @@ namespace HypaStories
             _splash = new SplashView(_world, _ui, _camp.Fire.Root, assets.logo, () => Go(Screen.List), on => _portalHover = on,
                 HypaShell.Instance != null ? (System.Action)(() => HypaShell.Instance.ExitToHome()) : null,
                 () => Places.GoTo(PlaceIds.Hut), () => Places.GoTo(PlaceIds.Gathering));
-            HypaShell.Instance?.SetMenuButtonVisible(false); // Back replaces the shell's floating Home button here
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
                 OpenTry, CornerTap, ExitPlay, ToggleSound, q => _ask.SubmitText(q), ToggleRoom);
@@ -123,7 +122,7 @@ namespace HypaStories
             // the same recording as Ask (stops when you stop talking), which is the one proven on the headset; the live
             // stream-until-Done mode gave only silence there
             _tryFlow.LiveText = false;
-            _try = new TryHypaView(_player.Root, _tryFlow, CloseTry);
+            _try = new TryHypaView(_player.Body, _tryFlow, CloseTry);
             _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
             _ask.Logged += e => Debug.Log("Hypa Stories " + e);
 
@@ -356,7 +355,7 @@ namespace HypaStories
                 _player.Follow.Snap();
             }, ToggleRoom);
             // above the player panel when Seven Hot Stones ends: step in as Auta
-            _faceDodo = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Face Dodo", "flame", KitStyle.Primary, FaceDodo, null, 0.022f);
+            _faceDodo = Kit.Button(_player.Body, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Face Dodo", "flame", KitStyle.Primary, FaceDodo, null, 0.022f);
             _faceDodo.gameObject.SetActive(false);
         }
 
@@ -392,7 +391,7 @@ namespace HypaStories
                 _player.Root.gameObject.SetActive(true);
                 _player.Follow.Snap();
             }, ToggleRoom);
-            _turnHat = Kit.Button(_player.Root, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Turn the hat", "rotate-ccw", KitStyle.Primary, TurnHat, null, 0.022f);
+            _turnHat = Kit.Button(_player.Body, new Vector3(0f, 0.255f, -0.01f), new Vector2(0.22f, 0.064f), "Turn the hat", "rotate-ccw", KitStyle.Primary, TurnHat, null, 0.022f);
             _turnHat.gameObject.SetActive(false);
         }
 
@@ -645,6 +644,7 @@ namespace HypaStories
         void EditorKeys()
         {
             if (Input.GetKeyDown(KeyCode.R)) ToggleRoom(); // In my room / back to the forest
+            if (Input.GetKeyDown(KeyCode.V) && _screen == Screen.Play) _player.SetHidden(!_player.Hidden); // hide / show the story panel
             switch (_screen)
             {
                 case Screen.Splash:
@@ -709,7 +709,6 @@ namespace HypaStories
             Places.Arrived -= OnArrivedPlace;
             if (Places.InCamp == (System.Func<string, bool>)HoldsPlace) { Places.InCamp = null; Places.TravelInCamp = null; }
             if (Places.NumberKeysTaken == (System.Func<bool>)NumberKeysTaken) Places.NumberKeysTaken = null;
-            HypaShell.Instance?.SetMenuButtonVisible(true); // leaving Stories: the shell's Home button is back
             StoryRoom.Depth?.Invoke(false);
             _cts.Cancel();
             _cts.Dispose();

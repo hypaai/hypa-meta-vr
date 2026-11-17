@@ -25,10 +25,15 @@ namespace HypaStories
         static readonly Vector3 FEshu = new Vector3(1.15f, 0f, 1.45f);
         static readonly Vector3 FSlab = new Vector3(0.62f, 0f, -2.35f), FBowl = new Vector3(-0.78f, 0f, -2.15f);
         GameFit _fit = GameFit.Forest;
-        Vector3 Post => _fit.At(FPost);
-        Vector3 FriendLeft => _fit.At(FFriendLeft);
-        Vector3 FriendRight => _fit.At(FFriendRight);
-        Vector3 EshuAt => _fit.At(FEshu);
+        // In your room you sit right at the stones, so there's no ground between you and the fire for a post: the hat floats over
+        // the fire itself, and Eshu sits across the stones where the storyteller does.
+        Vector3 Post => _fit.Room ? Vector3.zero : _fit.At(FPost);
+        /// <summary>Just outside the stones on the far side, where the storyteller sits in your room.</summary>
+        float FarStones => Mathf.Max(_fit.Gap, GameFit.StoneEdge + 0.15f);
+        // in your room the friends stand either side of the fire, just outside the stones, facing the hat over it
+        Vector3 FriendLeft => _fit.Room ? new Vector3(-(GameFit.StoneEdge + 0.35f), 0f, 0f) : _fit.At(FFriendLeft);
+        Vector3 FriendRight => _fit.Room ? new Vector3(GameFit.StoneEdge + 0.35f, 0f, 0f) : _fit.At(FFriendRight);
+        Vector3 EshuAt => _fit.Room ? new Vector3(0.35f, 0f, FarStones) : _fit.At(FEshu);
         Vector3 Slab => _fit.At(FSlab);
         Vector3 Bowl => _fit.At(FBowl);
         /// <summary>Where you sit: the forest seat, or how far from the fire your room put you.</summary>
@@ -337,6 +342,10 @@ namespace HypaStories
             _fit = fit;
             if (_root == null) return;
             _postT.localPosition = Post; _shrineT.localPosition = Bowl; _slabT.localPosition = Slab;
+            _postT.GetComponent<Renderer>().enabled = !_fit.Room; // in the room the hat floats over the flames on its own (its light stays)
+            // in the room the hat floats where the panel used to be (over the fire, 1.15 m away): the panel comes nearer, above it
+            var follow = _hud.GetComponent<FollowView>();
+            follow.Distance = _fit.Room ? 0.6f : 1.15f; follow.Height = _fit.Room ? 0.28f : 0.4f;
             if (_eshu != null) Place(_eshu, EshuAt, Seat);
             if (_cup != null && _rules != null && _rules.Phase >= HatPhase.Drink) _cup.localPosition = CupSpot;
         }
@@ -457,7 +466,7 @@ namespace HypaStories
             var slide = cam != null ? Vector3.Dot(hold, cam.right) : hold.x;
             Track(hold, dt);
 
-            if (pinch && !_wasPinching)
+            if (pinch && !_wasPinching && !DodoGame.OnPanel()) // a pinch on a panel button is for the button, not the hat or the cup
             {
                 // the cup or the cowrie, if one is waiting; else the hat
                 var things = new List<Vector3>(); var ok = new List<bool>();
@@ -587,7 +596,7 @@ namespace HypaStories
             if (p == HatPhase.Round) Facing(dt);
             var bob = Mathf.Sin(Time.time * 1.4f) * 0.035f;
             var away = p == HatPhase.Cup || p == HatPhase.Drink || p == HatPhase.Offering || p == HatPhase.Won;
-            _hat.localPosition = Post + Vector3.up * (PostTop + HatFloat + bob + (away ? 0.3f : 0f));
+            _hat.localPosition = Post + Vector3.up * (PostTop + HatFloat + bob + (away ? 0.3f : 0f) - (_fit.Room ? 0.3f : 0f)); // in the room: lower, under the nearer panel
             _hat.localRotation = Quaternion.Slerp(_hat.localRotation, Quaternion.Euler(0f, _yaw, 0f), 1f - Mathf.Exp(-14f * dt));
         }
 
@@ -628,16 +637,21 @@ namespace HypaStories
                     var u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((T - 0.5f) / 2.2f));
                     var from = Spot(i, false); var to = Spot(i, true);
                     // two lanes so they pass each other: one just behind the post (still clear of the fire's stones, ~1 m out), one just in front
-                    var behind = Post.z + 0.4f < -0.95f; // room between the post and the fire's stones for a lane
-                    var mid = new Vector3(0f, 0f, i == 0 ? (behind ? Post.z + 0.4f : Post.z - 0.35f) : (behind ? Post.z - 0.4f : Post.z - 0.8f));
+                    Vector3 mid;
+                    if (_fit.Room) mid = new Vector3(0f, 0f, FarStones + (i == 0 ? 0.4f : 0.8f)); // round the far side of the stones, behind Eshu
+                    else
+                    {
+                        var behind = Post.z + 0.4f < -0.95f; // room between the post and the fire's stones for a lane
+                        mid = new Vector3(0f, 0f, i == 0 ? (behind ? Post.z + 0.4f : Post.z - 0.35f) : (behind ? Post.z - 0.4f : Post.z - 0.8f));
+                    }
                     at = u < 0.5f ? Vector3.Lerp(from, mid, u * 2f) : Vector3.Lerp(mid, to, (u - 0.5f) * 2f);
                 }
-                else if (p == HatPhase.Fight && T < HatRules.FightTime - 0.8f) at = Vector3.Lerp(spot, new Vector3(spot.x * 0.35f, 0f, spot.z + 0.35f), Mathf.Clamp01(T * 2f));
+                else if (p == HatPhase.Fight && T < HatRules.FightTime - 0.8f && !_fit.Room) at = Vector3.Lerp(spot, new Vector3(spot.x * 0.35f, 0f, spot.z + 0.35f), Mathf.Clamp01(T * 2f));
                 else if (drinking)
                 {
                     var u = p == HatPhase.Drink ? Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(T / 1.4f)) : 1f;
                     var side = spot.x < 0f ? -1f : 1f;
-                    at = Vector3.Lerp(spot, Post + new Vector3(side * 0.78f, 0f, 0.04f), u); // in from either side, far enough that their heads don't meet over the bowl
+                    at = Vector3.Lerp(spot, Post + new Vector3(side * (_fit.Room ? GameFit.StoneEdge + 0.4f : 0.78f), 0f, 0.04f), u); // in from either side, far enough that their heads don't meet over the bowl
                 }
                 else at = spot;
                 var holding = p == HatPhase.Round && Time.time < _poseUntil[i];

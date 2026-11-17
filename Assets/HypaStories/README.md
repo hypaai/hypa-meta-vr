@@ -74,10 +74,11 @@ the fire changes.
 - **Where the fire goes (Scene API / MRUK):** `Quest/Mruk/QuestRoomScan` reads your scanned room: the floor height, and for any
   floor point how far it is from the nearest wall or furniture (checked at knee, table and head height). `Core/RoomSpot` (pure
   maths, tested) picks an open spot a few metres ahead of you with room round the fire (0.65 m) and the storyteller (0.5 m), you,
-  the fire and the storyteller in a line as at the camp. **Small rooms:** the gap between the fire and the storyteller shrinks from
-  2.1 m (the forest) down to 1.1 m before a spot is rejected.
+  the fire and the storyteller in a line as at the camp. You sit just outside the stone ring (about 1.15 m from the fire) and the
+  storyteller sits on the far edge of the same ring, so a small room does not leave them in the wall. **Tighter than that:** the
+  storyteller moves in to 1.05 m, still outside the flames, before a spot is rejected.
 - **No room scan:** Meta's own room set-up flow is started (you scan, then come back) and the app waits. If you don't, or you
-  decline the room permission, or nothing in the room is open, the fire goes 2 m straight in front of you, with a line saying why.
+  decline the room permission, or nothing in the room is open, the fire goes just in front of you, at the stones, with a line saying why.
 - **Real things hide it (Depth API):** `Quest/QuestRoom` turns on `EnvironmentDepthManager` (soft occlusion, Quest 3 and later). The
   flame, glow and ember shaders (`StoryFlame`, `StoryAdditive`, `StoryParticles`) carry Meta's `HARD/SOFT_OCCLUSION` test, and in
   the room the storyteller, the stones and the logs draw with Meta's `OcclusionSurfaceLit` (`StoryAssets.depthLit`). A real chair,

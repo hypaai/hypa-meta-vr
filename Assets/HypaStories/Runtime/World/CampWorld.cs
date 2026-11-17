@@ -552,10 +552,16 @@ namespace HypaStories
         /// village, the props, the mist, the rain, the fog and the moon are gone: the passthrough shows your room, with the fire (its
         /// stones, logs, flames, light, sound and embers) and the storyteller in it. The story is not touched.
         /// </summary>
+        Vector3 _ringScale = Vector3.one, _fireScale = Vector3.one;
+
         public void SetRoom(bool on)
         {
             if (on == Room) return;
             Room = on;
+            // the campfire at room size: 70% (stones and flames), so it fits between a sofa and a wall
+            var k = on ? GameFit.FireScale : 1f;
+            if (_ringHolder != null) { if (on) _ringScale = _ringHolder.localScale; _ringHolder.localScale = on ? _ringScale * k : _ringScale; }
+            if (Fire != null) { if (on) _fireScale = Fire.Root.localScale; Fire.Root.localScale = on ? _fireScale * k : _fireScale; }
             if (on)
             {
                 _hidden.Clear();

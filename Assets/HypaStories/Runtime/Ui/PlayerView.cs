@@ -19,6 +19,12 @@ namespace HypaStories
         public readonly Transform Root;
         public readonly KitGroup Fade;
         public readonly FollowView Follow;
+        /// <summary>Everything on the panel except its hide / show icon: what goes when you hide it. Add panel buttons here.</summary>
+        public readonly Transform Body;
+        /// <summary>The panel is tucked away, so it doesn't sit in front of the fire; only its show icon is left.</summary>
+        public bool Hidden { get; private set; }
+        readonly KitButton _hide;
+        Vector3 _hideAt;
         readonly TextMeshPro _kicker, _title, _prev, _line, _next, _time, _hint, _state, _question, _answer;
         readonly Transform _lines, _qa;
         readonly KitPanel _fill, _level;
@@ -108,16 +114,48 @@ namespace HypaStories
 
             // 3K: below the panel, so it never crowds the transport. "In my room" brings the fire into your real room; again, back to the forest.
             if (toggleRoom != null)
-                _room = Kit.Button(Root, new Vector3(0f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), InMyRoom, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+            {
+                // made with the longer of its two labels: Kit sizes the label beside the icon once, so "Back to the forest" ran into the house
+                _room = Kit.Button(Root, new Vector3(0f, -H / 2f - 0.05f, 0f), new Vector2(0.3f, 0.052f), BackToForest, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+                _room.SetLabel(InMyRoom);
+            }
+
+            // everything so far goes into the body, so one switch hides the whole panel and leaves only its show icon
+            Body = new GameObject("Body").transform;
+            Body.SetParent(Root, false);
+            var parts = new List<Transform>();
+            foreach (Transform c in Root) if (c != Body) parts.Add(c);
+            foreach (var c in parts) c.SetParent(Body, false);
+            // hide: a small tab on the panel's top edge, clear of the title; shown again from the same tab low down, where the
+            // panel's lower edge was, out of the fire's way
+            _hideAt = new Vector3(0f, H / 2f + 0.012f, -0.002f);
+            _hide = Kit.Button(Root, _hideAt, new Vector2(0.046f, 0.046f), null, "chevron-down", KitStyle.Ghost, () => SetHidden(!Hidden));
 
             Fade = Root.gameObject.AddComponent<KitGroup>();
             SetState(AskState.Idle, "");
             Fade.Refresh();
         }
 
+        /// <summary>Hides the panel (only a small show icon stays, low and out of the fire's way) or brings it back.</summary>
+        public void SetHidden(bool hidden)
+        {
+            if (hidden == Hidden) return;
+            Hidden = hidden;
+            Body.gameObject.SetActive(!hidden);
+            _hide.transform.localPosition = hidden ? new Vector3(0f, -H / 2f + 0.035f, 0f) : _hideAt;
+            if (_hide.Icon != null) _hide.Icon.transform.localRotation = Quaternion.Euler(0f, 0f, hidden ? 180f : 0f); // a chevron up: show
+            _hide.Style = hidden ? KitStyle.Primary : KitStyle.Ghost; // solid while it's all there is, so it shows against the fire
+            _hide.Selected = false;
+            Fade.Refresh();
+        }
+
+        /// <summary>Something new is waiting on a hidden panel (the story ended: Try Hypa, or a game): its show icon glows.</summary>
+        public void Nudge(bool on) { if (Hidden || !on) _hide.Selected = on && Hidden; }
+
         public void Load(StoryInfo story, StoryLanguage lang)
         {
             _story = story; _lang = lang;
+            SetHidden(false); // a new story starts with its panel showing
             _kicker.text = story.Eyebrow.ToUpperInvariant(); _kicker.color = story.Accent;
             _title.text = story.Title.Replace('\n', ' ');
             _answer.color = story.Accent;
@@ -174,6 +212,7 @@ namespace HypaStories
         /// <summary>The end-of-story button. Hidden while a question or the translation is open.</summary>
         public void SetTryOffer(bool on)
         {
+            Nudge(on);
             _offer = on;
             _tryOffer.gameObject.SetActive(on && !_translateOpen && !_asking);
         }
@@ -181,6 +220,7 @@ namespace HypaStories
         /// <summary>The translation is open in this panel: the script steps aside and the corner button speaks.</summary>
         public void SetTranslateOpen(bool on)
         {
+            if (on) SetHidden(false);
             _translateOpen = on;
             _lines.gameObject.SetActive(!on && !_asking);
             _tryOffer.gameObject.SetActive(!on && _offer && !_asking);
@@ -223,6 +263,7 @@ namespace HypaStories
         public void SetState(AskState state, string text)
         {
             var asking = state != AskState.Idle;
+            if (asking && Body != null) SetHidden(false); // a question: the Q&A shows
             _asking = asking;
             _lines.gameObject.SetActive(!asking && !_translateOpen);
             _qa.gameObject.SetActive(asking);
