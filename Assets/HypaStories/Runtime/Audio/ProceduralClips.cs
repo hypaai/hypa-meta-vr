@@ -644,6 +644,83 @@ namespace HypaStories
             return Normalize(d, 0.85f);
         }
 
+        /// <summary>
+        /// One stroke on the king's drums (the drum game). <paramref name="drum"/> 0: the big low drum, a round boom that falls;
+        /// 1: the small high drum, a ringing tone. <paramref name="slap"/>: struck at the edge, a sharp crack over a shorter tone.
+        /// <paramref name="seed"/> varies the hide's noise, so two takes of one stroke don't sound like a machine. Under a second.
+        /// </summary>
+        public static float[] DrumStrokeSamples(int drum, bool slap, int seed)
+        {
+            var low = drum == 0;
+            var n = (int)(Rate * (low ? (slap ? 0.5f : 0.85f) : (slap ? 0.35f : 0.55f)));
+            var d = new float[n];
+            var noise = White(n, seed);
+            var crack = Biquad.BandPass(low ? 1500f : 3200f, 1.1f);
+            var thump = Biquad.LowPass(low ? 400f : 900f);
+            float ph = 0f, ph2 = 0f, ph3 = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                float v;
+                if (low)
+                {
+                    // the big drum: a fundamental that drops as the skin settles, a second mode, the hand's thump
+                    var f = slap ? Mathf.Lerp(150f, 190f, Mathf.Exp(-t * 50f)) : Mathf.Lerp(62f, 98f, Mathf.Exp(-t * 22f));
+                    ph += 2f * Mathf.PI * f / Rate; ph2 += 2f * Mathf.PI * f * 1.59f / Rate; ph3 += 2f * Mathf.PI * f * 2.14f / Rate;
+                    var body = Mathf.Sin(ph) * Mathf.Exp(-t * (slap ? 14f : 5.5f)) + 0.4f * Mathf.Sin(ph2) * Mathf.Exp(-t * 11f) + 0.18f * Mathf.Sin(ph3) * Mathf.Exp(-t * 18f);
+                    v = body * (slap ? 0.55f : 1f) + thump.Process(noise[i]) * 0.9f * Mathf.Exp(-t * 60f)
+                        + (slap ? crack.Process(noise[i]) * 2.4f * Mathf.Exp(-t * 38f) : 0f);
+                }
+                else
+                {
+                    // the small drum: a clear tone with an inharmonic ring, and a bright crack at the edge
+                    var f = slap ? 410f : Mathf.Lerp(215f, 238f, Mathf.Exp(-t * 40f));
+                    ph += 2f * Mathf.PI * f / Rate; ph2 += 2f * Mathf.PI * f * 1.52f / Rate; ph3 += 2f * Mathf.PI * f * 2.3f / Rate;
+                    var body = Mathf.Sin(ph) * Mathf.Exp(-t * (slap ? 26f : 10f)) + 0.5f * Mathf.Sin(ph2) * Mathf.Exp(-t * 16f) + 0.2f * Mathf.Sin(ph3) * Mathf.Exp(-t * 24f);
+                    v = body * (slap ? 0.5f : 0.85f) + thump.Process(noise[i]) * 0.5f * Mathf.Exp(-t * 80f)
+                        + crack.Process(noise[i]) * (slap ? 2.8f : 0.6f) * Mathf.Exp(-t * (slap ? 45f : 90f));
+                }
+                d[i] = v * Mathf.Clamp01(t / 0.0015f);
+            }
+            return Normalize(d, 0.92f);
+        }
+
+        /// <summary>
+        /// The ogene, the iron bell that keeps time for the drums: a bright clang of inharmonic partials. <paramref name="low"/>:
+        /// the bell's lower mouth (the one on the bar line).
+        /// </summary>
+        public static float[] OgeneSamples(bool low)
+        {
+            var n = (int)(Rate * 0.6f);
+            var d = new float[n];
+            var f = low ? 640f : 905f;
+            float[] ratio = { 1f, 2.32f, 4.25f, 6.63f }, gain = { 1f, 0.55f, 0.32f, 0.18f }, decay = { 7f, 11f, 17f, 26f };
+            var ph = new float[ratio.Length];
+            var noise = Filter(White(n, low ? 230 : 231), Biquad.HighPass(4000f));
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                var v = 0f;
+                for (var k = 0; k < ratio.Length; k++) { ph[k] += 2f * Mathf.PI * f * ratio[k] / Rate; v += Mathf.Sin(ph[k]) * gain[k] * Mathf.Exp(-t * decay[k]); }
+                d[i] = (v + noise[i] * 0.5f * Mathf.Exp(-t * 120f)) * Mathf.Clamp01(t / 0.001f);
+            }
+            return Normalize(d, 0.8f);
+        }
+
+        /// <summary>A gourd shaker on the eighths: a short hiss of seeds. <paramref name="accent"/>: the push on the off-beat.</summary>
+        public static float[] ShakerSamples(bool accent)
+        {
+            var n = (int)(Rate * 0.12f);
+            var noise = Filter(White(n, accent ? 232 : 233), Biquad.HighPass(5000f), Biquad.LowPass(11000f));
+            var d = new float[n];
+            for (var i = 0; i < n; i++)
+            {
+                var t = (float)i / Rate;
+                d[i] = noise[i] * Mathf.Clamp01(t / (accent ? 0.018f : 0.008f)) * Mathf.Exp(-t * (accent ? 34f : 50f));
+            }
+            return Normalize(d, accent ? 0.7f : 0.45f);
+        }
+
         // ---------- story sound cues (Seven Hot Stones, Marlow Street) ----------
 
         static float Env(float t, float attack, float len) => Mathf.Clamp01(t / Mathf.Max(attack, 1e-4f)) * Mathf.Clamp01((len - t) / Mathf.Max(len * 0.35f, 1e-3f));

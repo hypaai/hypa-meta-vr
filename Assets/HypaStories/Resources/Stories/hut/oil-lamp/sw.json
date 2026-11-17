@@ -1,0 +1,28 @@
+{
+  "words": ["taa", "mafuta", "mwali"],
+  "greet": "Ah, umeipata taa yangu. Tunaiita fitila.",
+  "greet.ask": [
+    "Taa hiyo inaitwaje?"
+  ],
+  "made": "Kimefinyangwa kwa udongo uleule wa mtoni kama chungu, na ni kidogo kiasi cha kutosha kukaa kwenye kiganja chako.",
+  "made.ask": [
+    "Imetengenezwa kwa nini?"
+  ],
+  "oil": "Tunamimina mafuta ya mawese ndani na kuweka utambi wa pamba iliyosokotwa kwenye mdomo wake. Kisha tunawasha utambi.",
+  "oil.ask": [
+    "Inachoma nini?"
+  ],
+  "before": "Kabla ya taa za kandili na taa za umeme kuja, kila nyumba iliwasha mojawapo ya hizi wakati wa machweo. Mtaa mzima ungemetameta kwa miali midogo.",
+  "before.ask": [
+    "Watu walitumia nini kabla ya taa za umeme?"
+  ],
+  "grandmother": "Bibi yangu alisimulia hadithi zake kwa mwanga wa taa hii hii, kama ninavyokusimulia yangu.",
+  "grandmother.ask": [
+    "Ilikuwa taa ya nani?"
+  ],
+  "night": "Jua linapotua, mwali wake mdogo hutusaidia kupata mikeka yetu na kusimulia hadithi hadi usiku wa manane.",
+  "night.ask": [
+    "Unaiwasha lini?"
+  ],
+  "care": "Ibebe wima na polepole, mwanangu, la sivyo mafuta yatamwagika na kuuzima mwali."
+}

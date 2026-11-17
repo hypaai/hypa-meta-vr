@@ -1,0 +1,28 @@
+{
+  "words": ["azịza", "nkwụ", "ụtụtụ"],
+  "greet": "Nke a bụ azịza. Anyị na-akpọ ya igbale.",
+  "greet.ask": [
+    "Gịnị ka a na-akpọ azịza ahụ?"
+  ],
+  "made": "A na-eji obere ọgịrịga akwụkwọ nkwụ ndị dị gịrịgịrị, nke a mịrị amị ma kee ọnụ n'otu nsọtụ, eme ya.",
+  "made.ask": [
+    "Gịnị ka e ji mee azịza ahụ?"
+  ],
+  "olden": "A na-eke azịza dị otú a kemgbe oge gara aga nke na ọ dịghị onye dị ndụ ugbu a pụrụ icheta, site n’otu nkwụ ndị ahụ na-enye anyị mmanụ na mmanya.",
+  "olden.ask": [
+    "Ụdị azịza a dị afọ ole?"
+  ],
+  "festival": "Tupu emume, obodo dum na-azacha ụzọ na ogige ha, ka ndị okenye na ndị ọbịa wee na-eje ije n’ala dị ọcha.",
+  "festival.ask": [
+    "Olee mgbe onye ọ bụla na-azacha ọnụ?"
+  ],
+  "sweep": "Ụtụtụ ọ bụla, tupu anyanwụ arịgoro elu, anyị na-ehulata ala na-azacha ụlọ na ezi.",
+  "sweep.ask": [
+    "Kedu mgbe ị na-azacha?"
+  ],
+  "one": "Otu ọgịrịga naanị ya na-agbaji ngwa ngwa. Mgbe e jikọtara ha ọnụ, ha na-esi ike. Ezinụlọ dịkwa otu ahụ.",
+  "one.ask": [
+    "Gịnị mere e ji kee ọgịrịga ndị ahụ ọnụ?"
+  ],
+  "back": "Mgbe i lechara ya anya, doghachi ya ebe ị hụrụ ya."
+}

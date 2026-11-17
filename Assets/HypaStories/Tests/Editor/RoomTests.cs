@@ -37,17 +37,18 @@ namespace HypaStories.Tests
             var s = RoomSpot.Find(new Vector2(3f, 0.8f), Vector2.up, room).Value;
             AssertFits(s, room);
             Assert.Greater(s.Away.y, 0.9f, "the fire is out in front of you, not off to a side");
-            Assert.AreEqual(RoomSpot.WoodsGap, s.Gap, 0.01f, "plenty of room: the same gap as in the forest");
+            Assert.AreEqual(RoomSpot.WoodsGap, s.Gap, 0.01f, "plenty of room: the storyteller sits on the far stones");
             var between = Vector2.Distance(new Vector2(3f, 0.8f), s.Fire);
-            Assert.That(between, Is.InRange(1.5f, 3.3f), "a comfortable distance to the fire");
+            Assert.That(between, Is.InRange(GameFit.StoneEdge, 1.3f), "you sit at the edge of the stones, not metres back");
         }
 
-        [Test] public void SmallRoom_ShrinksTheGapBetweenTheFireAndTheStoryteller()
+        [Test] public void SmallRoom_TheRoomFireStillFits_InsideTheWalls()
         {
-            var room = Room(4.5f, 3f);
-            var s = RoomSpot.Find(new Vector2(0.6f, 1.5f), Vector2.right, room).Value;
+            // 2.9 x 2.6: the room-size campfire, you at its stones and the storyteller across it, all inside the walls
+            var room = Room(2.9f, 2.6f);
+            var s = RoomSpot.Find(new Vector2(0.6f, 1.3f), Vector2.right, room).Value;
             AssertFits(s, room);
-            Assert.Less(s.Gap, RoomSpot.WoodsGap - 0.2f, "the storyteller moves in toward the fire to stay inside the room");
+            Assert.Less(Vector2.Distance(new Vector2(0.6f, 1.3f), s.Fire), 1.3f, "still at the stones");
         }
 
         [Test] public void FurnitureIsKeptClearOf_AndYouAreNotSeatedOnTheWayThroughIt()
@@ -67,7 +68,7 @@ namespace HypaStories.Tests
             Assert.IsNull(RoomSpot.Find(Vector2.zero, Vector2.up, null), "no scan, no spot");
 
             var s = RoomSpot.InFront(new Vector2(1f, 2f), new Vector2(0f, 2f));
-            Assert.AreEqual(new Vector2(1f, 2f + RoomSpot.InFrontDistance), s.Fire, "2 m straight ahead (forward need not be a unit vector)");
+            Assert.AreEqual(new Vector2(1f, 2f + RoomSpot.InFrontDistance), s.Fire, "just in front, at the stones (forward need not be a unit vector)");
             Assert.AreEqual(Vector2.up, s.Away);
             Assert.AreEqual(RoomSpot.InFrontGap, s.Gap, 1e-4f);
             Assert.IsFalse(s.Scanned);
@@ -96,15 +97,14 @@ namespace HypaStories.Tests
             if (s.HasValue) { Assert.Greater(room(s.Value.Fire), 0.3f, "never on the bed"); Assert.Greater(room(s.Value.Teller), 0.2f); }
         }
 
-        [Test] public void NoComfortableSpot_ButTheWholeFloorHasOne()
+        [Test] public void AModestRoom_StillSeatsYouAtTheStones()
         {
-            // 3.4 x 3: nothing with the usual room round the fire and the storyteller...
+            // about 3.4 m deep: too small for the old 2 m seat, big enough to sit at the stones with the storyteller across
             var room = Room(3.4f, 3f);
             var user = new Vector2(0.7f, 1.5f);
-            Assert.IsNull(RoomSpot.Find(user, Vector2.right, room));
-            // ...but searching the whole floor, with less room round them, finds one
-            var s = RoomSpot.Find(user, Vector2.right, room, new Rect(0f, 0f, 3.4f, 3f)).Value;
-            Assert.GreaterOrEqual(room(s.Fire), 0.4f);
+            var s = RoomSpot.Find(user, Vector2.right, room).Value;
+            Assert.Less(Vector2.Distance(user, s.Fire), 1.3f, "the fire is at the stones, not back in the room");
+            Assert.GreaterOrEqual(room(s.Fire), GameFit.StoneEdge, "the whole stone ring is on open floor");
             Assert.GreaterOrEqual(room(s.Teller), 0.25f);
         }
 
@@ -117,5 +117,31 @@ namespace HypaStories.Tests
             Assert.AreEqual(a.Away, b.Away);
             Assert.AreEqual(a.Gap, b.Gap);
         }
-    }
+    
+        [Test] public void Games_InTheForest_AreAsBuilt()
+        {
+            var f = GameFit.Forest;
+            Assert.IsFalse(f.Room);
+            Assert.AreEqual(new Vector3(0.62f, 0f, -2.35f), f.At(new Vector3(0.62f, 0f, -2.35f)));
+            Assert.AreEqual(1f, f.DodoScale);
+        }
+
+        [Test] public void Games_InASmallRoom_PullInToYou_AndStayInFrontOfYou()
+        {
+            // you at the room fire's stones, the storyteller the same distance beyond it
+            var seat = RoomSpot.SeatDistance;
+            var f = GameFit.InRoom(seat, RoomSpot.WoodsGap);
+            var slab = f.At(new Vector3(0.62f, 0f, -2.35f));
+            Assert.Greater(slab.z, -seat, "the slab is in front of you, not behind");
+            Assert.LessOrEqual(slab.z, -GameFit.StoneEdge + 1e-4f, "the slab stays outside the stones");
+            var post = f.At(new Vector3(0f, 0f, -1.45f));
+            Assert.LessOrEqual(post.z, -GameFit.StoneEdge + 1e-4f, "clear of the stones");
+            Assert.Greater(post.z, -seat, "in front of you");
+            var eshu = f.At(new Vector3(1.15f, 0f, 1.45f));
+            Assert.LessOrEqual(eshu.magnitude, RoomSpot.WoodsGap + 0.5f, "beyond the fire no farther than the storyteller's open floor");
+            Assert.Less(f.DodoScale * 3.4f, 2.6f, "Dodo stands under a ceiling");
+            // inside the ring is not a seat: you are never placed in the fire
+            Assert.AreEqual(GameFit.InRoom(0.3f, 1.1f).Near, GameFit.InRoom(0.5f, 1.1f).Near, 1e-4);
+        }
+}
 }

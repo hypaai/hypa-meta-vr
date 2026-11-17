@@ -47,7 +47,6 @@ namespace HypaCore
         [SerializeField] bool openLastModeOnStart = false;
 
         Transform _cam, _anchor, _menu, _help;
-        GameObject _menuButton;
         TextMesh _status;
         /// <summary>The scene a mode lives in, or null while only the shell is loaded.</summary>
         string _currentMode;
@@ -83,7 +82,7 @@ namespace HypaCore
         void Start()
         {
             if (_cam == null) { Debug.LogError("Hypa shell: no MainCamera."); return; }
-            BuildMenuButton();
+            BuildHomeUi();
             // Wait one frame so the camera rig can turn passthrough on before a mode replaces the scene.
             StartCoroutine(StartNextFrame());
         }
@@ -182,14 +181,12 @@ namespace HypaCore
             FollowHead();
         }
 
-        void BuildMenuButton()
+        void BuildHomeUi()
         {
             _anchor = new GameObject("Hypa Shell UI").transform;
             DontDestroyOnLoad(_anchor.gameObject);
             PlaceInFront();
-            // The Home button: low and close to the middle, big enough to hit with a wobbly hand ray, with a caption.
-            // In a mode it leaves the mode; on its own it opens the Home card. A mode with its own X hides it.
-            _menuButton = Ui.IconButton("house", _anchor, new Vector3(-0.15f, -0.19f, 0f), 0.038f, HomeButton, "Home").transform.parent.gameObject;
+            // No floating Home button: every mode has its own way back (Stories' Back, Lens's X), and Home is the first screen.
 
             // Home: the first thing the user sees. Title row, the modes, how it works, and an X.
             _menu = new GameObject("Home Card").transform;
@@ -207,8 +204,9 @@ namespace HypaCore
             Ui.Text(_menu, "Hypa", 0.024f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
             // The X closes the Hypa app.
             Ui.IconButton("x", _menu, new Vector3(0.11f, titleY, -0.001f), 0.024f, QuitApp);
-            Ui.Button("Hypa Lens", _menu, new Vector3(0, 0.10f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Lens));
-            Ui.Button("Stories", _menu, new Vector3(0, 0.03f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Story));
+            // Stories is the first experience; Lens is still in beta
+            Ui.Button("Stories", _menu, new Vector3(0, 0.10f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Story));
+            Ui.Button("Lens (beta)", _menu, new Vector3(0, 0.03f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Lens));
             Ui.Button("Saved words", _menu, new Vector3(0, -0.04f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, OpenSavedWords);
             Ui.Button("How it works", _menu, new Vector3(0, -0.11f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => ShowHelp(true));
             _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.18f, 0), Color.white);
@@ -248,10 +246,10 @@ namespace HypaCore
                 Ui.Text(_help, wrapped, bodyH, new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
                 y -= wrapped.Split('\n').Length * bodyH * line + 0.03f;
             }
-            Section("camera", "Hypa Lens",
-                "Look at a sign, menu or book and pinch Capture. The text and its translation open in a popup: hear it, or save it to practise later. Caption reads the whole view at once.");
             Section("languages", "Stories",
                 "Sit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.");
+            Section("camera", "Lens (beta)",
+                "Look at a sign, menu or book and pinch Capture. The text and its translation open in a popup: hear it, or save it to practise later. Caption reads the whole view at once.");
             Ui.Text(_help, Ui.Wrap("Everything works with your hands. Pinch Home at any time to come back here.", chars), bodyH,
                 new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
             // Ui.IconButton("chevron-left", _help, new Vector3(0f, -h / 2f + pad + 0.03f, -0.001f), 0.028f, () => ShowHelp(false)); // back to Home (Stories' chevron)
@@ -273,23 +271,13 @@ namespace HypaCore
             if (open) PlaceInFront();
             _menu.gameObject.SetActive(open);
             if (!open) _help.gameObject.SetActive(false);
-            RefreshMenuButton();
         }
 
         void ShowHelp(bool open)
         {
             _help.gameObject.SetActive(open);
             _menu.gameObject.SetActive(!open);
-            RefreshMenuButton();
         }
-
-        /// <summary>A mode with its own X hides the shell's Home button (and shows it again when it closes).</summary>
-        public void SetMenuButtonVisible(bool visible) { _menuButtonWanted = visible; RefreshMenuButton(); }
-
-        bool _menuButtonWanted = true;
-
-        /// <summary>The Home button steps aside while a Home card is open (it would sit on the card and do nothing new).</summary>
-        void RefreshMenuButton() { if (_menuButton != null) _menuButton.SetActive(_menuButtonWanted && !IsMenuOpen); }
 
         /// <summary>Saved words live in Lens: open Lens (or go back to it) straight onto the practice cards.</summary>
         void OpenSavedWords()
@@ -321,13 +309,6 @@ namespace HypaCore
 #endif
         }
 
-        /// <summary>The Home button: in a mode it leaves the mode; otherwise it opens the Home card.</summary>
-        void HomeButton()
-        {
-            if (_currentMode != null) ExitToHome();
-            else ShowMenu(true);
-        }
-
         const string HomeScene = "HypaHome";
 
         /// <summary>
@@ -346,7 +327,6 @@ namespace HypaCore
                 SceneManager.SetActiveScene(home);
                 SceneManager.UnloadSceneAsync(mode);
             }
-            SetMenuButtonVisible(true);
             ShowMenu(true);
         }
 

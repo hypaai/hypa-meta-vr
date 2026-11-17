@@ -1,0 +1,28 @@
+{
+  "words": ["fìtílà", "epo", "ọwọ́ iná"],
+  "greet": "Áà, o ti rí fìtílà mi. A ń pè é ní fìtílà.",
+  "greet.ask": [
+    "Kí ni wọ́n ń pe fìtílà náà?"
+  ],
+  "made": "A fi amọ̀ odò kan náà tí a fi mọ ìkòkò náà ṣe é, ó sì kéré tó láti dúró sí àtẹ́lẹwọ́ rẹ.",
+  "made.ask": [
+    "Kí ni wọ́n fi ṣe é?"
+  ],
+  "oil": "A da epo pupa sínú rẹ̀, a sì fi òwú tí a ti dì pọ̀ ṣe òwú àtùpà sínú ẹnu rẹ̀. Lẹ́yìn náà, a tan òwú àtùpà náà.",
+  "oil.ask": [
+    "Kí ni ó ń jó?"
+  ],
+  "before": "Kí àwọn àtùpà àti iná mànàmáná tó dé, gbogbo ilé máa ń tan ọ̀kan lára irú àwọn nǹkan wọ̀nyí ní ìrọ̀lẹ́. Gbogbo òpópónà kan máa ń tàn yòò pẹ̀lú àwọn ọwọ́ iná kéékèèké.",
+  "before.ask": [
+    "Kí ni àwọn ènìyàn máa ń lò kí iná mànàmáná tó dé?"
+  ],
+  "grandmother": "Ìmọ́lẹ̀ fìtílà yìí gan-an ni ìyá àgbà mi fi ń sọ àwọn ìtàn rẹ̀, gẹ́gẹ́ bí èmi náà ṣe ń sọ tèmi fún ọ.",
+  "grandmother.ask": [
+    "Fìtílà ta ni?"
+  ],
+  "night": "Nígbà tí oòrùn bá wọ̀, ọwọ́ iná kékeré rẹ̀ máa ń jẹ́ ká rí àkéte wa, ká sì máa sọ ìtàn títí di òru pẹ́.",
+  "night.ask": [
+    "Ìgbà wo ni o máa ń tàn án?"
+  ],
+  "care": "Gbé e dúró ṣánṣán, kí o sì rìn díẹ̀díẹ̀, ọmọ mi, bí bẹ́ẹ̀ kọ́, òróró náà yóò dà sílẹ̀, yóò sì pa iná náà."
+}

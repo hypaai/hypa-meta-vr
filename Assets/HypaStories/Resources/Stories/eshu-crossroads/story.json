@@ -4,6 +4,7 @@
   "eyebrow": "Yoruba folk tale",
   "title": "Eshu at the\nCrossroads",
   "description": "Two friends swear that nothing can divide them, until a small god walks between them in a hat of two colours.",
+  "words": ["friends", "hat", "calabash"],
   "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
   "voices": [],
   "wind": 0.08,

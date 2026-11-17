@@ -1,0 +1,32 @@
+{
+  "words": ["mortier", "igname", "pilon"],
+  "greet": "Ah, tu as trouvé le mortier et son pilon. Le mortier s'appelle odo, et le pilon est son enfant.",
+  "greet.ask": [
+    "Comment s'appelle le mortier ?"
+  ],
+  "carved": "Un sculpteur a taillé le mortier dans une seule pièce de bois dur, pour qu'il résiste à de longues années de pilage.",
+  "carved.ask": [
+    "En quoi est-il fait ?"
+  ],
+  "yam": "Nous y mettons de l'igname bouillie et nous la pilons jusqu'à ce qu'elle soit lisse et tendre. C'est l'igname pilée.",
+  "yam.ask": [
+    "Que pilez-vous dedans ?"
+  ],
+  "more": "Nous y pilons aussi le piment, les céréales et les feuilles pour la marmite.",
+  "more.ask": [
+    "À quoi d'autre sert-il ?"
+  ],
+  "sound": "Quand tu entends le pilon tomber, encore et encore, tu sais que le repas arrive.",
+  "family": "Le père de mon mari l'a sculpté l'année de la naissance de mon mari. Trois générations de cette famille y ont mangé.",
+  "family.ask": [
+    "Qui l'a sculpté ?"
+  ],
+  "rhythm": "Autrefois, le soir, on entendait le pilage de chaque concession à travers le village. Son rythme disait à chacun que la maison était proche.",
+  "rhythm.ask": [
+    "Pourquoi le pilage est-il spécial ?"
+  ],
+  "together": "Deux femmes peuvent piler dans un seul mortier, à tour de rôle avec deux pilons, sans jamais manquer un temps. Nous chantons en travaillant.",
+  "together.ask": [
+    "Peut-on piler à deux ?"
+  ]
+}

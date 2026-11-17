@@ -17,7 +17,7 @@ namespace HypaStories
     public static class StoryLibrary
     {
         /// <summary>Card order. Each id is a folder under Resources/Stories.</summary>
-        static readonly string[] Ids = { "seven-hot-stones", "marlow-street", "eshu-crossroads" };
+        static readonly string[] Ids = { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street" };
 
         const float WordsPerSecond = 2.6f, Start = 0.4f, Gap = 0.45f, Tail = 1.5f;
 
@@ -38,7 +38,11 @@ namespace HypaStories
 
         public static StoryInfo Find(string id) => All.FirstOrDefault(s => s.Id == id);
 
-        static StoryInfo Load(string id)
+        /// <summary>
+        /// A story from its folder under Resources/Stories. The campfire's cards are <see cref="All"/>; other cards (the hut's
+        /// household items, <see cref="HutItems"/>) load theirs here, in the same format, without joining the campfire's row.
+        /// </summary>
+        public static StoryInfo Load(string id)
         {
             var story = Resources.Load<TextAsset>($"Stories/{id}/story");
             if (story == null) throw new InvalidOperationException($"Hypa Stories: no Resources/Stories/{id}/story.json.");
@@ -96,7 +100,7 @@ namespace HypaStories
                 t = c.Until + Gap;
             }
 
-            return new StoryInfo
+            var info = new StoryInfo
             {
                 Id = id, Theme = (int?)o["theme"] ?? 0, Accent = accent,
                 Eyebrow = (string)o["eyebrow"] ?? "", Title = (string)o["title"] ?? id, Desc = (string)o["description"] ?? "",
@@ -115,7 +119,14 @@ namespace HypaStories
                     Fire = fire.Keys.ToArray(), Dark = dark.Keys.ToArray(), Dawn = dawn.Keys.ToArray(), Police = police.Keys.ToArray(), Spirit = spirit.Keys.ToArray(),
                     Sounds = sounds.OrderBy(x => x.T).ToArray(),
                 },
+                Words = Strings(o["words"]),
             };
+            foreach (var kv in tr)
+            {
+                var w = Strings(kv.Value["words"]);
+                if (w.Length > 0) info.WordsTr[kv.Key] = w;
+            }
+            return info;
         }
 
         /// <summary>A weather track: the story's starting value, then each line's cue eased in over that line.</summary>

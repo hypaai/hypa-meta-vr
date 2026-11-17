@@ -1,0 +1,32 @@
+{
+  "words": ["chungu", "maji", "udongo"],
+  "greet": "Njoo karibu, mwanangu. Hiki ni chungu chetu cha udongo. Tunakiita ikoko.",
+  "greet.ask": [
+    "Sufuria inaitwaje?"
+  ],
+  "made": "Mfinyanzi alikitengeneza kwa mikono kutoka kwa udongo wa mtoni, kisha akakioka hadi kikawa kigumu katika moto wa wazi.",
+  "made.ask": [
+    "Sufuria hutengenezwaje?"
+  ],
+  "old": "Wanawake katika ardhi hizi wamefinyanga vyungu kama hivi kwa maelfu ya miaka. Vipande vyake vilivyovunjika hupatikana mahali ambapo miji ya kale zaidi iliwahi kusimama.",
+  "old.ask": [
+    "Vyungu vya udongo vina umri gani?"
+  ],
+  "potters": "Ufundi hupitishwa kutoka kwa mama kwenda kwa binti. Kila mfinyanzi ana alama zake mwenyewe, hivyo unaweza kujua ni mikono ya nani iliyotengeneza chungu.",
+  "potters.ask": [
+    "Nani hufundisha ufundi huo?"
+  ],
+  "mother": "Hiki kilikuwa cha mama yangu. Alibeba maji ndani yake kutoka mtoni kichwani, na akanipa siku ya harusi yangu.",
+  "mother.ask": [
+    "Ilikuwa sufuria ya nani?"
+  ],
+  "water": "Tunahifadhi maji yetu ya kunywa ndani yake. Udongo hupitisha hewa, hivyo maji hubaki baridi, hata wakati wa adhuhuri.",
+  "water.ask": [
+    "Kwa nini maji hubaki baridi?"
+  ],
+  "cook": "Chungu kingine kama hiki hukaa juu ya mafiga matatu motoni, na mchuzi wetu hupikwa ndani yake.",
+  "cook.ask": [
+    "Unapikia nini ndani yake?"
+  ],
+  "care": "Inyanyue kwa upole na uishike kwa mikono yote miwili. Chungu cha udongo kikianguka, hakinyanyuki tena."
+}

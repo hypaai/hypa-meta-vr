@@ -1,0 +1,28 @@
+{
+  "words": ["ufagio", "mtende", "asubuhi"],
+  "greet": "Na hiki ni kifagio. Tunakiita igbale.",
+  "greet.ask": [
+    "Ufagio unaitwaje?"
+  ],
+  "made": "Imetengenezwa kwa mbavu nyembamba za majani ya mitende, zilizokaushwa na kufungwa pamoja upande mmoja.",
+  "made.ask": [
+    "Ufagio umetengenezwa kwa nini?"
+  ],
+  "olden": "Fagio kama hizi zilifungwa zamani sana kabla ya mtu yeyote aliye hai sasa kuweza kukumbuka, kutoka kwa mitende ileile inayotupatia mafuta na divai.",
+  "olden.ask": [
+    "Ufagio wa aina hii una umri gani?"
+  ],
+  "festival": "Kabla ya sherehe, kijiji kizima hufagia njia na viwanja vyake, ili wazee na wageni watembee kwenye ardhi safi.",
+  "festival.ask": [
+    "Ni lini kila mtu hufagia pamoja?"
+  ],
+  "sweep": "Kila asubuhi, kabla jua halijapanda juu, tunainama na kufagia nyumba na ua.",
+  "sweep.ask": [
+    "Unafagia lini?"
+  ],
+  "one": "Ubavu mmoja peke yake huvunjika kwa urahisi. Zikifungwa pamoja, huwa imara. Familia pia ni hivyo.",
+  "one.ask": [
+    "Kwa nini mbavu zimefungwa pamoja?"
+  ],
+  "back": "Ukishaiangalia, irudishe mahali ulipoikuta."
+}

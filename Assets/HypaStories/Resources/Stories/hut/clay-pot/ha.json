@@ -1,0 +1,32 @@
+{
+  "words": ["tukunya", "ruwa", "laka"],
+  "greet": "Ka zo kusa, ɗana. Wannan tukunyar ƙasarmu ce. Muna kiranta ikoko.",
+  "greet.ask": [
+    "Me ake kiran tukunyar?"
+  ],
+  "made": "Maginin tukwane ya siffanta shi da hannu daga lakar kogi, sannan ya gasa shi har ya yi tauri a wuta a fili.",
+  "made.ask": [
+    "Yaya ake yin tukunya?"
+  ],
+  "old": "Mata a waɗannan yankuna sun shafe dubban shekaru suna ƙera tukwane irin wannan. Ana samun gutsattsarinsu a wuraren da tsofaffin garuruwa suka taɓa kasancewa.",
+  "old.ask": [
+    "Shekarun tukwanen ƙasa nawa ne?"
+  ],
+  "potters": "Ana gadar da sana’ar daga uwa zuwa ’ya. Kowace mai yin tukwane tana da alamominta na musamman, don haka za ka iya gane hannun wadda ta yi tukunya.",
+  "potters.ask": [
+    "Wa ke koyar da sana'ar?"
+  ],
+  "mother": "Wannan na mahaifiyata ne. Tana ɗebo ruwa da shi daga kogi tana ɗauke da shi a kanta, kuma ta ba ni shi a ranar aurena.",
+  "mother.ask": [
+    "Tukunyar wa ce?"
+  ],
+  "water": "Muna ajiye ruwan shanmu a cikinsa. Lakar tana shaƙar iska, don haka ruwan yana kasancewa mai sanyi, har ma da tsakar rana.",
+  "water.ask": [
+    "Me ya sa ruwan yake kasancewa mai sanyi?"
+  ],
+  "cook": "Wata tukunya irin wannan tana zaune a kan duwatsu uku bisa wuta, kuma miyar mu tana dahuwa a cikinta.",
+  "cook.ask": [
+    "Me kake dafa wa a ciki?"
+  ],
+  "care": "Ka ɗaga shi a hankali, ka riƙe shi da hannuwa biyu. Tukunyar laka da ta faɗi ba ta sake tashi."
+}

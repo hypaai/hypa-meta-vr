@@ -10,6 +10,7 @@ namespace HypaStories
     /// view above it. The line being spoken is large, its words lighting up with the voice, with the lines before and after faded.
     /// Progress, previous / play-pause / next and Ask along the bottom. While a question is open the script gives way to the Q&amp;A:
     /// state and mic level, "You asked", the answer in the story's accent colour, and suggested questions (no microphone or no key).
+    /// When the story has ended, Try Hypa Translate sits in the panel and opens the translation there.
     /// </summary>
     public sealed class PlayerView : IAskView
     {
@@ -18,13 +19,22 @@ namespace HypaStories
         public readonly Transform Root;
         public readonly KitGroup Fade;
         public readonly FollowView Follow;
+        /// <summary>Everything on the panel except its hide / show icon: what goes when you hide it. Add panel buttons here.</summary>
+        public readonly Transform Body;
+        /// <summary>The panel is tucked away, so it doesn't sit in front of the fire; only its show icon is left.</summary>
+        public bool Hidden { get; private set; }
+        readonly KitButton _hide;
+        Vector3 _hideAt;
         readonly TextMeshPro _kicker, _title, _prev, _line, _next, _time, _hint, _state, _question, _answer;
         readonly Transform _lines, _qa;
         readonly KitPanel _fill, _level;
-        readonly KitButton _pause, _ask, _sound;
+        readonly KitButton _pause, _ask, _sound, _tryOffer;
         readonly KitIcon _hintIcon;
         readonly List<KitButton> _suggestions = new List<KitButton>();
         readonly Action<string> _pick;
+        readonly Action _tryHypa, _askTap;
+        bool _asking, _translateOpen, _offer;
+        string _cornerLabel;
         StoryInfo _story;
         StoryLanguage _lang;
         string[] _asks = new string[0];
@@ -32,10 +42,10 @@ namespace HypaStories
         int _shownWords = -1, _shownLine = -2;
         static readonly Color Unlit = new Color(1f, 0.97f, 0.92f, 0.55f);
 
-        public PlayerView(Transform uiRoot, Action prev, Action pause, Action next, Action askTap, Action askHold,
+        public PlayerView(Transform uiRoot, Action prev, Action pause, Action next, Action tryHypa, Action askTap,
             Action back, Action toggleSound, Action<string> pickQuestion, Action toggleRoom = null)
         {
-            _pick = pickQuestion;
+            _pick = pickQuestion; _tryHypa = tryHypa; _askTap = askTap;
             Root = new GameObject("Player").transform;
             Root.SetParent(uiRoot, false);
             Follow = Root.gameObject.AddComponent<FollowView>();
@@ -93,22 +103,63 @@ namespace HypaStories
             Kit.Button(Root, new Vector3(-0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-back", KitStyle.Ghost, prev);
             _pause = Kit.Button(Root, new Vector3(0f, cy, 0f), new Vector2(0.07f, 0.07f), null, "pause", KitStyle.Primary, pause);
             Kit.Button(Root, new Vector3(0.075f, cy, 0f), new Vector2(0.056f, 0.056f), null, "skip-forward", KitStyle.Ghost, next);
-            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.1f, cy, 0f), new Vector2(0.14f, 0.056f), "Ask", "mic", KitStyle.Primary, askTap, askHold, 0.02f);
+            // made with the longest word it shows ("Speak", while translating) so the label never runs into the icon
+            _ask = Kit.Button(Root, new Vector3(W / 2f - 0.1f, cy, 0f), new Vector2(0.14f, 0.056f), "Speak", "mic", KitStyle.Primary, () => _askTap(), null, 0.02f);
+            _ask.SetLabel("Ask");
+            // only at the end of a campfire story: opens Hypa Translate in this same panel. A panel made without it (the hut's)
+            // has no such button at all
+            if (tryHypa != null)
+            {
+                _tryOffer = Kit.Button(Root, new Vector3(0f, -0.074f, -0.012f), new Vector2(0.36f, 0.04f), "Try Hypa Translate", "languages", KitStyle.Primary, () => _tryHypa(), null, 0.015f);
+                _tryOffer.gameObject.SetActive(false);
+            }
             _hintIcon = Kit.Icon(Root, "hand", new Vector3(-W / 2f + 0.05f, cy, 0f), 0.024f, KitTheme.Dim);
             _hint = Kit.Text(Root, "", 0.0145f, new Vector3(-W / 2f + 0.145f, cy, 0f), new Vector2(0.16f, 0.05f), KitTheme.Dim, TextAlignmentOptions.Left);
 
             // 3K: below the panel, so it never crowds the transport. "In my room" brings the fire into your real room; again, back to the forest.
             if (toggleRoom != null)
-                _room = Kit.Button(Root, new Vector3(0f, -H / 2f - 0.05f, 0f), new Vector2(0.27f, 0.052f), InMyRoom, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+            {
+                // made with the longer of its two labels: Kit sizes the label beside the icon once, so "Back to the forest" ran into the house
+                _room = Kit.Button(Root, new Vector3(0f, -H / 2f - 0.05f, 0f), new Vector2(0.3f, 0.052f), BackToForest, "house", KitStyle.Ghost, toggleRoom, null, 0.017f);
+                _room.SetLabel(InMyRoom);
+            }
+
+            // everything so far goes into the body, so one switch hides the whole panel and leaves only its show icon
+            Body = new GameObject("Body").transform;
+            Body.SetParent(Root, false);
+            var parts = new List<Transform>();
+            foreach (Transform c in Root) if (c != Body) parts.Add(c);
+            foreach (var c in parts) c.SetParent(Body, false);
+            // hide: a small tab on the panel's top edge, clear of the title; shown again from the same tab low down, where the
+            // panel's lower edge was, out of the fire's way
+            _hideAt = new Vector3(0f, H / 2f + 0.012f, -0.002f);
+            _hide = Kit.Button(Root, _hideAt, new Vector2(0.046f, 0.046f), null, "chevron-down", KitStyle.Ghost, () => SetHidden(!Hidden));
 
             Fade = Root.gameObject.AddComponent<KitGroup>();
             SetState(AskState.Idle, "");
             Fade.Refresh();
         }
 
+        /// <summary>Hides the panel (only a small show icon stays, low and out of the fire's way) or brings it back.</summary>
+        public void SetHidden(bool hidden)
+        {
+            if (hidden == Hidden) return;
+            Hidden = hidden;
+            Body.gameObject.SetActive(!hidden);
+            _hide.transform.localPosition = hidden ? new Vector3(0f, -H / 2f + 0.035f, 0f) : _hideAt;
+            if (_hide.Icon != null) _hide.Icon.transform.localRotation = Quaternion.Euler(0f, 0f, hidden ? 180f : 0f); // a chevron up: show
+            _hide.Style = hidden ? KitStyle.Primary : KitStyle.Ghost; // solid while it's all there is, so it shows against the fire
+            _hide.Selected = false;
+            Fade.Refresh();
+        }
+
+        /// <summary>Something new is waiting on a hidden panel (the story ended: Try Hypa, or a game): its show icon glows.</summary>
+        public void Nudge(bool on) { if (Hidden || !on) _hide.Selected = on && Hidden; }
+
         public void Load(StoryInfo story, StoryLanguage lang)
         {
             _story = story; _lang = lang;
+            SetHidden(false); // a new story starts with its panel showing
             _kicker.text = story.Eyebrow.ToUpperInvariant(); _kicker.color = story.Accent;
             _title.text = story.Title.Replace('\n', ' ');
             _answer.color = story.Accent;
@@ -162,6 +213,38 @@ namespace HypaStories
             _pause.SetIcon(s == "Pause" ? "pause" : s == "Replay" ? "rotate-ccw" : "play");
         }
 
+        /// <summary>Whether this panel offers Try Hypa at all (the campfire's does; the hut's doesn't).</summary>
+        public bool OffersTry => _tryOffer != null;
+
+        /// <summary>The end-of-story button. Hidden while a question or the translation is open. Nothing on a panel without it.</summary>
+        public void SetTryOffer(bool on)
+        {
+            if (_tryOffer == null) return;
+            Nudge(on);
+            _offer = on;
+            _tryOffer.gameObject.SetActive(on && !_translateOpen && !_asking);
+        }
+
+        /// <summary>The translation is open in this panel: the script steps aside and the corner button speaks.</summary>
+        public void SetTranslateOpen(bool on)
+        {
+            if (on) SetHidden(false);
+            _translateOpen = on;
+            _lines.gameObject.SetActive(!on && !_asking);
+            _tryOffer?.gameObject.SetActive(!on && _offer && !_asking);
+            if (on) SetCorner("Speak", "mic");
+            else if (!_asking) SetCorner("Ask", "mic");
+        }
+
+        /// <summary>The corner button's words, while translating (Speak / Done).</summary>
+        public void SetCorner(string label, string icon)
+        {
+            if (label == _cornerLabel) return;
+            _cornerLabel = label;
+            _ask.SetLabel(label);
+            _ask.SetIcon(icon);
+        }
+
         public void SetSound(bool muted) => _sound.SetIcon(muted ? "volume-x" : "volume-2");
 
         const string InMyRoom = "In my room", BackToForest = "Back to the forest";
@@ -188,8 +271,11 @@ namespace HypaStories
         public void SetState(AskState state, string text)
         {
             var asking = state != AskState.Idle;
-            _lines.gameObject.SetActive(!asking);
+            if (asking && Body != null) SetHidden(false); // a question: the Q&A shows
+            _asking = asking;
+            _lines.gameObject.SetActive(!asking && !_translateOpen);
             _qa.gameObject.SetActive(asking);
+            _tryOffer?.gameObject.SetActive(!asking && !_translateOpen && _offer);
             _state.text = text ?? "";
             var listening = state == AskState.Listening || state == AskState.Interrupt;
             _level.gameObject.SetActive(state == AskState.Listening);
@@ -201,8 +287,9 @@ namespace HypaStories
                 if (on) _suggestions[i].SetLabel(qs[i]);
             }
             _answer.gameObject.SetActive(!listening);
-            _ask.SetLabel(state == AskState.Listening ? "Done" : asking ? "Skip" : "Ask");
-            _ask.SetIcon(state == AskState.Listening ? "check" : asking ? "skip-forward" : "mic");
+            if (!_translateOpen)
+                SetCorner(state == AskState.Listening ? "Done" : asking ? "Skip" : "Ask",
+                    state == AskState.Listening ? "check" : asking ? "skip-forward" : "mic");
             if (!asking) SetLevel(0f);
         }
 

@@ -1,4 +1,5 @@
 {
+  "words": ["amis", "chapeau", "calebasse"],
   "road": "Il y a bien longtemps, une route rouge passait entre deux concessions, et quiconque l'empruntait passait par un carrefour.",
   "road.ask": [
     "Où se trouve ce carrefour ?"

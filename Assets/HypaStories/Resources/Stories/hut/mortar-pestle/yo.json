@@ -1,0 +1,32 @@
+{
+  "words": ["odó", "iṣu", "ọmọ odó"],
+  "greet": "Áà, o ti rí odó àti ọmọ odó rẹ̀. Odó ni a ń pè é, ọmọ odó sì ni ọmọ rẹ̀.",
+  "greet.ask": [
+    "Kí ni wọ́n ń pe odó náà?"
+  ],
+  "carved": "Onígbẹ̀gbẹ́ kan fi odindi igi líle kan gbẹ́ odó náà, nítorí náà ó lè fara da lílù fún ọ̀pọ̀ ọdún.",
+  "carved.ask": [
+    "Kí ni wọ́n fi ṣe é?"
+  ],
+  "family": "Baba ọkọ mi ni ó gbẹ́ e ní ọdún tí wọ́n bí ọkọ mi. Ìran mẹ́ta nínú ìdílé yìí ti jẹun nínú rẹ̀.",
+  "family.ask": [
+    "Ta ni ó gbẹ́ ẹ?"
+  ],
+  "rhythm": "Ní ìgbà àtijọ́, ní ìrọ̀lẹ́, a máa ń gbọ́ ìró odó láti gbogbo agbo ilé káàkiri abúlé. Ìlù rẹ̀ ń sọ fún gbogbo ènìyàn pé ilé ti dé tán.",
+  "rhythm.ask": [
+    "Kí ló mú kí lílu náà ṣe pàtàkì?"
+  ],
+  "together": "Obìnrin méjì lè jọ gún nínú odó kan, wọ́n á máa fi ọmọ odó méjì gún ní ìtẹ̀léra, láì pàdánù ìlù rárá. A máa ń kọrin bí a ṣe ń ṣiṣẹ́.",
+  "together.ask": [
+    "Ṣé ènìyàn méjì lè jọ gún pọ̀?"
+  ],
+  "yam": "A máa ń fi iṣu tí a ti sè sínú rẹ̀, a sì máa ń gún un títí yóò fi dán, tí yóò sì rọ̀. Ìyẹn ni iyán.",
+  "yam.ask": [
+    "Kí ni o máa ń gún sínú rẹ̀?"
+  ],
+  "more": "A tún máa ń gún ata, ọkà àti ewé fún ìkòkò.",
+  "more.ask": [
+    "Kí ni ohun mìíràn tí a tún ń lò ó fún?"
+  ],
+  "sound": "Nígbà tí o bá gbọ́ ìró ọmọ odó tí ń ṣubú léraléra, o mọ̀ pé oúnjẹ ń bọ̀."
+}

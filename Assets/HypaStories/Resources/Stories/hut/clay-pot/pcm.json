@@ -1,0 +1,32 @@
+{
+  "words": ["pot", "water", "clay"],
+  "greet": "Come near, my pikin. Dis na our clay pot. We dey call am ikoko.",
+  "greet.ask": [
+    "Wetin dem dey call the pot?"
+  ],
+  "made": "One potter mould am with hand from river clay, then bake am inside open fire until e strong.",
+  "made.ask": [
+    "How dem dey make the pot?"
+  ],
+  "old": "Women for dis land don dey mould pot like dis for thousands of years. Dem dey find the broken pieces for where the oldest towns bin dey before.",
+  "old.ask": [
+    "How old clay pot be?"
+  ],
+  "potters": "The work dey pass from mama to im daughter. Every potter get her own mark, so you fit know whose hand make one pot.",
+  "potters.ask": [
+    "Who dey teach the work?"
+  ],
+  "mother": "Dis one na my mama own. She dey carry water with am from river for her head, and she give am to me for my wedding day.",
+  "mother.ask": [
+    "Na whose pot be dis?"
+  ],
+  "water": "We dey keep our drinking water inside am. The clay dey breathe, so the water dey cold, even for afternoon.",
+  "water.ask": [
+    "Why the water dey cold?"
+  ],
+  "cook": "Another pot like dis dey sidon on top three stones for fire, and our soup dey cook inside am.",
+  "cook.ask": [
+    "Wetin una dey cook inside am?"
+  ],
+  "care": "Carry am gently, hold am with your two hands. Clay pot wey fall no dey stand up again."
+}

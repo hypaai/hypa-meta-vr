@@ -1,0 +1,130 @@
+{
+  "words": [
+    "tambour",
+    "tortue",
+    "palmier"
+  ],
+  "calabar": "Il y a bien longtemps, à Calabar, vivait un roi nommé Efriam Duke, qui n'aimait pas la guerre.",
+  "calabar.ask": [
+    "Où se trouve Calabar ?"
+  ],
+  "drum": "Il possédait un tambour, et chaque fois qu'il le battait, un festin apparaissait.",
+  "drum.ask": [
+    "Que faisait le tambour ?"
+  ],
+  "feast": "Du poisson et du foufou, des ignames et du gombo, une soupe à l'huile de palme et du vin de palme, assez pour tout le monde.",
+  "enemies": "Quand des ennemis venaient, il ne se battait pas. Il les invitait à manger.",
+  "enemies.ask": [
+    "Pourquoi le roi invitait-il ses ennemis ?"
+  ],
+  "animals": "Il régalait aussi son peuple, et même les animaux, car en ce temps-là, tous mangeaient ensemble en paix.",
+  "rule": "Mais le tambour avait une règle.",
+  "stick": "Si son propriétaire enjambait un jour un bâton posé en travers de la route, le tambour ne donnerait plus de nourriture.",
+  "stick.ask": [
+    "Quelle était la règle du tambour ?"
+  ],
+  "egbo": "À la place, trois cents hommes Egbo viendraient avec des bâtons et des fouets, et le battraient, lui et tous ses invités.",
+  "egbo.ask": [
+    "Qui sont les hommes Egbo ?"
+  ],
+  "wanted": "Beaucoup voulaient ce tambour. Le roi refusait de s'en séparer.",
+  "tortoise": "Et celui qui le voulait le plus, c'était Tortue.",
+  "tortoise.ask": [
+    "Qui est Tortue ?"
+  ],
+  "spring": "Un matin, Ikwor Edem, une épouse du roi, emmena sa petite fille se laver à une source.",
+  "palm": "Au-dessus d'elles, en haut d'un palmier, Tortue coupait des noix de palme.",
+  "nut": "Une noix tomba aux pieds de la fillette.",
+  "cried": "Elle pleura pour l'avoir, et sa mère la lui donna.",
+  "mine": "Tortue descendit. Cette noix est à moi, dit-il.",
+  "mine.ask": [
+    "Pourquoi Tortue est-il si fâché ?"
+  ],
+  "idea": "Ikwor Edem s'expliqua, mais Tortue pensait au tambour.",
+  "justice": "Ta femme a pris ma nourriture, dit-il au roi. Je veux justice.",
+  "offers": "Le roi lui offrit de l'argent. Du tissu. Des palmistes. De l'huile de palme.",
+  "no": "Tortue refusa tout.",
+  "choose": "Enfin le roi dit : alors choisis ce que tu veux.",
+  "point": "Tortue montra droit le tambour.",
+  "point.ask": [
+    "Qu'a choisi Tortue ?"
+  ],
+  "gave": "Pour mettre fin à la querelle, le roi le lui donna. Mais il ne lui dit pas la règle.",
+  "gave.ask": [
+    "Pourquoi le roi ne lui a-t-il pas dit la règle ?"
+  ],
+  "home": "Tortue rapporta le tambour chez lui. Nous ne travaillerons plus jamais pour manger, dit-il à sa famille.",
+  "beat": "Il battit le tambour, et un festin couvrit le sol.",
+  "three-days": "Pendant trois jours, la famille mangea, rit, et mangea encore.",
+  "invite": "Puis il invita le roi, toute la ville et les animaux à un grand festin.",
+  "laughed": "Beaucoup rirent. Tortue, le plus pauvre de tous, offrir un festin ?",
+  "few": "Peu vinrent. Mais le roi vint.",
+  "appeared": "Tortue battit le tambour, et le festin apparut devant eux tous.",
+  "amazed": "Les invités rentrèrent émerveillés. Ceux qui n'étaient pas venus jurèrent de venir la prochaine fois.",
+  "amazed.ask": [
+    "Que pense-t-on de Tortue maintenant ?"
+  ],
+  "boastful": "Tortue devint paresseux et vantard, et but trop de vin de palme.",
+  "farm": "Un soir, en rentrant de son champ, il ne regarda pas où il marchait.",
+  "stepped": "Un bâton était posé en travers du chemin, et il l'enjamba.",
+  "stepped.ask": [
+    "Qu'a fait Tortue de mal ?"
+  ],
+  "nothing": "Rien ne se passa. Il ne s'en rendit même pas compte.",
+  "breakfast": "Le lendemain matin, sa famille affamée demanda à manger.",
+  "beat-again": "Il battit le tambour.",
+  "egbo-came": "Aucune nourriture ne vint. Trois cents hommes Egbo vinrent à la place, avec des bâtons et des fouets.",
+  "beaten": "Ils battirent Tortue et toute sa famille.",
+  "furious": "Tortue était furieux. Mais il ne s'en prit pas à lui-même.",
+  "furious.ask": [
+    "Que va faire Tortue maintenant ?"
+  ],
+  "plan": "Si je dois être battu, pensa-t-il, ceux qui se sont moqués de moi le seront aussi.",
+  "second": "Il invita tout le monde à un autre grand festin.",
+  "crowds": "Cette fois, toute la ville vint, et tous les animaux, bien décidés à ne rien manquer.",
+  "stayed": "Le roi et ses épouses restèrent chez eux. Tortue avait déjà éloigné sa propre famille.",
+  "stayed.ask": [
+    "Pourquoi le roi n'est-il pas venu ?"
+  ],
+  "doors": "Quand tous les invités furent entrés, les portes furent fermées.",
+  "bench": "Tortue battit le tambour, et se glissa sous un banc.",
+  "burst": "Les hommes Egbo surgirent avec leurs bâtons et leurs fouets.",
+  "nowhere": "Les invités coururent, mais il n'y avait nulle part où fuir.",
+  "leopard": "Seul Léopard s'échappa, d'un bond par-dessus le mur de la concession.",
+  "leopard.ask": [
+    "Comment Léopard s'est-il échappé ?"
+  ],
+  "opened": "Enfin Tortue ouvrit les portes et battit le tambour d'une façon spéciale, et les hommes Egbo disparurent.",
+  "limped": "Les invités rentrèrent en boitant, couverts de bleus et très en colère.",
+  "return": "Alors le lendemain matin, Tortue rapporta le tambour au roi.",
+  "exchange": "Reprends-le, dit-il, et donne-moi plutôt des champs ou du tissu.",
+  "fufu-tree": "Le roi refusa l'échange. Mais il eut pitié de Tortue, et lui donna un arbre à foufou magique.",
+  "fufu-tree.ask": [
+    "Qu'est-ce qu'un arbre à foufou ?"
+  ],
+  "tree-rule": "Chaque jour, il donnait du foufou frais et de la soupe. Mais on ne pouvait s'y servir qu'une fois par jour, jamais deux.",
+  "tree-rule.ask": [
+    "Quelle était la règle de l'arbre à foufou ?"
+  ],
+  "calabashes": "Chaque matin, Tortue et sa femme remplissaient leurs calebasses, et la famille ne manquait de rien.",
+  "son": "Mais un de ses fils voulait savoir d'où venait la nourriture.",
+  "secret": "Tortue refusa de le dire. Si les enfants le trouvent, dit leur mère, ils vont tout gâcher.",
+  "ashes": "Alors le garçon remplit une calebasse de cendres et la cacha dans le sac de son père, au-dessus d'un petit trou.",
+  "ashes.ask": [
+    "Quelle était la ruse du garçon ?"
+  ],
+  "trail": "Pendant que Tortue marchait, une fine traînée de cendres tombait derrière lui.",
+  "followed": "Le garçon suivit la traînée, observa depuis les buissons, et ne dit rien.",
+  "twice": "Le lendemain, après que son père eut pris la nourriture, le garçon mena ses frères à l'arbre, et ils en reprirent.",
+  "twice.ask": [
+    "Qu'ont fait les garçons de mal ?"
+  ],
+  "gone": "Le lendemain matin, l'arbre avait disparu.",
+  "thicket": "Une brousse épaisse avait poussé pendant la nuit. Tortue ne voyait plus que des palmiers rotins épineux.",
+  "nobody": "Il demanda à sa famille qui avait enfreint la règle. Personne ne répondit.",
+  "live-here": "Alors il les y conduisit. Vous avez enfreint la règle, dit-il, alors c'est ici que nous vivrons.",
+  "why": "Et voilà pourquoi, disent les anciens, la tortue vit sous les palmiers rotins épineux.",
+  "why.ask": [
+    "Pourquoi les tortues vivent-elles sous les palmiers ?"
+  ]
+}

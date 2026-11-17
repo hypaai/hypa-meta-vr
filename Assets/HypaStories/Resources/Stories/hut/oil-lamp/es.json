@@ -1,0 +1,28 @@
+{
+  "words": ["lámpara", "aceite", "llama"],
+  "greet": "Ah, has encontrado mi lámpara. La llamamos fitila.",
+  "greet.ask": [
+    "¿Cómo se llama la lámpara?"
+  ],
+  "made": "Está hecha del mismo barro del río que la olla, tan pequeña que cabe en tu palma.",
+  "made.ask": [
+    "¿De qué está hecha?"
+  ],
+  "oil": "Le echamos aceite de palma y ponemos una mecha de algodón trenzado en su pico. Luego encendemos la mecha.",
+  "oil.ask": [
+    "¿Qué quema?"
+  ],
+  "night": "Cuando se pone el sol, su pequeña llama nos deja encontrar nuestras esteras y contar historias hasta tarde.",
+  "night.ask": [
+    "¿Cuándo la encienden?"
+  ],
+  "care": "Llévala derecha y despacio, hijo mío, o el aceite se derramará y ahogará la llama.",
+  "before": "Antes de que llegaran los faroles y la luz eléctrica, cada casa encendía una de estas al anochecer. Toda una calle brillaba con llamitas.",
+  "before.ask": [
+    "¿Qué usaban antes de la luz eléctrica?"
+  ],
+  "grandmother": "Mi abuela contaba sus historias a la luz de esta misma lámpara, como yo te cuento las mías.",
+  "grandmother.ask": [
+    "¿De quién era la lámpara?"
+  ]
+}

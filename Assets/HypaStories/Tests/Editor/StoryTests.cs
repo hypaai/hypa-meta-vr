@@ -61,11 +61,12 @@ namespace HypaStories.Tests
         {
             var marlow = StoryLibrary.Find("marlow-street").Timeline;
             var caps = marlow.Captions;
-            Assert.AreEqual(13, caps.Length);
+            Assert.AreEqual(48, caps.Length);
+            Assert.That(marlow.Duration, Is.InRange(230f, 290f), "about four minutes, like the other stories");
             Assert.AreEqual(0.4f, caps[0].At, 1e-4);
             for (var i = 1; i < caps.Length; i++) Assert.Greater(caps[i].At, caps[i - 1].Until);
             Assert.GreaterOrEqual(marlow.Duration, caps[caps.Length - 1].Until + 1.5f);
-            Assert.AreEqual(5, marlow.Flashes.Length);
+            Assert.AreEqual(9, marlow.Flashes.Length);
             var d = new StoryDirector(marlow);
             Assert.AreEqual(0.12f, d.Sample(caps[0].At).Rain, 1e-4);
             Assert.AreEqual(0.72f, d.Sample(caps[0].Until).Rain, 1e-4);
@@ -113,15 +114,35 @@ namespace HypaStories.Tests
             Assert.IsEmpty(heard, "never twice for the same moment");
         }
 
-        [Test] public void Eshu_IsTheThirdCard_HisLightTurnsWithTheHat_AndHeLaughsLast()
+        [Test] public void Cards_SevenStones_ThenTheDrum_ThenEshu_ThenMarlow()
         {
-            Assert.AreEqual("eshu-crossroads", StoryLibrary.All[2].Id);
+            CollectionAssert.AreEqual(new[] { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street" },
+                System.Linq.Enumerable.Select(StoryLibrary.All, s => s.Id));
+        }
+
+        [Test] public void Eshu_HisLightTurnsWithTheHat_AndHeLaughsLast()
+        {
             var tl = StoryLibrary.Find("eshu-crossroads").Timeline;
             var d = new StoryDirector(tl);
             Assert.AreEqual(0f, d.Sample(Line(tl, "road").Until).Spirit, 1e-4f, "no god's light before Eshu");
             Assert.AreEqual(1f, d.Sample(Line(tl, "turned").Until).Spirit, 1e-4f, "full as he turns the hat");
             Assert.AreEqual(0f, d.Sample(Line(tl, "same-road").Until).Spirit, 1e-4f, "gone once the lesson is told");
             Assert.AreEqual("laugh", tl.Sounds[tl.Sounds.Length - 1].Name, "the last sound is Eshu's laugh");
+        }
+
+        [Test] public void Drum_TheFeastRaisesTheFire_AndTheEgboMenComeInTheDark()
+        {
+            var tl = StoryLibrary.Find("kings-drum").Timeline;
+            var d = new StoryDirector(tl);
+            Assert.Greater(d.Sample(Line(tl, "appeared").Until).Fire, 1.4f, "the feast roars up the fire");
+            Assert.Greater(d.Sample(Line(tl, "burst").Until).Dark, 0.5f, "the night deepens when the Egbo men burst in");
+            Assert.Greater(d.Sample(Line(tl, "burst").At + 0.5f).Flash, 0.3f);
+            Assert.AreEqual(0f, d.Sample(Line(tl, "opened").Until).Spirit, 1e-4f, "gone with the Egbo men");
+            Assert.AreEqual(0f, d.Sample(tl.Duration).Rain, 1e-4f);
+            Assert.Greater(d.Sample(tl.Duration).Dawn, 0.4f, "it ends at daybreak among the palms");
+            Assert.GreaterOrEqual(tl.Sounds.Count(x => x.Name == "drums"), 5, "the drum is heard each time it is beaten");
+            Assert.AreEqual("Tortoise chose the drum.", StubStoryQa.AnswerFor("What did Tortoise choose?", 20, "en", "kings-drum")[0]);
+            StringAssert.StartsWith("Hmm", StubStoryQa.AnswerFor("What did the boys do wrong?", 40, "en", "kings-drum")[0], "no spoilers");
         }
 
         [Test] public void Director_WithoutAFireTrack_KeepsTheFireAsItIs()
@@ -264,6 +285,18 @@ namespace HypaStories.Tests
             Assert.AreEqual("Kiswahili", StoryLanguages.Find("sw").Name);
             foreach (var l in StoryLanguages.All.Where(l => l.Code != "en"))
                 Assert.AreNotEqual(StoryLanguages.Lines("en").Again, StoryLanguages.Lines(l.Code).Again, l.Code);
+            var en = StoryLanguages.Lines("en");
+            foreach (var l in StoryLanguages.All)
+            {
+                var lines = StoryLanguages.Lines(l.Code);
+                Assert.GreaterOrEqual(lines.Filler.Length, 4, l.Code);
+                Assert.GreaterOrEqual(lines.Resume.Length, 4, l.Code);
+                CollectionAssert.AllItemsAreUnique(lines.Filler, l.Code);
+                CollectionAssert.AllItemsAreUnique(lines.Resume, l.Code);
+                if (l.Code == "en") continue;
+                Assert.IsFalse(lines.Filler.Any(f => en.Filler.Contains(f)), l.Code);
+                Assert.IsFalse(lines.Resume.Any(f => en.Resume.Contains(f)), l.Code);
+            }
         }
 
         // ---------- Q&A stand-in ----------
@@ -384,6 +417,111 @@ namespace HypaStories.Tests
             }
         }
 
+        // ---------- Voice lock ----------
+
+        static HypaCore.HypaSpeech Spoke(string provider, string model, string voice) => new HypaCore.HypaSpeech { Provider = provider, Model = model, Voice = voice };
+
+        /// <summary>Runs <paramref name="body"/> with no synchronization context, so awaits resume as soon as a task completes.</summary>
+        static void Inline(Action body)
+        {
+            var was = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(null);
+            try { body(); } finally { SynchronizationContext.SetSynchronizationContext(was); }
+        }
+
+        [Test] public void VoiceLock_FirstAutoPickIsUsedForTheRestOfTheStory() => Inline(() =>
+        {
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            var first = new TaskCompletionSource<HypaCore.HypaSpeech>();
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                return p == null ? first.Task : Task.FromResult(Spoke("hypaai", "orpheus", p.Voice));
+            }
+            var a = vl.SpeakAsync("yo", Speak);
+            var b = vl.SpeakAsync("yo", Speak); // prefetched while the first is still with Auto: waits for its pick
+            CollectionAssert.AreEqual(new[] { "auto" }, asked);
+            first.SetResult(Spoke("hypaai", "orpheus", "Eniola"));
+            Assert.IsTrue(a.IsCompleted && b.IsCompleted);
+            vl.SpeakAsync("yo", Speak).Wait();
+            CollectionAssert.AreEqual(new[] { "auto", "hypaai/orpheus Eniola", "hypaai/orpheus Eniola" }, asked);
+            Assert.AreEqual("hypaai/orpheus Eniola", vl.PickFor("yo").ToString());
+            Assert.IsNull(vl.PickFor("fr"), "each language is picked on its own");
+
+            vl.Reset(); // the story is opened again: Auto picks again
+            first = new TaskCompletionSource<HypaCore.HypaSpeech>();
+            first.SetResult(Spoke("openai", "gpt-4o-mini-tts", "alloy"));
+            vl.SpeakAsync("yo", Speak).Wait();
+            Assert.AreEqual("auto", asked.Last());
+            Assert.AreEqual("openai/gpt-4o-mini-tts alloy", vl.PickFor("yo").ToString());
+        });
+
+        [Test] public void VoiceLock_AFailedFirstLineLetsTheNextOnePick() => Inline(() =>
+        {
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            var first = new TaskCompletionSource<HypaCore.HypaSpeech>();
+            var calls = 0;
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                return ++calls == 1 ? first.Task : Task.FromResult(Spoke("google", "chirp", p?.Voice ?? "Achernar"));
+            }
+            var a = vl.SpeakAsync("es", Speak);
+            var b = vl.SpeakAsync("es", Speak);
+            first.SetException(new HypaCore.HypaException(HypaCore.HypaErrorKind.Unavailable, "down"));
+            Assert.IsTrue(a.IsFaulted);
+            Assert.IsTrue(b.IsCompleted && !b.IsFaulted, "the waiting line asks Auto itself");
+            CollectionAssert.AreEqual(new[] { "auto", "auto" }, asked);
+            Assert.AreEqual("google/chirp Achernar", vl.PickFor("es").ToString());
+        });
+
+        [Test] public void VoiceLock_ALockedVoiceTheServiceRefuses_GoesToAuto_NeverSilent() => Inline(() =>
+        {
+            // Auto speaks Spanish in a Google voice, then refuses that voice by name ("cannot speak Spanish")
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                if (p != null) throw new HypaCore.HypaException(HypaCore.HypaErrorKind.ToolError, "google/gemini-2.5-pro-tts cannot speak Spanish.");
+                return Task.FromResult(Spoke("google", "gemini-2.5-pro-tts", "Achernar"));
+            }
+            vl.SpeakAsync("es", Speak).Wait();
+            var second = vl.SpeakAsync("es", Speak);
+            Assert.IsTrue(second.IsCompleted && !second.IsFaulted, "the line is spoken, not dropped");
+            vl.SpeakAsync("es", Speak).Wait();
+            CollectionAssert.AreEqual(new[] { "auto", "google/gemini-2.5-pro-tts Achernar", "auto", "auto" }, asked, "refused once, then Auto");
+            Assert.IsNull(vl.PickFor("es"), "Spanish stays on Auto for this story");
+        });
+
+        [Test] public void VoiceLock_ABlipRetriesTheSameVoice_ThenAuto() => Inline(() =>
+        {
+            var vl = new VoiceLock();
+            var asked = new List<string>();
+            var fails = 1;
+            Task<HypaCore.HypaSpeech> Speak(VoiceOption p)
+            {
+                asked.Add(p == null ? "auto" : p.ToString());
+                if (p != null && fails-- > 0) throw new HypaCore.HypaException(HypaCore.HypaErrorKind.Timeout, "slow");
+                return Task.FromResult(Spoke("hypaai", "orpheus", p?.Voice ?? "Eniola"));
+            }
+            vl.SpeakAsync("yo", Speak).Wait();
+            vl.SpeakAsync("yo", Speak).Wait();
+            CollectionAssert.AreEqual(new[] { "auto", "hypaai/orpheus Eniola", "hypaai/orpheus Eniola" }, asked, "same voice again after a blip");
+            Assert.AreEqual("hypaai/orpheus Eniola", vl.PickFor("yo").ToString(), "still locked");
+        });
+
+        [Test] public void VoiceLock_PickNeedsProviderModelAndVoice()
+        {
+            Assert.IsNull(VoiceLock.Pick(null));
+            Assert.IsNull(VoiceLock.Pick(Spoke("openai", "gpt-4o-mini-tts", null)));
+            Assert.IsNull(VoiceLock.Pick(Spoke(null, "gpt-4o-mini-tts", "alloy")));
+            Assert.AreEqual("openai/gpt-4o-mini-tts", VoiceLock.Pick(Spoke("openai", "gpt-4o-mini-tts", "alloy")).Model);
+            Assert.AreEqual("openai/gpt-4o-mini-tts", VoiceLock.Pick(Spoke("openai", "openai/gpt-4o-mini-tts", "alloy")).Model);
+        }
+
         // ---------- The ask loop (tickets 3B / 3C) ----------
 
         sealed class FakeSpeech : IStorySpeech
@@ -467,7 +605,7 @@ namespace HypaStories.Tests
             SynchronizationContext.SetSynchronizationContext(null);
             _speech = new FakeSpeech(); _mic = new FakeListener(); _qa = new FakeQa(); _story = new FakeNarration(); _view = new FakeView();
             _asking.Clear();
-            _ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0);
+            _ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0, n => 0);
         }
 
         [TearDown] public void TearDown() => SynchronizationContext.SetSynchronizationContext(_ctx);
@@ -489,6 +627,27 @@ namespace HypaStories.Tests
             Assert.AreEqual(100, log.Filler);
             Assert.AreEqual(40, log.Transcript);
             Assert.AreEqual(100, log.Playback);
+        }
+
+        [Test] public void Ask_CanPickAnotherFillerAndAnotherResume()
+        {
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            var ask = new AskFlow(_story, _speech, _mic, _qa, _view, () => StoryLanguages.All[0], _asking.Add, () => 0, n => 1);
+            Assert.IsTrue(ask.BeginAsync().IsCompleted);
+            Assert.AreEqual("Let me think about that…", _speech.Spoken[0]);
+            Assert.AreEqual("Right. Where was I…", _speech.Spoken[_speech.Spoken.Count - 1]);
+        }
+
+        [Test] public void Ask_NextQuestion_SkipsTheLineJustUsed()
+        {
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            _mic.Heard.Enqueue("Why did nobody answer?");
+            Assert.IsTrue(_ask.BeginAsync().IsCompleted);
+            Assert.IsTrue(_ask.BeginAsync().IsCompleted);
+            Assert.AreEqual("Hmm, good question…", _speech.Spoken[0]);
+            Assert.AreEqual("Now, where was I…", _speech.Spoken[3]);
+            Assert.AreEqual("Let me think about that…", _speech.Spoken[4]);
+            Assert.AreEqual("Right. Where was I…", _speech.Spoken[_speech.Spoken.Count - 1]);
         }
 
         [Test] public void Ask_UnclearThreeTimes_GoesBackToTheStory()

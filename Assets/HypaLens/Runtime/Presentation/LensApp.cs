@@ -231,7 +231,6 @@ namespace HypaLens
             Ui.Text(_liveBadge.transform, "● LIVE", 0.012f, Vector3.zero, Ui.TextColorFor(Ui.Accent));
             _liveBadge.SetActive(false);
 
-            HypaShell.Instance?.SetMenuButtonVisible(false); // the X replaces the shell's Home button here
             UpdateLanguageText();
         }
 
@@ -1307,7 +1306,6 @@ namespace HypaLens
         {
             _cts.Cancel();
             _cts.Dispose();
-            HypaShell.Instance?.SetMenuButtonVisible(true);
             if (_world != null) Destroy(_world.gameObject); // takes the HUD with it
         }
     }

@@ -1,7 +1,7 @@
 # Hypa Story (tickets 3A-3C, 3F, 3K)
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
-Same three screens, three stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, and *Eshu at the Crossroads* is a third card), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
+Same three screens, four stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, *Eshu at the Crossroads* is a third card and the Efik tale *The King's Magic Drum* a fourth), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
 moves, pinch instead of click. Uses HypaCore only and never references HypaLens.
 
 ## Run it
@@ -25,8 +25,9 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 | Language buttons | Pinch | Narration, questions and answers in English / Français / Español |
 | Space, ← → | Pause, `<<` `>>` | Pause / resume / replay, previous / next line |
 | **H** | Raise a hand above your head | Interrupt and ask |
-| **Q** (tap or hold), **Ask** (tap or hold) | Pinch Ask (hold = push-to-talk) | Ask; tap again = done talking / skip the line being said |
-| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question (about the lines told so far) |
+| **Q** | Raise a hand above your head | Ask; **Done** / **Skip** = done talking / skip the line being said |
+| **T**, after the story ends | Pinch **Try Hypa Translate** | Opens Hypa Translate in the story panel (see [Try Hypa](#try-hypa)); Esc / **x** closes it. The corner button becomes **Speak** |
+| 1-3, suggestion buttons | Pinch a suggestion | Ask a suggested question, or translate a suggested word |
 | Esc, **Back** | Pinch Back | Cancel the question / back to the list / back to start |
 
 ## Places (ticket 3F): camp, hut, gathering
@@ -63,19 +64,21 @@ portal (3L).
 
 ## In my room (ticket 3K): the campfire in your real room
 
-On a Quest 3, the fire and the storyteller come into your own room. While a story plays, pinch **In my room** (under the player
-panel; editor key **R**). The sky, trees, ground, trails, mist, rain and fog fade out through the warm veil, the headset's
-passthrough shows your room, and the fire (its stones, flames, light, sound and embers) and the storyteller stand on your real
-floor. Pinch **Back to the forest** (or **R**) to return. The story, the voice and the fire's sound carry on through both: only
-the world around the fire changes.
+On a Quest 3, the fire and the storyteller come into your own room, whichever story is playing. Pinch **In my room** (under the
+player panel; editor key **R**). The same button sits under the panel of the game after a story (Face Dodo, Turn the hat). The sky,
+trees, ground, trails, mist, rain and fog fade out through the warm veil, the headset's passthrough shows your room, and the fire
+(its stones, flames, light, sound and embers), the storyteller, and the game around the fire stand on your real floor. Pinch
+**Back to the forest** (or **R**) to return. The story, the voice and the fire's sound carry on through both: only the world around
+the fire changes.
 
 - **Where the fire goes (Scene API / MRUK):** `Quest/Mruk/QuestRoomScan` reads your scanned room: the floor height, and for any
   floor point how far it is from the nearest wall or furniture (checked at knee, table and head height). `Core/RoomSpot` (pure
   maths, tested) picks an open spot a few metres ahead of you with room round the fire (0.65 m) and the storyteller (0.5 m), you,
-  the fire and the storyteller in a line as at the camp. **Small rooms:** the gap between the fire and the storyteller shrinks from
-  2.1 m (the forest) down to 1.1 m before a spot is rejected.
+  the fire and the storyteller in a line as at the camp. You sit just outside the stone ring (about 1.15 m from the fire) and the
+  storyteller sits on the far edge of the same ring, so a small room does not leave them in the wall. **Tighter than that:** the
+  storyteller moves in to 1.05 m, still outside the flames, before a spot is rejected.
 - **No room scan:** Meta's own room set-up flow is started (you scan, then come back) and the app waits. If you don't, or you
-  decline the room permission, or nothing in the room is open, the fire goes 2 m straight in front of you, with a line saying why.
+  decline the room permission, or nothing in the room is open, the fire goes just in front of you, at the stones, with a line saying why.
 - **Real things hide it (Depth API):** `Quest/QuestRoom` turns on `EnvironmentDepthManager` (soft occlusion, Quest 3 and later). The
   flame, glow and ember shaders (`StoryFlame`, `StoryAdditive`, `StoryParticles`) carry Meta's `HARD/SOFT_OCCLUSION` test, and in
   the room the storyteller, the stones and the logs draw with Meta's `OcclusionSurfaceLit` (`StoryAssets.depthLit`). A real chair,
@@ -124,6 +127,17 @@ hut is the default.
 - **Not yet checked on a Quest 3:** the live view and its frame rate (it draws the forest a second time), the hole onto your room, the doors
   from a real scan. Windows are avoided, not used.
 
+## Try Hypa
+
+When a story ends, **Try Hypa Translate** appears in the story panel. It opens in that same panel. The story's language is the
+source. **To Yoruba** (or whichever language you last chose) cycles through the story languages. Three words from the story sit
+where suggested questions do: tap one and it is translated, then spoken. **Speak** on the corner button listens, translates what
+you said, and speaks that too. **Hear** plays the translation again. Translation and speech use Hypa's auto router (`model: auto`
+on `translate_message` and `text_to_speech`).
+
+Code: `Core/TryHypaFlow`, `Core/TryHypaText.Suggest`, `Ui/TryHypaView` (drawn inside `PlayerView`), `Ui/TryFonts` (device fonts so
+Yoruba tone marks, Igbo dots and Hausa hooks can be drawn; the story fonts are Latin-1 only). Unit tests: `TryHypaTests`.
+
 ## What came across from the prototype
 
 | Prototype (`Ideation/src`) | Here |
@@ -145,6 +159,31 @@ hut is the default.
 | `qa.js` | `Core/ChatStoryQa` (the story's chat model) behind the `IStoryQa` seam in `Core/StoryQa`, which keeps the spoiler-guarded stub for tests and offline runs. |
 | `public/languages.json` | `Data/StoryLanguages`. |
 | Swipe up / `H` to raise a hand | `Core/RaiseHand` + `Quest/QuestStoryInput` (tracked hand or controller above the head, held 0.35 s; thumbsticks walk and snap-turn). |
+
+## In the hut: household things, their cards and the old woman
+
+**Step inside** at the hut's door (or walk in). On the earth floor by the wall: a clay pot, a mortar with its pestle and a
+palm-rib broom leaning on the wall. A story card hovers over each, and an old woman sits on her mat at the back. Pinch a card (or its **Hear about it**
+button) and she tells you what the thing is and what it is for.
+
+- **The same card and the same telling as the campfire.** The card is `Ui/StoryCard` (the campfire's row,
+  `StoryListView`, builds its cards from the same class). An item's content is a story: `Resources/Stories/hut/{id}/story.json`
+  plus one file per language, loaded by `StoryLibrary.Load` (see Stories below for the format). It plays through the same
+  `StoryPlayer`, `StoryVoice` (from her mouth), `PlayerView` panel and `AskFlow` (the **Ask** button: she answers a question
+  about the thing). The hut has its own instances of these (`World/HutVisit`), so a story by the fire only pauses.
+- **Pick things up.** Each item is a rigidbody with box colliders and the Meta XR Interaction SDK's `Grabbable`,
+  `GrabInteractable` (controllers: grip) and `HandGrabInteractable` (hands: pinch or close your hand round it). The shell's rig
+  has no Interaction SDK interactors, so `Quest/QuestGrab` adds a grab-only set under the camera rig from the SDK's own prefabs
+  (referenced on **StoryAssets**; re-run **Hypa > Stories > Create Story Scene** if those five fields are empty). No SDK rays,
+  poke or locomotion are added. In the editor without a headset rig, things just sit there.
+- **The card stays put.** A card hangs from a fixed anchor in the hut, over the item's starting place: never from the item.
+  It can be pinched while the item is held or lies elsewhere. The floor and the wall behind each item have colliders; an item that leaves
+  the room (thrown out, or through the wall elsewhere) goes back to its place after a moment.
+- **Add an item:** make `Resources/Stories/hut/{id}/story.json` (copy one; at least two lines), then add one line to
+  `HutItems.Entries` (`Data/HutItems.cs`): `new Entry("hut/{id}", "{shape}")`. It takes the next place round the wall (six
+  places; add an angle to `HutItems.Angles` for more). The shape is a case in `World/HutProps.Build` (and `HutProps.Rest` if it should lean or lie
+  rather than stand); a name it doesn't know shows a small crate, so content can go in before the shape is made.
+- Tests: `HutItemsTests` (content loads in the story format, places fit the room, the lost rule, the shapes).
 
 ## Stories
 
@@ -173,7 +212,7 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
   story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
   (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
-  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for all three stories also comes from that auto router and needs the same native check.
+  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for the first three stories also comes from that auto router and needs the same native check. *The King's Magic Drum* is retold from the Calabar (Efik) folk tale of Efriam Duke's drum and Tortoise (in Elphinstone Dayrell's *Folk Stories from Southern Nigeria*, 1910), drum and fufu tree both; all seven translations are machine translations (Claude) and need the same native check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
@@ -188,9 +227,11 @@ the translations are matched on.
   fillers, answers. Both stories use Hypa's Auto routing (no `voices`): hypa-v2 ranks the speech models for the language by its
   benchmarks, uses the top model's first voice and fails over to the next model on the server (on 2026-11-14: English OpenAI `alloy`,
   Spanish Google `Achernar`, French / Hausa / Igbo / Pidgin / Yoruba Hypa Orpheus `Adaugo` / `Juliet` / `Amarachi` / `Prince` /
-  `Eniola`; 2.7-8 s a line). A story's `voices` pins voices instead (tried in order, then Auto). Meta has no TTS. Lines are cached for
-  the session and the next line is fetched while the current one plays; a line not ready after 12 s is read silently. Auto can't
-  take a chosen voice over MCP (hypa-v2 needs the voice's model with it; REST `/v2/developer/tts` can).
+  `Eniola`; 2.7-8 s a line). Auto routes every request on its own, so its first pick in a language (the provider/model and voice
+  the reply names) is locked for the rest of the story: later lines ask for that model and voice, and a line that fails in it is
+  read silently rather than in another voice. Opening a story (the same one again, or another) lets Auto pick again. A story's
+  `voices` pins voices instead (tried in order, then Auto). Meta has no TTS. Lines are cached for the session and the next line is
+  fetched while the current one plays; a line not ready after 12 s is read silently.
 - **ASR** (`speech_to_text`, schema read from `tools/list` on 2026-11-13, not yet called with a key): 16 kHz mono WAV, the story
   language as `sourceLang`, model picked by Hypa's auto-router. Nothing is sent if nothing louder than the noise floor was heard.
 - **Chat** (REST `/v2/developer/chat`, `HypaRestClient.ChatAsync`, not streamed): `ChatStoryQa` sends the storyteller persona, the
@@ -205,7 +246,8 @@ the translations are matched on.
 
 - Committed: shaders and code (original), Poly Haven props and forest floor (`Art/PolyHaven`, CC0), Camp Fire by JalenJacobson
   (`Art/Models/camp_fire.glb`, **CC BY 4.0, credit required**, re-encoded without meshopt / WebP so glTFast imports it), the Hypa
-  Reality mark (`Art/hypa-reality.png`, team-supplied).
+  Reality mark (`Art/hypa-reality.png`, team-supplied), and the witch song after the drum game (`Art/Audio/witch-song.mp3`,
+  team-supplied).
 - **Not committed** (`Assets/HypaStories/Local/`, git-ignored, because this repo is public): the Epidemic Sound beds
   (`amb-1/2`, `fire-1/2`, `wolf-1`; subscription licence, no redistribution) and the storyteller avatar
   (`Models/storyteller.glb`; a Ready Player Me placeholder from the three.js examples).
@@ -218,7 +260,7 @@ the translations are matched on.
 
 - The alley world (`alley.js`): the prototype keeps it for later too; both V1 stories are told at the campfire.
 - The "Voice" cue toggle (say "pause" / "question"): needs an on-device wake-word recogniser (Meta Voice SDK); raise a hand instead.
-- Typed questions: replaced by suggested-question buttons in VR.
+- Typed questions: replaced by suggested-question buttons in VR. Try Hypa takes a tap on a word, or your voice.
 - Loader, grain, bloom, adaptive quality, debug panel: desktop-preview features. On Quest use OVR fixed foveation and the
   Immersive Debugger; the Q&A timing log goes to the console (and the player's note line in the editor).
 - An Animator with Idle / Talking clips for the storyteller (the bones are driven directly, as in the prototype without clips).
@@ -254,3 +296,35 @@ When *Seven Hot Stones* ends, **Face Dodo** appears above the player panel: you 
 Hands first; controllers work the same way (trigger = pinch). Rules: `Core/DodoRules` (unit tested). Game: `World/DodoGame`,
 creature: `World/DodoCreature`. In the editor: **P** puts a stone in the fire, **T** throws into the mouth, **M** throws wide,
 **Space** shouts.
+
+## The drum game (after *The King's Magic Drum*)
+
+When *The King's Magic Drum* ends, **Play the drum** appears above the player panel: you have the king's drums, a big low drum on
+your left and a small high one on your right, waist high in front of where you are (lower if you sit).
+
+- **Listen:** the ogene bell counts a bar in (a shaker on the eighths), then the drums play a one-bar beat by themselves, each skin
+  lighting as it sounds. The HUD writes the beat on the bar: a big ember dot for the low drum, a small pale one for the high drum,
+  with a tick under each beat that flashes with the bell.
+- **Play it back:** the bell keeps going. Bring a hand down on the big drum for the low note, on the small drum for the high one
+  (a controller works the same way; pinching while pointing at a skin also strikes it). The edge of either drum gives a sharper
+  slap, which still counts as that drum. Only the gaps between your strokes count, so come in whenever you like.
+- **The feast:** each beat played back brings a dish by the fire, in the story's order: fish, fufu, yams, okra, palm-oil soup,
+  palm wine. A wrong drum, or a stroke too quick or too slow, makes the guests laugh and the drums play the beat again (no lives).
+  Six beats at 96 beats a minute, easiest first: on the beat, then the 3+3+2 tresillo against the bell, then the off-beats filled.
+  The last dish brings dawn, and the villagers come out of the trees to dance.
+- **Free drum:** then the witch song plays (`Art/Audio/witch-song.mp3`, `StoryAssets.witchSong`; instead of the village's
+  drums) and you drum along freely, nothing counted. It fades in at the top and out over its last 14 seconds. **Play again**
+  restarts the game; **The story** and **Stories** as after the other games. **In my room** puts the fire and the drums
+  on your real floor, the same switch as the other games. Without
+  the recording you can still drum freely.
+
+The bell, the shaker and the drums' own strokes are scheduled on the audio clock (`AudioSettings.dspTime`), so the groove holds
+whatever the frame rate. Rules: `Core/DrumRules` (unit tested with the strike detection: `DrumRulesTests`). Game: `World/DrumGame`
+(the drums are built in code: a footed Efik standing drum with carved bands and laced pegs, and a goblet drum with diamond
+lacing and cowries). `DrumVisuals` builds continuous worn-hide heads, woven mats, whole grilled fish, cut yam,
+open serving bowls and soup ingredients. `Resources/DrumSurface` uses one small generated detail texture for wood grain,
+hide mottling and food surfaces; meshes and materials are generated once, and reward halos fade to a faint glow.
+Hand positions come from `StoryInput.Hand` (each tracked hand's palm, else the controllers; set by
+`Quest/QuestStoryInput`). Sounds: `ProceduralClips.DrumStrokeSamples` (each drum open and slapped, two takes each),
+`OgeneSamples`, `ShakerSamples`. In the editor: pinch (click) a drum, or **B** for the low drum, **N** for the high one, **P** to
+play the beat back for you.

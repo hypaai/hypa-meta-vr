@@ -1,0 +1,28 @@
+{
+  "words": ["oriọna", "mmanụ", "ire ọkụ"],
+  "greet": "A, ị chọtala oriọna m. Anyị na-akpọ ya fitila.",
+  "greet.ask": [
+    "Gịnị ka a na-akpọ oriọna ahụ?"
+  ],
+  "made": "E ji otu ụrọ osimiri ahụ e ji kpụọ ite ahụ kpụọ ya, ọ dịkwa obere nke na ọ ga-anọ n'ọbụ aka gị.",
+  "made.ask": [
+    "Gịnị ka e ji mee ya?"
+  ],
+  "oil": "Anyị na-awụnye mmanụ nkwụ n’ime ya, tinye ogho a tụgharịrị agbagọ n’ọnụ ya ka ọ bụrụ eriri oriọna. Mgbe ahụ, anyị na-amụnye eriri oriọna ahụ ọkụ.",
+  "oil.ask": [
+    "Gịnị ka ọ na-agba ọkụ?"
+  ],
+  "before": "Tupu oriọna na ọkụ eletrik abịa, ụlọ ọ bụla na-amụnye otu n’ime ihe ndị a ná mgbede. Okporo ámá dum na-enwu site n’obere ire ọkụ.",
+  "before.ask": [
+    "Gịnị ka ndị mmadụ ji eme ihe tupu ọkụ eletrik abịa?"
+  ],
+  "grandmother": "Nne nne m ji ìhè oriọna a kpọmkwem kọọ akụkọ ya, dịka m si na-akọrọ gị nke m.",
+  "grandmother.ask": [
+    "Ọ bụ oriọna onye?"
+  ],
+  "night": "Mgbe anyanwụ dara, obere ire ọkụ ya na-enyere anyị aka ịchọta ute anyị ma kọọ akụkọ ruo n'ime abalị.",
+  "night.ask": [
+    "Kedu mgbe ị na-amụnye ya?"
+  ],
+  "care": "Buru ya kwụ ọtọ ma jiri nwayọọ, nwa m, ma ọ bụghị ya mmanụ ahụ ga-awụfu wee menyụọ ire ọkụ ahụ."
+}

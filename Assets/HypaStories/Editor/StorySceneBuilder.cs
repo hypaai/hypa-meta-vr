@@ -12,8 +12,8 @@ namespace HypaStories.EditorTools
     /// <summary>
     /// Hypa > Stories > Create Story Scene: gathers the story's shaders, models (glTF via glTFast), audio and logo into
     /// Assets/HypaStories/StoryAssets.asset, sets their import settings for Quest, and (re)builds the HypaStory scene: a camera for
-    /// standalone play (removed under the shell) and the StoryApp. Missing optional assets (the git-ignored Local folder) just leave
-    /// fields empty; the scene falls back to procedural stand-ins.
+    /// standalone play (removed under the shell) and the StoryApp. Missing optional assets just leave fields empty; the scene
+    /// falls back to procedural stand-ins.
     /// </summary>
     public static class StorySceneBuilder
     {
@@ -129,6 +129,7 @@ namespace HypaStories.EditorTools
             a.sky = S("StorySky"); a.flame = S("StoryFlame"); a.particles = S("StoryParticles"); a.rain = S("StoryRain");
             a.mist = S("StoryMist"); a.additive = S("StoryAdditive"); a.card = S("StoryCard"); a.cutout = S("StoryCutout");
             a.veil = S("StoryVeil"); a.pine = S("StoryPine"); a.uiPanel = S("StoryUIPanel"); a.uiIcon = S("StoryUIIcon"); a.portal = S("StoryPortal"); a.portalHole = S("StoryPortalHole");
+            a.dust = S("StoryDust");
             a.depthLit = AssetDatabase.LoadAssetAtPath<Shader>("Packages/com.meta.xr.sdk.core/Shaders/EnvironmentDepth/BiRP/OcclusionSurfaceLit.shader"); // room mode (3K)
 
             a.lit = Material($"{Materials}/StoryLit.mat", m => { m.color = Color.white; m.SetFloat("_Glossiness", 0.1f); });
@@ -166,9 +167,20 @@ namespace HypaStories.EditorTools
             a.deadTrunk = Ph("dead_tree_trunk"); a.stump = Ph("tree_stump_02"); a.fern = Ph("fern_02"); a.grass = Ph("grass_medium_01");
             a.rocks = Rocks.Select(Ph).Where(r => r != null).ToArray();
 
+            // the hut's household items are picked up with the Interaction SDK: its own rig pieces, wired at runtime (QuestGrab)
+            const string isdk = "Packages/com.meta.xr.sdk.interaction/Runtime/Prefabs/", isdkOvr = "Packages/com.meta.xr.sdk.interaction.ovr/Runtime/Prefabs/";
+            a.grabInteraction = M(isdkOvr + "OVRInteraction.prefab");
+            a.grabHands = M(isdkOvr + "Hands/OVRHandsDataSource.prefab");
+            a.grabControllers = M(isdkOvr + "Controller/OVRControllersDataSource.prefab");
+            a.grabHandInteractor = M(isdk + "HandGrab/HandGrabInteractor.prefab");
+            a.grabControllerInteractor = M(isdk + "Grab/ControllerGrabInteractor.prefab");
+            a.grabDistanceHandInteractor = M(isdk + "DistanceHandGrab/DistanceHandGrabInteractor.prefab");
+            a.grabDistanceControllerInteractor = M(isdk + "DistanceHandGrab/ControllerDistanceGrabInteractor.prefab");
+
             AudioClip C(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>($"{Local}/Audio/{file}");
             a.ambienceSplash = C("amb-1.mp3"); a.ambienceStory = C("amb-2.mp3");
             a.fireFar = C("fire-1.mp3"); a.fireNear = C("fire-2.mp3"); a.wolf = C("wolf-1.mp3");
+            a.witchSong = AssetDatabase.LoadAssetAtPath<AudioClip>($"{Art}/Audio/witch-song.mp3");
             a.logo = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Art}/hypa-reality.png");
 
             EditorUtility.SetDirty(a);
@@ -176,7 +188,7 @@ namespace HypaStories.EditorTools
             var missing = new (Object asset, string name)[] { (a.campFire, "camp fire"), (a.storyteller, "storyteller"), (a.ambienceStory, "ambience") }
                 .Where(x => x.asset == null).Select(x => x.name).ToArray();
             Debug.Log("Hypa Stories: StoryAssets updated." + (missing.Length > 0
-                ? " Missing (fallbacks will be used): " + string.Join(", ", missing) + ". Models need glTFast; audio and the avatar live in the git-ignored " + Local + "."
+                ? " Missing (fallbacks will be used): " + string.Join(", ", missing) + ". Models need glTFast; the beds and the avatar live in the git-ignored " + Local + ". The witch song is in " + Art + "/Audio."
                 : ""));
             return a;
         }
@@ -293,7 +305,10 @@ namespace HypaStories.EditorTools
         /// <summary>Quest-friendly import settings: compressed audio (narration stays exact for the story clock), ground textures tiled.</summary>
         static void ConfigureImports()
         {
-            foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { Local + "/Audio" }))
+            foreach (var folder in new[] { Local + "/Audio", Art + "/Audio" })
+            {
+            if (!AssetDatabase.IsValidFolder(folder)) continue;
+            foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { folder }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (!(AssetImporter.GetAtPath(path) is AudioImporter imp)) continue;
@@ -306,6 +321,7 @@ namespace HypaStories.EditorTools
                 imp.defaultSampleSettings = s;
                 imp.forceToMono = !path.Contains("amb");
                 imp.SaveAndReimport();
+            }
             }
             const string g = Art + "/PolyHaven/forest_ground_04/";
             foreach (var f in new[] { "Diffuse.jpg", "nor_gl.jpg", "arm.jpg" })

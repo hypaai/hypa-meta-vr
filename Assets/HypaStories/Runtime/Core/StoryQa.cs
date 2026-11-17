@@ -141,18 +141,91 @@ namespace HypaStories
                 new[] { "La gente deja una pequeña ofrenda para Eshu en las encrucijadas." }),
         };
 
+        // The King's Magic Drum: English, French and Spanish answers; other languages fall back to English.
+        static readonly Intent[] Drum =
+        {
+            I("calabar|where|où|dónde|donde", 0,
+                new[] { "Calabar is a town by the river in the south of Nigeria.", "King Efriam Duke ruled there." },
+                new[] { "Calabar est une ville au bord du fleuve, dans le sud du Nigeria.", "C’est là que régnait le roi Efriam Duke." },
+                new[] { "Calabar es una ciudad junto al río, en el sur de Nigeria.", "Allí reinaba el rey Efriam Duke." }),
+            I("drum|tambour|tambor|feast|festin|banquete", 1,
+                new[] { "When the king beat his drum, a feast appeared.", "There was always enough for everyone." },
+                new[] { "Quand le roi battait son tambour, un festin apparaissait.", "Il y en avait toujours assez pour tout le monde." },
+                new[] { "Cuando el rey tocaba su tambor, aparecía un banquete.", "Siempre había suficiente para todos." }),
+            I("enem|ennemi|war|guerre|guerra", 3,
+                new[] { "The king did not love war.", "He would rather feed his enemies than fight them." },
+                new[] { "Le roi n’aimait pas la guerre.", "Il préférait nourrir ses ennemis que les combattre." },
+                new[] { "Al rey no le gustaba la guerra.", "Prefería dar de comer a sus enemigos que luchar contra ellos." }),
+            I("rule|règle|regla|stick|bâton|palo", 6,
+                new[] { "The drum's owner must never step over a stick lying across the road.", "If he does, the drum gives no more food." },
+                new[] { "Le propriétaire du tambour ne doit jamais enjamber un bâton en travers de la route.", "Sinon, le tambour ne donne plus de nourriture." },
+                new[] { "El dueño del tambor nunca debe pasar por encima de un palo atravesado en el camino.", "Si lo hace, el tambor ya no da comida." }),
+            I(@"egbo|whip|fouet|látigo", 7,
+                new[] { "The Egbo men come when the drum's rule is broken.", "Three hundred of them, with sticks and whips." },
+                new[] { "Les hommes Egbo viennent quand on enfreint la règle du tambour.", "Ils sont trois cents, avec des bâtons et des fouets." },
+                new[] { "Los hombres Egbo llegan cuando se rompe la regla del tambor.", "Son trescientos, con palos y látigos." }),
+            I("tortoise|tortue|tortuga", 9,
+                new[] { "Tortoise is clever, and he wants the king's drum more than anyone." },
+                new[] { "Tortue est malin, et il veut le tambour du roi plus que personne." },
+                new[] { "Tortuga es astuto, y quiere el tambor del rey más que nadie." }),
+            I(@"\bnut|noix|nuez|upset|angry|fâché|enfadado", 14,
+                new[] { "A palm nut fell from his tree, and the king's wife gave it to her little daughter.", "Tortoise says the nut was his." },
+                new[] { "Une noix de palme est tombée de son arbre, et l’épouse du roi l’a donnée à sa fillette.", "Tortue dit que la noix était à lui." },
+                new[] { "Una nuez de palma cayó de su árbol, y la esposa del rey se la dio a su hijita.", "Tortuga dice que la nuez era suya." }),
+            I("choose|chose|choisi|eligió|elige", 20,
+                new[] { "Tortoise chose the drum.", "It was what he had wanted all along." },
+                new[] { "Tortue a choisi le tambour.", "C’est ce qu’il voulait depuis le début." },
+                new[] { "Tortuga eligió el tambor.", "Era lo que había querido desde el principio." }),
+            I(@"wrong|\bmal\b|\bstep|enjamb|por encima", 32,
+                new[] { "Tortoise stepped over a stick lying across the path.", "He broke the drum's rule without noticing." },
+                new[] { "Tortue a enjambé un bâton en travers du chemin.", "Il a enfreint la règle du tambour sans s’en rendre compte." },
+                new[] { "Tortuga pasó por encima de un palo atravesado en el sendero.", "Rompió la regla del tambor sin darse cuenta." }),
+            I("king stay|stay away|pas venu|no fue|second feast", 42,
+                new[] { "The king and his wives stayed at home.", "Perhaps the king guessed what the drum would do." },
+                new[] { "Le roi et ses épouses sont restés chez eux.", "Peut-être que le roi avait deviné ce que ferait le tambour." },
+                new[] { "El rey y sus esposas se quedaron en casa.", "Quizás el rey adivinó lo que haría el tambor." }),
+            I("leopard|léopard|leopardo|escape|échapp|escap", 47,
+                new[] { "Leopard leapt clean over the compound wall.", "He was the only one to get away." },
+                new[] { "Léopard a sauté d’un bond par-dessus le mur de la concession.", "C’est le seul qui a pu s’enfuir." },
+                new[] { "Leopardo saltó por encima del muro del recinto.", "Fue el único que logró escapar." }),
+            I("fufu|tree|arbre|árbol", 52,
+                new[] { "The king gave Tortoise a magic fufu tree.", "It gave fresh fufu and soup, but only once a day." },
+                new[] { "Le roi a donné à Tortue un arbre à foufou magique.", "Il donnait du foufou frais et de la soupe, mais une seule fois par jour." },
+                new[] { "El rey le dio a Tortuga un árbol de fufú mágico.", "Daba fufú fresco y sopa, pero solo una vez al día." }),
+            I(@"trick|ruse|truco|\bash|cendre|ceniza", 57,
+                new[] { "The boy hid a calabash of ashes in his father's bag, over a small hole.", "The ashes left a trail he could follow." },
+                new[] { "Le garçon a caché une calebasse de cendres dans le sac de son père, au-dessus d’un petit trou.", "Les cendres ont laissé une traînée à suivre." },
+                new[] { "El niño escondió una calabaza de ceniza en la bolsa de su padre, encima de un agujerito.", "La ceniza dejó un rastro que podía seguir." }),
+            I("boys|garçons|niños|twice|deux fois|dos veces", 60,
+                new[] { "The boys took food from the tree a second time in one day.", "That broke the tree's rule." },
+                new[] { "Les garçons ont pris de la nourriture à l’arbre une deuxième fois dans la même journée.", "Ils ont enfreint la règle de l’arbre." },
+                new[] { "Los niños tomaron comida del árbol por segunda vez en el mismo día.", "Así rompieron la regla del árbol." }),
+            I(@"palms|palmiers|palmeras|\blive|vivent|viven", 65,
+                new[] { "Because the rule was broken, Tortoise's family had to live among the prickly tie-tie palms.", "Tortoises have lived there ever since." },
+                new[] { "Parce que la règle a été enfreinte, la famille de Tortue a dû vivre parmi les palmiers rotins épineux.", "Depuis, les tortues vivent là." },
+                new[] { "Como se rompió la regla, la familia de Tortuga tuvo que vivir entre las palmeras de ratán espinosas.", "Desde entonces, las tortugas viven allí." }),
+        };
+
         // Marlow Street: English answers; other languages fall back to English until the translation step covers answers.
         static readonly Intent[] Marlow =
         {
-            I("nia|detective|who is", 1, new[] { "Nia is the detective on the case.", "She is standing behind the tape, watching the alley." }),
-            I("man|body|found|dead|victim", 2, new[] { "A man was found at the far end of the alley, beside the old brick wall." }),
-            I("witness|girl|saw", 3, new[] { "The only witness is a girl.", "She swears she saw nothing." }),
-            I("light|lamp|flicker|streetlight", 4, new[] { "The streetlight above the alley has been flickering all night.", "Nia thinks it is not random." }),
-            I("pattern|message|code|three seconds", 7, new[] { "The light goes dark for three seconds, then flashes twice.", "It repeats, like someone sending a message." }),
-            I("key|brass", 8, new[] { "Under the lamp post, Nia finds a small brass key." }),
-            I("door|brick|cupboard", 9, new[] { "The key opens a door that was bricked over twenty years ago." }),
-            I("photo|picture|photograph", 11, new[] { "Inside the cupboard is a single photograph.", "It shows the witness, much younger, beside the missing man." }),
-            I("truth|why|really|waiting|question", 12, new[] { "The girl saw everything.", "She was waiting for someone to ask the right question." }),
+            I(@"\bnia\b|detective", 2, new[] { "Nia is the detective on the case.", "She is standing behind the tape, watching the alley." }),
+            I(@"bello|officer|policeman", 3, new[] { "Officer Bello is a young policeman working with Nia.", "He is soaked, and trying not to look nervous." }),
+            I("man|body|found|dead|victim", 7, new[] { "A man was found at the far end of the alley, beside the old brick wall." }),
+            I(@"button|his hand|in his hand", 9, new[] { "In the man's hand, Nia found a single brass button.", "It did not come from his own coat." }),
+            I(@"witness|girl|saw|\bama\b", 11, new[] { "The only witness is a girl called Ama.", "She says she saw nothing, because she was asleep." }),
+            I(@"asleep|window|lying|\bliar\b", 16, new[] { "Ama says she was asleep.", "But the light in her window, right over the alley, was still on." }),
+            I("light|lamp|flicker|streetlight", 18, new[] { "The streetlight above the alley has been flickering all night.", "Nia thinks it is not random." }),
+            I("pattern|message|code|three seconds", 23, new[] { "The light goes dark for three seconds, then flashes twice.", "It repeats, like someone sending a message." }),
+            I("key|brass", 25, new[] { "Under the lamp post, Nia finds a small brass key." }),
+            I("door|brick|cupboard", 28, new[] { "The key opens a door that was bricked over twenty years ago." }),
+            I("photo|picture|photograph", 32, new[] { "Inside the cupboard is a single photograph.", "It shows the witness, much younger, beside the missing man." }),
+            I(@"blackout|lights went out|power cut|twenty years|vanish|missing", 34, new[] { "Twenty years ago, the whole street lost its power for a night.", "That same night, a man from Marlow Street vanished and was never found." }),
+            I(@"came back|come back|ran away|run away|same face", 37, new[] { "The man in the alley is the man who vanished twenty years ago.", "He had run away, and tonight he came back." }),
+            I(@"second man|torn|killer|who did it|who killed", 38, new[] { "In the photograph, a second man stands half out of the frame, with brass buttons on his coat.", "His face has been torn away." }),
+            I(@"wire|switch|signal|who is sending", 40, new[] { "A thin wire runs from the lamp post to Ama's lit window.", "Someone up there has been talking to Nia all night, in light." }),
+            I(@"daughter|father|related", 42, new[] { "In the photograph, the little girl holds the man's hand the way a daughter does." }),
+            I("truth|why|really|waiting|question", 43, new[] { "The girl saw everything.", "She was waiting for someone to ask the right question." }),
         };
 
         static readonly Dictionary<string, string[]> Spoiler = new Dictionary<string, string[]>
@@ -177,7 +250,7 @@ namespace HypaStories
         /// </summary>
         public static string[] AnswerFor(string question, int lineIndex, string lang, string storyId)
         {
-            var intents = storyId == "marlow-street" ? Marlow : storyId == "eshu-crossroads" ? Eshu : SevenStones;
+            var intents = storyId == "marlow-street" ? Marlow : storyId == "eshu-crossroads" ? Eshu : storyId == "kings-drum" ? Drum : SevenStones;
             var hit = intents.Where(i => i.Re.IsMatch(question ?? "")).OrderByDescending(i => i.Min).FirstOrDefault();
             if (hit == null) return For(Default, lang);
             if (hit.Min > lineIndex) return For(Spoiler, lang);

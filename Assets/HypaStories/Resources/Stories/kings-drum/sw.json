@@ -1,0 +1,130 @@
+{
+  "words": [
+    "ngoma",
+    "kobe",
+    "mchikichi"
+  ],
+  "calabar": "Zamani za kale, huko Calabar, aliishi mfalme aitwaye Efriam Duke, ambaye hakupenda vita.",
+  "calabar.ask": [
+    "Calabar iko wapi?"
+  ],
+  "drum": "Alikuwa na ngoma, na kila alipoipiga, karamu ilitokea.",
+  "drum.ask": [
+    "Ngoma ilifanya nini?"
+  ],
+  "feast": "Samaki na fufu, viazi vikuu na bamia, supu ya mawese na divai ya mnazi, vya kumtosha kila mtu.",
+  "enemies": "Maadui walipokuja, hakupigana nao. Aliwaalika waje kula.",
+  "enemies.ask": [
+    "Kwa nini mfalme aliwaalika maadui zake?"
+  ],
+  "animals": "Aliwalisha pia watu wake, hata wanyama, kwa sababu siku hizo wote walikula pamoja kwa amani.",
+  "rule": "Lakini ngoma ilikuwa na sharti moja.",
+  "stick": "Mwenye ngoma akiwahi kuvuka fimbo iliyolala njiani, ngoma isingetoa chakula tena.",
+  "stick.ask": [
+    "Sharti la ngoma lilikuwa nini?"
+  ],
+  "egbo": "Badala yake, wanaume mia tatu wa Egbo wangekuja na fimbo na mijeledi, wampige yeye na wageni wake wote.",
+  "egbo.ask": [
+    "Wanaume wa Egbo ni akina nani?"
+  ],
+  "wanted": "Wengi waliitaka ngoma hiyo. Mfalme alikataa kuiachia.",
+  "tortoise": "Na aliyeitaka kuliko wote alikuwa Kobe.",
+  "tortoise.ask": [
+    "Kobe ni nani?"
+  ],
+  "spring": "Asubuhi moja, Ikwor Edem, mmoja wa wake wa mfalme, alimpeleka binti yake mdogo kwenye chemchemi ili amwogeshe.",
+  "palm": "Juu yao, kwenye mchikichi, Kobe alikuwa akikata kokwa za mchikichi.",
+  "nut": "Kokwa moja ilianguka miguuni mwa msichana mdogo.",
+  "cried": "Alilia akiitaka, na mama yake akampa.",
+  "mine": "Kobe alishuka. Kokwa hiyo ni yangu, alisema.",
+  "mine.ask": [
+    "Kwa nini Kobe amekasirika hivyo?"
+  ],
+  "idea": "Ikwor Edem alieleza, lakini Kobe alikuwa akiifikiria ngoma.",
+  "justice": "Mke wako amechukua chakula changu, alimwambia mfalme. Nataka haki.",
+  "offers": "Mfalme alimpa pesa. Nguo. Kokwa za mawese. Mafuta ya mawese.",
+  "no": "Kobe alikataa vyote.",
+  "choose": "Mwishowe mfalme akasema, basi chagua chochote unachotaka.",
+  "point": "Kobe aliinyooshea ngoma kidole moja kwa moja.",
+  "point.ask": [
+    "Kobe alichagua nini?"
+  ],
+  "gave": "Ili kumaliza ugomvi, mfalme alimpa ngoma. Lakini hakumwambia sharti lake.",
+  "gave.ask": [
+    "Kwa nini mfalme hakumwambia sharti?"
+  ],
+  "home": "Kobe aliibeba ngoma hadi nyumbani. Hatutafanya kazi kwa ajili ya chakula tena, aliiambia familia yake.",
+  "beat": "Aliipiga ngoma, na karamu ikafunika sakafu.",
+  "three-days": "Kwa siku tatu familia ilikula, ikacheka, ikala tena.",
+  "invite": "Kisha akamwalika mfalme, mji mzima na wanyama kwenye karamu kubwa.",
+  "laughed": "Wengi walicheka. Kobe, maskini kuliko wote, anaandaa karamu?",
+  "few": "Wachache tu walikuja. Lakini mfalme alikuja.",
+  "appeared": "Kobe aliipiga ngoma, na karamu ikatokea mbele yao wote.",
+  "amazed": "Wageni walirudi nyumbani wakiwa wameshangaa. Wale ambao hawakuja waliapa kuja wakati ujao.",
+  "amazed.ask": [
+    "Watu wanamwonaje Kobe sasa?"
+  ],
+  "boastful": "Kobe akawa mvivu na mwenye majivuno, na alikunywa divai ya mnazi kupita kiasi.",
+  "farm": "Jioni moja, akirudi nyumbani kutoka shambani kwake, hakuangalia alikokuwa akienda.",
+  "stepped": "Fimbo ililala njiani, naye akaivuka.",
+  "stepped.ask": [
+    "Kobe alikosea nini?"
+  ],
+  "nothing": "Hakuna kilichotokea. Hata hakugundua.",
+  "breakfast": "Asubuhi iliyofuata, familia yake yenye njaa iliomba kifungua kinywa.",
+  "beat-again": "Aliipiga ngoma.",
+  "egbo-came": "Chakula hakikuja. Badala yake walikuja wanaume mia tatu wa Egbo, wakiwa na fimbo na mijeledi.",
+  "beaten": "Walimpiga Kobe na familia yake yote.",
+  "furious": "Kobe alikasirika sana. Lakini hakujilaumu.",
+  "furious.ask": [
+    "Kobe atafanya nini sasa?"
+  ],
+  "plan": "Kama ni lazima nipigwe, aliwaza, basi na wale walionicheka wapigwe pia.",
+  "second": "Aliwaalika watu wote kwenye karamu nyingine kubwa.",
+  "crowds": "Safari hii mji mzima ulikuja, na kila mnyama, wote wakitaka wasikose tena.",
+  "stayed": "Mfalme na wake zake walibaki nyumbani. Kobe alikuwa ameshaipeleka familia yake mbali.",
+  "stayed.ask": [
+    "Kwa nini mfalme hakuja?"
+  ],
+  "doors": "Wageni wote walipoingia, milango ilifungwa.",
+  "bench": "Kobe aliipiga ngoma, kisha akajificha chini ya benchi.",
+  "burst": "Wanaume wa Egbo waliingia kwa nguvu na fimbo na mijeledi yao.",
+  "nowhere": "Wageni walikimbia, lakini hapakuwa na pa kukimbilia.",
+  "leopard": "Chui peke yake alitoroka, akiruka juu ya ukuta wa boma.",
+  "leopard.ask": [
+    "Chui alitorokaje?"
+  ],
+  "opened": "Mwishowe Kobe alifungua milango na kuipiga ngoma kwa mdundo maalum, na wanaume wa Egbo wakatoweka.",
+  "limped": "Wageni walirudi nyumbani wakichechemea, wakiwa na majeraha na hasira kubwa.",
+  "return": "Basi asubuhi iliyofuata, Kobe aliirudisha ngoma kwa mfalme.",
+  "exchange": "Ichukue, alisema, unipe mashamba au nguo badala yake.",
+  "fufu-tree": "Mfalme alikataa kubadilishana. Lakini alimhurumia Kobe, akampa mti wa fufu wa ajabu.",
+  "fufu-tree.ask": [
+    "Mti wa fufu ni nini?"
+  ],
+  "tree-rule": "Kila siku ulitoa fufu mpya na supu. Lakini wangeweza kuchukua chakula kwake mara moja tu kwa siku, si mara mbili.",
+  "tree-rule.ask": [
+    "Sharti la mti wa fufu lilikuwa nini?"
+  ],
+  "calabashes": "Kila asubuhi Kobe na mkewe walijaza vibuyu vyao, na familia ikawa na chakula tele.",
+  "son": "Lakini mmoja wa wanawe alitaka kujua chakula kilitoka wapi.",
+  "secret": "Kobe hakusema. Watoto wakiugundua, mama yao alisema, wataharibu kila kitu.",
+  "ashes": "Basi mvulana alijaza kibuyu majivu na kukificha ndani ya mfuko wa baba yake, juu ya tundu dogo.",
+  "ashes.ask": [
+    "Hila ya mvulana ilikuwa nini?"
+  ],
+  "trail": "Kobe alipokuwa akitembea, mstari mwembamba wa majivu ulianguka nyuma yake.",
+  "followed": "Mvulana alifuata mstari huo, akatazama kutoka vichakani, na hakusema kitu.",
+  "twice": "Siku iliyofuata, baada ya baba yake kuchukua chakula, mvulana aliwapeleka kaka zake kwenye mti, nao wakachukua zaidi.",
+  "twice.ask": [
+    "Wavulana walikosea nini?"
+  ],
+  "gone": "Asubuhi iliyofuata, mti ulikuwa umetoweka.",
+  "thicket": "Kichaka kizito kilikuwa kimeota usiku. Kobe aliweza kuona tu michikichi yenye miiba.",
+  "nobody": "Aliiuliza familia yake ni nani aliyevunja sharti. Hakuna aliyejibu.",
+  "live-here": "Basi akawapeleka huko. Mlivunja sharti, alisema, kwa hiyo hapa ndipo tutakapoishi.",
+  "why": "Na ndiyo sababu, wazee husema, kobe huishi chini ya michikichi yenye miiba.",
+  "why.ask": [
+    "Kwa nini kobe huishi chini ya michikichi?"
+  ]
+}
