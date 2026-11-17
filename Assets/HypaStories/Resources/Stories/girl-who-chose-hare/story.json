@@ -18,76 +18,200 @@
   "lines": [
     {
       "id": "wood",
-      "text": "A girl went into the forest with her companions to gather firewood.",
+      "text": "A young woman went into the forest with her companions to gather firewood.",
       "ask": [
         "Why does the girl go into the forest?"
       ]
     },
     {
+      "id": "wood-2",
+      "text": "She was skilled at finding good wood, and the others were jealous."
+    },
+    {
       "id": "tree",
-      "text": "She climbed a tree, slipped, and trapped her hand in the wood."
+      "text": "That day, she climbed a tree, slipped, and trapped her hand in the wood."
+    },
+    {
+      "id": "tree-2",
+      "text": "“Help me!” she cried."
     },
     {
       "id": "left",
-      "text": "Her companions were jealous of her skill at finding wood. They left her behind and denied seeing her."
+      "text": "But her companions left her there."
+    },
+    {
+      "id": "left-2",
+      "text": "When they returned to the village, her mother asked where her daughter was."
+    },
+    {
+      "id": "left-3",
+      "text": "They denied having seen her."
     },
     {
       "id": "song",
-      "text": "Alone in the forest, the girl sang whenever she heard a sound."
+      "text": "Alone in the forest, the young woman listened for footsteps."
+    },
+    {
+      "id": "song-2",
+      "text": "Whenever she heard a sound, she sang, hoping someone would find her."
     },
     {
       "id": "hunter",
-      "text": "A hunter heard her song. Later he brought it back to the village, where her family recognized her voice."
+      "text": "A hunter heard her voice."
+    },
+    {
+      "id": "hunter-2",
+      "text": "Frightened by singing in the lonely forest, he fled."
+    },
+    {
+      "id": "hunter-3",
+      "text": "But he remembered the song and eventually brought it back to the village."
     },
     {
       "id": "rescue",
-      "text": "People took tools into the forest and freed the girl from the tree.",
+      "text": "Her family recognised it.",
       "ask": [
         "How does her family find her?"
       ]
     },
     {
+      "id": "rescue-2",
+      "text": "They gathered people, machetes, and tools, and followed the hunter into the forest."
+    },
+    {
+      "id": "rescue-3",
+      "text": "When the young woman sang again, voices answered."
+    },
+    {
+      "id": "rescue-4",
+      "text": "They cut away the wood and freed her."
+    },
+    {
       "id": "wound",
-      "text": "But her trapped hand had become badly wounded."
+      "text": "But her hand was badly wounded."
+    },
+    {
+      "id": "wound-2",
+      "text": "At home, her mother watched her suffering and feared she would never recover."
     },
     {
       "id": "promise",
-      "text": "Her mother promised that whoever healed her daughter could marry her."
+      "text": "In desperation, she promised that whoever healed her daughter could marry her."
     },
     {
       "id": "animals",
-      "text": "Monkey, Panther, Lion, and others tried, but none could heal the wound."
+      "text": "The animals came to try."
+    },
+    {
+      "id": "animals-2",
+      "text": "Monkey tried, but failed."
+    },
+    {
+      "id": "animals-3",
+      "text": "Panther could not heal her."
+    },
+    {
+      "id": "animals-4",
+      "text": "Lion could not help either."
     },
     {
       "id": "hare",
-      "text": "At last Hare was allowed to try. He used remedies from the land around them."
+      "text": "Then Hare stepped forward."
+    },
+    {
+      "id": "hare-2",
+      "text": "Those around him doubted him."
+    },
+    {
+      "id": "hare-3",
+      "text": "Others had already failed."
+    },
+    {
+      "id": "hare-4",
+      "text": "What could Hare possibly do?"
+    },
+    {
+      "id": "hare-5",
+      "text": "At last, her mother allowed him to try."
+    },
+    {
+      "id": "hare-6",
+      "text": "Using remedies from the surrounding land, Hare treated the wound."
     },
     {
       "id": "healed",
-      "text": "Hare succeeded, and the girl recovered."
+      "text": "His efforts succeeded, and the young woman recovered."
     },
     {
       "id": "suitors",
-      "text": "When suitors came, she refused even those with wealth and noble standing."
+      "text": "Soon suitors began to arrive."
+    },
+    {
+      "id": "suitors-2",
+      "text": "Some were wealthy."
+    },
+    {
+      "id": "suitors-3",
+      "text": "Others belonged to important families."
+    },
+    {
+      "id": "suitors-4",
+      "text": "Each hoped she would choose him."
+    },
+    {
+      "id": "suitors-5",
+      "text": "She refused them."
     },
     {
       "id": "choice",
-      "text": "She chose Hare, who had helped her when others could not.",
+      "text": "Instead, she chose Hare.",
       "ask": [
         "Why does she choose Hare?"
       ]
     },
     {
+      "id": "choice-2",
+      "text": "People were surprised."
+    },
+    {
+      "id": "choice-3",
+      "text": "Why refuse wealth and rank for him?"
+    },
+    {
       "id": "gratitude",
-      "text": "She remembered his kindness and honoured the promise her mother had made."
+      "text": "But the young woman remembered who had helped her when she was suffering."
+    },
+    {
+      "id": "gratitude-2",
+      "text": "An important name had not healed her."
+    },
+    {
+      "id": "gratitude-3",
+      "text": "Riches had not healed her."
+    },
+    {
+      "id": "gratitude-4",
+      "text": "Hare had succeeded when others could not."
     },
     {
       "id": "lesson",
-      "text": "The lesson is to value help, loyalty, and honesty above riches or rank."
+      "text": "She chose him and honoured her mother’s promise."
+    },
+    {
+      "id": "lesson-2",
+      "text": "Her companions had let jealousy turn them against her."
+    },
+    {
+      "id": "lesson-3",
+      "text": "Others had doubted Hare before seeing what he could do."
     },
     {
       "id": "end",
-      "text": "That is the story of the girl who chose Hare."
+      "text": "But she remembered his help."
+    },
+    {
+      "id": "end-2",
+      "text": "And so she married Hare, choosing the one whose deeds mattered most to her."
     }
   ]
 }
