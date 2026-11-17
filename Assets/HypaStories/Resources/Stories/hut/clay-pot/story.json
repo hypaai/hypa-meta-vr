@@ -4,6 +4,7 @@
   "eyebrow": "In the hut",
   "title": "The clay pot",
   "description": "A pot shaped by hand from river clay. Hear what it keeps for the house.",
+  "words": ["pot", "water", "clay"],
   "voices": [],
   "lines": [
     {"id": "greet", "text": "Come closer, my child. This is our clay pot. We call it ikoko.", "ask": ["What is the pot called?"]},

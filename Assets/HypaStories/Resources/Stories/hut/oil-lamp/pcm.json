@@ -1,4 +1,5 @@
 {
+  "words": ["lamp", "oil", "fire"],
   "greet": "Ehen, you don find my lamp. We dey call am fitila.",
   "greet.ask": [
     "Wetin dem dey call the lamp?"

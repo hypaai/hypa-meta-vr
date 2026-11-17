@@ -1,4 +1,5 @@
 {
+  "words": ["escoba", "palma", "mañana"],
   "greet": "Y esta es la escoba. La llamamos igbale.",
   "greet.ask": [
     "¿Cómo se llama la escoba?"

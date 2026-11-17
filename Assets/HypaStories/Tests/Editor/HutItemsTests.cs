@@ -82,6 +82,15 @@ namespace HypaStories.Tests
             Assert.IsTrue(HutItems.Entries[0].Heavy && HutItems.Entries[1].Heavy, "the pot and the mortar take both hands");
         }
 
+        [Test] public void EveryItem_HasThreeWordsToTranslate_InEveryLanguage()
+        {
+            // the hut offers Try Hypa at the end of each item's story, as the campfire does
+            foreach (var st in HutItems.All)
+                foreach (var l in StoryLanguages.All)
+                    Assert.AreEqual(3, st.WordsFor(l.Code).Length, $"{st.Id} {l.Code}");
+            Assert.AreEqual(new[] { "lamp", "oil", "flame" }, HutItems.All[System.Array.FindIndex(HutItems.All, s => s.Id.EndsWith("oil-lamp"))].WordsFor("en"));
+        }
+
         [Test] public void HerLines_FallBackToEnglish()
         {
             Assert.AreEqual("en", HutLines.For(HutLines.Kind.Care, "zz").lang);

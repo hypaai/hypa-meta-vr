@@ -1,4 +1,5 @@
 {
+  "words": ["balai", "palmier", "matin"],
   "greet": "Et celui-ci, c'est le balai. Nous l'appelons igbale.",
   "greet.ask": [
     "Comment s'appelle le balai ?"

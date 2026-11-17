@@ -4,6 +4,7 @@
   "eyebrow": "In the hut",
   "title": "The oil lamp",
   "description": "A little clay lamp with a cotton wick. Hear how it keeps the night away.",
+  "words": ["lamp", "oil", "flame"],
   "voices": [],
   "lines": [
     {"id": "greet", "text": "Ah, you have found my lamp. We call it fitila.", "ask": ["What is the lamp called?"]},

@@ -1,4 +1,5 @@
 {
+  "words": ["pot", "eau", "argile"],
   "greet": "Approche, mon enfant. Voici notre pot en argile. Nous l'appelons ikoko.",
   "greet.ask": [
     "Comment s'appelle le pot ?"

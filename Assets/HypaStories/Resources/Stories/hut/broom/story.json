@@ -4,6 +4,7 @@
   "eyebrow": "In the hut",
   "title": "The broom",
   "description": "A bundle of palm ribs tied with cord. Hear how each day begins with it.",
+  "words": ["broom", "palm", "morning"],
   "voices": [],
   "lines": [
     {"id": "greet", "text": "And this one is the broom. We call it igbale.", "ask": ["What is the broom called?"]},

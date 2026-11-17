@@ -1,4 +1,5 @@
 {
+  "words": ["lampe", "huile", "flamme"],
   "greet": "Ah, tu as trouvé ma lampe. Nous l'appelons fitila.",
   "greet.ask": [
     "Comment s'appelle la lampe ?"

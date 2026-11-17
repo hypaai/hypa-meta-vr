@@ -1,4 +1,5 @@
 {
+  "words": ["mortier", "igname", "pilon"],
   "greet": "Ah, tu as trouvé le mortier et son pilon. Le mortier s'appelle odo, et le pilon est son enfant.",
   "greet.ask": [
     "Comment s'appelle le mortier ?"

@@ -83,6 +83,10 @@ namespace HypaStories
         StoryPlayer _story;
         PlayerView _panel;
         AskFlow _ask;
+        // Try Hypa Translate at the end of an item's story, in the hut's panel (as at the end of a campfire story)
+        TryHypaFlow _tryFlow;
+        TryHypaView _try;
+        bool _tryOpen, _endNoted;
         Func<StoryLanguage> _lang;
         Action _pauseCamp;
         int _current = -1, _gen;
@@ -120,10 +124,14 @@ namespace HypaStories
 
             // the same panel the campfire's story plays in, in front of you (not under the campfire's UI, which is put away out here)
             _ui = new GameObject("Hypa Stories Hut UI").transform;
-            _panel = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1), null /* no Try Hypa in the hut: it stays on the campfire's stories */, AskTap, Close,
+            _panel = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1), OpenTry, CornerTap, Close,
                 toggleSound, q => _ask.SubmitText(q));
             _panel.Follow.Height = -0.55f; // lower than by the fire: she sits just beyond it, and her face stays in view over its top edge
             _ask = new AskFlow(_story, _voice, mic, qa, _panel, lang, _ => { });
+            // its own translate, in this panel: the same recording as Ask (proven on the headset), not the live stream
+            _tryFlow = new TryHypaFlow(new HypaTryApi(), mic, HypaSettings.TargetLanguage) { LiveText = false };
+            _try = new TryHypaView(_panel.Body, _tryFlow, CloseTry);
+            _try.Root.gameObject.SetActive(false);
             _panel.Root.gameObject.SetActive(false);
 
             var cardMat = StoryCard.NewMaterial(a);
@@ -273,8 +281,10 @@ namespace HypaStories
             item.Card.Press = 1f;
             _pauseCamp?.Invoke();
             _ask.Cancel();
+            HideTryNow();
             _story.Stop();
             _current = i;
+            _endNoted = false;
             var lang = _lang();
             _story.Load(item.Story);
             _panel.Load(item.Story, lang);
@@ -297,10 +307,54 @@ namespace HypaStories
             _story.Start(0f);
         }
 
+        // ---------- Try Hypa Translate (as by the fire) ----------
+
+        /// <summary>The corner button: speak while translating, otherwise Ask.</summary>
+        void CornerTap()
+        {
+            if (_tryOpen) { _ = _tryFlow.DictateAsync(); return; }
+            AskTap();
+        }
+
+        /// <summary>Opens Hypa Translate in the hut's panel once the item's story is told: its words, your voice, the translation spoken back.</summary>
+        void OpenTry()
+        {
+            if (_current < 0 || _tryOpen || !_story.Live || !_story.Ended || _ask.State != AskState.Idle) return;
+            _tryOpen = true;
+            var lang = _lang();
+            var story = _items[_current].Story;
+            _tryFlow.Clear();
+            _tryFlow.BindStory(lang.HypaLabel, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(StoryLanguages.All, l => l.HypaLabel)));
+            var words = story.WordsFor(lang.Code);
+            _tryFlow.SetSuggestions(words.Length > 0 ? System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Take(words, 3))
+                : TryHypaText.Suggest(System.Linq.Enumerable.Select(story.Timeline.Captions, c => c.TextFor(lang.Code)), 3));
+            _try.Root.gameObject.SetActive(true);
+            _try.Show(story.Accent);
+            _panel.SetTranslateOpen(true);
+            _ = _tryFlow.LoadLanguagesAsync();
+        }
+
+        void CloseTry()
+        {
+            if (!_tryOpen) return;
+            HideTryNow();
+        }
+
+        /// <summary>Puts the translation away at once (another thing picked, the story replayed, the panel closed).</summary>
+        void HideTryNow()
+        {
+            if (_tryFlow == null) return;
+            var was = _tryOpen;
+            _tryOpen = false;
+            _tryFlow.Cancel();
+            if (_try != null) _try.Root.gameObject.SetActive(false);
+            if (was) _panel?.SetTranslateOpen(false);
+        }
+
         /// <summary>The panel's Ask button: start a question, end the recording, or skip the line being said (as by the fire).</summary>
         void AskTap()
         {
-            if (!_story.Live) return;
+            if (!_story.Live || _tryOpen) return;
             if (_ask.State == AskState.Idle) _ = _ask.BeginAsync();
             else if (_ask.State == AskState.Listening) _ask.StopListening();
             else _ask.Skip();
@@ -313,6 +367,8 @@ namespace HypaStories
             if (_current < 0) return;
             _current = -1;
             _ask.Cancel();
+            HideTryNow();
+            _panel.SetTryOffer(false);
             _story.Stop();
             _panel.Root.gameObject.SetActive(false);
         }
@@ -368,12 +424,21 @@ namespace HypaStories
                 _panel.ShowLine(s.Index, s.T);
                 _panel.SetProgress(s.T, _story.Duration);
                 _panel.SetPauseLabel(_story.Ended ? "Replay" : _story.Paused ? "Resume" : "Pause");
+                if (_story.Ended && !_endNoted) { _endNoted = true; _panel.SetNote("Try Hypa Translate, or pick up another thing."); }
+                if (!_story.Ended) _endNoted = false;
+                _panel.SetTryOffer(_story.Ended && !_tryOpen && _ask.State == AskState.Idle);
+                if (_tryOpen && !_story.Ended) HideTryNow(); // replayed: back to the story
+            }
+            if (_tryOpen)
+            {
+                _try.Update(dt);
+                _panel.SetCorner(_tryFlow.Listening ? "Done" : "Speak", _tryFlow.Listening ? "check" : "mic");
             }
 
             // raise a hand to ask her about the thing, as by the fire
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
-            if (_raise.Update(raised, dt) && _current >= 0 && _story.Live && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
-            if (Application.isEditor && _current >= 0 && Input.GetKeyDown(KeyCode.H) && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
+            if (_raise.Update(raised, dt) && _current >= 0 && _story.Live && !_tryOpen && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
+            if (Application.isEditor && _current >= 0 && Input.GetKeyDown(KeyCode.H) && !_tryOpen && _ask.State == AskState.Idle) _ = _ask.BeginAsync();
 
             HutInterior.Tick(_fire, cam, _t);
             Flames(cam, dt);
@@ -619,6 +684,7 @@ namespace HypaStories
             _cts.Cancel();
             _cts.Dispose();
             _ask?.Cancel();
+            _tryFlow?.Cancel();
             _story?.Stop();
             if (_ui != null) Destroy(_ui.gameObject);
         }

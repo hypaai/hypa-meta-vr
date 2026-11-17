@@ -1,4 +1,5 @@
 {
+  "words": ["mortero", "ñame", "mano"],
   "greet": "Ah, has encontrado el mortero y su mano. El mortero se llama odo, y la mano es su hijo.",
   "greet.ask": [
     "¿Cómo se llama el mortero?"

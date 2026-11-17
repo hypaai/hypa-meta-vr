@@ -1,4 +1,5 @@
 {
+  "words": ["olla", "agua", "barro"],
   "greet": "Acércate, hijo mío. Esta es nuestra olla de barro. La llamamos ikoko.",
   "greet.ask": [
     "¿Cómo se llama la olla?"
