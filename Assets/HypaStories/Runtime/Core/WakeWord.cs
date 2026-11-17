@@ -23,6 +23,10 @@ namespace HypaStories
         void End();
         /// <summary>A finished phrase, on the main thread.</summary>
         event Action<string> Heard;
+        /// <summary>The phrase so far, while it is being said ("Hey Emma"), on the main thread: lets a local react at once.</summary>
+        event Action<string> HeardSoFar;
+        /// <summary>Microphone loudness 0..1 while listening, for the voice meter.</summary>
+        event Action<float> Level;
     }
 
     /// <summary>

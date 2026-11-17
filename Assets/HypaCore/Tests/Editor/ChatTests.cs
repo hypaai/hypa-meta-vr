@@ -18,6 +18,7 @@ namespace HypaCore.Tests
             Assert.AreEqual(false, (bool)body["stream"]);
             Assert.AreEqual(1, (int)body["top_p"], "OpenAI models reject the provider default");
             Assert.AreEqual("user", (string)body["messages"][1]["role"]);
+            Assert.AreEqual(false, (bool)body["thinking"], "Muse answers ~1.5 s sooner without thinking");
         }
 
         [Test] public void Parse_TheLiveReply()

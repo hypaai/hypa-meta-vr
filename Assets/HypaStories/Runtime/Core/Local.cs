@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using HypaCore;
 using UnityEngine;
 
@@ -34,10 +35,10 @@ namespace HypaStories
         public string TranscribeModel = "openai/gpt-4o-mini-transcribe";
         [Tooltip("Hypa text-to-speech model; gpt-4o-mini-tts with inline audio took ~2.2 s for a sentence (the default ~3.9 s). Empty = Hypa picks.")]
         public string SpeechModel = "openai/gpt-4o-mini-tts";
-        [Tooltip("How close you must be to talk, metres.")]
-        public float TalkDistance = 3f;
+        [Tooltip("How close you must be to talk, metres. 4.5: the camp's test local stands ~2.9 m from the seat, and on the headset a step or a lean took you past 3 m (she then never greeted or heard you).")]
+        public float TalkDistance = 4.5f;
         [Tooltip("Height of the panel above this object's origin, metres.")]
-        public float PanelHeight = 1.75f;
+        public float PanelHeight = 1.9f;
         public bool GreetOnApproach = true;
         [Tooltip("Say their name to talk to them (Meta Voice SDK + WIT_CLIENT_TOKEN). Raise a hand and Talk always work too.")]
         public bool WakeWordEnabled = true;
@@ -80,7 +81,12 @@ namespace HypaStories
         void OnDisable()
         {
             SetWantWake(false);
-            if (WakeWord.Listener != null) WakeWord.Listener.Heard -= OnHeard;
+            if (WakeWord.Listener != null)
+            {
+                WakeWord.Listener.Heard -= OnHeard;
+                WakeWord.Listener.HeardSoFar -= OnHeardSoFar;
+                WakeWord.Listener.Level -= OnWakeLevel;
+            }
             Unduck();
             All.Remove(this);
             if (Focused == this) Focused = null;
@@ -109,6 +115,7 @@ namespace HypaStories
             _mic.Transcribe = TranscribeAsync;
             _mic.IgnoreFirstMs = 350f; // the listening cue plays from the speakers right then
             _mic.NoSpeechMs = 7000f;   // nobody spoke: ask again after 7 s, not 12
+            _mic.SilenceMs = 1000f;    // you've finished after 1 s of quiet, not 1.3
             Debug.Log($"Hypa Stories: {Persona.DisplayName} listens on " +
                       (Microphone.devices.Length > 0 ? $"'{MicListener.Device(Microphone.devices) ?? "the default input"}'" : "no microphone (pick a suggested question)") +
                       (Application.isEditor ? ". In the editor, macOS must allow Unity to use the microphone (System Settings > Privacy > Microphone)." : "."));
@@ -137,12 +144,7 @@ namespace HypaStories
             Talk = new LocalTalk(_voice, _mic, brain, _view, () => StoryLanguages.Current, () => Persona, on => _engaged = on);
             Talk.Logged += e => Debug.Log($"Hypa Stories local {Persona.DisplayName} {e}");
             _view.SetState(AskState.Idle, lines.Prompt);
-
-            // Fillers and stock lines are spoken at once, so fetch their speech now; the greeting too.
-            foreach (var s in lines.Filler) _voice.Prefetch(s, lang);
-            _voice.Prefetch(lines.Again, lang);
-            _voice.Prefetch(lines.Lost, lang);
-            if (!string.IsNullOrWhiteSpace(Persona.Greeting)) _voice.Prefetch(Persona.Greeting, lang);
+            _ = ApplyLanguageAsync(lang);
             if (WakeWordEnabled)
             {
                 var l = WakeWord.Listener;
@@ -150,12 +152,75 @@ namespace HypaStories
                 else
                 {
                     l.Heard += OnHeard;
+                    l.HeardSoFar += OnHeardSoFar;
+                    l.Level += OnWakeLevel;
                     Debug.Log(l.Available
                         ? $"Hypa Stories: say \"{Persona.DisplayName}\" near them to talk (wake word)."
                         : $"Hypa Stories: wake word off ({l.Problem}); raise a hand or pinch Talk.");
                 }
             }
             _ready = true;
+            if (Debug.isDebugBuild) StartCoroutine(DevSteps());
+        }
+
+        /// <summary>
+        /// Development builds: test on the headset without hands. adb ... -e hypa_local "tap" presses Talk (as a pinch does),
+        /// "ask:Who is Kiko?" asks a typed question, "lang:en" switches the story language; steps separated by ';', each after the previous one finishes (a few seconds).
+        /// </summary>
+        System.Collections.IEnumerator DevSteps()
+        {
+            var steps = HypaCore.DevTools.Extra("hypa_local");
+            if (string.IsNullOrWhiteSpace(steps)) yield break;
+            yield return new WaitForSeconds(8f); // the greeting and the first prefetches
+            foreach (var raw in steps.Split(';'))
+            {
+                var step = raw.Trim();
+                while (Talk.State != AskState.Idle) yield return null;
+                yield return new WaitForSeconds(1.5f);
+                Debug.Log($"Hypa dev: {Persona.DisplayName} step '{step}'");
+                if (step.StartsWith("lang:")) { var l = StoryLanguages.Find(step.Substring(5)); if (l != null) StoryLanguages.Current = l; }
+                else if (step == "tap") TalkTap();
+                else if (step.StartsWith("ask:")) _ = Talk.AskAsync(step.Substring(4));
+                yield return new WaitForSeconds(1f);
+            }
+        }
+
+        float _devLogAt;
+        void DevStatus(float distance, float angle, bool near)
+        {
+            if (!Debug.isDebugBuild || Time.unscaledTime < _devLogAt) return;
+            _devLogAt = Time.unscaledTime + 3f;
+            Debug.Log($"Hypa dev: {Persona.DisplayName} dist {distance:0.00} m angle {angle:0}° near={near} focused={Focused == this} " +
+                      $"state={Talk.State} greeted={_greeted} wake={(WakeWord.Listener == null ? "none" : WakeWord.Listener.Listening ? "listening" : WakeWord.Listener.Available ? "idle" : "off: " + WakeWord.Listener.Problem)}");
+        }
+
+        string _langCode;
+        bool _langReady;
+
+        /// <summary>
+        /// Ticket 3I: the local speaks the chosen story language. Puts the panel, the button labels, the suggested questions, the
+        /// greeting and the fillers in it (translated once with Hypa when not written in), and fetches their speech. Runs at start and
+        /// whenever the story language changes; the greeting waits for it.
+        /// </summary>
+        async System.Threading.Tasks.Task ApplyLanguageAsync(StoryLanguage lang)
+        {
+            _langCode = lang.Code;
+            _langReady = false;
+            var lines = await LocalLines.EnsureAsync(lang);
+            var persona = await LocalLines.TranslateManyAsync((Persona.Suggested ?? new string[0]).Concat(new[] { Persona.Greeting ?? "" }).ToArray(), lang);
+            var suggested = persona.Take(persona.Length - 1).ToArray();
+            var greeting = persona[persona.Length - 1];
+            if (this == null || _langCode != lang.Code) return; // changed again meanwhile
+            _view.SetLanguage(lines.Prompt, lines.Talk, lines.Done, lines.Skip);
+            _view.SetSuggestions(suggested);
+            Talk.GreetingText = greeting;
+            // Fillers and stock lines are spoken at once, so fetch their speech now; the greeting too.
+            foreach (var f in lines.Filler) _voice.Prefetch(f, lang);
+            _voice.Prefetch(lines.Again, lang);
+            _voice.Prefetch(lines.Lost, lang);
+            if (!string.IsNullOrWhiteSpace(greeting)) _voice.Prefetch(greeting, lang);
+            _langReady = true;
+            if (lang.Code != "en") Debug.Log($"Hypa Stories: {Persona.DisplayName} speaks {lang.HypaLabel} (\"{lines.Prompt}\").");
         }
 
         void SetWantWake(bool want)
@@ -166,10 +231,31 @@ namespace HypaStories
         }
 
         /// <summary>A phrase from the wake listener: if it calls this local, talk (the question in it, or listen for one).</summary>
+        float _wakeOpenedAt;
+
+        /// <summary>
+        /// The phrase so far: as soon as it calls this local ("Hey Emma…"), the panel shows "Listening" and the voice meter moves,
+        /// while you go on talking. The finished phrase (<see cref="OnHeard"/>) then answers or listens. The wake listener keeps
+        /// running meanwhile (it is hearing the rest of your question).
+        /// </summary>
+        void OnHeardSoFar(string phrase)
+        {
+            if (!_ready || !_wantWake || Talk.WakeOpen || Talk.State != AskState.Idle) return;
+            if (!WakeWord.Match(phrase, Persona.CalledBy(), out _)) return;
+            _wakeOpenedAt = Time.unscaledTime;
+            Talk.OpenFromWake(); // the listening chime plays on the state change, below in Update
+        }
+
+        void OnWakeLevel(float level) { if (Talk.WakeOpen) _view.SetLevel(level); }
+
         void OnHeard(string phrase)
         {
             if (!_ready || !_wantWake || _wokeFrame == Time.frameCount) return;
-            if (!WakeWord.Match(phrase, Persona.CalledBy(), out var rest)) return;
+            if (!WakeWord.Match(phrase, Persona.CalledBy(), out var rest))
+            {
+                if (!Talk.WakeOpen) return;
+                rest = phrase; // the words so far called us, the final words came out differently: take it all as the question
+            }
             _wokeFrame = Time.frameCount; // one local answers a call, even if two share a name
             _ = WakeAsync(phrase, rest);
         }
@@ -180,7 +266,7 @@ namespace HypaStories
             Debug.Log($"Hypa Stories: heard \"{phrase}\" → {Persona.DisplayName} {(ask ? "answers it" : "listens")} (wake word).");
             SetWantWake(false); // the wake listener lets go of the microphone...
             await System.Threading.Tasks.Task.Yield(); // ...before ours opens it
-            if (Talk.State != AskState.Idle && !Talk.Greeting) return;
+            if (Talk.State != AskState.Idle && !Talk.Greeting && !Talk.WakeOpen) return;
             if (ask) await Talk.AskAsync(rest);
             else await Talk.BeginAsync();
         }
@@ -234,6 +320,7 @@ namespace HypaStories
             var angle = distance < 0.01f ? 0f : Vector3.Angle(fwd, to);
             var looking = angle < 40f;
             var near = distance < TalkDistance;
+            DevStatus(distance, angle, near);
 
             // The local you're near and facing gets the raised hand (the nearest, if several).
             if (Focused == this && !(near && looking)) Focused = null;
@@ -244,14 +331,16 @@ namespace HypaStories
             {
                 Talk.Cancel(); Talk.ForgetVisit(); _greeted = false; // walked away: the visit is over
             }
-            if (GreetOnApproach && !_greeted && near && angle < GreetAngle && Talk.State == AskState.Idle)
+            if (StoryLanguages.Current.Code != _langCode) _ = ApplyLanguageAsync(StoryLanguages.Current);
+            if (GreetOnApproach && !_greeted && _langReady && near && angle < GreetAngle && Talk.State == AskState.Idle)
             {
                 _greeted = true;
                 _ = Talk.GreetAsync();
             }
 
             // Listen for their name while you're near and nobody is talking (the listener would hear the local, or fight our microphone).
-            SetWantWake(WakeWordEnabled && near && Talk.State == AskState.Idle);
+            SetWantWake(WakeWordEnabled && near && (Talk.State == AskState.Idle || Talk.WakeOpen));
+            if (Talk.WakeOpen && Time.unscaledTime - _wakeOpenedAt > 8f) Talk.CloseWake(); // the call never became a phrase
 
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
             if (_raise.Update(raised, Time.deltaTime) && Focused == this && (Talk.State == AskState.Idle || Talk.Greeting))

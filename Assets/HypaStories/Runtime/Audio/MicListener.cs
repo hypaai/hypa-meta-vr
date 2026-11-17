@@ -35,6 +35,8 @@ namespace HypaStories
         public float IgnoreFirstMs;
         /// <summary>Stop listening this soon if no voice is heard at all (0 = wait the full recording).</summary>
         public float NoSpeechMs;
+        /// <summary>Quiet after speech that ends the recording (0 = the detector's default, 1.3 s). Locals use 1 s.</summary>
+        public float SilenceMs;
 
         readonly CancellationTokenSource _life = new CancellationTokenSource();
         Session _active;
@@ -74,6 +76,7 @@ namespace HypaStories
             if (clip == null) throw new InvalidOperationException("Microphone could not start.");
             var session = new Session(device, clip, language, onLevel, transcribe, _life.Token, IgnoreFirstMs);
             if (NoSpeechMs > 0f) session.NoSpeechMs = NoSpeechMs;
+            if (SilenceMs > 0f) session.SilenceMs = SilenceMs;
             return _active = session;
         }
 
@@ -102,6 +105,9 @@ namespace HypaStories
             bool _done;
             float _ignoreMs;
             public float NoSpeechMs { set => _silence.NoSpeechMs = value; }
+            public float SilenceMs { set => _silence.SilenceMs = value; }
+            public event Action Recorded;
+            int _firstSpeech = -1, _lastSpeech = -1; // sample indices of the first and last loud chunks
 
             public Task<ListenResult> Result => _result.Task;
 
@@ -129,6 +135,7 @@ namespace HypaStories
                 var sum = 0f;
                 for (var i = 0; i < n; i++) { _samples.Add(buf[i]); sum += buf[i] * buf[i]; }
                 var rms = Mathf.Sqrt(sum / n);
+                if (rms > _silence.Threshold) { if (_firstSpeech < 0) _firstSpeech = _samples.Count - n; _lastSpeech = _samples.Count; }
                 _peak = Mathf.Max(_peak, rms);
                 _onLevel?.Invoke(Mathf.Min(1f, rms * 6f));
                 if (_silence.Update(rms, n * 1000f / Rate)) Stop();
@@ -148,6 +155,7 @@ namespace HypaStories
                     _result.TrySetResult(new ListenResult { TEnd = tEnd, TTranscript = tEnd });
                     return;
                 }
+                try { Recorded?.Invoke(); } catch (Exception e) { Debug.LogException(e); }
                 _ = TranscribeAsync(tEnd);
             }
 
@@ -155,9 +163,13 @@ namespace HypaStories
             {
                 try
                 {
-                    var wav = WavEncoder.Encode16(_samples.ToArray(), _samples.Count, 1, Rate);
+                    // Only the speech, with a little room either side: a shorter upload (the Quest's speech-to-text took ~4 s for 11 s).
+                    var from = Mathf.Max(0, _firstSpeech - Rate * 3 / 10);
+                    var to = Mathf.Min(_samples.Count, (_lastSpeech < 0 ? _samples.Count : _lastSpeech) + Rate * 4 / 10);
+                    var clip = _samples.GetRange(from, Mathf.Max(0, to - from)).ToArray();
+                    var wav = WavEncoder.Encode16(clip, clip.Length, 1, Rate);
                     var text = await _transcribe(wav, _lang, _ct);
-                    Debug.Log($"Hypa Stories: heard “{text}” from {Name} ({_samples.Count / (float)Rate:0.0} s, {Now - tEnd:0} ms to transcribe)");
+                    Debug.Log($"Hypa Stories: heard “{text}” from {Name} ({clip.Length / (float)Rate:0.0} of {_samples.Count / (float)Rate:0.0} s sent, {Now - tEnd:0} ms to transcribe)");
                     _result.TrySetResult(new ListenResult { Transcript = text ?? "", TEnd = tEnd, TTranscript = Now, Spoke = true });
                 }
                 catch (Exception e) { _result.TrySetException(e); }

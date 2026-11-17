@@ -110,7 +110,9 @@ namespace HypaStories
             // don't draw what the fog hides: the far ends of the trails, the hut, the pines round them (the village has its own)
             var cull = gameObject.AddComponent<DistanceCull>();
             cull.Collect(transform, t => Village != null && t == Village.transform || t == Fire.Root || t == PortalRing || t == Teller.transform,
-                14f, n => n == "Wolf" || n == "Owl" || n == "Bat" || n == "Bushbaby" || n == "Frog", 16f);
+                14f, n => n == "Wolf" || n == "Owl" || n == "Bat" || n == "Bushbaby" || n == "Frog", 16f,
+                // Quest: the scanned ferns and grass are ~700k triangles of alpha-tested cards; past 20 m the fog all but hides them
+                n => _a.fern != null && n == _a.fern.name || _a.grass != null && n == _a.grass.name, 20f);
         }
 
         // ---------- builders ----------
@@ -252,6 +254,7 @@ namespace HypaStories
             var holder = new GameObject(prefab.name);
             holder.transform.SetParent(transform, false);
             var inner = Instantiate(prefab, holder.transform);
+            PropDiet.Apply(inner, _a.propShader, _a.propCutoutShader); // Quest: cheap materials, lighter meshes
             inner.transform.localPosition = Vector3.zero; inner.transform.localRotation = Quaternion.identity; inner.transform.localScale = Vector3.one;
             var rs = inner.GetComponentsInChildren<Renderer>();
             if (rs.Length == 0) return holder;

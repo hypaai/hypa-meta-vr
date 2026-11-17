@@ -386,6 +386,15 @@ namespace HypaStories
                 else lb = Text(go.transform, label, em, Vector3.zero, new Vector2(textW, size.y), ink, TextAlignmentOptions.Center,
                     style == KitStyle.Primary ? KitFont.UiBold : KitFont.Ui, 12, false);
             }
+            if (lb != null)
+            {
+                // Never spill out of the button: shrink to fit (down to 55%), then "…" as a last resort. Seen on the headset: a
+                // long suggested question ran past its button and the panel's edge.
+                lb.enableAutoSizing = true;
+                lb.fontSizeMax = em * 10f;
+                lb.fontSizeMin = em * 10f * 0.55f;
+                lb.overflowMode = TextOverflowModes.Ellipsis;
+            }
             var col = go.AddComponent<BoxCollider>();
             col.size = new Vector3(size.x, size.y, 0.02f);
             var b = go.AddComponent<KitButton>();

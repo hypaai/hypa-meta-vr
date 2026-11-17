@@ -38,6 +38,8 @@ MonoBehaviour:
   - {fileID: 8771091787928289351, guid: 69192ca938c5a498c8990ba4c3658989, type: 3}
   - {fileID: 8771091787928289351, guid: a49b58403025e41afb7653f6564790e3, type: 3}
   - {fileID: -2984254379172062463, guid: f57200a0d360f4d5eb2380d4f9990a0f, type: 3}
+  propShader: {fileID: 4800000, guid: eba479379a9e1485e872c7b0d8cfbb9a, type: 3}
+  propCutoutShader: {fileID: 4800000, guid: e547585ed4c744b76bb8be3ad45b5272, type: 3}
   ambienceSplash: {fileID: 8300000, guid: badde89f108d3498aac62d99d201c661, type: 3}
   ambienceStory: {fileID: 8300000, guid: ae6afe2e43bc94d14bfb9ff1dc5da4bb, type: 3}
   fireFar: {fileID: 8300000, guid: e67c6285202474c50a24ef160c03cd10, type: 3}

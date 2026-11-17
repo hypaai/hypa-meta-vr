@@ -151,6 +151,7 @@ namespace HypaStories.Tests
 
         sealed class FakeSession : IListenSession
         {
+            public event Action Recorded { add { } remove { } }
             public Task<ListenResult> Result { get; set; }
             public void Stop() { }
             public void Cancel() { }
@@ -357,6 +358,8 @@ namespace HypaStories.Tests
             public void Begin() => Listening = true;
             public void End() => Listening = false;
             public event Action<string> Heard { add { } remove { } }
+            public event Action<string> HeardSoFar { add { } remove { } }
+            public event Action<float> Level { add { } remove { } }
         }
 
         [Test] public void WakeWord_ListensWhileALocalWantsIt_AndNotWhilePaused()
@@ -392,6 +395,79 @@ namespace HypaStories.Tests
                 Assert.IsFalse(talk.Log[0].Typed);
                 Assert.AreEqual(AskState.Idle, talk.State);
             }
+        }
+
+        // ---------- answering sooner ----------
+
+        sealed class SlowSession : IListenSession
+        {
+            public readonly TaskCompletionSource<ListenResult> Tcs = new TaskCompletionSource<ListenResult>();
+            public Task<ListenResult> Result => Tcs.Task;
+            public event Action Recorded;
+            public void FireRecorded() => Recorded?.Invoke();
+            public void Stop() { }
+            public void Cancel() { }
+        }
+
+        sealed class SlowListener : IListener
+        {
+            public SlowSession Last;
+            public IListenSession Listen(StoryLanguage language, Action<float> onLevel) => Last = new SlowSession();
+        }
+
+        [Test] public void Talk_TheFillerStartsWhenTheRecordingStops_NotAfterSpeechToText()
+        {
+            using (new NoContext())
+            {
+                var speech = new FakeSpeech(); var mic = new SlowListener(); var view = new FakeView();
+                var persona = Ama();
+                var talk = new LocalTalk(speech, mic, new InstantBrain(), view, () => StoryLanguages.All[0], () => persona, _ => { }, () => 0);
+                var t = talk.BeginAsync();
+                Assert.AreEqual(AskState.Listening, talk.State);
+                mic.Last.FireRecorded(); // you stopped talking; speech-to-text is still running
+                Assert.AreEqual(AskState.Thinking, talk.State, "thinking at once");
+                CollectionAssert.AreEqual(new[] { "Hmm, good question…" }, speech.Spoken, "the filler at once");
+                mic.Last.Tcs.SetResult(new ListenResult { Transcript = "What do you weave?", Spoke = true });
+                t.Wait();
+                Assert.AreEqual(1, speech.Spoken.Count(x => x == "Hmm, good question…"), "not said twice");
+                Assert.AreEqual("My grandmother taught me.", speech.Spoken.Last());
+            }
+        }
+
+        [Test] public void Wake_ShowsListeningAtOnce_ThenAnswersTheQuestion()
+        {
+            using (new NoContext())
+            {
+                var (talk, speech, _, _, view, engaged) = Make();
+                talk.OpenFromWake(); // "Hey Ama…" heard while still talking
+                Assert.AreEqual(AskState.Listening, talk.State);
+                Assert.IsTrue(talk.WakeOpen);
+                talk.AskAsync("what do you weave?").Wait();
+                Assert.IsFalse(talk.WakeOpen);
+                Assert.AreEqual("My grandmother taught me.", speech.Spoken.Last());
+                Assert.AreEqual(AskState.Idle, talk.State);
+            }
+        }
+
+        [Test] public void Wake_ThatCameToNothing_GoesBackToIdle()
+        {
+            var (talk, _, _, _, _, _) = Make();
+            talk.OpenFromWake();
+            talk.CloseWake();
+            Assert.AreEqual(AskState.Idle, talk.State);
+            Assert.IsFalse(talk.WakeOpen);
+        }
+
+        [Test] public void Lines_EveryStoryLanguageHasLines_EnglishUntilTranslated()
+        {
+            foreach (var l in StoryLanguages.All)
+            {
+                var lines = LocalLines.For(l.Code);
+                Assert.IsNotEmpty(lines.Prompt, l.Code);
+                Assert.AreEqual(2, lines.Filler.Length, l.Code);
+            }
+            Assert.AreEqual("Parler", LocalLines.For("fr").Talk);
+            Assert.IsTrue(LocalLines.Ready("en"));
         }
     }
 }

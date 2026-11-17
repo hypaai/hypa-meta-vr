@@ -41,6 +41,9 @@ namespace HypaStories
         public GameObject fern;
         public GameObject grass;
         public GameObject[] rocks = new GameObject[0];
+        [Tooltip("Cheap shaders the scanned props are switched to on spawn (PropDiet): HypaStories/Prop and HypaStories/PropCutout.")]
+        public Shader propShader;
+        public Shader propCutoutShader;
 
         [Header("Audio (Local, not in git)")]
         public AudioClip ambienceSplash;

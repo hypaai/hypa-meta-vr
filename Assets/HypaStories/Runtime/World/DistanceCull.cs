@@ -36,14 +36,17 @@ namespace HypaStories
         /// sits within <paramref name="always"/> of the fire (the clearing is always drawn). Things under a transform whose name
         /// <paramref name="moving"/> accepts get <paramref name="moveMargin"/> extra.
         /// </summary>
-        public void Collect(Transform root, Func<Transform, bool> skip, float always, Func<string, bool> moving, float moveMargin)
+        /// <param name="small">Small things (ferns, grass) that the fog hides much sooner: drawn only within <paramref name="smallRange"/>.</param>
+        public void Collect(Transform root, Func<Transform, bool> skip, float always, Func<string, bool> moving, float moveMargin,
+            Func<string, bool> small = null, float smallRange = 20f)
         {
             foreach (var r in root.GetComponentsInChildren<Renderer>(true))
             {
                 if (Under(r.transform, root, skip)) continue;
                 var b = LocalBounds(r);
                 if (b.SqrDistance(Vector3.zero) < always * always) continue;
-                _renderers.Add(new Entry { R = r, B = b, Margin = Moving(r.transform, root, moving) ? moveMargin : 0f });
+                var margin = Moving(r.transform, root, moving) ? moveMargin : small != null && Moving(r.transform, root, small) ? smallRange - Range : 0f;
+                _renderers.Add(new Entry { R = r, B = b, Margin = margin });
             }
             foreach (var l in root.GetComponentsInChildren<Light>(true))
             {

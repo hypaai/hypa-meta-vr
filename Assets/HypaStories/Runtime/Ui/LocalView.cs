@@ -12,7 +12,8 @@ namespace HypaStories
     /// </summary>
     public sealed class LocalView : IAskView
     {
-        const float W = 0.6f, H = 0.4f;
+        // Taller than first built: the suggested questions are full-width rows (side by side they overflowed on the headset).
+        const float W = 0.6f, H = 0.54f;
         public readonly Transform Root;
         readonly TextMeshPro _state, _question, _answer;
         readonly KitPanel _bg;
@@ -24,7 +25,7 @@ namespace HypaStories
         readonly KitButton _talk;
         readonly List<KitButton> _suggestions = new List<KitButton>();
         string[] _suggested;
-        readonly string _prompt;
+        string _prompt;
 
         public LocalView(Transform parent, LocalPersona persona, string prompt, Action onTalk, Action onTalkHold, Action<string> onSuggestion)
         {
@@ -32,37 +33,55 @@ namespace HypaStories
             _prompt = prompt;
             Root = new GameObject("Local Panel").transform;
             Root.SetParent(parent, false);
-            var left = -W / 2f + 0.03f;
+            const float inner = W - 0.06f;
             _bg = Kit.Glass(Root, "bg", Vector3.zero, new Vector2(W, H), 0.03f);
-            Kit.Text(Root, persona.Title, 0.024f, new Vector3(0f, 0.16f, 0f), new Vector2(W - 0.06f, 0.04f), KitTheme.Paper, TextAlignmentOptions.Left, KitFont.UiBold);
-            _state = Kit.Text(Root, prompt, 0.015f, new Vector3(0f, 0.125f, 0f), new Vector2(W - 0.06f, 0.03f), KitTheme.Ember, TextAlignmentOptions.Left);
-            _question = Kit.Text(Root, "", 0.015f, new Vector3(0f, 0.09f, 0f), new Vector2(W - 0.06f, 0.03f), KitTheme.Dim, TextAlignmentOptions.Left, KitFont.Ui);
-            _answer = Kit.Text(Root, "", 0.024f, new Vector3(0f, 0.025f, 0f), new Vector2(W - 0.06f, 0.1f), KitTheme.Paper, TextAlignmentOptions.TopLeft, KitFont.Serif);
+            Kit.Text(Root, persona.Title, 0.026f, new Vector3(0f, 0.225f, 0f), new Vector2(inner, 0.04f), KitTheme.Paper, TextAlignmentOptions.Left, KitFont.UiBold);
+            _state = Fit(Kit.Text(Root, prompt, 0.019f, new Vector3(0f, 0.188f, 0f), new Vector2(inner, 0.032f), KitTheme.Ember, TextAlignmentOptions.Left, KitFont.Ui, 12, false), 0.6f);
+            _question = Fit(Kit.Text(Root, "", 0.017f, new Vector3(0f, 0.146f, 0f), new Vector2(inner, 0.046f), KitTheme.Dim, TextAlignmentOptions.TopLeft, KitFont.Ui), 0.7f);
+            _answer = Fit(Kit.Text(Root, "", 0.025f, new Vector3(0f, 0.065f, 0f), new Vector2(inner, 0.11f), KitTheme.Paper, TextAlignmentOptions.TopLeft, KitFont.Serif), 0.7f);
 
             // The voice meter: bars that bounce with your voice while they listen, so you can see they hear you.
             var x0 = -(Bars * BarW + (Bars - 1) * BarGap) / 2f + BarW / 2f;
             for (var i = 0; i < Bars; i++)
             {
-                var bar = Kit.Panel(Root, "level", new Vector3(x0 + i * (BarW + BarGap), -0.045f, 0f), new Vector2(BarW, 0.006f), BarW / 2f,
+                var bar = Kit.Panel(Root, "level", new Vector3(x0 + i * (BarW + BarGap), -0.012f, 0f), new Vector2(BarW, 0.006f), BarW / 2f,
                     KitTheme.Ember, KitTheme.EmberDeep, KitTheme.Clear, 12, 0f);
                 bar.gameObject.SetActive(false);
                 _bars.Add(bar);
             }
-            _ = left;
-
-            const float sw = 0.18f, gap = 0.01f;
+            const float rowH = 0.044f, rowGap = 0.008f;
             for (var i = 0; i < 3; i++)
             {
                 var k = i;
                 // Created with its text: a Kit button made with no label is an icon-only button, and a label can't be added later.
                 var text = i < _suggested.Length && !string.IsNullOrWhiteSpace(_suggested[i]) ? _suggested[i] : "…";
-                var b = Kit.Button(Root, new Vector3(-(sw + gap) + i * (sw + gap), -0.095f, 0f), new Vector2(sw, 0.05f), text, null, KitStyle.Ghost,
-                    () => { if (k < _suggested.Length) onSuggestion(_suggested[k]); }, null, 0.0135f);
+                var b = Kit.Button(Root, new Vector3(0f, -0.058f - i * (rowH + rowGap), 0f), new Vector2(inner, rowH), text, null, KitStyle.Ghost,
+                    () => { if (k < _suggested.Length) onSuggestion(_suggested[k]); }, null, 0.017f);
                 b.gameObject.SetActive(false);
                 _suggestions.Add(b);
             }
-            _talk = Kit.Button(Root, new Vector3(0f, -0.16f, 0f), new Vector2(0.17f, 0.052f), "Talk", "mic", KitStyle.Primary, onTalk, onTalkHold);
+            _talk = Kit.Button(Root, new Vector3(0f, -0.225f, 0f), new Vector2(0.2f, 0.056f), "Talk", "mic", KitStyle.Primary, onTalk, onTalkHold);
         }
+
+        /// <summary>Shrinks the text to fit its box (down to <paramref name="min"/> of its size) instead of spilling past the panel.</summary>
+        static TextMeshPro Fit(TextMeshPro t, float min)
+        {
+            t.enableAutoSizing = true;
+            t.fontSizeMax = t.fontSize;
+            t.fontSizeMin = t.fontSize * min;
+            t.overflowMode = TextOverflowModes.Ellipsis;
+            return t;
+        }
+
+        /// <summary>The idle prompt and the button labels in another language (the story language changed).</summary>
+        public void SetLanguage(string prompt, string talk, string done, string skip)
+        {
+            _prompt = prompt; _talkLabel = talk; _doneLabel = done; _skipLabel = skip;
+            if (_idle) _state.text = prompt;
+            _talk.SetLabel(_listening ? done : _idle ? talk : skip);
+        }
+        string _talkLabel = "Talk", _doneLabel = "Done", _skipLabel = "Skip";
+        bool _idle = true;
 
         public void SetState(AskState state, string text)
         {
@@ -79,7 +98,8 @@ namespace HypaStories
                 _suggestions[i].gameObject.SetActive(on);
                 if (on) _suggestions[i].SetLabel(_suggested[i]);
             }
-            _talk.SetLabel(listening ? "Done" : state == AskState.Idle ? "Talk" : "Skip");
+            _idle = state == AskState.Idle;
+            _talk.SetLabel(listening ? _doneLabel : _idle ? _talkLabel : _skipLabel);
             _talk.SetIcon(listening ? "check" : state == AskState.Idle ? "mic" : "skip-forward");
             if (!listening) SetLevel(0f);
         }

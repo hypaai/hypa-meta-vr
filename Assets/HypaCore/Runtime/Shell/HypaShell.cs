@@ -91,8 +91,48 @@ namespace HypaCore
         System.Collections.IEnumerator StartNextFrame()
         {
             yield return null;
-            if (openLastModeOnStart) Open(HypaSettings.LastMode);
+            ApplyQuality();
+            var devOpen = DevTools.Begin(gameObject); // development builds: adb launch options and a perf log
+            if (devOpen != null) Open(devOpen);
+            else if (openLastModeOnStart) Open(HypaSettings.LastMode);
             else ShowMenu(true); // the Home card is the first thing the user sees
+        }
+
+        /// <summary>Headset image quality. Development builds can override each from adb (hypa_aa, hypa_res, hypa_fov) to measure.</summary>
+        public static int Msaa = 4;
+        public static float EyeResolution = 1.25f;
+        public static string Foveation = "Low";
+
+        /// <summary>
+        /// Sharpness on the headset (Stories looked soft on a Quest Pro): 4x MSAA (cheap on Quest's tiled GPU: smooth edges, no
+        /// shimmer), eye buffers rendered above the default size, and fixed foveation only Low and dynamic (lower resolution at the
+        /// edges of the view only when the GPU needs the room). Foveation is set through reflection so HypaCore keeps no reference
+        /// to the Meta SDK. The editor is left alone.
+        /// </summary>
+        static void ApplyQuality()
+        {
+            if (Application.isEditor) return;
+            if (Debug.isDebugBuild)
+            {
+                if (int.TryParse(DevTools.Extra("hypa_aa"), out var aa)) Msaa = aa;
+                if (float.TryParse(DevTools.Extra("hypa_res"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var res) && res > 0f)
+                    EyeResolution = res;
+                var fov = DevTools.Extra("hypa_fov"); if (!string.IsNullOrEmpty(fov)) Foveation = fov;
+            }
+            QualitySettings.antiAliasing = Msaa;
+            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = EyeResolution;
+            try
+            {
+                var t = System.Type.GetType("OVRManager, Oculus.VR");
+                var level = t?.GetProperty("foveatedRenderingLevel");
+                if (level != null)
+                {
+                    level.SetValue(null, System.Enum.Parse(level.PropertyType, Foveation));
+                    t.GetProperty("useDynamicFoveatedRendering")?.SetValue(null, Foveation != "Off");
+                }
+            }
+            catch (System.Exception e) { Debug.LogWarning("Hypa shell: foveated rendering not available: " + e.Message); }
+            Debug.Log($"Hypa shell: quality MSAA {QualitySettings.antiAliasing}x, eye resolution {UnityEngine.XR.XRSettings.eyeTextureResolutionScale:0.00}, foveation {Foveation} (dynamic).");
         }
 
         void Update()

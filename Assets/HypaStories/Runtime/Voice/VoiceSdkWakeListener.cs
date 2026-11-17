@@ -33,6 +33,8 @@ namespace HypaStories.Voice
         public string Problem => _problem;
         public bool Listening => _want;
         public event Action<string> Heard;
+        public event Action<string> HeardSoFar;
+        public event Action<float> Level;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Install()
@@ -71,6 +73,8 @@ namespace HypaStories.Voice
             };
             _dictation.OnInitialized += () => { _initialized = true; if (_want) Activate(); };
             _dictation.DictationEvents.OnFullTranscription.AddListener(OnPhrase);
+            _dictation.DictationEvents.OnPartialTranscription.AddListener(t => { if (_want && !string.IsNullOrWhiteSpace(t)) HeardSoFar?.Invoke(t); });
+            _dictation.DictationEvents.OnMicLevelChanged.AddListener(v => { if (_want) Level?.Invoke(Mathf.Clamp01(v * 4f)); });
             _dictation.DictationEvents.OnError.AddListener(OnError);
             host.SetActive(true);
         }

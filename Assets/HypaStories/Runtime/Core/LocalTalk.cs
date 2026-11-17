@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HypaCore;
@@ -7,10 +8,15 @@ using UnityEngine;
 
 namespace HypaStories
 {
-    /// <summary>What a local says around a question, per language.</summary>
+    /// <summary>
+    /// What a local says around a question, per story language (ticket 3I: "speak in the chosen story language"). English, French
+    /// and Spanish are written here; the other story languages are translated from English once with Hypa's translate tool
+    /// (<see cref="EnsureAsync"/>) and kept for the session and on the device, so the panel, fillers and greeting are in the language
+    /// the story is told in. Until a translation arrives (or without a key) the English lines are used.
+    /// </summary>
     public sealed class LocalLines
     {
-        public string Prompt, Listening, Thinking, Again, Lost, You, NoVoice;
+        public string Prompt, Listening, Thinking, Again, Lost, You, NoVoice, Talk = "Talk", Done = "Done", Skip = "Skip";
         public string[] Filler;
 
         static readonly LocalLines En = new LocalLines
@@ -25,17 +31,98 @@ namespace HypaStories
             Prompt = "Lève la main ou pince Parler", Listening = "Je t’écoute… parle maintenant", Thinking = "Compris. Je réfléchis…",
             Filler = new[] { "Hmm, bonne question…", "Laisse-moi y réfléchir…" },
             Again = "Désolé, peux-tu répéter ?", Lost = "Pardon, j’ai perdu le fil. Redemande-moi ?", You = "Tu as dit",
-            NoVoice = "Je n’ai rien entendu. Ton micro est-il allumé ?",
+            NoVoice = "Je n’ai rien entendu. Ton micro est-il allumé ?", Talk = "Parler", Done = "Fini", Skip = "Passer",
         };
         static readonly LocalLines Es = new LocalLines
         {
             Prompt = "Levanta la mano o pellizca Hablar", Listening = "Te escucho… habla ahora", Thinking = "Entendido. Pensando…",
             Filler = new[] { "Mmm, buena pregunta…", "Déjame pensarlo…" },
             Again = "Perdona, ¿puedes repetirlo?", Lost = "Perdona, perdí el hilo. ¿Me lo preguntas otra vez?", You = "Dijiste",
-            NoVoice = "No te oí. ¿Está encendido tu micrófono?",
+            NoVoice = "No te oí. ¿Está encendido tu micrófono?", Talk = "Hablar", Done = "Listo", Skip = "Saltar",
         };
+        static readonly Dictionary<string, LocalLines> Translated = new Dictionary<string, LocalLines>();
+        static readonly Dictionary<string, string> Texts = new Dictionary<string, string>(); // "code|English" → translation
 
-        public static LocalLines For(string code) => code == "fr" ? Fr : code == "es" ? Es : En;
+        /// <summary>The lines for a language code: written, translated, or English until a translation is ready.</summary>
+        public static LocalLines For(string code) =>
+            code == "fr" ? Fr : code == "es" ? Es : code != null && Translated.TryGetValue(code, out var t) ? t : En;
+
+        /// <summary>True when the lines for this language are ready (written, or already translated).</summary>
+        public static bool Ready(string code) => code == "en" || code == "fr" || code == "es" || (code != null && Translated.ContainsKey(code));
+
+        /// <summary>One English line in another story language (cached; on device too). English back on any failure.</summary>
+        public static async Task<string> TranslateAsync(string english, StoryLanguage lang)
+        {
+            if (string.IsNullOrWhiteSpace(english) || lang == null || lang.Code == "en") return english;
+            var key = lang.Code + "|" + english;
+            if (Texts.TryGetValue(key, out var hit)) return hit;
+            var pref = "hypa.stories.localLine." + StableHash(key);
+            var saved = PlayerPrefs.GetString(pref, "");
+            if (saved.Length > 0) return Texts[key] = saved;
+            if (!HypaConfig.Current.CanCallPaidTools) return english;
+            try
+            {
+                var t = (await new HypaMcpClient().TranslateAsync(english, lang.HypaLabel, null, CancellationToken.None))?.Text?.Trim();
+                if (string.IsNullOrEmpty(t)) return english;
+                PlayerPrefs.SetString(pref, t);
+                return Texts[key] = t;
+            }
+            catch (Exception e) { Debug.LogWarning($"Hypa Stories: couldn't translate a local's line to {lang.HypaLabel}: {e.Message}"); return english; }
+        }
+
+        /// <summary>
+        /// Several lines, one request at a time (many at once failed on the translate tool, and one request with all the lines timed
+        /// out after 30 s; one at a time took ~20 s for twelve). Cached like <see cref="TranslateAsync"/>, so only the first visit in a
+        /// language waits.
+        /// </summary>
+        public static async Task<string[]> TranslateManyAsync(string[] english, StoryLanguage lang)
+        {
+            var result = (string[])english.Clone();
+            if (lang == null || lang.Code == "en") return result;
+            var todo = new List<int>();
+            for (var i = 0; i < english.Length; i++)
+            {
+                var key = lang.Code + "|" + english[i];
+                var saved = PlayerPrefs.GetString("hypa.stories.localLine." + StableHash(key), "");
+                if (Texts.TryGetValue(key, out var hit)) result[i] = hit;
+                else if (saved.Length > 0) result[i] = Texts[key] = saved;
+                else if (!string.IsNullOrWhiteSpace(english[i])) todo.Add(i);
+            }
+            if (todo.Count == 0 || !HypaConfig.Current.CanCallPaidTools) return result;
+            foreach (var i in todo)
+            {
+                result[i] = await TranslateAsync(english[i], lang);
+                if (result[i] == english[i]) { await Task.Delay(500); result[i] = await TranslateAsync(english[i], lang); } // once more
+            }
+            PlayerPrefs.Save();
+            return result;
+        }
+
+        /// <summary>FNV-1a: the same on every run and device (string.GetHashCode isn't guaranteed to be).</summary>
+        static string StableHash(string s)
+        {
+            unchecked
+            {
+                uint h = 2166136261;
+                foreach (var c in s) { h ^= c; h *= 16777619; }
+                return h.ToString("x8");
+            }
+        }
+
+        /// <summary>Makes the lines for <paramref name="lang"/> ready (translating the English ones when needed). Main thread.</summary>
+        public static async Task<LocalLines> EnsureAsync(StoryLanguage lang)
+        {
+            if (lang == null || Ready(lang.Code)) return For(lang?.Code);
+            var parts = new[] { En.Prompt, En.Listening, En.Thinking, En.Again, En.Lost, En.You, En.NoVoice, En.Talk, En.Done, En.Skip, En.Filler[0], En.Filler[1] };
+            var done = await TranslateManyAsync(parts, lang);
+            var l = new LocalLines
+            {
+                Prompt = done[0], Listening = done[1], Thinking = done[2], Again = done[3], Lost = done[4], You = done[5], NoVoice = done[6],
+                Talk = done[7], Done = done[8], Skip = done[9], Filler = new[] { done[10], done[11] },
+            };
+            PlayerPrefs.Save();
+            return Translated[lang.Code] = l;
+        }
     }
 
     /// <summary>
@@ -65,6 +152,13 @@ namespace HypaStories
         public string BrainMode => _brain.Mode;
         /// <summary>True while the greeting is being said (talking over it starts a question).</summary>
         public bool Greeting { get; private set; }
+        /// <summary>
+        /// The wake word has just been heard ("Hey Ama…") and the rest of the phrase is still coming: the panel shows "Listening"
+        /// at once (not after the phrase is transcribed), then <see cref="AskAsync"/> or <see cref="BeginAsync"/> takes over.
+        /// </summary>
+        public bool WakeOpen { get; private set; }
+        /// <summary>The greeting in the story language (set by the Local once translated); empty = the persona's own.</summary>
+        public string GreetingText;
 
         sealed class Session
         {
@@ -73,6 +167,9 @@ namespace HypaStories
             public int Unclear;
             public IListenSession Rec;
             public TaskCompletionSource<ListenResult> Typed;
+            /// <summary>The filler already started when the recording stopped (before speech-to-text came back).</summary>
+            public bool FillerSaid;
+            public double FillerAt;
         }
 
         Session _s;
@@ -120,12 +217,13 @@ namespace HypaStories
         public async Task GreetAsync()
         {
             var p = _persona();
-            if (State != AskState.Idle || p == null || string.IsNullOrWhiteSpace(p.Greeting)) return;
+            var greeting = string.IsNullOrWhiteSpace(GreetingText) ? p?.Greeting : GreetingText;
+            if (State != AskState.Idle || p == null || string.IsNullOrWhiteSpace(greeting)) return;
             var s = _s = new Session();
             Greeting = true;
             Set(AskState.Answering);
             _onEngaged?.Invoke(true);
-            await Say(s, p.Greeting, answer: true);
+            await Say(s, greeting, answer: true);
             Greeting = false;
             if (s.Cancelled) return;
             Finish();
@@ -134,8 +232,9 @@ namespace HypaStories
         /// <summary>Raise a hand / pinch Talk: start listening. No-op while a question is already open.</summary>
         public async Task BeginAsync()
         {
-            if (State != AskState.Idle && !Greeting) return;
+            if (State != AskState.Idle && !Greeting && !WakeOpen) return;
             if (Greeting) { Greeting = false; Cancel(); } // talking over the greeting: listen now
+            WakeOpen = false;
             var s = _s = new Session();
             _onEngaged?.Invoke(true);
             _view.SetQuestion("");
@@ -149,12 +248,32 @@ namespace HypaStories
         public async Task AskAsync(string question)
         {
             question = question?.Trim();
-            if (string.IsNullOrEmpty(question) || (State != AskState.Idle && !Greeting)) return;
+            if (string.IsNullOrEmpty(question) || (State != AskState.Idle && !Greeting && !WakeOpen)) return;
             if (Greeting) { Greeting = false; Cancel(); }
+            WakeOpen = false;
             var s = _s = new Session();
             _onEngaged?.Invoke(true);
             var now = _clockMs();
             await Answer(s, new ListenResult { Transcript = question, TEnd = now, TTranscript = now, Spoke = true });
+        }
+
+        /// <summary>The wake word was heard: show "Listening" now, while the rest of the phrase arrives. Ignored mid-question.</summary>
+        public void OpenFromWake()
+        {
+            if (WakeOpen || (State != AskState.Idle && !Greeting)) return;
+            if (Greeting) { Greeting = false; Cancel(); }
+            WakeOpen = true;
+            _onEngaged?.Invoke(true);
+            _view.SetQuestion("");
+            Set(AskState.Listening, L.Listening);
+        }
+
+        /// <summary>The wake phrase came to nothing (no question, timed out): back to idle.</summary>
+        public void CloseWake()
+        {
+            if (!WakeOpen) return;
+            WakeOpen = false;
+            if (_s == null) Finish();
         }
 
         async Task Loop(Session s)
@@ -167,6 +286,15 @@ namespace HypaStories
                 try
                 {
                     s.Rec = _listener.Listen(_language(), _view.SetLevel);
+                    s.FillerSaid = false;
+                    // The moment you stop talking: "Got it. Thinking…" and the filler, while speech-to-text runs (~4 s on a Quest).
+                    s.Rec.Recorded += () =>
+                    {
+                        if (s.Cancelled || s.Typed == null) return;
+                        Set(AskState.Thinking, L.Thinking);
+                        s.FillerSaid = true;
+                        _ = Say(s, L.Filler[0], t => s.FillerAt = t);
+                    };
                     r = await await Task.WhenAny(s.Rec.Result, typed.Task);
                 }
                 catch (OperationCanceledException) { return; }
@@ -211,7 +339,8 @@ namespace HypaStories
             Set(AskState.Thinking, L.Thinking);
             var answered = false;
             var said = new List<string>();
-            _ = Say(s, L.Filler[0], t => entry.Filler = t - r.TEnd); // at once, before any network work (cached)
+            if (s.FillerSaid) entry.Filler = s.FillerAt > 0 ? s.FillerAt - r.TEnd : 0; // already started when the recording stopped
+            else _ = Say(s, L.Filler[0], t => entry.Filler = t - r.TEnd); // at once, before any network work (cached)
             var timer = CancellationTokenSource.CreateLinkedTokenSource(s.Cts.Token);
             _ = SecondFiller();
 
@@ -280,7 +409,8 @@ namespace HypaStories
         public void Cancel()
         {
             var s = _s;
-            if (s == null) return;
+            if (s == null) { if (WakeOpen) { WakeOpen = false; Finish(); } return; }
+            WakeOpen = false;
             s.Cancelled = true;
             s.Cts.Cancel();
             s.Rec?.Cancel();

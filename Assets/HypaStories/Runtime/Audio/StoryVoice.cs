@@ -87,19 +87,60 @@ namespace HypaStories
             return _cache[key] = FetchAsync(text, language.HypaLabel, voices);
         }
 
+        /// <summary>The voice that spoke each language (by Hypa label); every later line in that language uses it.</summary>
+        readonly Dictionary<string, VoiceOption> _chosen = new Dictionary<string, VoiceOption>();
+        static readonly VoiceOption Auto = new VoiceOption();
+
+        /// <summary>Network and service hiccups: worth trying the same voice again rather than switching to another one.</summary>
+        static bool Transient(HypaException e) => e.Kind == HypaErrorKind.Offline || e.Kind == HypaErrorKind.Timeout ||
+            e.Kind == HypaErrorKind.Unavailable || e.Kind == HypaErrorKind.RateLimited || e.Kind == HypaErrorKind.Server ||
+            e.Kind == HypaErrorKind.InvalidResponse;
+
+        /// <summary>
+        /// One voice per language. The first voice that can speak the language (this speaker's, then the story's, then Hypa's
+        /// Auto) is kept for every later line, and a network hiccup retries that same voice instead of falling through to another:
+        /// on the headset a failed request once switched Ama to a different voice mid-answer.
+        /// </summary>
         async Task<AudioClip> FetchAsync(string text, string label, VoiceOption[] voices)
         {
-            HypaSpeech speech = null;
-            foreach (var voice in voices)
+            var order = new List<VoiceOption>();
+            if (_chosen.TryGetValue(label, out var chosen)) order.Add(chosen);
+            order.AddRange(voices.Where(v => v != chosen));
+            if (chosen != Auto) order.Add(Auto);
+            HypaException last = null;
+            foreach (var voice in order)
             {
-                try { speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, NullIfEmpty(voice.Voice), NullIfEmpty(voice.Model), InlineAudio); break; }
-                catch (HypaException e) when (e.Kind != HypaErrorKind.MissingKey && e.Kind != HypaErrorKind.Unauthorized)
+                for (var attempt = 0; ; attempt++)
                 {
-                    Warn($"voice {voice} failed for {label} ({e.Message}); trying the next voice.");
+                    try
+                    {
+                        var speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, NullIfEmpty(voice.Voice), NullIfEmpty(voice.Model), InlineAudio);
+                        if (!_chosen.TryGetValue(label, out var had) || had != voice)
+                        {
+                            _chosen[label] = voice;
+                            Debug.Log($"Hypa Stories: {(voice == Auto ? "Hypa's Auto voice" : "voice " + voice)} speaks {label} from now on.");
+                        }
+                        return await HypaAudioPlayer.LoadClipAsync(speech, _life.Token); // main thread: we were called from it
+                    }
+                    catch (HypaException e) when (Transient(e) && attempt < 2)
+                    {
+                        Warn($"voice {voice} hiccup for {label} ({e.Message}); trying the same voice again.");
+                        await Task.Delay(400 * (attempt + 1), _life.Token);
+                    }
+                    catch (HypaException e) when (Transient(e))
+                    {
+                        throw; // still failing: this line plays silently rather than in another voice
+                    }
+                    catch (HypaException e) when (e.Kind != HypaErrorKind.MissingKey && e.Kind != HypaErrorKind.Unauthorized)
+                    {
+                        last = e;
+                        if (_chosen.TryGetValue(label, out var c) && c == voice) _chosen.Remove(label);
+                        Warn($"voice {voice} can't speak {label} ({e.Message}); trying the next voice.");
+                        break;
+                    }
                 }
             }
-            if (speech == null) speech = await _mcp.TextToSpeechAsync(text, label, _life.Token, inline: InlineAudio); // Auto
-            return await HypaAudioPlayer.LoadClipAsync(speech, _life.Token); // main thread: we were called from it
+            throw last ?? new HypaException(HypaErrorKind.BadRequest, "No voice could speak " + label);
         }
 
         static string NullIfEmpty(string s) => string.IsNullOrEmpty(s) ? null : s;

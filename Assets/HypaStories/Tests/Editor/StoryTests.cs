@@ -397,6 +397,7 @@ namespace HypaStories.Tests
 
         sealed class FakeSession : IListenSession
         {
+            public event Action Recorded { add { } remove { } }
             public Task<ListenResult> Result { get; set; }
             public void Stop() { }
             public void Cancel() { }

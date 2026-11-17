@@ -19,6 +19,11 @@ namespace HypaStories
         void Stop();
         /// <summary>Stop recording and drop it (a suggested question was picked instead): no transcription call.</summary>
         void Cancel();
+        /// <summary>
+        /// The recording ended with speech in it and is being transcribed now (before <see cref="Result"/>): the moment to show
+        /// "thinking" and start a filler, instead of after speech-to-text (~4 s on a Quest). On the main thread.
+        /// </summary>
+        event Action Recorded;
     }
 
     /// <summary>Microphone + speech-to-text. Listen throws when there is no microphone (or no permission).</summary>

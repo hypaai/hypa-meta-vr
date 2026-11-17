@@ -73,7 +73,8 @@ namespace HypaCore
         {
             var list = new JArray();
             foreach (var m in messages) list.Add(new JObject { ["role"] = m.Role, ["content"] = m.Content });
-            return new JObject { ["messages"] = list, ["stream"] = false, ["provider"] = provider, ["model"] = model, ["top_p"] = 1 };
+            // thinking=false: Muse Spark answered in 3.8-4.2 s instead of ~5.5 s (it still reasons, but less). Measured 2026-11-16.
+            return new JObject { ["messages"] = list, ["stream"] = false, ["provider"] = provider, ["model"] = model, ["top_p"] = 1, ["thinking"] = false };
         }
 
         /// <summary>The reply text from a chat response (JSON or SSE). Throws on an error event or no content. Pure, unit tested.</summary>
