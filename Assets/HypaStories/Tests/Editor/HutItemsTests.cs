@@ -69,7 +69,11 @@ namespace HypaStories.Tests
             }
             var lamp = System.Array.FindIndex(HutItems.Entries, e => e.Prop == "oil-lamp");
             Assert.GreaterOrEqual(lamp, 0, "there is a lamp");
-            Assert.Less(HutItems.Place(lamp).spot.y, -1.5f, "at the back of the room, on the ledge");
+            Assert.AreEqual(HutInterior.TableHeight, HutItems.Place(lamp).baseY, "on its table");
+            Assert.Less(HutItems.Place(lamp).spot.magnitude, HutTrailLayout.WallInner - HutInterior.LedgeDepth - 0.3f, "out in the room, where it is seen");
+            for (var i = 0; i < HutItems.Entries.Length; i++)
+                if (i != lamp) Assert.Greater(Vector2.Distance(HutItems.Place(i).spot, HutItems.Place(lamp).spot), 0.75f, "the table is clear of " + HutItems.Entries[i].Prop);
+            Assert.Greater(Vector2.Distance(HutItems.Place(lamp).spot, HutItems.Woman), 0.8f, "and of the old woman");
             Assert.IsTrue(HutProps.Flame("oil-lamp").HasValue, "with a flame");
             Assert.IsFalse(HutItems.Entries[lamp].Heavy, "light: one hand carries it");
             Assert.IsTrue(HutItems.Entries[0].Heavy && HutItems.Entries[1].Heavy, "the pot and the mortar take both hands");
@@ -81,6 +85,12 @@ namespace HypaStories.Tests
             Assert.AreEqual("fr", HutLines.For(HutLines.Kind.BothHands, "fr").lang);
             foreach (HutLines.Kind k in System.Enum.GetValues(typeof(HutLines.Kind)))
                 foreach (var l in StoryLanguages.All) Assert.IsNotEmpty(HutLines.For(k, l.Code).text, $"{k} in {l.Code}");
+            // more than one way to pick something up, a line about each thing, and never the same twice running
+            Assert.Greater(HutLines.Options(HutLines.Kind.Care, "en").lines.Length, 1);
+            foreach (var e in HutItems.Entries)
+                Assert.Greater(HutLines.Options(HutLines.Kind.Care, "en", e.Prop).lines.Length, HutLines.Options(HutLines.Kind.Care, "en").lines.Length, e.Prop + " has its own line");
+            var first = HutLines.For(HutLines.Kind.Careful, "en", null, null, 0f).text;
+            for (var i = 0; i < 10; i++) Assert.AreNotEqual(first, HutLines.For(HutLines.Kind.Careful, "en", null, first, i / 10f).text);
         }
 
         [Test] public void AnItemThatLeavesTheRoom_IsLost()

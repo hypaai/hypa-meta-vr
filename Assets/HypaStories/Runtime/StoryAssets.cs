@@ -25,6 +25,8 @@ namespace HypaStories
         public Shader uiIcon;
         [Tooltip("Meta's depth-occlusion surface shader (Core SDK): the storyteller and the fire's stones use it in the room, so a real table or body in front hides them.")]
         public Shader depthLit;
+        [Tooltip("Dust kicked up by the hut's broom (a ParticleSystem): soft, alpha blended, faded by vertex colour.")]
+        public Shader dust;
 
         [Header("Materials")]
         [Tooltip("Standard material used as the template for runtime lit materials (keeps the Standard shader in the build).")]

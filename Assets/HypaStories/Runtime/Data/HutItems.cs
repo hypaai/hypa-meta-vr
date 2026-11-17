@@ -34,8 +34,8 @@ namespace HypaStories
             new Entry("hut/clay-pot", "clay-pot", heavy: true),
             new Entry("hut/mortar-pestle", "mortar-pestle", heavy: true),
             new Entry("hut/broom", "broom"),
-            // on the mud ledge at the back, beside the old woman (HutInterior builds the ledge)
-            new Entry("hut/oil-lamp", "oil-lamp", angle: 201f, radius: HutTrailLayout.WallInner - 0.18f, baseY: 0.36f),
+            // on a low table at the old woman's right hand, in plain sight from the door (HutInterior builds the table)
+            new Entry("hut/oil-lamp", "oil-lamp", angle: 145f, radius: 1.45f, baseY: HutInterior.TableHeight),
         };
 
         static StoryInfo[] _all;
@@ -97,31 +97,129 @@ namespace HypaStories
     }
 
     /// <summary>
-    /// What the old woman says when you handle her things: pick one up (<see cref="Care"/>), try a heavy one with one hand
-    /// (<see cref="BothHands"/>), or let one fall hard (<see cref="Careful"/>). One line per language code; a language without
-    /// them uses English. The non-European lines are best checked by a native speaker.
+    /// What the old woman says when you handle her things: pick one up (<see cref="Kind.Care"/>, and a line of her own for each
+    /// thing), try a heavy one with one hand (<see cref="Kind.BothHands"/>), let one fall hard or tip the lamp
+    /// (<see cref="Kind.Careful"/>), sweep with her broom (<see cref="Kind.Sweep"/>), and sweep on (<see cref="Kind.Enough"/>).
+    /// Several ways to say each, never the same twice running. Per language code; a language without a line uses its English.
+    /// The non-European lines are best checked by a native speaker.
     /// </summary>
     public static class HutLines
     {
-        public enum Kind { Care, BothHands, Careful }
+        public enum Kind { Care, BothHands, Careful, Sweep, Enough }
 
-        static readonly System.Collections.Generic.Dictionary<string, string[]> Lines = new System.Collections.Generic.Dictionary<string, string[]>
+        static string Key(Kind k) => k == Kind.Care ? "care" : k == Kind.BothHands ? "both" : k == Kind.Careful ? "careful" : k == Kind.Sweep ? "sweep" : "enough";
+
+        // language → key → the ways to say it. "care.{prop}" is said instead of "care" for that thing (mixed with the general ones).
+        static readonly System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string[]>> Lines =
+            new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string[]>>
         {
-            ["en"] = new[] { "Gently, my child. Handle it with care.", "It is heavy. Use both hands.", "Careful! Put it down gently." },
-            ["fr"] = new[] { "Doucement, mon enfant. Prends-en soin.", "C'est lourd. Prends-le à deux mains.", "Attention ! Pose-le doucement." },
-            ["es"] = new[] { "Despacio, hijo mío. Trátalo con cuidado.", "Pesa mucho. Usa las dos manos.", "¡Cuidado! Déjalo con suavidad." },
-            ["pcm"] = new[] { "Gently, my pikin. Handle am with care.", "E heavy. Use your two hand carry am.", "Careful! Put am down gently." },
-            ["yo"] = new[] { "Pẹ̀lẹ́, ọmọ mi. Fi ìṣọ́ra mú un.", "Ó wúwo. Fi ọwọ́ méjèèjì gbé e.", "Ṣọ́ra! Rọra gbé e kalẹ̀." },
-            ["ha"] = new[] { "A hankali, ɗana. Ka riƙe shi da kulawa.", "Yana da nauyi. Yi amfani da hannaye biyu.", "A kula! Ajiye shi a hankali." },
-            ["ig"] = new[] { "Nwayọọ, nwa m. Jiri nlezianya jide ya.", "Ọ dị arọ. Jiri aka abụọ.", "Kpachara anya! Tọgbọ ya nwayọọ." },
-            ["sw"] = new[] { "Polepole, mwanangu. Ishike kwa uangalifu.", "Ni nzito. Tumia mikono yote miwili.", "Angalia! Iweke chini polepole." },
+            ["en"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "Gently, my child. Handle it with care.", "Slowly, slowly. It is older than you are.", "Hold it well. We do not have another." },
+                ["care.clay-pot"] = new[] { "Ah, my water pot. Hold it gently, it was my mother's.", "Mind the rim, my child. Clay chips so easily." },
+                ["care.mortar-pestle"] = new[] { "Mind your toes! That mortar is heavier than it looks.", "Carry it close to your body, like the women do." },
+                ["care.broom"] = new[] { "Yes, take the broom. Show me how you sweep.", "Hold it low, by the tied end." },
+                ["care.oil-lamp"] = new[] { "Carry the lamp upright, or the oil will spill.", "Slowly with the lamp. Keep the flame alive." },
+                ["both"] = new[] { "It is heavy. Use both hands.", "Ah-ah, one hand? Use both, my child.", "Not like that. Two hands, and lift with your knees." },
+                ["careful"] = new[] { "Careful! Put it down gently.", "Eh! Gently, gently!", "Mind it, my child, it can break." },
+                ["sweep"] = new[] { "Yes, like that! Sweep from the back toward the door.", "Good. Short strokes, my child, like this." },
+                ["enough"] = new[] { "That is enough, my child. The floor is clean now.", "Enough, enough! You will sweep away the floor itself." },
+            },
+            ["fr"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "Doucement, mon enfant. Prends-en soin.", "Doucement, doucement. Il est plus vieux que toi.", "Tiens-le bien. Nous n'en avons pas d'autre." },
+                ["care.clay-pot"] = new[] { "Ah, mon pot à eau. Tiens-le doucement, il était à ma mère.", "Attention au bord, mon enfant. L'argile s'ébrèche si facilement." },
+                ["care.mortar-pestle"] = new[] { "Attention à tes pieds ! Ce mortier est plus lourd qu'il n'en a l'air.", "Porte-le contre toi, comme le font les femmes." },
+                ["care.broom"] = new[] { "Oui, prends le balai. Montre-moi comment tu balaies.", "Tiens-le bas, par le bout attaché." },
+                ["care.oil-lamp"] = new[] { "Porte la lampe bien droite, sinon l'huile va se renverser.", "Doucement avec la lampe. Garde la flamme en vie." },
+                ["both"] = new[] { "C'est lourd. Prends-le à deux mains.", "Une seule main ? Les deux, mon enfant.", "Pas comme ça. Deux mains, et soulève avec les genoux." },
+                ["careful"] = new[] { "Attention ! Pose-le doucement.", "Eh ! Doucement, doucement !", "Fais attention, mon enfant, ça peut se casser." },
+                ["sweep"] = new[] { "Oui, comme ça ! Balaie du fond vers la porte.", "Bien. De petits coups, mon enfant, comme ça." },
+                ["enough"] = new[] { "Ça suffit, mon enfant. Le sol est propre maintenant.", "Assez, assez ! Tu vas balayer le sol lui-même." },
+            },
+            ["es"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "Despacio, hijo mío. Trátalo con cuidado.", "Despacio, despacio. Es más viejo que tú.", "Sostenlo bien. No tenemos otro." },
+                ["care.clay-pot"] = new[] { "Ah, mi olla del agua. Sostenla con cuidado, era de mi madre.", "Cuidado con el borde, hijo mío. El barro se desportilla fácilmente." },
+                ["care.mortar-pestle"] = new[] { "¡Cuidado con los pies! Ese mortero pesa más de lo que parece.", "Llévalo pegado al cuerpo, como hacen las mujeres." },
+                ["care.broom"] = new[] { "Sí, toma la escoba. Enséñame cómo barres.", "Sostenla abajo, por el extremo atado." },
+                ["care.oil-lamp"] = new[] { "Lleva la lámpara derecha, o se derramará el aceite.", "Despacio con la lámpara. Mantén viva la llama." },
+                ["both"] = new[] { "Pesa mucho. Usa las dos manos.", "¿Una sola mano? Las dos, hijo mío.", "Así no. Dos manos, y levanta con las rodillas." },
+                ["careful"] = new[] { "¡Cuidado! Déjalo con suavidad.", "¡Eh! ¡Despacio, despacio!", "Cuidado, hijo mío, se puede romper." },
+                ["sweep"] = new[] { "¡Sí, así! Barre desde el fondo hacia la puerta.", "Bien. Golpes cortos, hijo mío, así." },
+                ["enough"] = new[] { "Ya basta, hijo mío. El suelo ya está limpio.", "¡Basta, basta! Vas a barrer el suelo mismo." },
+            },
+            ["pcm"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "Gently, my pikin. Handle am with care.", "Small small. E old pass you.", "Hold am well. We no get another one." },
+                ["care.clay-pot"] = new[] { "Ah, my water pot. Hold am gently, na my mama own." },
+                ["care.mortar-pestle"] = new[] { "Mind your leg! That mortar heavy pass how e be." },
+                ["care.broom"] = new[] { "Yes, carry the broom. Show me how you dey sweep." },
+                ["care.oil-lamp"] = new[] { "Carry the lamp straight, make the oil no pour." },
+                ["both"] = new[] { "E heavy. Use your two hand carry am.", "Ah-ah, one hand? Use two, my pikin." },
+                ["careful"] = new[] { "Careful! Put am down gently.", "Eh! Gently, gently!" },
+                ["sweep"] = new[] { "Na so! Sweep am from back go door." },
+                ["enough"] = new[] { "E don do, my pikin. The floor don clean now." },
+            },
+            ["yo"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "Pẹ̀lẹ́, ọmọ mi. Fi ìṣọ́ra mú un.", "Díẹ̀díẹ̀. Ó ti dàgbà jù ọ́ lọ." },
+                ["both"] = new[] { "Ó wúwo. Fi ọwọ́ méjèèjì gbé e." },
+                ["careful"] = new[] { "Ṣọ́ra! Rọra gbé e kalẹ̀.", "Ẹ̀! Pẹ̀lẹ́, pẹ̀lẹ́!" },
+                ["sweep"] = new[] { "Bẹ́ẹ̀ ni! Gbá a láti ẹ̀yìn lọ sí ẹnu ọ̀nà." },
+                ["enough"] = new[] { "Ó tó gẹ́ẹ́, ọmọ mi. Ilẹ̀ ti mọ́ báyìí." },
+            },
+            ["ha"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "A hankali, ɗana. Ka riƙe shi da kulawa." },
+                ["both"] = new[] { "Yana da nauyi. Yi amfani da hannaye biyu." },
+                ["careful"] = new[] { "A kula! Ajiye shi a hankali." },
+                ["sweep"] = new[] { "Haka ne! Ka share daga baya zuwa ƙofa." },
+                ["enough"] = new[] { "Ya isa haka, ɗana. Ƙasa ta yi tsabta yanzu." },
+            },
+            ["ig"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "Nwayọọ, nwa m. Jiri nlezianya jide ya." },
+                ["both"] = new[] { "Ọ dị arọ. Jiri aka abụọ." },
+                ["careful"] = new[] { "Kpachara anya! Tọgbọ ya nwayọọ." },
+                ["sweep"] = new[] { "Ọ dị mma! Zachaa site n'azụ ruo n'ọnụ ụzọ." },
+                ["enough"] = new[] { "O zuola, nwa m. Ala adịla ọcha ugbu a." },
+            },
+            ["sw"] = new System.Collections.Generic.Dictionary<string, string[]>
+            {
+                ["care"] = new[] { "Polepole, mwanangu. Ishike kwa uangalifu." },
+                ["both"] = new[] { "Ni nzito. Tumia mikono yote miwili." },
+                ["careful"] = new[] { "Angalia! Iweke chini polepole." },
+                ["sweep"] = new[] { "Ndiyo hivyo! Fagia kutoka nyuma hadi mlangoni." },
+                ["enough"] = new[] { "Inatosha, mwanangu. Sakafu ni safi sasa." },
+            },
         };
 
-        /// <summary>The line in <paramref name="lang"/>, and the language it is actually in (English when there is none). Pure.</summary>
-        public static (string text, string lang) For(Kind kind, string lang)
+        /// <summary>
+        /// The ways to say <paramref name="kind"/> (about <paramref name="prop"/>, for Care) in <paramref name="lang"/>, and the language
+        /// they are in: the language's own when it has the line, else English. Pure.
+        /// </summary>
+        public static (string[] lines, string lang) Options(Kind kind, string lang, string prop = null)
         {
-            if (lang != null && Lines.TryGetValue(lang, out var l)) return (l[(int)kind], lang);
-            return (Lines["en"][(int)kind], "en");
+            System.Collections.Generic.List<string> Get(string code)
+            {
+                if (code == null || !Lines.TryGetValue(code, out var d)) return null;
+                var l = new System.Collections.Generic.List<string>();
+                if (kind == Kind.Care && prop != null && d.TryGetValue("care." + prop, out var own)) l.AddRange(own);
+                if (d.TryGetValue(Key(kind), out var gen)) l.AddRange(gen);
+                return l.Count > 0 ? l : null;
+            }
+            var mine = Get(lang);
+            return mine != null ? (mine.ToArray(), lang) : (Get("en").ToArray(), "en");
+        }
+
+        /// <summary>One of the ways to say it, never <paramref name="last"/> again when there is another. Pure given <paramref name="pick"/> (0 ≤ pick &lt; 1).</summary>
+        public static (string text, string lang) For(Kind kind, string lang, string prop = null, string last = null, float pick = 0f)
+        {
+            var (lines, code) = Options(kind, lang, prop);
+            var choices = System.Array.FindAll(lines, l => l != last);
+            if (choices.Length == 0) choices = lines;
+            return (choices[Mathf.Clamp((int)(pick * choices.Length), 0, choices.Length - 1)], code);
         }
     }
 }

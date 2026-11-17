@@ -16,6 +16,10 @@ namespace HypaStories
     public static class HutInterior
     {
         /// <summary>The parts that flicker: glow materials (with their base opacity), the fire's light and the cards that face you.</summary>
+        /// <summary>How far the mud ledge comes out from the wall; the height and top of the low table a thing stands on.</summary>
+        public const float LedgeDepth = 0.36f, TableHeight = 0.55f;
+        public static readonly Vector2 TableSize = new Vector2(0.56f, 0.44f);
+
         public sealed class Fire
         {
             public readonly List<(Material m, float baseOpacity, float ph)> Glows = new List<(Material, float, float)>();
@@ -126,7 +130,7 @@ namespace HypaStories
         static void Ledge(MeshKit mk, float floorY)
         {
             var mud = new Color(0.42f, 0.29f, 0.19f);
-            float rOut = HutTrailLayout.WallInner - 0.01f, rIn = HutTrailLayout.WallInner - 0.36f;
+            float rOut = HutTrailLayout.WallInner - 0.01f, rIn = HutTrailLayout.WallInner - LedgeDepth;
             const float h = 0.36f, from = 152f, to = 208f;
             const int seg = 10;
             for (var i = 0; i < seg; i++)
@@ -206,11 +210,35 @@ namespace HypaStories
                     mk.Ellipsoid(at + Vector3.up * (sackH + 0.04f), new Vector3(0.07f, 0.06f, 0.07f), Id, burlap, 8, 5);                             // the tuft
                 }
             }
-            // a carved stool beside her mat, a small bowl on it
-            var stool = At(152f, 1.25f, floorY);
+            // a low carved table for every household thing that stands on one (the lamp), out in the room where it is seen
+            for (var i = 0; i < HutItems.Entries.Length; i++)
+            {
+                var (spot, baseY) = HutItems.Place(i);
+                if (baseY <= 0f || spot.magnitude > HutTrailLayout.WallInner - LedgeDepth - 0.1f) continue;
+                Table(mk, new Vector3(spot.x, floorY, spot.y), Quaternion.LookRotation(new Vector3(-spot.x, 0f, -spot.y).normalized), baseY);
+            }
+            // a carved stool on her other side, a small bowl on it
+            var stool = At(-150f, 1.3f, floorY);
             var dark = new Color(0.27f, 0.17f, 0.09f);
             mk.Lathe(stool, Id, new[] { (0.3f, 0.17f, 0.17f), (0.27f, 0.17f, 0.17f), (0.22f, 0.07f, 0.07f), (0.1f, 0.06f, 0.06f), (0.04f, 0.13f, 0.13f), (0f, 0.14f, 0.14f) }, dark, 14);
             mk.Lathe(stool + Vector3.up * 0.3f, Id, new[] { (0.05f, 0.09f, 0.09f), (0f, 0.05f, 0.05f) }, new Color(0.7f, 0.52f, 0.28f), 12);
+        }
+
+        /// <summary>A low table of dark wood: a thick top with a lip, four turned legs with a stretcher between them.</summary>
+        static void Table(MeshKit mk, Vector3 at, Quaternion facing, float height)
+        {
+            var wood = new Color(0.3f, 0.19f, 0.1f);
+            float w = TableSize.x, d = TableSize.y;
+            mk.Box(at + Vector3.up * (height - 0.025f), new Vector3(w, 0.05f, d), facing, Shade(wood, 1.15f));
+            mk.Box(at + Vector3.up * (height - 0.065f), new Vector3(w - 0.04f, 0.03f, d - 0.04f), facing, Shade(wood, 0.8f)); // the apron
+            foreach (var kx in new[] { -1f, 1f })
+                foreach (var kz in new[] { -1f, 1f })
+                {
+                    var foot = at + facing * new Vector3(kx * (w / 2f - 0.05f), 0f, kz * (d / 2f - 0.05f));
+                    mk.Limb(foot + Vector3.up * 0.01f, foot + Vector3.up * (height - 0.06f), 0.026f, 0.03f, wood, 8);
+                }
+            foreach (var kz in new[] { -1f, 1f })
+                mk.Beam(at + facing * new Vector3(-(w / 2f - 0.05f), 0.14f, kz * (d / 2f - 0.05f)), at + facing * new Vector3(w / 2f - 0.05f, 0.14f, kz * (d / 2f - 0.05f)), 0.025f, Shade(wood, 0.9f));
         }
 
         // ---------- things of the house round the wall ----------

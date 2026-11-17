@@ -35,6 +35,7 @@ namespace HypaStories
             /// <summary>How many hands (or controllers) hold it (null: it can't be picked up here).</summary>
             public Func<int> Hands;
             public bool Heavy;
+            public string Prop;
             public Vector3 HomePos;
             public Quaternion HomeRot;
             public float Lost, Ph, LetGoAt = -10f, OutFor, UpFor;
@@ -54,6 +55,16 @@ namespace HypaStories
         // what she says when you handle her things, shown over her head too
         const float SayAgainSeconds = 5f, HardHit = 2.2f;
         readonly Dictionary<HutLines.Kind, float> _saidAt = new Dictionary<HutLines.Kind, float>();
+        readonly Dictionary<HutLines.Kind, string> _lastSaid = new Dictionary<HutLines.Kind, string>();
+
+        // the broom: dust where it brushes the floor, as much as you sweep; a swish; and she has her say about it
+        const float SweepHeight = 0.16f, EnoughSeconds = 7f;
+        ParticleSystem _dust;
+        AudioSource _swish;
+        Item _broom;
+        Vector3 _tipWas;
+        bool _tipKnown, _praised;
+        float _sweepEase, _swept;
         TMPro.TextMeshPro _caption;
         KitGroup _captionGroup;
         Transform _captionRoot;
@@ -196,7 +207,9 @@ namespace HypaStories
                 var stand = new GameObject("Stand Collider " + entry.Prop);
                 stand.transform.SetParent(_inside, false);
                 stand.transform.SetLocalPositionAndRotation(X0Z(spot, baseY / 2f), inward);
-                stand.AddComponent<BoxCollider>().size = new Vector3(0.8f, baseY, Mathf.Max(0.3f, (toWall + 0.15f) * 2f));
+                var onTable = spot.magnitude < HutTrailLayout.WallInner - HutInterior.LedgeDepth - 0.1f; // out in the room: its table
+                stand.AddComponent<BoxCollider>().size = onTable ? new Vector3(HutInterior.TableSize.x, baseY, HutInterior.TableSize.y)
+                    : new Vector3(0.8f, baseY, Mathf.Max(0.3f, (toWall + 0.15f) * 2f));
             }
             var flameAt = HutProps.Flame(entry.Prop);
             foreach (var b in boxes)
@@ -238,6 +251,8 @@ namespace HypaStories
                 HomePos = prop.localPosition, HomeRot = prop.localRotation,
             };
             item.Heavy = entry.Heavy;
+            item.Prop = entry.Prop;
+            if (entry.Prop == "broom") BuildDust(a, item);
             var probe = prop.gameObject.AddComponent<ImpactProbe>();
             probe.Hit = speed => { if (speed > HardHit && !item.WasHeld && Time.time - item.LetGoAt < 3f) Say(HutLines.Kind.Careful); };
             try { item.Hands = StoryGrab.Make?.Invoke(body, a, entry.Heavy); }
@@ -362,6 +377,7 @@ namespace HypaStories
 
             HutInterior.Tick(_fire, cam, _t);
             Flames(cam, dt);
+            Sweeping(dt);
             Caption(cam, dt);
             Woman(cam, dt);
             Things(dt);
@@ -428,24 +444,120 @@ namespace HypaStories
             }
         }
 
+        /// <summary>
+        /// Dust from under the broom: built once, a world-space particle system (the dust stays where it was kicked up) that gives
+        /// nothing until the broom sweeps, and a looping swish that is silent until then.
+        /// </summary>
+        void BuildDust(StoryAssets a, Item broom)
+        {
+            _broom = broom;
+            var go = new GameObject("Broom Dust");
+            go.transform.SetParent(_inside, false);
+            _dust = go.AddComponent<ParticleSystem>();
+            _dust.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = _dust.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.4f, 2.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.08f, 0.32f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.18f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.62f, 0.5f, 0.36f, 0.55f), new Color(0.48f, 0.38f, 0.27f, 0.4f));
+            main.gravityModifier = -0.015f; // fine dust drifts up a little before it settles
+            main.maxParticles = 160;
+            main.playOnAwake = false;
+            var shape = _dust.shape;
+            shape.shapeType = ParticleSystemShapeType.Hemisphere;
+            shape.radius = 0.12f;
+            var em = _dust.emission;
+            em.rateOverTime = 0f;
+            var size = _dust.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.6f, 1f, 2.2f)); // puffs spread as they hang
+            var col = _dust.colorOverLifetime;
+            col.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.15f), new GradientAlphaKey(0.6f, 0.5f), new GradientAlphaKey(0f, 1f) });
+            col.color = fade;
+            var noise = _dust.noise;
+            noise.enabled = true; noise.strength = 0.12f; noise.frequency = 0.6f;
+            var r = go.GetComponent<ParticleSystemRenderer>();
+            r.renderMode = ParticleSystemRenderMode.Billboard;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            r.sharedMaterial = a != null && a.dust != null ? new Material(a.dust) { mainTexture = StoryMeshes.Glow(), name = "Broom Dust" } : null;
+            _dust.Play();
+
+            _swish = go.AddComponent<AudioSource>();
+            _swish.clip = ProceduralClips.Clip("broom swish", ProceduralClips.RustleSamples(61));
+            _swish.loop = true; _swish.playOnAwake = false; _swish.volume = 0f;
+            _swish.spatialBlend = 1f; _swish.minDistance = 0.6f; _swish.maxDistance = 6f; _swish.dopplerLevel = 0f;
+        }
+
+        /// <summary>
+        /// While the broom is held and its spread end brushes the floor, dust rises from under it, more the faster it sweeps, and
+        /// the swish follows. She says so when you start ("like that, from the back toward the door"), and after a good while
+        /// of sweeping, "that's enough, my child".
+        /// </summary>
+        void Sweeping(float dt)
+        {
+            if (_broom == null || _dust == null || dt <= 0f) return;
+            var held = _broom.Hands != null && _broom.Hands() > 0;
+            // the spread end of the broom (HutProps builds it lying along +Z, the bristles at the +Z end)
+            var tip = _broom.Body.transform.TransformPoint(new Vector3(0f, 0.03f, 0.27f));
+            var local = _inside.InverseTransformPoint(tip);
+            var onFloor = held && local.y < FloorY + SweepHeight;
+            var speed = 0f;
+            if (_tipKnown)
+            {
+                var d = local - _tipWas; d.y = 0f;
+                speed = d.magnitude / dt;
+            }
+            _tipWas = local; _tipKnown = true;
+            var want = onFloor ? Mathf.Clamp01((speed - 0.12f) / 1.3f) : 0f;
+            _sweepEase = Approach(_sweepEase, want, want > _sweepEase ? 14f : 5f, dt);
+
+            _dust.transform.position = _inside.TransformPoint(new Vector3(local.x, FloorY + 0.02f, local.z));
+            if (!_dust.isPlaying) _dust.Play(); // built while the room was switched off, it doesn't start on its own
+            var em = _dust.emission;
+            em.rateOverTime = _sweepEase * 90f;
+            if (_swish.clip != null)
+            {
+                _swish.transform.position = _dust.transform.position;
+                _swish.volume = _sweepEase * 0.55f;
+                _swish.pitch = 0.85f + _sweepEase * 0.4f;
+                if (_sweepEase > 0.02f && !_swish.isPlaying) _swish.Play();
+                else if (_sweepEase <= 0.02f && _swish.isPlaying) _swish.Stop();
+            }
+
+            if (_sweepEase > 0.25f)
+            {
+                _swept += dt;
+                if (!_praised && _swept > 1f) { _praised = true; Say(HutLines.Kind.Sweep); }
+                if (_swept > EnoughSeconds) { Say(HutLines.Kind.Enough); _swept = 0f; _praised = true; }
+            }
+            if (!held) { _praised = false; _swept = Mathf.Max(0f, _swept - dt * 0.5f); }
+        }
+
         /// <summary>A hand took hold or let go: she minds her things.</summary>
         void Handled(Item it, int was, int now)
         {
             if (now == 0) { _letGo = it.LetGoAt = Time.time; return; }
             if (was != 0 && !(it.Heavy && was == 1 && now >= 2)) return;
             if (it.Heavy && now == 1) Say(HutLines.Kind.BothHands);  // one hand on a heavy pot: it won't come up
-            else Say(HutLines.Kind.Care);                           // lifted: handle it with care
+            else Say(HutLines.Kind.Care, it.Prop);                  // lifted: handle it with care (and a word about this thing)
         }
 
         /// <summary>
         /// She says a line, in the story language (English where there is none), shown over her head. If she is telling you about
         /// a thing, the telling waits and picks up again from its line. Lines repeat no more often than every few seconds.
         /// </summary>
-        async void Say(HutLines.Kind kind)
+        async void Say(HutLines.Kind kind, string prop = null)
         {
             if (_saidAt.TryGetValue(kind, out var at) && Time.time - at < SayAgainSeconds) return;
             _saidAt[kind] = Time.time;
-            var (text, code) = HutLines.For(kind, _lang().Code);
+            _lastSaid.TryGetValue(kind, out var last);
+            var (text, code) = HutLines.For(kind, _lang().Code, prop, last, UnityEngine.Random.value);
+            _lastSaid[kind] = text;
             ShowCaption(text);
             if (_ask.State != AskState.Idle) return; // a question is open: the words show, she doesn't talk over it
             var gen = ++_sayGen;
