@@ -61,7 +61,7 @@ namespace HypaStories
         TryHypaFlow _tryFlow;
         StoryPlayer _story;
         AskFlow _ask;
-        StoryLanguage _lang;
+        StoryLanguage _lang;     // selection for the next story
         readonly RaiseHandGesture _raise = new RaiseHandGesture();
         // Places (3F): away = at another place; the camp stays loaded, hidden and quiet, and picks up when you come back.
         bool _away, _wasPlaying;
@@ -114,9 +114,9 @@ namespace HypaStories
             _voice = gameObject.AddComponent<StoryVoice>();
             _voice.Init(_camp.Teller.Mouth);
             _audio = gameObject.AddComponent<StoryAudio>();
-            _audio.Init(assets, _camp.Fire.Root, () => _voice.IsSpeaking);
+            _audio.Init(assets, _camp.Fire.Root, () => _voice.IsSpeaking || (_hut != null && _hut.DuckAmbience));
             _mic = gameObject.AddComponent<MicListener>();
-            _story = new StoryPlayer(_voice, () => _lang);
+            _story = new StoryPlayer(_voice);
             _story.Thunder += _audio.Thunder;
             _story.Sound += name => { _audio.Effect(name); _camp.Effect(name); };
 
@@ -135,7 +135,7 @@ namespace HypaStories
             // stream-until-Done mode gave only silence there
             _tryFlow.LiveText = false;
             _try = new TryHypaView(_player.Body, _tryFlow, CloseTry);
-            _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _lang, OnAsking);
+            _ask = new AskFlow(_story, _voice, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, _player, () => _story.Language, OnAsking);
             _ask.Logged += e => Debug.Log("Hypa Stories " + e);
 
             var prep = new GameObject("Preparing").transform;
@@ -399,7 +399,7 @@ namespace HypaStories
             _hut = go.AddComponent<HutVisit>();
             try
             {
-                _hut.Init(_camp, assets, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, () => _lang,
+                _hut.Init(_camp, assets, _mic, qaMode == "chat" ? new ChatStoryQa() : (IStoryQa)new StubStoryQa { Mode = qaMode }, () => _lang, PickLanguage,
                     () => { if (_story.Live) _story.Pause(); }, ToggleSound);
             }
             catch (Exception e)
@@ -485,7 +485,7 @@ namespace HypaStories
         string DodoLine(string id)
         {
             var c = System.Linq.Enumerable.FirstOrDefault(StoryLibrary.Find(DodoStory)?.Timeline.Captions ?? new Caption[0], x => x.Id == id);
-            return c?.TextFor(_lang.Code);
+            return c?.TextFor((_story.Language ?? _lang).Code);
         }
 
         /// <summary>The storyteller says a line (in the game: Dodo's challenge). Never throws.</summary>
@@ -498,7 +498,7 @@ namespace HypaStories
             _voice.StopAll(); // a new line replaces the one still being said
             try
             {
-                var line = await _voice.PrepareAsync(text, _lang, _cts.Token);
+                var line = await _voice.PrepareAsync(text, _story.Language ?? _lang, _cts.Token);
                 if (gen != _sayGen) return;
                 await _voice.PlayAsync(line, null, _cts.Token);
             }
@@ -514,14 +514,13 @@ namespace HypaStories
             _busy = true; _active = i;
             var st = StoryLibrary.All[i];
             _audio.Tap();
-            _story.Load(st);
+            _story.Load(st, _lang);
             _audio.Prepare(System.Linq.Enumerable.Select(st.Timeline.Sounds, c => c.Name)); // the story's sounds, made now, not mid-story
-            _player.Load(st, _lang);
+            _player.Load(st, _story.Language);
             _endNoted = false;
             _player.SetTryOffer(false);
             MicListener.RequestPermission();
-            var ready = _story.PrepareAsync(_cts.Token); // the opening line locks the voice; the fillers below speak in it
-            PrefetchLines();
+            var ready = _story.PrepareAsync(_cts.Token);
             for (var c = 0; c < _list.Count; c++) { var k = c; Run(0f, 0.9f, u => _list.SetReveal(k, 1f - u), In); }
             Run(0f, 0.8f, u => _list.Chrome.Set(1f - u), In);
             StartCoroutine(PlaySequence(ready));
@@ -581,17 +580,8 @@ namespace HypaStories
         {
             _lang = lang;
             StoryLanguages.Current = lang;
-            PrefetchLines();
-        }
-
-        /// <summary>The storyteller's stock lines in the current language, so a question's filler plays at once.</summary>
-        void PrefetchLines()
-        {
-            var l = StoryLanguages.Lines(_lang.Code);
-            foreach (var s in l.Filler) _voice.Prefetch(s, _lang);
-            foreach (var s in l.Resume) _voice.Prefetch(s, _lang);
-            _voice.Prefetch(l.Again, _lang);
-            _voice.Prefetch(l.Offline, _lang);
+            _list.SetLanguage(lang);
+            _hut?.SetLanguage(lang);
         }
 
         void ToggleSound()
@@ -627,11 +617,12 @@ namespace HypaStories
             _tryOpen = true;
             _audio.Tap();
             _tryFlow.Clear();
-            _tryFlow.BindStory(_lang.HypaLabel, StoryLanguages.All.Select(l => l.HypaLabel).ToArray());
+            var lang = _story.Language;
+            _tryFlow.BindStory(lang.HypaLabel, StoryLanguages.All.Select(l => l.HypaLabel).ToArray());
             // the story's chosen words in the language it was told in; a story without them offers its first long words
-            var words = _story.Story.WordsFor(_lang.Code);
+            var words = _story.Story.WordsFor(lang.Code);
             _tryFlow.SetSuggestions(words.Length > 0 ? words.Take(3).ToArray()
-                : TryHypaText.Suggest(_story.Story.Timeline.Captions.Select(c => c.TextFor(_lang.Code)), 3));
+                : TryHypaText.Suggest(_story.Story.Timeline.Captions.Select(c => c.TextFor(lang.Code)), 3));
             _try.Root.gameObject.SetActive(true);
             _try.Show(_story.Story.Accent);
             _player.SetTranslateOpen(true);

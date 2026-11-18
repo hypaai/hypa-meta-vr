@@ -77,19 +77,19 @@ namespace HypaStories
                 var lang = StoryLanguages.All[i];
                 var pos = new Vector3(-0.165f + i % perRow * 0.118f, -0.075f - i / perRow * row, 0f);
                 var btn = Kit.Button(_chrome, pos, new Vector2(0.112f, 0.048f), lang.Name, null, KitStyle.Ghost, null, null, 0.017f);
-                btn.OnPress = () => { pickLanguage(lang); PaintLanguage(lang); };
+                btn.OnPress = () => pickLanguage(lang);
                 _chips.Add((lang, btn));
             }
 
             Kit.Button(_chrome, new Vector3(-0.19f, -0.155f - extra, 0f), new Vector2(0.15f, 0.052f), "Back", "arrow-left", KitStyle.Ghost, back, null, 0.018f);
             _sound = Kit.Button(_chrome, new Vector3(0.235f, -0.155f - extra, 0f), new Vector2(0.052f, 0.052f), null, "volume-2", KitStyle.Ghost, toggleSound);
-            PaintLanguage(StoryLanguages.Current);
+            SetLanguage(StoryLanguages.Current);
             Chrome = _chrome.gameObject.AddComponent<KitGroup>();
             Chrome.Refresh();
             Layout(0f, true);
         }
 
-        void PaintLanguage(StoryLanguage current)
+        public void SetLanguage(StoryLanguage current)
         {
             foreach (var (lang, btn) in _chips) btn.Selected = lang == current;
         }

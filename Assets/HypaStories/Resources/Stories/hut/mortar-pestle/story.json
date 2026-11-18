@@ -5,6 +5,7 @@
   "title": "The mortar\nand pestle",
   "description": "Carved from one piece of hardwood. Hear the sound that means food is coming.",
   "words": ["mortar", "yam", "pestle"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
   "voices": [],
   "lines": [
     {"id": "greet", "text": "Ah, you have found the mortar and its pestle. The mortar is odo, and the pestle is its child.", "ask": ["What is the mortar called?"]},
