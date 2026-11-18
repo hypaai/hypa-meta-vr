@@ -39,13 +39,22 @@ namespace HypaCore
         /// <summary>GET bytes from a signed URL (TTS audio). Never sends the API key to it.</summary>
         public static async Task<byte[]> GetBytesAsync(string url, CancellationToken ct)
         {
-            using (var req = new HttpRequestMessage(HttpMethod.Get, url))
-            using (var res = await Send(req, ct, AudioDownloadTimeout).ConfigureAwait(false))
+            // the link's host only: its query string signs it
+            var trace = HypaTrace.Enabled ? HypaTrace.Begin("audio download", Uri.TryCreate(url, UriKind.Absolute, out var u) ? u.Host : "") : null;
+            try
             {
-                if (!res.IsSuccessStatusCode)
-                    throw new HypaException(HypaErrorKind.BadRequest, $"Audio link returned HTTP {(int)res.StatusCode} (links expire after about an hour).", (int)res.StatusCode);
-                return await res.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                using (var req = new HttpRequestMessage(HttpMethod.Get, url))
+                using (var res = await Send(req, ct, AudioDownloadTimeout).ConfigureAwait(false))
+                {
+                    if (!res.IsSuccessStatusCode)
+                        throw new HypaException(HypaErrorKind.BadRequest, $"Audio link returned HTTP {(int)res.StatusCode} (links expire after about an hour).", (int)res.StatusCode);
+                    var bytes = await res.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                    HypaTrace.End(trace, "ok", $"{bytes.Length / 1024} KB");
+                    return bytes;
+                }
             }
+            catch (OperationCanceledException) { HypaTrace.End(trace, "cancelled"); throw; }
+            catch (Exception e) { HypaTrace.End(trace, e is HypaException h ? h.Kind.ToString() : e.GetType().Name, e.Message); throw; }
         }
 
         static async Task<HttpResponseMessage> Send(HttpRequestMessage req, CancellationToken ct, TimeSpan timeout)

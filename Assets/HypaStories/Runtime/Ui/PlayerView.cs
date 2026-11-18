@@ -15,6 +15,7 @@ namespace HypaStories
     public sealed class PlayerView : IAskView
     {
         const float W = 0.68f, H = 0.42f;
+        public const float Width = W;
 
         public readonly Transform Root;
         public readonly KitGroup Fade;

@@ -12,7 +12,7 @@ namespace HypaCore
     /// (copy <c>.env.example</c>), then a git-ignored <c>hypa.local.json</c>. Both files live in:
     ///   Editor: project root (next to Assets/).
     ///   Quest:  Application.persistentDataPath, pushed with adb (see README). Never StreamingAssets/Resources.
-    /// .env shape: HYPA_API_KEY=... and HYPA_BASE_URL=...
+    /// .env shape: HYPA_API_KEY=... and HYPA_BASE_URL=... (and DEBUG=true for the debug panel)
     /// json shape: { "apiKey": "...", "baseUrl": "https://api.hypaintelligence.com" }
     /// The judges' build points baseUrl at the private proxy and needs no key in the app.
     /// </summary>
@@ -25,11 +25,14 @@ namespace HypaCore
         public string ApiKey { get; }
         public string BaseUrl { get; }
         public bool HasKey => !string.IsNullOrEmpty(ApiKey);
+        /// <summary>DEBUG=true (environment or .env): the apps show their debug panels and record API calls. Off by default.</summary>
+        public bool DebugMode { get; }
 
-        public HypaConfig(string apiKey, string baseUrl = null)
+        public HypaConfig(string apiKey, string baseUrl = null, bool debugMode = false)
         {
             ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
             BaseUrl = string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl.Trim().TrimEnd('/');
+            DebugMode = debugMode;
         }
 
         static HypaConfig _current;
@@ -46,6 +49,7 @@ namespace HypaCore
         {
             string key = Environment.GetEnvironmentVariable("HYPA_API_KEY");
             string url = Environment.GetEnvironmentVariable("HYPA_BASE_URL");
+            string debug = Environment.GetEnvironmentVariable("DEBUG");
             try
             {
                 var path = EnvFilePath;
@@ -54,6 +58,7 @@ namespace HypaCore
                     var env = ParseEnv(File.ReadAllText(path));
                     if (string.IsNullOrEmpty(key)) env.TryGetValue("HYPA_API_KEY", out key);
                     if (string.IsNullOrEmpty(url)) env.TryGetValue("HYPA_BASE_URL", out url);
+                    if (string.IsNullOrEmpty(debug)) env.TryGetValue("DEBUG", out debug);
                 }
             }
             catch (Exception e) { Debug.LogWarning("Hypa: could not read " + EnvFileName + ": " + e.Message); } // never log the key
@@ -68,10 +73,17 @@ namespace HypaCore
                 }
             }
             catch (Exception e) { Debug.LogWarning("Hypa: could not read " + FileName + ": " + e.Message); } // never log the key
-            var cfg = new HypaConfig(key, url);
+            var cfg = new HypaConfig(key, url, IsTrue(debug));
             // Says which server and whether a key was found, never the key itself.
-            Debug.Log($"Hypa: API {cfg.BaseUrl} | key {(cfg.HasKey ? "found" : "missing (free tools only)")}");
+            Debug.Log($"Hypa: API {cfg.BaseUrl} | key {(cfg.HasKey ? "found" : "missing (free tools only)")}{(cfg.DebugMode ? " | DEBUG on" : "")}");
             return cfg;
+        }
+
+        /// <summary>true / 1 / yes / on, any case.</summary>
+        public static bool IsTrue(string v)
+        {
+            v = v?.Trim().ToLowerInvariant();
+            return v == "true" || v == "1" || v == "yes" || v == "on";
         }
 
         /// <summary>Minimal dotenv parser: KEY=VALUE lines, # comments, optional "export ", optional quotes.</summary>

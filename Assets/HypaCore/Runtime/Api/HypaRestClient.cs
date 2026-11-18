@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -31,18 +32,27 @@ namespace HypaCore
         /// <summary>Generic call for any endpoint. Returns the last JSON payload of the response.</summary>
         public async Task<JToken> PostAsync(string endpoint, JObject body, CancellationToken ct)
         {
-            if (!_cfg.HasKey) throw new HypaException(HypaErrorKind.MissingKey, $"REST '{endpoint}' needs a Hypa API key.");
-            var raw = await HypaHttp.PostAsync(_cfg, BasePath + endpoint, body.ToString(Formatting.None), ct).ConfigureAwait(false);
-            var payloads = HypaHttp.JsonPayloads(raw);
-            if (payloads.Count == 0) throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: empty response.");
-            var last = payloads[payloads.Count - 1];
-            try { return JToken.Parse(last); }
-            catch (JsonException e)
+            var trace = HypaTrace.Enabled ? HypaTrace.Begin("rest " + endpoint, HypaTrace.Describe(body)) : null;
+            try
             {
-                // an error event carries plain text ("Your request could not be processed... model was not found"): say that
-                var text = last.Length > 300 ? last.Substring(0, 300) + "…" : last;
-                throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: {text}", 0, null, e);
+                if (!_cfg.HasKey) throw new HypaException(HypaErrorKind.MissingKey, $"REST '{endpoint}' needs a Hypa API key.");
+                var raw = await HypaHttp.PostAsync(_cfg, BasePath + endpoint, body.ToString(Formatting.None), ct).ConfigureAwait(false);
+                var payloads = HypaHttp.JsonPayloads(raw);
+                if (payloads.Count == 0) throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: empty response.");
+                var last = payloads[payloads.Count - 1];
+                JToken result;
+                try { result = JToken.Parse(last); }
+                catch (JsonException e)
+                {
+                    // an error event carries plain text ("Your request could not be processed... model was not found"): say that
+                    var text = last.Length > 300 ? last.Substring(0, 300) + "…" : last;
+                    throw new HypaException(HypaErrorKind.InvalidResponse, $"{endpoint}: {text}", 0, null, e);
+                }
+                HypaTrace.End(trace, "ok", trace == null ? null : result is JObject o ? HypaTrace.Describe(o) : HypaTrace.Clip(result.ToString(Formatting.None), 120));
+                return result;
             }
+            catch (OperationCanceledException) { HypaTrace.End(trace, "cancelled"); throw; }
+            catch (Exception e) { HypaTrace.End(trace, e is HypaException h ? h.Kind.ToString() : e.GetType().Name, e.Message); throw; }
         }
 
         /// <summary>

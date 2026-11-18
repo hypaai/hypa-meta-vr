@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using HypaCore;
 using UnityEngine;
 
 namespace HypaStories
@@ -38,6 +39,18 @@ namespace HypaStories
         public float Duration => Director?.Duration ?? 0f;
         public bool Live, Running, Paused, Asking, Ended;
         public int CaptionIndex { get; private set; } = -1;
+
+        // ---------- for the debug panel ----------
+        /// <summary>The line whose audio the story is waiting for (-1: not waiting), since when (<see cref="HypaTrace.Now"/>).</summary>
+        public int WaitingFor { get; private set; } = -1;
+        public double WaitingSince { get; private set; }
+        /// <summary>A tap on previous / next is settling: no line asked for yet.</summary>
+        public bool Settling { get; private set; }
+        public int LineCount => Story?.Timeline.Captions.Length ?? 0;
+        /// <summary>Where line <paramref name="i"/>'s audio is (debug panel).</summary>
+        public string LineVoiceState(int i) => Story != null && i >= 0 && i < Caps.Length ? _voice.CacheState(Text(i), Spoken(i)) : "";
+        public StoryLanguage LineLanguage(int i) => Story != null && i >= 0 && i < Caps.Length ? Spoken(i) : null;
+        public string LineText(int i) => Story != null && i >= 0 && i < Caps.Length ? Text(i) : "";
         float _hold = float.PositiveInfinity, _lastT;
 
         /// <summary>Thunder claps to play this frame (lightning flashes crossed by the clock).</summary>
@@ -99,14 +112,23 @@ namespace HypaStories
             _hold = Caps[idx].At; // held at the line's start while it settles, not at the last line's end
             try
             {
-                if (settleMs > 0) await Task.Delay(settleMs, ct);
+                if (settleMs > 0)
+                {
+                    Settling = true;
+                    await Task.Delay(settleMs, ct);
+                    if (token == _ttsToken) Settling = false;
+                }
                 for (var i = idx; i < Caps.Length; i++)
                 {
                     if (token != _ttsToken) return;
                     T = _lastT = Caps[i].At;
                     _hold = Caps[i].At;                       // wait at the line's start until its audio starts
+                    WaitingFor = i; WaitingSince = HypaTrace.Now;
                     var line = await PrepareLine(Text(i), Spoken(i), ct);
                     if (token != _ttsToken) return;
+                    WaitingFor = -1;
+                    if (HypaTrace.Enabled)
+                        HypaTrace.Add("player", $"line {i + 1} {(line.Clip != null ? $"ready, {line.Clip.length:0.0}s clip" : "SILENT")} after {HypaTrace.Now - WaitingSince:0.0}s wait");
                     for (var k = i + 1; k <= i + Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), Spoken(k));
                     var next = i + 1 < Caps.Length ? Caps[i + 1].At : Caps[i].Until + 1f;
                     await _voice.PlayAsync(line, _ => _hold = next - 0.01f, ct);
@@ -126,11 +148,13 @@ namespace HypaStories
             var prepared = _voice.PrepareAsync(text, lang, ct);
             if (await Task.WhenAny(prepared, Task.Delay(LineTimeoutMs, ct)) == prepared) return await prepared;
             ct.ThrowIfCancellationRequested();
+            if (HypaTrace.Enabled) HypaTrace.Add("player", $"line timed out after {LineTimeoutMs / 1000}s: plays silently");
             return StoryVoice.Silent(text);
         }
 
         void StopTts()
         {
+            WaitingFor = -1; Settling = false;
             _ttsToken++;
             _tts.Cancel();
             _tts.Dispose();
@@ -157,6 +181,7 @@ namespace HypaStories
             var i = CaptionIndex;
             var to = dir > 0 ? Mathf.Min(i + 1, Caps.Length - 1)
                 : (i >= 0 && T - Caps[i].At > 1.2f) || i <= 0 ? Mathf.Max(i, 0) : i - 1;
+            if (HypaTrace.Enabled) HypaTrace.Add("player", $"{(dir > 0 ? "next" : "previous")} → line {to + 1}");
             Seek(Caps[to].At + 0.02f, SettleMs);
         }
 

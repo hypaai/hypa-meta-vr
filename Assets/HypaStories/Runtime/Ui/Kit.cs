@@ -262,6 +262,8 @@ namespace HypaStories
     public sealed class FollowView : MonoBehaviour
     {
         public float Distance = 1.2f, Height = -0.1f, YawOffset, Threshold = 32f, Speed = 3.5f;
+        /// <summary>Stays exactly where it is while set (e.g. while you read the debug panel beside it), then follows again.</summary>
+        public bool Hold;
         float _yaw;
         bool _moving, _placed;
 
@@ -295,6 +297,7 @@ namespace HypaStories
             var h = Head;
             if (h == null) return;
             if (!_placed) { Snap(); return; }
+            if (Hold) { _moving = false; return; }
             var off = Mathf.Abs(Mathf.DeltaAngle(h.eulerAngles.y, _yaw));
             var flat = transform.position - h.position; flat.y = 0f;
             if (!_moving && (off > Threshold || Mathf.Abs(flat.magnitude - Distance) > 0.35f)) _moving = true;

@@ -62,6 +62,8 @@ namespace HypaStories
         StoryPlayer _story;
         AskFlow _ask;
         StoryLanguage _lang;
+        /// <summary>Beside the player, with DEBUG=true only.</summary>
+        DebugView _debug;
         readonly RaiseHandGesture _raise = new RaiseHandGesture();
         // Places (3F): away = at another place; the camp stays loaded, hidden and quiet, and picks up when you come back.
         bool _away, _wasPlaying;
@@ -122,6 +124,11 @@ namespace HypaStories
             _list = new StoryListView(_ui, assets, Play, () => Go(Screen.Splash), ToggleSound, PickLanguage);
             _player = new PlayerView(_ui, () => _story.Jump(-1), () => _story.TogglePause(), () => _story.Jump(1),
                 OpenTry, CornerTap, ExitPlay, ToggleSound, q => _ask.SubmitText(q), ToggleRoom);
+            // DEBUG=true in .env only: otherwise the panel is never made and no call is recorded
+            if (HypaConfig.Current.DebugMode)
+            {
+                _debug = new DebugView(_ui, _player, _story, _voice, () => _lang);
+            }
             _tryFlow = new TryHypaFlow(new HypaTryApi(), _mic, HypaSettings.TargetLanguage);
             // the same recording as Ask (stops when you stop talking), which is the one proven on the headset; the live
             // stream-until-Done mode gave only silence there
@@ -696,6 +703,7 @@ namespace HypaStories
                 _player.SetTryOffer(_story.Ended && !_tryOpen && _ask.State == AskState.Idle);
                 if (_tryOpen && !_story.Ended) HideTryNow();
             }
+            _debug?.Update();
             _camp.Teller.Level = _voice.Level;
             _camp.Teller.Attend = _ask.State != AskState.Idle ? 1f : 0f;
 

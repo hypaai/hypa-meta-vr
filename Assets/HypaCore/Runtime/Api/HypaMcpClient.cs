@@ -38,17 +38,25 @@ namespace HypaCore
 
         public async Task<JObject> CallToolAsync(string tool, JObject args, CancellationToken ct)
         {
-            if (!_cfg.HasKey && !FreeTools.Contains(tool))
-                throw new HypaException(HypaErrorKind.MissingKey, $"'{tool}' needs a Hypa API key.");
-            var req = new JObject
+            var trace = HypaTrace.Enabled ? HypaTrace.Begin("mcp " + tool, HypaTrace.Describe(args)) : null;
+            try
             {
-                ["jsonrpc"] = "2.0",
-                ["id"] = Interlocked.Increment(ref _id),
-                ["method"] = "tools/call",
-                ["params"] = new JObject { ["name"] = tool, ["arguments"] = args ?? new JObject() },
-            };
-            var body = await HypaHttp.PostAsync(_cfg, Path, req.ToString(Formatting.None), ct, TimeoutFor(tool)).ConfigureAwait(false);
-            return ParseToolResult(body, tool);
+                if (!_cfg.HasKey && !FreeTools.Contains(tool))
+                    throw new HypaException(HypaErrorKind.MissingKey, $"'{tool}' needs a Hypa API key.");
+                var req = new JObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = Interlocked.Increment(ref _id),
+                    ["method"] = "tools/call",
+                    ["params"] = new JObject { ["name"] = tool, ["arguments"] = args ?? new JObject() },
+                };
+                var body = await HypaHttp.PostAsync(_cfg, Path, req.ToString(Formatting.None), ct, TimeoutFor(tool)).ConfigureAwait(false);
+                var result = ParseToolResult(body, tool);
+                HypaTrace.End(trace, "ok", trace != null ? HypaTrace.Describe(result) : null);
+                return result;
+            }
+            catch (OperationCanceledException) { HypaTrace.End(trace, "cancelled"); throw; }
+            catch (Exception e) { HypaTrace.End(trace, e is HypaException h ? h.Kind.ToString() : e.GetType().Name, e.Message); throw; }
         }
 
         /// <summary>Turns a tools/call response body into the tool's structured output, or throws HypaException. Pure.</summary>
