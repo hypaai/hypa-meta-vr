@@ -160,6 +160,7 @@ namespace HypaStories.Tests
                 var village = Node("Village", root.transform).gameObject.AddComponent<Village>();
                 SetField(camp, "<Village>k__BackingField", village);
                 var scenery = Node("Village scenery", village.transform);
+                SetField(village, "_root", scenery);
                 var elder = Node("Elder", scenery);
                 elder.localPosition = new Vector3(40f, 0f, 8f);
                 elder.localRotation = Quaternion.Euler(0f, 43f, 0f);
@@ -176,16 +177,17 @@ namespace HypaStories.Tests
                 SetField(camp, "<PortalRing>k__BackingField", portal);
                 SetField(camp, "_firePool", glow);
                 SetField(camp, "_rainT", Node("Rain", root.transform));
-                var sceneryList = (System.Collections.Generic.List<GameObject>)typeof(CampWorld)
-                    .GetField("_scenery", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(camp);
-                sceneryList.Add(village.gameObject);
                 var originalPosition = elder.localPosition; var originalRotation = elder.localRotation; var originalScale = elder.localScale;
+                var elderPosition = elder.position; var elderRotation = elder.rotation;
                 camp.SetRoom(true, elderSession);
                 Assert.AreEqual(outdoorPosition, root.transform.position);
                 Assert.Less(Quaternion.Angle(outdoorRotation, root.transform.rotation), 0.001f);
                 Assert.AreEqual(elderSession, camp.RoomWithElder);
-                Assert.IsTrue(elder.gameObject.activeInHierarchy);
-                Assert.AreEqual(elderSession ? 0 : CampWorld.DestLayer, elder.gameObject.layer);
+                Assert.AreEqual(elderSession, elder.gameObject.activeInHierarchy);
+                Assert.IsFalse(scenery.gameObject.activeInHierarchy);
+                Assert.AreEqual(0, elder.gameObject.layer);
+                Assert.That(Vector3.Distance(elderPosition, elder.position), Is.LessThan(0.0001f));
+                Assert.Less(Quaternion.Angle(elderRotation, elder.rotation), 0.001f);
                 Assert.AreEqual(!elderSession, village.gameObject.activeInHierarchy);
                 foreach (var t in new[] { teller.transform, ring, portal, glow, embers })
                     Assert.AreEqual(!elderSession, t.gameObject.activeInHierarchy, t.name);

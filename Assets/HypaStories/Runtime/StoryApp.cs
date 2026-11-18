@@ -885,7 +885,7 @@ namespace HypaStories
 
             // read the room (Meta's scan; with none, Meta's own set-up flow asks the player to scan it, and we wait for them to come back)
             Task<RoomScan> scan = null;
-            if (StoryRoom.Scan != null)
+            if (!_elderSession && StoryRoom.Scan != null)
             {
                 try { scan = StoryRoom.Scan(); } catch (Exception e) { Debug.LogWarning("Hypa Stories: room scan: " + e.Message); }
             }
@@ -899,34 +899,36 @@ namespace HypaStories
             var found = scan != null && scan.Status == TaskStatus.RanToCompletion && scan.Result != null ? scan.Result : null;
             _roomScan = found;
 
-            // where the fire goes: an open spot in the scanned room, else in front of you
-            var head = _cam.position;
-            var user = new Vector2(head.x, head.z);
-            var fwd3 = _cam.forward; fwd3.y = 0f;
-            var fwd = new Vector2(fwd3.x, fwd3.z);
             string note = null;
-            RoomSpotPlan plan;
-            var floorY = FloorHeight();
-            if (found != null && found.Result == RoomScanResult.Found && found.Clearance != null)
+            RoomSpotPlan plan = default;
+            float floorY = 0f;
+            if (!_elderSession)
             {
-                floorY = found.FloorY;
-                var spot = RoomSpot.Find(user, fwd, found.Clearance, found.Floor);
-                Debug.Log("Hypa Stories room: " + (spot.HasValue ? $"fire at {spot.Value.Fire}, gap {spot.Value.Gap:0.0} m, clearance {found.Clearance(spot.Value.Fire):0.00} m" : "no open spot found") + $", you at {user}, floor y {found.FloorY:0.00}");
-                if (spot.HasValue) plan = spot.Value;
+                // where the fire goes: an open spot in the scanned room, else in front of you
+                var head = _cam.position;
+                var user = new Vector2(head.x, head.z);
+                var fwd3 = _cam.forward; fwd3.y = 0f;
+                var fwd = new Vector2(fwd3.x, fwd3.z);
+                floorY = FloorHeight();
+                if (found != null && found.Result == RoomScanResult.Found && found.Clearance != null)
+                {
+                    floorY = found.FloorY;
+                    var spot = RoomSpot.Find(user, fwd, found.Clearance, found.Floor);
+                    Debug.Log("Hypa Stories room: " + (spot.HasValue ? $"fire at {spot.Value.Fire}, gap {spot.Value.Gap:0.0} m, clearance {found.Clearance(spot.Value.Fire):0.00} m" : "no open spot found") + $", you at {user}, floor y {found.FloorY:0.00}");
+                    if (spot.HasValue) plan = spot.Value;
+                    else
+                    {
+                        plan = RoomSpot.InFront(user, fwd, RoomSpot.MinGap);
+                        note = "There's no open floor in your room, so the fire is just in front of you.";
+                    }
+                }
                 else
                 {
-                    plan = RoomSpot.InFront(user, fwd, RoomSpot.MinGap);
-                    note = _elderSession ? "There's no open floor in your room, so the elder is just in front of you."
-                        : "There's no open floor in your room, so the fire is just in front of you.";
+                    plan = RoomSpot.InFront(user, fwd);
+                    var why = found != null ? found.Result : RoomScanResult.Unavailable;
+                    if (why == RoomScanResult.NoScan) note = "No room scan yet, so the fire is just in front of you. Scan your room in your headset's settings, then try again.";
+                    else if (why == RoomScanResult.NoPermission) note = "Allow Hypa to see your room and the fire will find its spot. For now it's just in front of you.";
                 }
-            }
-            else
-            {
-                plan = RoomSpot.InFront(user, fwd);
-                var why = found != null ? found.Result : RoomScanResult.Unavailable;
-                var subject = _elderSession ? "elder" : "fire";
-                if (why == RoomScanResult.NoScan) note = $"No room scan yet, so the {subject} is just in front of you. Scan your room in your headset's settings, then try again.";
-                else if (why == RoomScanResult.NoPermission) note = $"Allow Hypa to see your room and the {subject} will find its spot. For now it's just in front of you.";
             }
 
             // through the veil: the forest goes, your room shows, the fire is on its floor
@@ -991,19 +993,11 @@ namespace HypaStories
             _drumGame?.SetInRoom(inRoom);
         }
 
-        /// <summary>Place the elder alone, or the fire and its storyteller, on the scanned room floor.</summary>
+        /// <summary>Place the fire and its storyteller on the scanned room floor.</summary>
         void PlaceInRoom()
         {
+            if (_elderSession) return; // the elder keeps his outdoor pose in passthrough
             var away = new Vector3(_roomPlan.Away.x, 0f, _roomPlan.Away.y);
-            if (_elderSession)
-            {
-                var at = _roomPlan.Fire + _roomPlan.Away * _roomPlan.Gap;
-                var position = new Vector3(at.x, _roomFloorY, at.y);
-                var facing = _cam.position - position; facing.y = 0f;
-                _camp.Village.ElderRoot.SetPositionAndRotation(position,
-                    Quaternion.LookRotation(facing.sqrMagnitude > 0.0001f ? facing : -away));
-                return;
-            }
             _world.SetPositionAndRotation(new Vector3(_roomPlan.Fire.x, _roomFloorY, _roomPlan.Fire.y), Quaternion.LookRotation(away));
             _camp.SetTellerGap(_roomPlan.Gap);
             _camp.FaceTeller(_cam.position);

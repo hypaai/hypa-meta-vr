@@ -604,6 +604,7 @@ namespace HypaStories
                     _hidden.Clear();
                     _roomLoops.Clear();
                     foreach (var go in _scenery) HideForRoom(go);
+                    HideForRoom(Village.gameObject);
                     HideForRoom(Teller.gameObject);
                     HideForRoom(Fire?.Root.gameObject);
                     HideForRoom(_ringHolder?.gameObject);
