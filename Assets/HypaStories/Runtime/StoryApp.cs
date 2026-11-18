@@ -67,6 +67,14 @@ namespace HypaStories
         bool _away, _wasPlaying;
         // In my room (3K): the camp in your real room, on the floor you found, with the story going on as before.
         bool _room, _roomBusy;
+        // Portal (3L): a doorway on your real door (else a clear wall) that shows where it leads (hut, village or camp); a step in takes you there, a step back brings you home.
+        sealed class DoorPortal { public StoryPortal Portal; public PortalPlan Plan; public float Prev = float.NaN; public Transform Chips; public KitButton[] Buttons; }
+        readonly System.Collections.Generic.List<DoorPortal> _doors = new System.Collections.Generic.List<DoorPortal>();
+        DoorPortal _through;      // the door you stepped through
+        RoomScan _roomScan;
+        bool _returnToRoom;
+        PortalDestination _dest = PortalDestination.Hut;
+        float _prevDepth = float.NaN, _portalQuietUntil;
         RoomSpotPlan _roomPlan;
         float _roomFloorY;
         KitGroup _roomNote;
@@ -179,6 +187,7 @@ namespace HypaStories
         {
             if (id != PlaceIds.Camp || _away) return;
             if (_room) ExitRoomNow(); // the hut and the village are out in the forest: back to it, unseen, before the camp is put away
+            else if (_returnToRoom) DestroyDoors();
             _wasPlaying = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
             if (_hut != null && _hut.enabled) _hut.Close();
             _ask.Cancel();
@@ -224,6 +233,7 @@ namespace HypaStories
         float Recenter(Vector3 seat)
         {
             if (_room) { PlaceInRoom(); return _cam.position.y - _roomFloorY; } // in your room the fire stays where it is on the real floor
+            if (_returnToRoom) return _cam.position.y - _world.position.y; // the destination stays lined up with the real door
             var head = _cam.position;
             var fwd = _cam.forward; fwd.y = 0f;
             if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.forward;
@@ -672,8 +682,11 @@ namespace HypaStories
 
             _splash.Update(_cam);
             _list.Update(dt);
-            Locomotion(dt);
-            if (!_busy && !_room) KeepInBounds(); // every frame: head movement (room-scale, or the simulator) can't leave the clearing either
+            if (!_busy && !_room && !_returnToRoom)
+            {
+                Locomotion(dt);
+                KeepInBounds();
+            }
             TrailPanels(dt);
 
             if (_hatGame != null) _turnHat.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == EshuStory && !_busy);
@@ -704,6 +717,7 @@ namespace HypaStories
                 _try.Update(dt);
                 _player.SetCorner(_tryFlow.Listening ? "Done" : "Speak", _tryFlow.Listening ? "check" : "mic");
             }
+            UpdatePortal(dt);
             var raised = RaiseHand.Probe != null && RaiseHand.Probe();
             if (_raise.Update(raised, dt) && _screen == Screen.Play && !_busy && !_tryOpen && _ask.State == AskState.Idle && !Playing && !InHutTelling()) _ = _ask.BeginAsync();
             if (Application.isEditor) EditorKeys();
@@ -712,6 +726,8 @@ namespace HypaStories
         void EditorKeys()
         {
             if (Input.GetKeyDown(KeyCode.R)) ToggleRoom(); // In my room / back to the forest
+            if (Input.GetKeyDown(KeyCode.P)) { if (_room) UseDoor(null); else ToggleRoom(); } // editor: step through the door (into your room first)
+            if (Input.GetKeyDown(KeyCode.G)) StepThroughPortal(); // editor: step through the door, or back out (you can't walk here)
             if (Input.GetKeyDown(KeyCode.V) && _screen == Screen.Play) _player.SetHidden(!_player.Hidden); // hide / show the story panel
             switch (_screen)
             {
@@ -781,6 +797,7 @@ namespace HypaStories
             if (Places.InCamp == (System.Func<string, bool>)HoldsPlace) { Places.InCamp = null; Places.TravelInCamp = null; }
             if (Places.NumberKeysTaken == (System.Func<bool>)NumberKeysTaken) Places.NumberKeysTaken = null;
             StoryRoom.Depth?.Invoke(false);
+            DestroyDoors();
             _cts.Cancel();
             _cts.Dispose();
             _ask?.Cancel();
@@ -842,6 +859,7 @@ namespace HypaStories
             }
             if (_away || _busy) { HideRoomNote(); _roomBusy = false; yield break; } // gone elsewhere meanwhile
             var found = scan != null && scan.Status == TaskStatus.RanToCompletion && scan.Result != null ? scan.Result : null;
+            _roomScan = found;
 
             // where the fire goes: an open spot in the scanned room, else in front of you
             var head = _cam.position;
@@ -876,6 +894,7 @@ namespace HypaStories
             yield return new WaitForSeconds(0.5f);
             if (_away) { SetVeil(0f); _roomBusy = false; yield break; }
             _room = true;
+            _returnToRoom = false;
             _roomPlan = plan;
             _roomFloorY = floorY;
             _camp.SetRoom(true);
@@ -883,9 +902,10 @@ namespace HypaStories
             PlaceInRoom();
             SetRoomButtons(true);
             RefitGames();
+            var doorNote = ArmPortal();
             SnapPanels();
             Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
-            if (note != null) ShowRoomNote(note, 7f); else HideRoomNote();
+            if (note != null) ShowRoomNote(note, 7f); else ShowRoomNote(doorNote, 8f);
             yield return new WaitForSeconds(0.8f);
             _roomBusy = false;
         }
@@ -908,9 +928,10 @@ namespace HypaStories
         }
 
         /// <summary>Back to the forest at once (the world around the fire returns; where the camp stands is the caller's to set).</summary>
-        void ExitRoomNow()
+        void ExitRoomNow(bool keepPortal = false)
         {
             if (!_room) return;
+            if (!keepPortal) DestroyDoors();
             _room = false;
             _camp.SetRoom(false);
             StoryRoom.Depth?.Invoke(false);
@@ -934,6 +955,279 @@ namespace HypaStories
             _world.SetPositionAndRotation(new Vector3(_roomPlan.Fire.x, _roomFloorY, _roomPlan.Fire.y), Quaternion.LookRotation(away));
             _camp.SetTellerGap(_roomPlan.Gap);
             _camp.FaceTeller(_cam.position);
+        }
+
+        // ---------- portal: hut, village or camp (3L) ----------
+
+        /// <summary>
+        /// A doorway on every real door the scan found, each open and showing where it leads (live). With no door in the scan, one on a clear
+        /// stretch of wall; with no scan, one in front of you. Three chips beside each switch the place. A step through goes in; a step back
+        /// brings you home. Returns a line to show.
+        /// </summary>
+        string ArmPortal()
+        {
+            DestroyDoors();
+            var head = _cam.position;
+            var user = new Vector2(head.x, head.z);
+            var fwd3 = _cam.forward; fwd3.y = 0f;
+            var fwd = new Vector2(fwd3.x, fwd3.z);
+            var fire = _roomPlan.Fire;
+            var plans = new System.Collections.Generic.List<PortalPlan>();
+            var note = "Step through the door to go where it shows.";
+            var scanned = _roomScan != null && _roomScan.Result == RoomScanResult.Found && _roomScan.Surfaces != null && _roomScan.Surfaces.Count > 0 && _roomScan.Clearance != null;
+            if (scanned)
+            {
+                plans = PortalSpot.Doors(user, _roomScan.Surfaces, _roomFloorY);
+                if (plans.Count == 0)
+                {
+                    var found = PortalSpot.Find(user, fwd, _roomScan.Surfaces, _roomFloorY, _roomScan.Clearance, fire);
+                    if (found.HasValue) { plans.Add(found.Value); note = "Your scan has no door, so there's a doorway on your wall. Step through it to go where it shows."; }
+                    else { plans.Add(PortalSpot.InFront(user, fwd, _roomFloorY, fire)); note = "Your scan has no door and no clear wall, so the doorway is just in front of you. Step through it."; }
+                }
+            }
+            else plans.Add(PortalSpot.InFront(user, fwd, _roomFloorY, fire));
+            foreach (var plan in plans)
+            {
+                Debug.Log($"Hypa Stories portal: {plan.Kind}{(plan.Scanned ? "" : " (in front of you)")} at {plan.Base}, facing {plan.Normal}, {plan.Width:0.00} x {plan.Height:0.00} m");
+                AddDoor(plan);
+            }
+            PaintChips();
+            _portalQuietUntil = Time.time + 1.5f;
+            _audio.PortalOpen();
+            return note;
+        }
+
+        void AddDoor(PortalPlan plan)
+        {
+            var d = new DoorPortal { Plan = plan };
+            d.Portal = StoryPortal.Create(assets.portal != null ? assets.portal : Shader.Find("HypaStories/Portal"),
+                assets.portalHole != null ? assets.portalHole : Shader.Find("HypaStories/PortalHole"), plan, () => UseDoor(d), CycleDestination);
+            d.Portal.Link = () => PortalLink(d);
+            d.Portal.Fog = () => _camp.ForestFog;
+            d.Portal.Show();
+            BuildChips(d);
+            _doors.Add(d);
+        }
+
+        /// <summary>The real doorway linked to the chosen place's doorway in the camp's world (null when there is nothing to show).</summary>
+        Matrix4x4? PortalLink(DoorPortal d)
+        {
+            if (!_room || d.Portal == null || !d.Portal.Opening) return null;
+            var real = PortalDestinations.Frame(d.Plan.Base, d.Plan.Normal);
+            return PortalDestinations.Link(real, PortalDestinations.DoorWorld(_world.localToWorldMatrix, _dest));
+        }
+
+        // the sign over a door: Hut, Village, Campfire (solid glass, like the other menus), mounted just above the door. It turns to face you.
+        void BuildChips(DoorPortal d)
+        {
+            var p = d.Plan;
+            const float W = 0.64f, H = 0.17f;
+            d.Chips = new GameObject("Portal Bar").transform;
+            d.Chips.SetParent(d.Portal.transform, false);
+            d.Chips.localPosition = new Vector3(0f, p.Height + 0.1f + H * 0.5f, 0.04f); // a sign over the door (FaceBars keeps it just above the top)
+            Kit.Panel(d.Chips, "Bar", Vector3.zero, new Vector2(W, H), 0.05f, KitTheme.GlassTop, KitTheme.GlassBottom, KitTheme.Hairline, 10, 0.5f);
+            Kit.Text(d.Chips, "Where to?", 0.02f, new Vector3(0f, 0.056f, -0.004f), new Vector2(0.5f, 0.035f), KitTheme.Dim);
+            d.Buttons = new KitButton[PortalDestinations.All.Length];
+            for (var i = 0; i < d.Buttons.Length; i++)
+            {
+                var dest = PortalDestinations.All[i];
+                d.Buttons[i] = Kit.Button(d.Chips, new Vector3((i - 1) * 0.205f, -0.012f, -0.004f), new Vector2(0.195f, 0.075f), PortalDestinations.Label(dest),
+                    PortalDestinations.Icon(dest), KitStyle.Ghost, () => ChooseDestination(dest), null, 0.022f);
+            }
+        }
+
+        void ChooseDestination(PortalDestination dest)
+        {
+            if (_busy || _roomBusy || !_room || _dest == dest) return;
+            _dest = dest;
+            _audio.Tap();
+            foreach (var d in _doors) if (d.Portal != null) d.Portal.Dip();
+            PaintChips();
+        }
+
+        /// <summary>Turns each bar toward you (level) and makes it bigger the further you are, so it reads from across the room.</summary>
+        void FaceBars()
+        {
+            var head = _cam.position;
+            foreach (var d in _doors)
+            {
+                if (d.Chips == null || !d.Chips.gameObject.activeInHierarchy) continue;
+                var to = d.Chips.position - head;
+                var dist = to.magnitude;
+                to.y = 0f;
+                if (to.sqrMagnitude > 1e-4f) d.Chips.rotation = Quaternion.LookRotation(to.normalized);
+                var k = Mathf.Clamp(dist / 2.5f, 0.85f, 1.4f);                     // about the door's width at a few metres
+                d.Chips.localScale = Vector3.one * k;
+                var lp = d.Chips.localPosition;
+                d.Chips.localPosition = new Vector3(0f, d.Plan.Height + 0.1f + 0.085f * k, lp.z);   // its bottom edge stays just over the door
+            }
+        }
+
+        /// <summary>The door itself was pinched: the next place (hut, village, campfire, round again).</summary>
+        void CycleDestination()
+        {
+            if (_busy || _roomBusy || !_room) return;
+            var all = PortalDestinations.All;
+            _dest = all[(System.Array.IndexOf(all, _dest) + 1) % all.Length];
+            _audio.Tap();
+            foreach (var d in _doors) if (d.Portal != null) d.Portal.Dip();
+            PaintChips();
+        }
+
+        void PaintChips()
+        {
+            foreach (var d in _doors)
+            {
+                if (d.Buttons == null) continue;
+                for (var i = 0; i < d.Buttons.Length; i++)
+                {
+                    if (d.Buttons[i] == null) continue;
+                    var on = PortalDestinations.All[i] == _dest;
+                    d.Buttons[i].Style = on ? KitStyle.Primary : KitStyle.Ghost;
+                    d.Buttons[i].Selected = on;
+                }
+            }
+        }
+
+        void DestroyDoors()
+        {
+            _returnToRoom = false;
+            _prevDepth = float.NaN;
+            _through = null;
+            foreach (var d in _doors) if (d.Portal != null) Destroy(d.Portal.gameObject);
+            _doors.Clear();
+            _camp?.SetViewer(null);
+        }
+
+        /// <summary>The door nearest your head.</summary>
+        DoorPortal NearestDoor()
+        {
+            DoorPortal best = null; var bd = float.MaxValue;
+            foreach (var d in _doors)
+            {
+                var dist = (d.Plan.Base - _cam.position).sqrMagnitude;
+                if (dist < bd) { bd = dist; best = d; }
+            }
+            return best;
+        }
+
+        /// <summary>Per frame: the pull as you near a doorway, the camp's draw distance for the view through it, and the step in or back.</summary>
+        void UpdatePortal(float dt)
+        {
+            var head = _cam.position;
+            if (_room && _doors.Count > 0)
+            {
+                FaceBars();
+                var near = NearestDoor();
+                var link = near != null ? PortalLink(near) : null;
+                _camp.SetViewer(link.HasValue ? _world.InverseTransformPoint(link.Value.MultiplyPoint(head)) : (Vector3?)null);
+            }
+            if (_busy || _roomBusy) return;
+            if (_room)
+            {
+                foreach (var d in _doors)
+                {
+                    if (d.Portal == null || !d.Portal.Opening) continue;
+                    var l = PortalSpot.Local(d.Plan, head);
+                    d.Portal.SetPull(PortalSpot.Pull(l.z, l.x, d.Plan.Width));
+                    if (Time.time < _portalQuietUntil || Playing) { d.Prev = l.z; continue; }
+                    if (!float.IsNaN(d.Prev) && PortalSpot.SteppedIn(d.Prev, l.z, l.x, l.y, d.Plan.Width, d.Plan.Height, -PortalSpot.Through)) { d.Prev = float.NaN; UseDoor(d, steppedThrough: true); return; }
+                    d.Prev = l.z;
+                }
+            }
+            else if (_returnToRoom && _through != null)
+            {
+                var here = _world.InverseTransformPoint(head);
+                var v = new Vector2(here.x, here.z) - PortalDestinations.Door(_dest);
+                var dir = PortalDestinations.DoorDir(_dest);
+                var depth = Vector2.Dot(v, dir);                          // + = outside, the room's side
+                var across = Vector2.Dot(v, new Vector2(dir.y, -dir.x));
+                if (Time.time >= _portalQuietUntil && !float.IsNaN(_prevDepth) && PortalSpot.SteppedOut(_prevDepth, depth, across, _through.Plan.Width)) { _prevDepth = float.NaN; UseDoor(null); return; }
+                _prevDepth = depth;
+            }
+        }
+
+        /// <summary>
+        /// A step through a door (or pinching its glass, or P in the editor): into the place it shows. From inside, a step back (or G) brings you
+        /// home. <paramref name="door"/> null = the nearest.
+        /// </summary>
+        void UseDoor(DoorPortal door, bool steppedThrough = false)
+        {
+            if (_busy || _roomBusy || _away || Playing) return;
+            if (_room)
+            {
+                door = door ?? NearestDoor();
+                if (door != null && door.Portal != null && door.Portal.Opening) StartCoroutine(EnterDestination(door, steppedThrough));
+            }
+            else if (_returnToRoom) StartCoroutine(BackToTheRoom());
+        }
+
+        void StepThroughPortal() => UseDoor(null);
+
+        /// <summary>
+        /// A soft flash and you are in the place, just inside its doorway, which is laid on the real door: you see your room through it, and
+        /// stepping back over it takes you home. (Pinched from afar or by key, the doorway comes to you, a step in front of your head.)
+        /// </summary>
+        IEnumerator EnterDestination(DoorPortal door, bool steppedThrough)
+        {
+            _roomBusy = true;
+            _audio.PortalPass();
+            Run(0f, 0.22f, u => SetVeil(u), In);
+            yield return new WaitForSeconds(0.26f);
+            if (_away) { SetVeil(0f); _roomBusy = false; yield break; }
+            ExitRoomNow(keepPortal: true);
+            var at = door.Plan;
+            if (!steppedThrough)
+            {
+                var depth = PortalSpot.Local(at, _cam.position).z;
+                at.Base += at.Normal * (depth + PortalSpot.Through); // bring the doorway to a seated player
+            }
+            var pose = PortalSpot.WorldPose(at, PortalDestinations.Door(_dest), PortalDestinations.DoorDir(_dest));
+            _world.SetPositionAndRotation(pose.position, pose.rotation);
+            _through = door;
+            foreach (var d in _doors)
+            {
+                if (d != door) { d.Portal.gameObject.SetActive(false); continue; }
+                d.Portal.transform.position = at.Base;
+                d.Portal.SetHole(true);
+                if (d.Chips != null) d.Chips.gameObject.SetActive(false); // the plate
+            }
+            _returnToRoom = true; _prevDepth = float.NaN; _portalQuietUntil = Time.time + 0.8f;
+            SnapPanels();
+            Run(0.05f, 0.5f, u => SetVeil(1f - u), Out);
+            yield return new WaitForSeconds(0.6f);
+            _roomBusy = false;
+        }
+
+        IEnumerator BackToTheRoom()
+        {
+            _roomBusy = true;
+            _audio.PortalPass();
+            Run(0f, 0.22f, u => SetVeil(u), In);
+            yield return new WaitForSeconds(0.26f);
+            if (_away) { SetVeil(0f); _roomBusy = false; yield break; }
+            _returnToRoom = false;
+            _room = true;
+            _camp.SetRoom(true);
+            StoryRoom.Depth?.Invoke(true);
+            PlaceInRoom();
+            SetRoomButtons(true);
+            RefitGames();
+            foreach (var d in _doors)
+            {
+                d.Portal.gameObject.SetActive(true);
+                d.Portal.transform.position = d.Plan.Base;
+                d.Portal.SetHole(false);
+                d.Portal.Show();
+                d.Prev = float.NaN;
+                if (d.Chips != null) d.Chips.gameObject.SetActive(true);
+            }
+            _through = null;
+            _prevDepth = float.NaN; _portalQuietUntil = Time.time + 1.2f;
+            SnapPanels();
+            Run(0.05f, 0.5f, u => SetVeil(1f - u), Out);
+            yield return new WaitForSeconds(0.6f);
+            _roomBusy = false;
         }
 
         /// <summary>
@@ -985,7 +1279,7 @@ namespace HypaStories
         /// </summary>
         void Locomotion(float dt)
         {
-            if (_busy || _room || Playing) return; // in your room you walk for yourself; the fight is staged at the seat
+            if (Playing) return; // the fight is staged at the seat
             var move = StoryInput.Move?.Invoke() ?? Vector2.zero;
             if (Application.isEditor)
             {
@@ -1108,6 +1402,7 @@ namespace HypaStories
         void StandAt(Vector2 at, Vector2 look)
         {
             if (_room) ExitRoomNow(); // out on the trails you're in the forest
+            else if (_returnToRoom) DestroyDoors();
             var head = _cam.position;
             var floor = _cam.parent != null ? _cam.root.position.y : head.y - seatedEyeHeight;
             if (head.y - floor < 0.6f) floor = head.y - seatedEyeHeight;
@@ -1128,6 +1423,7 @@ namespace HypaStories
             Run(0f, 0.45f, u => SetVeil(u), In);
             At(0.5f, () =>
             {
+                if (_returnToRoom) DestroyDoors();
                 Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
                 SnapPanels();
             });

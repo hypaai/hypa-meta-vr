@@ -22,6 +22,9 @@ namespace HypaStories
         readonly List<(Light l, Vector3 at)> _lights = new List<(Light, Vector3)>();
         float _next;
 
+        /// <summary>Where to measure from (camp ground space) instead of the camera: the far side of the portal while you look through it (3L).</summary>
+        public Vector3? Viewer;
+
         public int Count => _renderers.Count + _lights.Count;
 
         /// <summary>Is a thing with these bounds (camp ground space) close enough to draw from <paramref name="viewer"/>? Pure, unit tested.</summary>
@@ -85,7 +88,7 @@ namespace HypaStories
             _next = Time.time + Every;
             var cam = Camera.main;
             if (cam == null) return;
-            var me = transform.InverseTransformPoint(cam.transform.position);
+            var me = Viewer ?? transform.InverseTransformPoint(cam.transform.position);
             foreach (var e in _renderers)
             {
                 if (e.R == null) continue;

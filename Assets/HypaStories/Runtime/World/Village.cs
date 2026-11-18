@@ -1016,7 +1016,7 @@ namespace HypaStories
             var dist = Vector2.Distance(Viewer, VillageLayout.Plaza);
             // the drums come clear as you come out of the trees
             _drumsMuffle.cutoffFrequency = Mathf.Lerp(900f, 22000f, Mathf.Pow(Mathf.Clamp01(1f - (dist - 8f) / 26f), 2f));
-            var seen = _placeWanted && dist < ShowWithin;
+            var seen = (_placeWanted || PreviewFrom.HasValue) && dist < ShowWithin; // the portal in your room shows it too
             if (_root.gameObject.activeSelf != seen) _root.gameObject.SetActive(seen);
             if (!seen) return;
 
