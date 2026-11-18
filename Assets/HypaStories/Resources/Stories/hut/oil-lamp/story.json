@@ -5,6 +5,7 @@
   "title": "The oil lamp",
   "description": "A little clay lamp with a cotton wick. Hear how it keeps the night away.",
   "words": ["lamp", "oil", "flame"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
   "voices": [],
   "lines": [
     {"id": "greet", "text": "Ah, you have found my lamp. We call it fitila.", "ask": ["What is the lamp called?"]},

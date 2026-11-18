@@ -5,6 +5,7 @@
   "title": "The broom",
   "description": "A bundle of palm ribs tied with cord. Hear how each day begins with it.",
   "words": ["broom", "palm", "morning"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
   "voices": [],
   "lines": [
     {"id": "greet", "text": "And this one is the broom. We call it igbale.", "ask": ["What is the broom called?"]},

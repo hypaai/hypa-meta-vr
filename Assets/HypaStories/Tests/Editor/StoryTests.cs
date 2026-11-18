@@ -57,6 +57,33 @@ namespace HypaStories.Tests
             Assert.AreEqual(4, StoryDirector.WordsShown(c, 20f, 4));
         }
 
+        [Test] public void StoryPlayers_KeepTheirOwnLanguageUntilTheNextStory()
+        {
+            var voices = new GameObject("Test voices");
+            try
+            {
+                var camp = new StoryPlayer(voices.AddComponent<StoryVoice>());
+                var hut = new StoryPlayer(voices.AddComponent<StoryVoice>());
+                var campStory = StoryLibrary.Find("seven-hot-stones");
+                var hutStory = HutItems.All[0];
+                var english = StoryLanguages.Find("en");
+                var french = StoryLanguages.Find("fr");
+
+                camp.Load(campStory, english);
+                hut.Load(hutStory, french);
+
+                Assert.AreSame(english, camp.Language);
+                Assert.AreEqual(campStory.Timeline.Captions[0].TextFor("en"), camp.StorySoFar);
+                Assert.AreSame(french, hut.Language);
+                Assert.AreEqual(hutStory.Timeline.Captions[0].TextFor("fr"), hut.StorySoFar);
+                CollectionAssert.AreEqual(hutStory.Suggestions(0, "fr"), hut.Suggestions);
+
+                camp.Load(campStory, french);
+                Assert.AreEqual(campStory.Timeline.Captions[0].TextFor("fr"), camp.StorySoFar);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(voices); }
+        }
+
         [Test] public void Stories_TimesFromWordCount_InOrder()
         {
             var marlow = StoryLibrary.Find("marlow-street").Timeline;
