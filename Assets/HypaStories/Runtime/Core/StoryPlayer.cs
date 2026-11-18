@@ -24,6 +24,11 @@ namespace HypaStories
         const int LineTimeoutMs = 25000;
         /// <summary>Lines fetched ahead of the one playing: slow voices (Yoruba ~4-9 s a line) are then ready in time.</summary>
         const int Ahead = 3;
+        /// <summary>
+        /// Previous / next wait this long before the line is fetched, so tapping through lines asks only for the one you stop on.
+        /// Without it each tap starts a fetch that runs on (to be cached), and the line you land on queues behind them all.
+        /// </summary>
+        const int SettleMs = 400;
         CancellationTokenSource _tts = new CancellationTokenSource();
         int _ttsToken;
 
@@ -87,12 +92,14 @@ namespace HypaStories
             _ = TtsRun(IdxAt(from));
         }
 
-        async Task TtsRun(int idx)
+        async Task TtsRun(int idx, int settleMs = 0)
         {
             var token = ++_ttsToken;
             var ct = _tts.Token;
+            _hold = Caps[idx].At; // held at the line's start while it settles, not at the last line's end
             try
             {
+                if (settleMs > 0) await Task.Delay(settleMs, ct);
                 for (var i = idx; i < Caps.Length; i++)
                 {
                     if (token != _ttsToken) return;
@@ -131,14 +138,16 @@ namespace HypaStories
             _voice.StopAll();
         }
 
-        public void Seek(float to)
+        public void Seek(float to) => Seek(to, 0);
+
+        void Seek(float to, int settleMs)
         {
             T = _lastT = Mathf.Clamp(to, 0f, Mathf.Max(Duration - 0.01f, 0f));
             Ended = false;
             StopTts();
             var i = IdxAt(T);
             T = _lastT = Caps[i].At;
-            if (!Paused) _ = TtsRun(i);
+            if (!Paused) _ = TtsRun(i, settleMs);
         }
 
         /// <summary>Previous / next line. Previous restarts the current line if it has been playing for a moment.</summary>
@@ -148,7 +157,7 @@ namespace HypaStories
             var i = CaptionIndex;
             var to = dir > 0 ? Mathf.Min(i + 1, Caps.Length - 1)
                 : (i >= 0 && T - Caps[i].At > 1.2f) || i <= 0 ? Mathf.Max(i, 0) : i - 1;
-            Seek(Caps[to].At + 0.02f);
+            Seek(Caps[to].At + 0.02f, SettleMs);
         }
 
         public void TogglePause()

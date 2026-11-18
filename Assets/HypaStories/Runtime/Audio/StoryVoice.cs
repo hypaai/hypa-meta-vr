@@ -30,6 +30,8 @@ namespace HypaStories
         readonly HashSet<string> _locked = new HashSet<string>();
         bool _fake, _skip;
         int _playToken;
+        /// <summary>The wait before a failed line is asked for again.</summary>
+        const int RetryMs = 1500;
 
         /// <summary>Loudness of whatever the storyteller is saying, 0..1.</summary>
         public float Level { get; private set; }
@@ -128,9 +130,11 @@ namespace HypaStories
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception first)
             {
-                // once more (a failed fetch isn't kept in the cache, so this asks again) before the line plays silently
+                // once more (a failed fetch isn't kept in the cache, so this asks again) before the line plays silently; after a
+                // pause, since an instant retry of a busy or rate-limited service fails the same way
                 try
                 {
+                    await Task.Delay(RetryMs, ct);
                     var clip = await WithCancellation(Fetch(text, language), ct);
                     if (clip != null) return new SpeechLine { Text = text, Clip = clip, Seconds = clip.length };
                 }
