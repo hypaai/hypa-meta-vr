@@ -24,7 +24,7 @@ namespace HypaStories
     /// </summary>
     public sealed class HutVisit : MonoBehaviour
     {
-        const float FloorY = 0.017f, CardScale = 0.9f, NearMetres = 7f, BuiltMetres = 30f, LostSeconds = 2.5f, LetGoSeconds = 0.3f;
+        const float FloorY = 0.017f, CardScale = 0.9f, NearMetres = 7f, BuiltMetres = 46f, LostSeconds = 2.5f, LetGoSeconds = 0.3f;
 
         sealed class Item
         {
@@ -78,6 +78,9 @@ namespace HypaStories
         static float CardHalf => StoryCard.H * CardScale / 2f;
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
         Transform _hut, _inside, _ui;
+        DistanceCull _distanceCull;
+        float _open;
+        Vector3 _jawRest, _jawAt;
         Village.Figure _woman;
         StoryVoice _voice;
         StoryPlayer _story;
@@ -102,6 +105,7 @@ namespace HypaStories
             _lang = lang; _pauseCamp = pauseCamp;
             _hut = camp.Trail != null ? camp.Trail.HutRoot : null;
             if (_hut == null) { Debug.LogWarning("Hypa Stories: no hut to furnish."); enabled = false; return; }
+            _distanceCull = camp.GetComponent<DistanceCull>();
 
             _inside = new GameObject("Hut Inside").transform;
             _inside.SetParent(_hut, false);
@@ -143,7 +147,9 @@ namespace HypaStories
                 catch (Exception e) { Debug.LogWarning($"Hypa Stories: hut item {HutItems.Entries[i].Id} has no content: {e.Message}"); continue; }
                 BuildItem(i, HutItems.Entries[i], story, a, vc, cardMat, quad);
             }
-            _inside.gameObject.SetActive(false); // shown when you come near (see Update)
+            // The furnishings use the same draw distance as the shell. Cards, captions and lamp lights manage their own visibility.
+            _distanceCull?.Collect(_inside, t => t.name.StartsWith("Card") || t.name == "Old Woman Says", 0f, _ => false, 0f, includeLights: false);
+            _inside.gameObject.SetActive(false); // shown when the hut is in view (see Update)
         }
 
         // ---------- building ----------
@@ -182,6 +188,8 @@ namespace HypaStories
             {
                 _woman = camp.Village.MakeElderWoman(_inside, HutItems.Woman, -HutItems.Woman);
                 _woman.Root.localPosition = X0Z(HutItems.Woman, FloorY + 0.012f); // on the mat
+                if (_woman.Mouth != null) _jawRest = _woman.Mouth.localPosition;
+                if (_woman.Jaw != null) _jawAt = _woman.Jaw.localPosition;
             }
             catch (Exception e) { Debug.LogWarning("Hypa Stories: couldn't make the old woman: " + e.Message); }
         }
@@ -387,10 +395,16 @@ namespace HypaStories
             _t += dt;
             if (!_hut.gameObject.activeInHierarchy) { Close(); return; } // the camp is put away (another place)
 
-            var local = _hut.InverseTransformPoint(cam.position);
-            var dist = new Vector2(local.x, local.z).magnitude;
+            var eye = ViewerWorld(cam);
+            var dist = ViewerDistance(eye);
             var built = dist < BuiltMetres;
-            if (_inside.gameObject.activeSelf != built) _inside.gameObject.SetActive(built);
+            if (_inside.gameObject.activeSelf != built)
+            {
+                _inside.gameObject.SetActive(built);
+                // the distance test may still have them off from when you were far; turn them on, it switches them off again if you are
+                if (built)
+                    foreach (var r in _inside.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
+            }
             if (!built) { Close(); return; }
             if (_current >= 0 && dist > HutTrailLayout.HutRadius + 3f) Close(); // you walked away
 
@@ -408,7 +422,7 @@ namespace HypaStories
                 if (reveal) it.Card.SetReveal(_shown);
                 it.Card.Root.localPosition = new Vector3(0f, CardHalf + 0.006f + Mathf.Sin(_t * 0.6f + it.Ph) * 0.006f, 0f); // bobs gently, never down onto its thing
                 // low over its thing, so it tips up to face you as well as turning (never past 50 degrees)
-                var to = it.Anchor.position - cam.position;
+                var to = it.Anchor.position - eye;
                 var flat = new Vector2(to.x, to.z).magnitude;
                 to.y = Mathf.Clamp(to.y, -flat * 1.19f, flat * 1.19f);
                 if (flat > 0.1f)
@@ -444,15 +458,15 @@ namespace HypaStories
             Flames(cam, dt);
             Sweeping(dt);
             Caption(cam, dt);
-            Woman(cam, dt);
+            Woman(eye, dt);
             Things(dt);
         }
 
         /// <summary>She looks at you, breathes, blinks, and her mouth moves with her voice.</summary>
-        void Woman(Transform cam, float dt)
+        void Woman(Vector3 eye, float dt)
         {
             if (_woman == null) return;
-            var to = _inside.InverseTransformPoint(cam.position) - _woman.Root.localPosition;
+            var to = _inside.InverseTransformPoint(eye) - _woman.Root.localPosition;
             var dir = Quaternion.Inverse(_woman.Root.localRotation) * to;
             var yaw = Mathf.Clamp(Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg, -65f, 65f);
             var pitch = Mathf.Clamp(-Mathf.Atan2(dir.y - 0.75f, new Vector2(dir.x, dir.z).magnitude) * Mathf.Rad2Deg, -22f, 18f);
@@ -462,12 +476,49 @@ namespace HypaStories
             _woman.Torso.localRotation = Quaternion.Euler(9f + Mathf.Sin(_t * 1.1f) * 1.2f, yaw * 0.2f, 0f); // a little bent with her years
             var blink = Mathf.Repeat(_t + 0.7f, 4.1f) < 0.13f;
             _woman.EyeL.localScale = _woman.EyeR.localScale = new Vector3(1f, blink ? 0.12f : 1f, 1f);
-            if (_woman.Mouth != null) _woman.Mouth.localScale = new Vector3(1f, 1f + talk * 3.5f, 1f);
             // her hands rest in her lap, and lift a little as she talks
             var lift = Mathf.Clamp01(talk * 2f) * (0.6f + 0.4f * Mathf.Sin(_t * 2.3f));
             _woman.ArmL.localRotation = _woman.ArmR.localRotation = Quaternion.Euler(-28f - lift * 10f, 0f, 0f);
             _woman.ForeL.localRotation = Quaternion.Euler(-55f - lift * 22f, 0f, -14f);
             _woman.ForeR.localRotation = Quaternion.Euler(-55f - lift * 30f, 0f, 14f);
+        }
+
+        /// <summary>
+        /// Where to measure and face from. Through the portal that is the eye on the far side of the doorway (your head is still
+        /// by the fire), so the room is furnished in the glass, and she looks at the door, not only after you step through.
+        /// </summary>
+        Vector3 ViewerWorld(Transform cam)
+        {
+            if (_distanceCull != null && _distanceCull.Viewer.HasValue)
+            {
+                var far = _distanceCull.transform.TransformPoint(_distanceCull.Viewer.Value);
+                var hut = _hut.position;
+                if ((far - hut).sqrMagnitude < (cam.position - hut).sqrMagnitude) return far;
+            }
+            return cam.position;
+        }
+
+        /// <summary>How far <paramref name="eye"/> is from the hut's centre, on the ground.</summary>
+        float ViewerDistance(Vector3 eye)
+        {
+            var local = _hut.InverseTransformPoint(eye);
+            return new Vector2(local.x, local.z).magnitude;
+        }
+
+        /// <summary>Her mouth opens with her voice, the same smoothing the campfire storyteller uses, after this frame's loudness is known.</summary>
+        void LateUpdate()
+        {
+            if (_woman == null || _woman.Mouth == null || _inside == null || !_inside.gameObject.activeInHierarchy) return;
+            var talk = _voice != null ? _voice.Level : 0f;
+            _open = Approach(_open, Mathf.Min(1f, talk * 1.2f), 22f, Time.deltaTime);
+            _woman.Mouth.localScale = Vector3.one;
+            _woman.Mouth.localPosition = _jawRest + new Vector3(0f, -_open * 0.024f, _open * 0.005f);
+            _woman.Mouth.localRotation = Quaternion.Euler(_open * 14f, 0f, 0f);
+            if (_woman.Jaw != null)
+            {
+                _woman.Jaw.localPosition = _jawAt + new Vector3(0f, -_open * 0.012f, 0f);
+                _woman.Jaw.localScale = new Vector3(1f, Mathf.Lerp(0.15f, 1.5f, _open), 1f);
+            }
         }
 
         /// <summary>Held, resting, or gone astray: a thing that has left the room goes back to its place.</summary>

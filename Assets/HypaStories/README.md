@@ -1,4 +1,4 @@
-# Hypa Story (tickets 3A-3C, 3F, 3K)
+# Hypa Stories
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
 Same three screens, four stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, *Eshu at the Crossroads* is a third card and the Efik tale *The King's Magic Drum* a fourth), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
@@ -13,8 +13,7 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 2. Open `Assets/HypaStories/Scenes/HypaStory.unity` and press Play:
    - **Meta XR Simulator** (runtime enabled) or **Quest Link**: you are in the headset view; use controllers or hands.
    - **Neither**: the same scene on screen with the mouse and keyboard below.
-3. On a Quest: Build and Run with HypaShell first in Build Settings, then **Menu > Practice > Hypa Story**; or move HypaStory
-   to the top of Build Settings to start straight in it.
+3. On Quest, build and run with `HypaShell` first in Build Settings, then select **Stories** from the Hypa Stories home menu. To start at the campfire, move `HypaStory` to the top of Build Settings.
 
 | Input (editor) | Quest | Effect |
 |---|---|---|
