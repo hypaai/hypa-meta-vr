@@ -32,6 +32,8 @@ namespace HypaStories
 
         /// <summary>Ticket 3K: the camp is in your real room (passthrough): no sky, trees, ground, trails, mist or rain; the fire and the storyteller stay.</summary>
         public bool Room { get; private set; }
+        public bool RoomWithElder { get; private set; }
+        readonly List<(AudioSource source, float time)> _roomLoops = new List<(AudioSource, float)>();
 
         StoryAssets _a;
         readonly List<GameObject> _scenery = new List<GameObject>();   // everything that goes away in the room
@@ -549,15 +551,29 @@ namespace HypaStories
 
         /// <summary>
         /// Into your room (<paramref name="on"/>) or back to the forest. In the room the sky, the ground, the trees, the trails, the
-        /// village, the props, the mist, the rain, the fog and the moon are gone: the passthrough shows your room, with the fire (its
-        /// stones, logs, flames, light, sound and embers) and the storyteller in it. The story is not touched.
+        /// village, the props, the mist, the rain, the fog and the moon are gone. Fireside sessions keep the fire and its storyteller;
+        /// elder sessions temporarily bring only the village elder out of the hidden village. Playback is not touched.
         /// </summary>
         Vector3 _ringScale = Vector3.one, _fireScale = Vector3.one;
 
-        public void SetRoom(bool on)
+        void HideForRoom(GameObject go)
+        {
+            if (go == null || !go.activeSelf) return;
+            foreach (var source in go.GetComponentsInChildren<AudioSource>())
+                if (source.isPlaying && source.loop) _roomLoops.Add((source, source.time));
+            _hidden.Add(go);
+            go.SetActive(false);
+        }
+
+        public void SetRoom(bool on, bool elder = false)
         {
             if (on == Room) return;
             Room = on;
+            if (on)
+            {
+                RoomWithElder = elder;
+                if (elder) Village.SetElderInRoom(true, transform);
+            }
             // the campfire at room size: 70% (stones and flames), so it fits between a sofa and a wall
             var k = on ? GameFit.FireScale : 1f;
             if (_ringHolder != null) { if (on) _ringScale = _ringHolder.localScale; _ringHolder.localScale = on ? _ringScale * k : _ringScale; }
@@ -565,8 +581,18 @@ namespace HypaStories
             if (on)
             {
                 _hidden.Clear();
+                _roomLoops.Clear();
                 foreach (var go in _scenery)
-                    if (go != null && go.activeSelf) { _hidden.Add(go); go.SetActive(false); }
+                    HideForRoom(go);
+                if (RoomWithElder)
+                {
+                    HideForRoom(Teller.gameObject);
+                    HideForRoom(Fire?.Root.gameObject);
+                    HideForRoom(_ringHolder?.gameObject);
+                    HideForRoom(PortalRing?.gameObject);
+                    HideForRoom(_firePool?.gameObject);
+                    HideForRoom(transform.Find("Embers")?.gameObject);
+                }
                 _fogWas = RenderSettings.fog;
                 RenderSettings.fog = false;
                 _rainT.gameObject.SetActive(false);
@@ -574,9 +600,16 @@ namespace HypaStories
             else
             {
                 foreach (var go in _hidden) if (go != null) go.SetActive(true);
+                // Restore the live village before returning the speaking elder to it, so his audio is never disabled.
+                if (RoomWithElder) Village.SetElderInRoom(false, transform);
+                foreach (var (source, time) in _roomLoops)
+                    if (source != null && source.clip != null && source.gameObject.activeInHierarchy)
+                    { source.Play(); source.time = time; }
+                _roomLoops.Clear();
                 _hidden.Clear();
                 RenderSettings.fog = _fogWas;
                 ResetTeller();
+                RoomWithElder = false;
             }
             SwapLit(on);
         }
