@@ -33,9 +33,9 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 
 ### Stories beside the elder
 
-Walk close to the elder inside the village, or use **Meet the locals** at the gate. Within 2.2 metres, the same place-button row appears with **Narrate story** as its main action. It opens the existing floating story list with **The Death of the Rice Farmer** and **The Girl Who Chose Hare** only. The fireside continues to offer its original three stories.
+Walk close to the elder inside the village, or use **Meet the locals** at the gate. Within 2.2 metres, the same place-button row appears with **Narrate story** as its main action. It opens the existing floating story list with **The Death of the Rice Farmer** and **The Girl Who Chose Hare** only. The fireside continues to offer its original four stories.
 
-The list, language controls, narration, Ask, replay, and Try Hypa Translate are shared with the fireside. Opening or backing out of the elder's list does not recenter the world. Normal completion leaves the player panel and its existing ending options in place; Back returns to the two-story list. The elder is unchanged, and narration uses the existing voice source. Enter/Space near the elder opens the same list in the editor. Proximity rows hide while a list or story is open.
+The list, language controls, narration, Ask, replay, and Try Hypa Translate are shared with the fireside. Opening or backing out of the elder's list does not recenter the world. Normal completion leaves the player panel and its existing ending options in place; Back returns to the two-story list. The elder is unchanged, and narration uses the existing voice source. Enter/Space near the elder opens the same list in the editor. The hut door and the village gate keep their buttons while a story is open. Narrate story hides once the elder's list or story is open. Walk far from him outdoors, or step back through the village door, and a story he is still telling stops. Stepping back then returns to the campfire room. In your room he stays with you, and that doorway is put away.
 
 Both new stories include English plus French, Spanish, Hausa, Igbo, Pidgin, Swahili, and Yoruba scripts, suggested questions, and three practice words per language. See [story sources and attribution](Resources/Stories/SOURCES.md) for the source accounts and adaptation notes.
 
