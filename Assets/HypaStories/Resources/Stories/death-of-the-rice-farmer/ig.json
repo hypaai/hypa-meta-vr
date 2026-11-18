@@ -1,0 +1,55 @@
+{
+  "words": [
+    "osikapa",
+    "nnụnụ",
+    "onye ọrụ ugbo"
+  ],
+  "field": "Otu onye ọrụ ugbo kụrụ osikapa n'ubi ya.",
+  "field-2": "Ọ sachara ala, hichapụ ahịhịa ma lekọta ihe ọ kụrụ, na-atụ anya owuwe ihe ubi.",
+  "birds": "Ma ụmụ nnụnụ chọpụtara ubi ahụ.",
+  "birds-2": "Kwa ụbọchị, ha na-efedata eri osikapa.",
+  "birds-3": "“Hapụnụ ihe m kụrụ!” onye ọrụ ugbo ahụ tiri mkpu.",
+  "guard": "Ọ na-agba ọsọ n'etiti osisi ndị ahụ na-efegharị aka ya.",
+  "guard-2": "Nnụnụ ndị ahụ na-agbasasị, ma mgbe ọ bụla ọ pụrụ, ha alọghachi.",
+  "guard-3": "N'oge na-adịghị anya, ọ na-etinye oge n'ịchụ nnụnụ karịa ilekọta ubi.",
+  "guard-4": "Ike gwụrụ ya, ma osikapa ya ka na-ebelata.",
+  "plan": "Otu ehihie, ọ kwụsịrị iti mkpu wee lelee ha.",
+  "plan-2": "Mgbe ọ bịaruru ha nso, ha efeapụ.",
+  "plan-3": "Mgbe ọ nọ n'ebe dị anya, ha echere.",
+  "plan-4": "Ozugbo ha chere na ọ pụọla, ha alaghachi n'ubi.",
+  "plan-5": "Onye ọrụ ugbo ahụ chebara ya echiche ogologo oge.",
+  "plan-6": "Mgbe ahụ, ọ tụpụtara atụmatụ.",
+  "animal": "Ọ gburu anụmanụ ma wepụta eriri afọ ya.",
+  "animal-2": "O buuru ha gaa n'ubi, dinara n'etiti osikapa ma dọba ha n'elu afọ ya.",
+  "animal-3": "Onye ọ bụla lere ya ga-eche na ọ nwụọla.",
+  "still": "Mgbe ahụ, o dina jụụ n'enweghị mmegharị ọ bụla.",
+  "watch": "Nnụnụ ndị ahụ bịara, ma ha abịaghị nso na mbụ.",
+  "watch-2": "Ọ bụ otu nwoke ahụ na-achụ ha mgbe niile.",
+  "watch-3": "Ha lere ya anya.",
+  "watch-4": "Onye ọrụ ugbo ahụ emeghịgharị.",
+  "quiet": "Otu nnụnụ rutere nso.",
+  "quiet-2": "Ọzọ soro ya.",
+  "quiet-3": "Ha chere mkpu ha maara, ma ubi ahụ dara jụụ.",
+  "quiet-4": "Onye ọrụ ugbo ahụ na-anụ nku na ụkwụ ha n'etiti osisi.",
+  "quiet-5": "N'agbanyeghị nke ahụ, o chere.",
+  "closer": "Obi kasịrị nnụnụ ndị ahụ ike.",
+  "closer-2": "Ha chere na onye ọrụ ugbo ahụ anwụọla, wee gbakọta nso ruo mgbe aka ya nwere ike iru ha.",
+  "caught": "Na mberede, ọ wuliri elu.",
+  "caught-2": "Tupu ha agbapụ, o jidere ha.",
+  "caught-3": "Nwoke ha chere na ọ nwụọla dị ndụ, atụmatụ ya emezuola.",
+  "safe": "Site n'ụbọchị ahụ, nnụnụ ndị ahụ enyeghị ubi ya nsogbu ọzọ.",
+  "safe-2": "Ọ nwere ike ilekọta osikapa ya n'etinyeghị awa ọ bụla n'ịchụ ha.",
+  "title": "Mgbe owuwe ihe ubi ruru, ọrụ ya efughị n'efu.",
+  "title-2": "Ọ bụ ya mere e ji akpọ akụkọ a Ọnwụ Onye Ọrụ Ugbo Osikapa.",
+  "lesson": "Onye ọrụ ugbo ahụ anwụghị.",
+  "end": "Ọ kwụsịrị imegharị ihe na-adịghị arụ ọrụ, mụọ nsogbu ya ma chọta ụzọ ọzọ iji chebe ihe ọ kụrụ.",
+  "field.ask": [
+    "Gịnị ka onye ọrụ ugbo na-akụ?"
+  ],
+  "still.ask": [
+    "Gịnị mere o ji mee ka à ga-asị na ọ nwụọla?"
+  ],
+  "caught.ask": [
+    "Olee otú o si chebe ubi ya?"
+  ]
+}

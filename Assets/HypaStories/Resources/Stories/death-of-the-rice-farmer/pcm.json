@@ -1,0 +1,55 @@
+{
+  "words": [
+    "rice",
+    "bird dem",
+    "farmer"
+  ],
+  "field": "One farmer plant rice for im farm.",
+  "field-2": "E clear di land, pull weeds and care for di plants as e dey wait for harvest.",
+  "birds": "But birds discover di farm.",
+  "birds-2": "Every day dem dey fly come chop di rice.",
+  "birds-3": "“Leave my crop alone!” di farmer shout.",
+  "guard": "E run between di plants, dey wave im hands.",
+  "guard-2": "Di birds scatter, but anytime e comot, dem return.",
+  "guard-3": "Soon e dey spend more time chasing birds than caring for im farm.",
+  "guard-4": "E tire, but im rice still dey disappear.",
+  "plan": "One afternoon, e stop to shout and watch dem.",
+  "plan-2": "When e move near dem, dem fly away.",
+  "plan-3": "When e stand far, dem wait.",
+  "plan-4": "Once dem think say e don go, dem land for di farm again.",
+  "plan-5": "Di farmer think well-well.",
+  "plan-6": "Then e get one plan.",
+  "animal": "E kill one animal and remove di intestines.",
+  "animal-2": "E carry dem go farm, lie down among di rice and put dem across im belle.",
+  "animal-3": "Anybody wey see am go think say e don die.",
+  "still": "Then e lie down without moving at all.",
+  "watch": "Di birds appear, but dem no come near at first.",
+  "watch-2": "Na di same man wey always dey chase dem.",
+  "watch-3": "Dem watch am.",
+  "watch-4": "Di farmer no move.",
+  "quiet": "One bird land nearby.",
+  "quiet-2": "Another one follow.",
+  "quiet-3": "Dem wait for di shout wey dem know, but everywhere quiet.",
+  "quiet-4": "Di farmer fit hear dia wings and feet among di plants.",
+  "quiet-5": "Still, e wait.",
+  "closer": "Di birds get more mind.",
+  "closer-2": "Dem believe say di farmer don die, so dem gather closer until im hands fit reach dem.",
+  "caught": "Suddenly, e jump up.",
+  "caught-2": "Before dem fit escape, e catch dem.",
+  "caught-3": "Di man wey dem think say don die still dey alive, and im trick work.",
+  "safe": "From dat day, those birds no disturb im farm again.",
+  "safe-2": "Di farmer fit care for im rice without spending every hour chasing dem.",
+  "title": "When harvest time reach, im work no waste.",
+  "title-2": "Na why dem call dis story Di Death of di Rice Farmer.",
+  "lesson": "Di farmer no die.",
+  "end": "E stop to repeat wetin no work, study im problem and find another way to protect im crop.",
+  "field.ask": [
+    "Wetin the farmer de plant?"
+  ],
+  "still.ask": [
+    "Why the farmer pretend say e don die?"
+  ],
+  "caught.ask": [
+    "How the farmer protect im farm?"
+  ]
+}

@@ -20,6 +20,91 @@ namespace HypaStories
     public sealed class Village : TrailBuilder
     {
         const float ShowWithin = 40f;
+        public Transform ElderMouth => _local?.Mouth;
+        public Transform ElderRoot => _local?.Root;
+        Transform _elderParent;
+        Vector3 _elderPosition, _elderScale;
+        Quaternion _elderRotation;
+        bool _elderInRoom;
+        Vector3 _villageFireLightPosition;
+        Transform _elderMouthMesh;
+        Vector3 _elderMouthRestScale;
+        Vector3 _elderMouthRestPosition, _elderJawRestPosition, _elderUpperLipRestPosition;
+        Transform _elderJaw, _elderUpperLip;
+        float _elderMouthOpen;
+
+        /// <summary>Animate only the visible mouth, leaving the head and speech-source anchor unchanged.</summary>
+        public void UpdateElderSpeech(float level, bool speaking, float dt)
+        {
+            if (_elderMouthMesh == null) return;
+            var target = speaking ? Mathf.Clamp01(level * 1.2f) : 0f;
+            _elderMouthOpen = Mathf.Lerp(_elderMouthOpen, target, 1f - Mathf.Exp(-22f * Mathf.Max(0f, dt)));
+            if (target == 0f && _elderMouthOpen < 0.001f) _elderMouthOpen = 0f;
+            var scale = _elderMouthRestScale;
+            scale.y *= 1f + _elderMouthOpen * 4f;
+            _elderMouthMesh.localScale = scale;
+            _elderMouthMesh.localPosition = _elderMouthRestPosition + new Vector3(0f, -0.006f, 0.005f) * _elderMouthOpen;
+            if (_elderJaw != null)
+            {
+                _elderJaw.localPosition = _elderJawRestPosition + Vector3.down * (0.004f * _elderMouthOpen);
+                _elderJaw.localRotation = Quaternion.Euler(12f * _elderMouthOpen, 0f, 0f);
+            }
+            if (_elderUpperLip != null)
+                _elderUpperLip.localPosition = _elderUpperLipRestPosition + Vector3.up * (0.001f * _elderMouthOpen);
+        }
+
+        public void SetElderInRoom(bool on, Transform roomParent)
+        {
+            if (_elderInRoom == on) return;
+            var elder = ElderRoot;
+            if (on)
+            {
+                _elderParent = elder.parent;
+                _elderPosition = elder.localPosition; _elderRotation = elder.localRotation; _elderScale = elder.localScale;
+                if (_fire != null)
+                {
+                    var light = _fire.Light.transform;
+                    _villageFireLightPosition = light.localPosition;
+                    light.SetParent(elder, true);
+                }
+                elder.SetParent(roomParent, true);
+            }
+            else
+            {
+                elder.SetParent(_elderParent, false);
+                elder.localPosition = _elderPosition; elder.localRotation = _elderRotation; elder.localScale = _elderScale;
+                if (_fire != null)
+                {
+                    var light = _fire.Light.transform;
+                    light.SetParent(_fire.Root, true);
+                    light.localPosition = _villageFireLightPosition;
+                }
+            }
+            _elderInRoom = on;
+        }
+
+        public void UpdateRoomElder(Transform cam, float dt)
+        {
+            if (!_elderInRoom) return;
+            _t += dt;
+            Local(cam, dt);
+        }
+        bool _narrationFocus;
+        float _performanceLevel = 1f;
+        AudioSource _crowd;
+
+        public void SetNarrationFocus(bool on) => _narrationFocus = on;
+
+        /// <summary>Fade performance audio without stopping the drum clock used by the dancers.</summary>
+        public void UpdatePerformanceAudio(float dt)
+        {
+            var target = _narrationFocus ? 0.15f : 1f;
+            _performanceLevel = Mathf.Lerp(_performanceLevel, target,
+                1f - Mathf.Exp(-Mathf.Max(0f, dt) / (_narrationFocus ? 0.2f : 0.7f)));
+            if (_drums != null) _drums.volume = 0.85f * _performanceLevel;
+            if (_crowd != null) _crowd.volume = 0.45f * _performanceLevel;
+            if (_thud != null) _thud.volume = _performanceLevel;
+        }
 
         Transform _root;   // everything you see (hidden when far)
         StoryFire _fire;
@@ -637,7 +722,7 @@ namespace HypaStories
                 f.Head = Node(name + " Head", f.Torso);
                 f.Head.localPosition = hc;
                 var head = new MeshKit();
-                HeadMesh(head, Vector3.zero, look, false, !movingMouth);
+                HeadMesh(head, Vector3.zero, look, false, !movingMouth, look.Elder);
                 MeshNode(name + " Head", head.Build("Head"), _vc, f.Head);
                 Transform Eye(float k)
                 {
@@ -650,7 +735,7 @@ namespace HypaStories
                     return eye;
                 }
                 f.EyeL = Eye(-1f); f.EyeR = Eye(1f);
-                if (movingMouth) TalkingMouth(f, name, look);
+                if (movingMouth && !look.Elder) TalkingMouth(f, name, look);
                 else
                 {
                     f.Mouth = Node(name + " Mouth", f.Head);
@@ -658,6 +743,7 @@ namespace HypaStories
                     var mm = new MeshKit();
                     mm.Ellipsoid(Vector3.zero, new Vector3(0.023f, 0.006f, 0.008f), id, new Color(0.12f, 0.04f, 0.04f), 8, 4);
                     MeshNode(name + " Mouth", mm.Build("Mouth"), _vc, f.Mouth);
+                    if (look.Elder) BuildSpeakingMouth(f, look);
                 }
             }
             else HeadMesh(body, hc, look, true);
@@ -719,14 +805,14 @@ namespace HypaStories
         }
 
         /// <summary>A head at <paramref name="c"/>: skull and jaw, ears, nose, lips, brows, (eyes), and hair, a head wrap or a cap.</summary>
-        void HeadMesh(MeshKit m, Vector3 c, Look look, bool eyes, bool lips = true)
+        void HeadMesh(MeshKit m, Vector3 c, Look look, bool eyes, bool lips = true, bool animatedMouth = false)
         {
             var id = Quaternion.identity;
             var skin = look.Skin;
             var shade = skin * 0.9f; shade.a = 1f;
             var lip = new Color(skin.r * 1.05f + 0.04f, skin.g * 0.8f, skin.b * 0.8f);
             m.Ellipsoid(c + new Vector3(0f, 0.012f, 0f), new Vector3(0.092f, 0.108f, 0.1f), id, skin, 14, 9);
-            m.Ellipsoid(c + new Vector3(0f, -0.05f, 0.02f), new Vector3(0.074f, 0.06f, 0.075f), id, skin, 12, 7);      // jaw and chin
+            if (!animatedMouth) m.Ellipsoid(c + new Vector3(0f, -0.05f, 0.02f), new Vector3(0.074f, 0.06f, 0.075f), id, skin, 12, 7); // jaw and chin
             foreach (var k in new[] { -1f, 1f })
             {
                 m.Ellipsoid(c + new Vector3(k * 0.09f, -0.004f, -0.006f), new Vector3(0.016f, 0.03f, 0.022f), id, shade, 8, 5); // ears
@@ -740,7 +826,7 @@ namespace HypaStories
             }
             m.Ellipsoid(c + new Vector3(0f, -0.012f, 0.097f), new Vector3(0.019f, 0.027f, 0.022f), Quaternion.Euler(-10f, 0f, 0f), skin, 8, 5); // nose
             m.Ellipsoid(c + new Vector3(0f, -0.032f, 0.094f), new Vector3(0.031f, 0.013f, 0.018f), id, shade, 8, 5);                                 // its wings
-            if (lips)
+            if (lips && !animatedMouth)
             {
                 m.Ellipsoid(c + new Vector3(0f, -0.051f, 0.09f), new Vector3(0.03f, 0.008f, 0.012f), id, lip, 8, 4);
                 m.Ellipsoid(c + new Vector3(0f, -0.067f, 0.086f), new Vector3(0.027f, 0.009f, 0.012f), id, lip * 0.95f, 8, 4);
@@ -750,7 +836,7 @@ namespace HypaStories
             var hat = ClothColour(look.HatPrint, look.Hat); var hatTile = PrintTile(look.HatPrint);
             if (look.Elder)
             {
-                m.Ellipsoid(c + new Vector3(0f, -0.078f, 0.05f), new Vector3(0.062f, 0.05f, 0.05f), id, hair, 10, 6);            // a short grey beard
+                if (!animatedMouth) m.Ellipsoid(c + new Vector3(0f, -0.078f, 0.05f), new Vector3(0.062f, 0.05f, 0.05f), id, hair, 10, 6); // beard
                 m.Ellipsoid(c + new Vector3(0f, -0.043f, 0.094f), new Vector3(0.033f, 0.008f, 0.01f), id, hair, 8, 4);           // moustache
             }
             if (look.Headwear == 1)
@@ -767,6 +853,26 @@ namespace HypaStories
             }
             else
                 m.Ellipsoid(c + new Vector3(0f, 0.02f, -0.01f), new Vector3(0.097f, 0.106f, 0.104f), Quaternion.Euler(-28f, 0f, 0f), hair, 12, 5, null, 82f);
+        }
+
+        // Same resting geometry as HeadMesh, separated so the actual lips, chin and beard can move.
+        void BuildSpeakingMouth(Figure figure, Look look)
+        {
+            var lip = new Color(look.Skin.r * 1.05f + 0.04f, look.Skin.g * 0.8f, look.Skin.b * 0.8f);
+            var upper = new MeshKit();
+            upper.Ellipsoid(Vector3.zero, new Vector3(0.03f, 0.008f, 0.012f), Quaternion.identity, lip, 8, 4);
+            _elderUpperLip = MeshNode("Elder Upper Lip", upper.Build("Upper lip"), _vc, figure.Head);
+            _elderUpperLipRestPosition = _elderUpperLip.localPosition = new Vector3(0f, -0.051f, 0.09f);
+            _elderJaw = Node("Elder Jaw", figure.Head);
+            _elderJawRestPosition = _elderJaw.localPosition = new Vector3(0f, -0.04f, 0.015f);
+            var lower = new MeshKit();
+            lower.Ellipsoid(new Vector3(0f, -0.05f, 0.02f) - _elderJawRestPosition,
+                new Vector3(0.074f, 0.06f, 0.075f), Quaternion.identity, look.Skin, 12, 7);
+            lower.Ellipsoid(new Vector3(0f, -0.067f, 0.086f) - _elderJawRestPosition,
+                new Vector3(0.027f, 0.009f, 0.012f), Quaternion.identity, lip * 0.95f, 8, 4);
+            lower.Ellipsoid(new Vector3(0f, -0.078f, 0.05f) - _elderJawRestPosition,
+                new Vector3(0.062f, 0.05f, 0.05f), Quaternion.identity, new Color(0.55f, 0.53f, 0.5f), 10, 6);
+            MeshNode("Elder Chin Lip and Beard", lower.Build("Moving lower face"), _vc, _elderJaw);
         }
 
         void BuildCrowd()
@@ -929,6 +1035,9 @@ namespace HypaStories
                 Hat = new Color(0.45f, 0.12f, 0.15f), Hair = new Color(0.04f, 0.035f, 0.03f), HatPrint = 2, Headwear = 2, Wrapper = true, Elder = true,
             };
             _local = Person("The Local", VillageLayout.Local, VillageLayout.FrontOfGate - VillageLayout.Local, look, 1.02f, false, true);
+            _elderMouthMesh = _local.Mouth.GetComponentInChildren<MeshRenderer>().transform;
+            _elderMouthRestScale = _elderMouthMesh.localScale;
+            _elderMouthRestPosition = _elderMouthMesh.localPosition;
             // a walking stick in the left hand
             var stick = new MeshKit();
             stick.Limb(new Vector3(-0.35f, 0.01f, 0.37f), new Vector3(-0.32f, 0.99f, 0.35f), 0.02f, 0.017f, new Color(0.3f, 0.2f, 0.11f), 6);
@@ -941,8 +1050,11 @@ namespace HypaStories
             var mk = new MeshKit();
             mk.Box(X0Z(post, 0.9f), new Vector3(0.07f, 1.8f, 0.07f), Quaternion.identity, new Color(0.3f, 0.2f, 0.12f));
             MeshNode("Local Lantern Post", mk.Build("Lantern Post"), _vc, _root);
-            Lantern(X0Z(post, 1.88f), 1f, 4.4f, 5f, _root);
-            VertexLight(X0Z(VillageLayout.Local - VillageLayout.Into * 1.1f, 1.7f), 2.6f, 0.9f, new Color(1f, 0.7f, 0.45f), 4.9f, _root); // on their face
+            var lanternLight = Lantern(X0Z(post, 1.88f), 1f, 4.4f, 5f, _root);
+            var faceLight = VertexLight(X0Z(VillageLayout.Local - VillageLayout.Into * 1.1f, 1.7f), 2.6f, 0.9f, new Color(1f, 0.7f, 0.45f), 4.9f, _root);
+            // The lights follow the elder into the room. The lantern prop stays in the village.
+            lanternLight.transform.SetParent(_local.Root, true);
+            faceLight.transform.SetParent(_local.Root, true);
             GroundPool(VillageLayout.Local, 3f, 3f, new Color(1f, 0.58f, 0.24f), 0.14f, 4.4f, _root);
         }
 
@@ -1035,7 +1147,7 @@ namespace HypaStories
             _drums.time = 0f;
             _drumsMuffle = _drums.gameObject.AddComponent<AudioLowPassFilter>();
             _murmurClip = ProceduralClips.Clip("murmur", ProceduralClips.MurmurSamples());
-            Bed("Crowd", _murmurClip, X0Z(VillageLayout.YamPile, 1.4f), 0.45f, 3f, 22f);
+            _crowd = Bed("Crowd", _murmurClip, X0Z(VillageLayout.YamPile, 1.4f), 0.45f, 3f, 22f);
             Bed("Village Fire", ProceduralClips.Clip("village fire", ProceduralClips.FireSamples()), X0Z(VillageLayout.Fire, 0.4f), 0.6f, 1.5f, 12f);
             _thudClip = ProceduralClips.Clip("pestle", ProceduralClips.StepSamples(151));
             _thud = Voice("Pestles", _root, 18f);
@@ -1046,6 +1158,7 @@ namespace HypaStories
 
         void Update()
         {
+            UpdatePerformanceAudio(Time.unscaledDeltaTime);
             var cam = Tick();
             if (cam == null) return;
             var dt = Time.deltaTime;

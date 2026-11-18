@@ -1,0 +1,55 @@
+{
+  "words": [
+    "mpunga",
+    "ndege",
+    "mkulima"
+  ],
+  "field": "Mkulima mmoja alipanda shamba la mpunga.",
+  "field-2": "Alisafisha ardhi, akang'oa magugu na kutunza mimea, akitarajia mavuno.",
+  "birds": "Lakini ndege waliligundua shamba.",
+  "birds-2": "Kila siku walishuka kula mpunga.",
+  "birds-3": "“Acheni mazao yangu!” mkulima alipaza sauti.",
+  "guard": "Alikimbia katikati ya mimea akipunga mikono.",
+  "guard-2": "Ndege walitawanyika, lakini alipoondoka walirudi.",
+  "guard-3": "Punde alianza kutumia muda mwingi kuwafukuza kuliko kutunza shamba.",
+  "guard-4": "Alichoka, lakini mpunga wake uliendelea kupotea.",
+  "plan": "Alasiri moja aliacha kupiga kelele na kuwatazama.",
+  "plan-2": "Alipowakaribia, waliruka.",
+  "plan-3": "Aliposimama mbali, walisubiri.",
+  "plan-4": "Walipodhani ameondoka, walitua shambani tena.",
+  "plan-5": "Mkulima alifikiri kwa muda mrefu.",
+  "plan-6": "Kisha akapata mpango.",
+  "animal": "Alimchinja mnyama na kutoa matumbo yake.",
+  "animal-2": "Aliyapeleka shambani, akalala katikati ya mpunga na kuyaweka juu ya tumbo lake.",
+  "animal-3": "Kwa aliyemtazama, alionekana amekufa.",
+  "still": "Kisha akatulia kabisa bila kusogea.",
+  "watch": "Ndege walifika, lakini mwanzoni hawakukaribia.",
+  "watch-2": "Huyu ndiye mtu aliyewafukuza kila mara.",
+  "watch-3": "Walimtazama.",
+  "watch-4": "Mkulima hakusogea.",
+  "quiet": "Ndege mmoja alitua karibu.",
+  "quiet-2": "Mwingine akamfuata.",
+  "quiet-3": "Walisubiri kelele walizozizoea, lakini shambani palitulia.",
+  "quiet-4": "Mkulima alisikia mabawa na miguu yao katikati ya mimea.",
+  "quiet-5": "Bado alisubiri.",
+  "closer": "Ndege wakawa na ujasiri zaidi.",
+  "closer-2": "Wakiamini mkulima amekufa, walisogea hadi alipoweza kuwafikia.",
+  "caught": "Ghafla akaruka juu.",
+  "caught-2": "Kabla hawajatoroka, aliwakamata.",
+  "caught-3": "Mtu waliyedhani amekufa alikuwa hai, na hila yake ilikuwa imefanikiwa.",
+  "safe": "Tangu siku hiyo, ndege hao hawakusumbua shamba lake tena.",
+  "safe-2": "Mkulima aliweza kutunza mpunga bila kutumia kila saa kuwafukuza.",
+  "title": "Mavuno yalipofika, kazi yake haikuwa bure.",
+  "title-2": "Ndiyo maana hadithi hii inaitwa Kifo cha Mkulima wa Mpunga.",
+  "lesson": "Mkulima hakufa.",
+  "end": "Aliacha kurudia jambo lililoshindwa, akachunguza tatizo lake na kupata njia nyingine ya kulinda mazao yake.",
+  "field.ask": [
+    "Mkulima analima nini?"
+  ],
+  "still.ask": [
+    "Kwa nini mkulima anajifanya amekufa?"
+  ],
+  "caught.ask": [
+    "Mkulima analindaje shamba lake?"
+  ]
+}

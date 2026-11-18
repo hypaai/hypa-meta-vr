@@ -1,0 +1,63 @@
+{
+  "words": [
+    "ọhịa",
+    "nkwa",
+    "obiọma"
+  ],
+  "wood": "Otu nwa agbọghọ na ndị enyi ya gara ọhịa ịchịkọta nkụ.",
+  "wood-2": "Ọ maara ịchọta ezigbo nkụ, ndị ọzọ na-enwere ya anyaụfụ.",
+  "tree": "Ụbọchị ahụ, ọ rịgoro osisi, zọhie ụkwụ, aka ya wee rapara n'ime osisi.",
+  "tree-2": "“Nyerenụ m aka!” ọ tiri mkpu.",
+  "left": "Ma ndị enyi ya hapụrụ ya ebe ahụ.",
+  "left-2": "Mgbe ha laghachiri n'obodo, nne ya jụrụ ha ebe nwa ya nọ.",
+  "left-3": "Ha gọnahụrụ ịhụ ya.",
+  "song": "Naanị ya n'ọhịa, nwa agbọghọ ahụ na-ege ntị ịnụ nzọụkwụ.",
+  "song-2": "Mgbe ọ bụla ọ nụrụ ụda, ọ na-abụ abụ, na-enwe olileanya na mmadụ ga-achọta ya.",
+  "hunter": "Otu dinta nụrụ olu ya.",
+  "hunter-2": "Abụ n'ọhịa ebe mmadụ na-anọghị tụrụ ya egwu, ọ gbapụ.",
+  "hunter-3": "Ma ọ chetara abụ ahụ ma mesịa buru ya laghachi n'obodo.",
+  "rescue": "Ezinụlọ ya matara ya.",
+  "rescue-2": "Ha kpọkọtara ndị mmadụ, mma na ngwa ọrụ, soro dinta ahụ gaa ọhịa.",
+  "rescue-3": "Mgbe nwa agbọghọ ahụ bụrụkwara abụ, olu ndị mmadụ zara ya.",
+  "rescue-4": "Ha gbubiri osisi ahụ ma tọhapụ ya.",
+  "wound": "Ma aka ya merụrụ ahụ nke ukwuu.",
+  "wound-2": "N'ụlọ, nne ya na-ahụ ahụhụ ya, na-atụ egwu na ọ gaghị agbake ma ọlị.",
+  "promise": "N'ihi enweghị olileanya, o kwere nkwa na onye ọ bụla gwọrọ nwa ya nwere ike ịlụ ya.",
+  "animals": "Ụmụ anụmanụ bịara ịnwale.",
+  "animals-2": "Enwe nwara, ma o nweghị ihe ịga nke ọma.",
+  "animals-3": "Agụ enweghị ike ịgwọ ya.",
+  "animals-4": "Ọdụm enweghịkwa ike inye aka.",
+  "hare": "Mgbe ahụ, Oke Oyibo pụtara n'ihu.",
+  "hare-2": "Ndị gbara ya gburugburu nwere obi abụọ.",
+  "hare-3": "Ndị ọzọ adaala.",
+  "hare-4": "Gịnị ka ọ pụrụ ime?",
+  "hare-5": "N'ikpeazụ, nne ya kwere ka ọ nwalee.",
+  "hare-6": "Oke Oyibo ji ọgwụ ndị sitere n'ala gbara ha gburugburu gwọọ ọnya ahụ.",
+  "healed": "Mgbalị ya gara nke ọma, nwa agbọghọ ahụ agbakee.",
+  "suitors": "N'oge na-adịghị anya, ndị chọrọ ịlụ ya bịara.",
+  "suitors-2": "Ụfọdụ bara ọgaranya.",
+  "suitors-3": "Ndị ọzọ si n'ezinụlọ ndị a ma ama.",
+  "suitors-4": "Onye ọ bụla tụrụ anya na ọ ga-ahọrọ ya.",
+  "suitors-5": "Ọ jụrụ ha.",
+  "choice": "Kama nke ahụ, ọ họọrọ Oke Oyibo.",
+  "choice-2": "O juru ndị mmadụ anya.",
+  "choice-3": "Gịnị mere ọ ga-eji jụ akụ na ọkwá n'ihi ya?",
+  "gratitude": "Ma nwa agbọghọ ahụ chetara onye nyeere ya aka mgbe ọ na-ata ahụhụ.",
+  "gratitude-2": "Aha ukwu agwọghị ya.",
+  "gratitude-3": "Akụ agwọghị ya.",
+  "gratitude-4": "Oke Oyibo mere ihe ndị ọzọ na-enweghị ike ime.",
+  "lesson": "Ọ họọrọ ya ma mezuo nkwa nne ya.",
+  "lesson-2": "Ndị enyi ya kwere ka anyaụfụ mee ka ha gbakụta ya azụ.",
+  "lesson-3": "Ndị ọzọ nwere obi abụọ banyere Oke Oyibo tupu ha ahụ ihe ọ pụrụ ime.",
+  "end": "Ma o chetara enyemaka ya.",
+  "end-2": "Ya mere, ọ lụrụ Oke Oyibo, na-ahọrọ onye omume ya kacha dị ya mkpa.",
+  "wood.ask": [
+    "Gịnị mere nwa agbọghọ ahụ ji gaa n'ọhịa?"
+  ],
+  "rescue.ask": [
+    "Olee otú ezinụlọ ya si chọta ya?"
+  ],
+  "choice.ask": [
+    "Gịnị mere o ji họrọ Oke Oyibo?"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "words": [
+    "riz",
+    "oiseaux",
+    "cultivateur"
+  ],
+  "field": "Un cultivateur planta un jour un champ de riz.",
+  "field-2": "Il défricha la terre, arracha les mauvaises herbes et soigna les plants en attendant la récolte.",
+  "birds": "Mais des oiseaux découvrirent le champ.",
+  "birds-2": "Chaque jour, ils descendaient manger le riz.",
+  "birds-3": "« Laissez ma récolte tranquille ! » cria le cultivateur.",
+  "guard": "Il courait entre les plants en agitant les bras.",
+  "guard-2": "Les oiseaux s'envolaient, mais revenaient dès son départ.",
+  "guard-3": "Bientôt, il passait plus de temps à les chasser qu'à soigner sa ferme.",
+  "guard-4": "Il se fatiguait, et son riz disparaissait toujours.",
+  "plan": "Un après-midi, il cessa de crier et les observa.",
+  "plan-2": "Quand il avançait vers eux, ils s'envolaient.",
+  "plan-3": "Quand il restait loin, ils attendaient.",
+  "plan-4": "Dès qu'ils le croyaient parti, ils revenaient dans le champ.",
+  "plan-5": "Le cultivateur réfléchit longtemps.",
+  "plan-6": "Puis il trouva un plan.",
+  "animal": "Il tua un animal et en retira les entrailles.",
+  "animal-2": "Il les porta au champ, s'allongea parmi le riz et les posa sur son ventre.",
+  "animal-3": "Pour qui le regardait, il semblait mort.",
+  "still": "Puis il resta parfaitement immobile.",
+  "watch": "Les oiseaux apparurent, mais gardèrent d'abord leurs distances.",
+  "watch-2": "C'était bien l'homme qui les chassait toujours.",
+  "watch-3": "Ils l'observèrent.",
+  "watch-4": "Le cultivateur ne bougea pas.",
+  "quiet": "Un oiseau se posa tout près.",
+  "quiet-2": "Un autre le suivit.",
+  "quiet-3": "Ils attendaient le cri habituel, mais le champ restait silencieux.",
+  "quiet-4": "Le cultivateur entendait leurs ailes et leurs pas parmi les plants.",
+  "quiet-5": "Pourtant, il attendait.",
+  "closer": "Les oiseaux s'enhardirent.",
+  "closer-2": "Croyant le cultivateur mort, ils se rapprochèrent jusqu'à être à sa portée.",
+  "caught": "Soudain, il bondit.",
+  "caught-2": "Avant qu'ils puissent s'échapper, il les attrapa.",
+  "caught-3": "L'homme qu'ils avaient cru mort était vivant, et sa ruse avait réussi.",
+  "safe": "Depuis ce jour, ces oiseaux ne troublèrent plus son champ.",
+  "safe-2": "Le cultivateur put soigner son riz sans passer chaque heure à les chasser.",
+  "title": "Quand vint la récolte, son travail n'avait pas été vain.",
+  "title-2": "Voilà pourquoi ce conte s'appelle La Mort du cultivateur de riz.",
+  "lesson": "Le cultivateur n'était pas mort.",
+  "end": "Il avait cessé de répéter ce qui échouait, étudié son problème et trouvé une autre façon de protéger sa récolte.",
+  "field.ask": [
+    "Que cultive le cultivateur ?"
+  ],
+  "still.ask": [
+    "Pourquoi fait-il semblant d'être mort ?"
+  ],
+  "caught.ask": [
+    "Comment protège-t-il son champ ?"
+  ]
+}

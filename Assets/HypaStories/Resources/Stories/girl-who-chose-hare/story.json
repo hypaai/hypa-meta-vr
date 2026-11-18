@@ -1,0 +1,217 @@
+{
+  "theme": 0,
+  "accent": "#E8B15A",
+  "eyebrow": "Medumba, Cameroon folk tale",
+  "title": "The Girl Who\nChose Hare",
+  "description": "Abandoned in the forest and rescued with a wounded hand, a girl remembers who helped her when others could not.",
+  "words": [
+    "forest",
+    "promise",
+    "kindness"
+  ],
+  "voices": [],
+  "source": {
+    "url": "https://doi.org/10.4314/jcas.v21i3.4",
+    "tradition": "Medumba, Cameroon",
+    "adaptation": "Original Hypa retelling of the documented folktale; see SOURCES.md."
+  },
+  "lines": [
+    {
+      "id": "wood",
+      "text": "A young woman went into the forest with her companions to gather firewood.",
+      "ask": [
+        "Why does the girl go into the forest?"
+      ]
+    },
+    {
+      "id": "wood-2",
+      "text": "She was skilled at finding good wood, and the others were jealous."
+    },
+    {
+      "id": "tree",
+      "text": "That day, she climbed a tree, slipped, and trapped her hand in the wood."
+    },
+    {
+      "id": "tree-2",
+      "text": "“Help me!” she cried."
+    },
+    {
+      "id": "left",
+      "text": "But her companions left her there."
+    },
+    {
+      "id": "left-2",
+      "text": "When they returned to the village, her mother asked where her daughter was."
+    },
+    {
+      "id": "left-3",
+      "text": "They denied having seen her."
+    },
+    {
+      "id": "song",
+      "text": "Alone in the forest, the young woman listened for footsteps."
+    },
+    {
+      "id": "song-2",
+      "text": "Whenever she heard a sound, she sang, hoping someone would find her."
+    },
+    {
+      "id": "hunter",
+      "text": "A hunter heard her voice."
+    },
+    {
+      "id": "hunter-2",
+      "text": "Frightened by singing in the lonely forest, he fled."
+    },
+    {
+      "id": "hunter-3",
+      "text": "But he remembered the song and eventually brought it back to the village."
+    },
+    {
+      "id": "rescue",
+      "text": "Her family recognised it.",
+      "ask": [
+        "How does her family find her?"
+      ]
+    },
+    {
+      "id": "rescue-2",
+      "text": "They gathered people, machetes, and tools, and followed the hunter into the forest."
+    },
+    {
+      "id": "rescue-3",
+      "text": "When the young woman sang again, voices answered."
+    },
+    {
+      "id": "rescue-4",
+      "text": "They cut away the wood and freed her."
+    },
+    {
+      "id": "wound",
+      "text": "But her hand was badly wounded."
+    },
+    {
+      "id": "wound-2",
+      "text": "At home, her mother watched her suffering and feared she would never recover."
+    },
+    {
+      "id": "promise",
+      "text": "In desperation, she promised that whoever healed her daughter could marry her."
+    },
+    {
+      "id": "animals",
+      "text": "The animals came to try."
+    },
+    {
+      "id": "animals-2",
+      "text": "Monkey tried, but failed."
+    },
+    {
+      "id": "animals-3",
+      "text": "Panther could not heal her."
+    },
+    {
+      "id": "animals-4",
+      "text": "Lion could not help either."
+    },
+    {
+      "id": "hare",
+      "text": "Then Hare stepped forward."
+    },
+    {
+      "id": "hare-2",
+      "text": "Those around him doubted him."
+    },
+    {
+      "id": "hare-3",
+      "text": "Others had already failed."
+    },
+    {
+      "id": "hare-4",
+      "text": "What could Hare possibly do?"
+    },
+    {
+      "id": "hare-5",
+      "text": "At last, her mother allowed him to try."
+    },
+    {
+      "id": "hare-6",
+      "text": "Using remedies from the surrounding land, Hare treated the wound."
+    },
+    {
+      "id": "healed",
+      "text": "His efforts succeeded, and the young woman recovered."
+    },
+    {
+      "id": "suitors",
+      "text": "Soon suitors began to arrive."
+    },
+    {
+      "id": "suitors-2",
+      "text": "Some were wealthy."
+    },
+    {
+      "id": "suitors-3",
+      "text": "Others belonged to important families."
+    },
+    {
+      "id": "suitors-4",
+      "text": "Each hoped she would choose him."
+    },
+    {
+      "id": "suitors-5",
+      "text": "She refused them."
+    },
+    {
+      "id": "choice",
+      "text": "Instead, she chose Hare.",
+      "ask": [
+        "Why does she choose Hare?"
+      ]
+    },
+    {
+      "id": "choice-2",
+      "text": "People were surprised."
+    },
+    {
+      "id": "choice-3",
+      "text": "Why refuse wealth and rank for him?"
+    },
+    {
+      "id": "gratitude",
+      "text": "But the young woman remembered who had helped her when she was suffering."
+    },
+    {
+      "id": "gratitude-2",
+      "text": "An important name had not healed her."
+    },
+    {
+      "id": "gratitude-3",
+      "text": "Riches had not healed her."
+    },
+    {
+      "id": "gratitude-4",
+      "text": "Hare had succeeded when others could not."
+    },
+    {
+      "id": "lesson",
+      "text": "She chose him and honoured her mother’s promise."
+    },
+    {
+      "id": "lesson-2",
+      "text": "Her companions had let jealousy turn them against her."
+    },
+    {
+      "id": "lesson-3",
+      "text": "Others had doubted Hare before seeing what he could do."
+    },
+    {
+      "id": "end",
+      "text": "But she remembered his help."
+    },
+    {
+      "id": "end-2",
+      "text": "And so she married Hare, choosing the one whose deeds mattered most to her."
+    }
+  ]
+}

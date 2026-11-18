@@ -52,6 +52,14 @@ namespace HypaStories
             _speech = s;
         }
 
+        /// <summary>Move only the audio object; keep the current clip, playback position and voice settings.</summary>
+        public void SetOrigin(Transform mouth)
+        {
+            if (_speech == null || mouth == null || _speech.transform.parent == mouth) return;
+            _speech.transform.SetParent(mouth, false);
+            _speech.transform.localPosition = Vector3.zero;
+        }
+
         void Update()
         {
             var flutter = _fake ? 0.3f + 0.5f * Mathf.Abs(Mathf.Sin(Time.time * 9.3f) * Mathf.Sin(Time.time * 5.1f + 1f)) : 0f;

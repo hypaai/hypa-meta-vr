@@ -1,0 +1,63 @@
+{
+  "words": [
+    "bosque",
+    "promesa",
+    "bondad"
+  ],
+  "wood": "Una joven fue al bosque con sus compañeras a recoger leña.",
+  "wood-2": "Sabía encontrar buena madera, y las demás sentían celos.",
+  "tree": "Ese día subió a un árbol, resbaló y se le quedó la mano atrapada en la madera.",
+  "tree-2": "«¡Ayudadme!», gritó.",
+  "left": "Pero sus compañeras la abandonaron.",
+  "left-2": "Al volver al pueblo, su madre preguntó dónde estaba su hija.",
+  "left-3": "Ellas negaron haberla visto.",
+  "song": "Sola en el bosque, la joven escuchaba por si oía pasos.",
+  "song-2": "Cada vez que percibía un ruido, cantaba, esperando que alguien la encontrara.",
+  "hunter": "Un cazador oyó su voz.",
+  "hunter-2": "Asustado por aquel canto en el bosque solitario, huyó.",
+  "hunter-3": "Pero recordó la canción y acabó llevándola al pueblo.",
+  "rescue": "Su familia la reconoció.",
+  "rescue-2": "Reunieron gente, machetes y herramientas, y siguieron al cazador al bosque.",
+  "rescue-3": "Cuando la joven volvió a cantar, unas voces respondieron.",
+  "rescue-4": "Cortaron la madera y la liberaron.",
+  "wound": "Pero su mano estaba muy herida.",
+  "wound-2": "En casa, su madre la veía sufrir y temía que nunca se recuperara.",
+  "promise": "Desesperada, prometió que quien curara a su hija podría casarse con ella.",
+  "animals": "Los animales vinieron a intentarlo.",
+  "animals-2": "Mono lo intentó, pero falló.",
+  "animals-3": "Pantera no pudo curarla.",
+  "animals-4": "León tampoco pudo ayudar.",
+  "hare": "Entonces Liebre se adelantó.",
+  "hare-2": "Los demás dudaban de él.",
+  "hare-3": "Otros ya habían fracasado.",
+  "hare-4": "¿Qué podría hacer Liebre?",
+  "hare-5": "Por fin, la madre lo dejó intentarlo.",
+  "hare-6": "Con remedios de los alrededores, Liebre trató la herida.",
+  "healed": "Sus esfuerzos dieron resultado y la joven se recuperó.",
+  "suitors": "Pronto llegaron pretendientes.",
+  "suitors-2": "Algunos eran ricos.",
+  "suitors-3": "Otros pertenecían a familias importantes.",
+  "suitors-4": "Todos esperaban que ella los eligiera.",
+  "suitors-5": "Ella los rechazó.",
+  "choice": "En cambio, eligió a Liebre.",
+  "choice-2": "La gente se sorprendió.",
+  "choice-3": "¿Por qué rechazar la riqueza y el rango por él?",
+  "gratitude": "Pero la joven recordaba quién la había ayudado cuando sufría.",
+  "gratitude-2": "Un apellido importante no la había curado.",
+  "gratitude-3": "Las riquezas tampoco.",
+  "gratitude-4": "Liebre había logrado lo que los otros no pudieron.",
+  "lesson": "Lo eligió y cumplió la promesa de su madre.",
+  "lesson-2": "Sus compañeras habían dejado que los celos las volvieran contra ella.",
+  "lesson-3": "Otros habían dudado de Liebre antes de ver lo que podía hacer.",
+  "end": "Pero ella recordaba su ayuda.",
+  "end-2": "Así que se casó con Liebre, eligiendo a aquel cuyas acciones más valoraba.",
+  "wood.ask": [
+    "¿Por qué va la muchacha al bosque?"
+  ],
+  "rescue.ask": [
+    "¿Cómo la encuentra su familia?"
+  ],
+  "choice.ask": [
+    "¿Por qué elige a Liebre?"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "words": [
+    "daji",
+    "alkawari",
+    "alheri"
+  ],
+  "wood": "Wata budurwa ta tafi daji tare da ƙawayenta domin tara itacen wuta.",
+  "wood-2": "Ta iya samun itace mai kyau, kuma sauran suna kishinta.",
+  "tree": "A wannan rana, ta hau bishiya, ta zame, hannunta ya maƙale a cikin itacen.",
+  "tree-2": "“Ku taimake ni!” ta yi kuka.",
+  "left": "Amma ƙawayenta suka bar ta a can.",
+  "left-2": "Da suka koma ƙauye, mahaifiyarta ta tambayi inda 'yarta take.",
+  "left-3": "Suka musanta ganinta.",
+  "song": "Ita kaɗai a daji, budurwar tana sauraron takun ƙafa.",
+  "song-2": "Duk lokacin da ta ji wani sauti, sai ta yi waƙa, tana fatan wani zai same ta.",
+  "hunter": "Wani mafarauci ya ji muryarta.",
+  "hunter-2": "Waƙar a dajin da babu kowa ta tsorata shi, sai ya gudu.",
+  "hunter-3": "Amma ya tuna waƙar, daga baya ya kai ta ƙauye.",
+  "rescue": "Iyalinta suka gane ta.",
+  "rescue-2": "Suka tara mutane, adduna da kayan aiki, suka bi mafaraucin zuwa daji.",
+  "rescue-3": "Da budurwar ta sake waƙa, sai muryoyi suka amsa.",
+  "rescue-4": "Suka sare itacen suka 'yantar da ita.",
+  "wound": "Amma hannunta ya ji rauni sosai.",
+  "wound-2": "A gida, mahaifiyarta tana ganin wahalarta, tana tsoron ba za ta taɓa warkewa ba.",
+  "promise": "Saboda damuwa, ta yi alkawarin cewa duk wanda ya warkar da 'yarta zai iya aurenta.",
+  "animals": "Dabbobi suka zo gwadawa.",
+  "animals-2": "Biri ya gwada, ya kasa.",
+  "animals-3": "Damisa ba ta iya warkar da ita ba.",
+  "animals-4": "Zaki ma bai iya taimakawa ba.",
+  "hare": "Sai Zomo ya fito gaba.",
+  "hare-2": "Waɗanda ke kusa suka yi shakka.",
+  "hare-3": "Wasu sun riga sun kasa.",
+  "hare-4": "Me Zomo zai iya yi?",
+  "hare-5": "A ƙarshe, mahaifiyarta ta bar shi ya gwada.",
+  "hare-6": "Zomo ya yi amfani da magunguna daga yankin da suke zaune wajen kula da raunin.",
+  "healed": "Ƙoƙarinsa ya yi nasara, kuma budurwar ta warke.",
+  "suitors": "Ba da daɗewa ba, masu neman aure suka fara zuwa.",
+  "suitors-2": "Wasu masu arziki ne.",
+  "suitors-3": "Wasu daga manyan iyalai suke.",
+  "suitors-4": "Kowa yana fatan ta zaɓe shi.",
+  "suitors-5": "Ta ƙi su.",
+  "choice": "Maimakon haka, ta zaɓi Zomo.",
+  "choice-2": "Mutane suka yi mamaki.",
+  "choice-3": "Me ya sa za ta ƙi arziki da matsayi saboda shi?",
+  "gratitude": "Amma budurwar ta tuna wanda ya taimake ta lokacin wahalarta.",
+  "gratitude-2": "Babban suna bai warkar da ita ba.",
+  "gratitude-3": "Arziki bai warkar da ita ba.",
+  "gratitude-4": "Zomo ya yi nasara inda wasu suka kasa.",
+  "lesson": "Ta zaɓe shi kuma ta cika alkawarin mahaifiyarta.",
+  "lesson-2": "Ƙawayenta sun bar kishi ya sa su juya mata baya.",
+  "lesson-3": "Wasu sun yi wa Zomo shakka kafin su ga abin da zai iya yi.",
+  "end": "Amma ta tuna taimakonsa.",
+  "end-2": "Don haka ta auri Zomo, ta zaɓi wanda ayyukansa suka fi muhimmanci a gare ta.",
+  "wood.ask": [
+    "Me ya sa yarinyar ta shiga daji?"
+  ],
+  "rescue.ask": [
+    "Ta yaya iyalinta suka same ta?"
+  ],
+  "choice.ask": [
+    "Me ya sa ta zaɓi Zomo?"
+  ]
+}

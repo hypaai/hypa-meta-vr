@@ -144,7 +144,7 @@ namespace HypaStories.Tests
         [Test] public void Cards_SevenStones_ThenTheDrum_ThenEshu_ThenMarlow()
         {
             CollectionAssert.AreEqual(new[] { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street" },
-                System.Linq.Enumerable.Select(StoryLibrary.All, s => s.Id));
+                System.Linq.Enumerable.Select(StoryLibrary.Campfire, s => s.Id));
         }
 
         [Test] public void Eshu_HisLightTurnsWithTheHat_AndHeLaughsLast()

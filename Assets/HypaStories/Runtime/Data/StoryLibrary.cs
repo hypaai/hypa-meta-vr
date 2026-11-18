@@ -17,7 +17,7 @@ namespace HypaStories
     public static class StoryLibrary
     {
         /// <summary>Card order. Each id is a folder under Resources/Stories.</summary>
-        static readonly string[] Ids = { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street" };
+        static readonly string[] Ids = { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street", "death-of-the-rice-farmer", "girl-who-chose-hare" };
 
         const float WordsPerSecond = 2.6f, Start = 0.4f, Gap = 0.45f, Tail = 1.5f;
 
@@ -35,6 +35,9 @@ namespace HypaStories
         public static string DefaultModel => DefaultModels[0];
 
         public static readonly StoryInfo[] All = Ids.Select(Load).ToArray();
+
+        public static readonly StoryInfo[] Campfire = { Find("seven-hot-stones"), Find("kings-drum"), Find("eshu-crossroads"), Find("marlow-street") };
+        public static readonly StoryInfo[] Elder = { Find("death-of-the-rice-farmer"), Find("girl-who-chose-hare") };
 
         public static StoryInfo Find(string id) => All.FirstOrDefault(s => s.Id == id);
 

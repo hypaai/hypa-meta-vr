@@ -1,0 +1,55 @@
+{
+  "words": [
+    "shinkafa",
+    "tsuntsaye",
+    "manomi"
+  ],
+  "field": "Wani manomi ya shuka shinkafa a gonarsa.",
+  "field-2": "Ya share ƙasa, ya cire ciyawa, ya kula da tsire-tsiren, yana jiran girbi.",
+  "birds": "Amma tsuntsaye suka gano gonar.",
+  "birds-2": "Kullum suna saukowa suna cin shinkafar.",
+  "birds-3": "“Ku bar amfanin gonata!” manomin ya yi ihu.",
+  "guard": "Ya rika gudu tsakanin tsire-tsiren yana kaɗa hannuwansa.",
+  "guard-2": "Tsuntsayen sukan watse, amma da zarar ya tafi sai su dawo.",
+  "guard-3": "Ba da daɗewa ba, ya fi ɓata lokaci yana korarsu maimakon kula da gonarsa.",
+  "guard-4": "Ya gaji, amma shinkafarsa tana ta raguwa.",
+  "plan": "Wata rana da yamma, ya daina ihu ya lura da su.",
+  "plan-2": "Idan ya matsa kusa, sai su tashi.",
+  "plan-3": "Idan ya tsaya nesa, sai su jira.",
+  "plan-4": "Da zarar sun yi zaton ya tafi, sai su sake sauka a gona.",
+  "plan-5": "Manomin ya yi dogon tunani.",
+  "plan-6": "Sai ya tsara dabara.",
+  "animal": "Ya yanka wata dabba ya fitar da hanjinta.",
+  "animal-2": "Ya kai su gona, ya kwanta cikin shinkafar ya ɗora su a kan cikinsa.",
+  "animal-3": "Duk mai kallonsa zai yi zaton ya mutu.",
+  "still": "Sai ya kwanta shiru ba tare da ko motsi ba.",
+  "watch": "Tsuntsayen suka bayyana, amma da farko ba su matso ba.",
+  "watch-2": "Wannan shi ne mutumin da kullum yake korarsu.",
+  "watch-3": "Suka dube shi.",
+  "watch-4": "Manomin bai motsa ba.",
+  "quiet": "Wani tsuntsu ya sauka kusa.",
+  "quiet-2": "Wani ya biyo shi.",
+  "quiet-3": "Suna jiran ihun da suka saba, amma gonar ta yi shiru.",
+  "quiet-4": "Manomin yana jin fikafikansu da tafiyarsu tsakanin tsire-tsiren.",
+  "quiet-5": "Duk da haka, ya jira.",
+  "closer": "Tsuntsayen suka ƙara samun ƙarfin hali.",
+  "closer-2": "Suna zaton manomin ya mutu, suka taru kusa har hannunsa zai iya kaiwa gare su.",
+  "caught": "Farat ɗaya, ya zabura.",
+  "caught-2": "Kafin su tsere, ya kama su.",
+  "caught-3": "Mutumin da suka ɗauka ya mutu yana raye, kuma dabararsa ta yi nasara.",
+  "safe": "Tun daga ranar, waɗannan tsuntsayen ba su sake damun gonarsa ba.",
+  "safe-2": "Manomin ya iya kula da shinkafarsa ba tare da korarsu kowace sa'a ba.",
+  "title": "Da lokacin girbi ya yi, aikinsa bai tafi a banza ba.",
+  "title-2": "Shi ya sa ake kiran wannan tatsuniya Mutuwar Manomin Shinkafa.",
+  "lesson": "Manomin bai mutu ba.",
+  "end": "Ya daina maimaita abin da bai yi nasara ba, ya nazarci matsalarsa, ya sami wata hanyar kare amfanin gonarsa.",
+  "field.ask": [
+    "Me manomin yake nomawa?"
+  ],
+  "still.ask": [
+    "Me ya sa manomin ya yi kamar ya mutu?"
+  ],
+  "caught.ask": [
+    "Ta yaya manomin ya kare gonarsa?"
+  ]
+}

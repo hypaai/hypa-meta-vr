@@ -1,0 +1,185 @@
+{
+  "theme": 0,
+  "accent": "#E8B15A",
+  "eyebrow": "Nso, Cameroon folk tale",
+  "title": "The Death of the\nRice Farmer",
+  "description": "Birds keep eating a farmer's rice. He lies still in his field and uses a surprising trick to protect his harvest.",
+  "words": [
+    "rice",
+    "birds",
+    "farmer"
+  ],
+  "voices": [],
+  "source": {
+    "url": "https://doi.org/10.3389/fpsyg.2023.1049691",
+    "tradition": "Nso, Cameroon",
+    "adaptation": "Original Hypa retelling of the documented folktale; see SOURCES.md."
+  },
+  "lines": [
+    {
+      "id": "field",
+      "text": "A farmer once planted a field of rice.",
+      "ask": [
+        "What does the farmer grow?"
+      ]
+    },
+    {
+      "id": "field-2",
+      "text": "He cleared the ground, pulled the weeds, and tended the plants, looking forward to his harvest."
+    },
+    {
+      "id": "birds",
+      "text": "But birds discovered the field."
+    },
+    {
+      "id": "birds-2",
+      "text": "Every day they flew down and ate the rice."
+    },
+    {
+      "id": "birds-3",
+      "text": "“Leave my crop alone!” the farmer shouted."
+    },
+    {
+      "id": "guard",
+      "text": "He ran among the plants, waving his arms."
+    },
+    {
+      "id": "guard-2",
+      "text": "The birds scattered, but whenever he left, they returned."
+    },
+    {
+      "id": "guard-3",
+      "text": "Soon he was spending more time chasing birds than caring for his farm."
+    },
+    {
+      "id": "guard-4",
+      "text": "He grew tired, and still his rice disappeared."
+    },
+    {
+      "id": "plan",
+      "text": "One afternoon, he stopped shouting and watched them."
+    },
+    {
+      "id": "plan-2",
+      "text": "When he moved towards them, they flew away."
+    },
+    {
+      "id": "plan-3",
+      "text": "When he stood at a distance, they waited."
+    },
+    {
+      "id": "plan-4",
+      "text": "The moment they thought he was gone, they settled in the field again."
+    },
+    {
+      "id": "plan-5",
+      "text": "The farmer thought for a long time."
+    },
+    {
+      "id": "plan-6",
+      "text": "Then he made a plan."
+    },
+    {
+      "id": "animal",
+      "text": "He killed an animal and took out its entrails."
+    },
+    {
+      "id": "animal-2",
+      "text": "Carrying them to the field, he lay down among the rice and placed them across his belly."
+    },
+    {
+      "id": "animal-3",
+      "text": "To anyone watching, it looked as though he had died."
+    },
+    {
+      "id": "still",
+      "text": "Then he lay perfectly still.",
+      "ask": [
+        "Why does the farmer pretend to be dead?"
+      ]
+    },
+    {
+      "id": "watch",
+      "text": "The birds appeared, but they did not come close at first."
+    },
+    {
+      "id": "watch-2",
+      "text": "This was the same man who always chased them."
+    },
+    {
+      "id": "watch-3",
+      "text": "They watched him."
+    },
+    {
+      "id": "watch-4",
+      "text": "The farmer did not move."
+    },
+    {
+      "id": "quiet",
+      "text": "One bird landed nearby."
+    },
+    {
+      "id": "quiet-2",
+      "text": "Another followed."
+    },
+    {
+      "id": "quiet-3",
+      "text": "They waited for the familiar shout, but the field remained quiet."
+    },
+    {
+      "id": "quiet-4",
+      "text": "The farmer could hear their wings and their feet moving among the plants."
+    },
+    {
+      "id": "quiet-5",
+      "text": "Still, he waited."
+    },
+    {
+      "id": "closer",
+      "text": "The birds grew bolder."
+    },
+    {
+      "id": "closer-2",
+      "text": "Believing the farmer was dead, they gathered closer, until they were within his reach."
+    },
+    {
+      "id": "caught",
+      "text": "Suddenly, he sprang up.",
+      "ask": [
+        "How does the farmer protect his field?"
+      ]
+    },
+    {
+      "id": "caught-2",
+      "text": "Before they could escape, he caught them."
+    },
+    {
+      "id": "caught-3",
+      "text": "The man they had believed was dead was alive, and his trick had succeeded."
+    },
+    {
+      "id": "safe",
+      "text": "From that day, those birds no longer troubled his field."
+    },
+    {
+      "id": "safe-2",
+      "text": "The farmer could tend his rice without spending every hour chasing them away."
+    },
+    {
+      "id": "title",
+      "text": "When harvest came, his work had not been wasted."
+    },
+    {
+      "id": "title-2",
+      "text": "And that is why this tale is called The Death of the Rice Farmer."
+    },
+    {
+      "id": "lesson",
+      "text": "The farmer did not die."
+    },
+    {
+      "id": "end",
+      "text": "He stopped repeating what had failed, studied his problem, and found another way to protect his crop."
+    }
+  ]
+}

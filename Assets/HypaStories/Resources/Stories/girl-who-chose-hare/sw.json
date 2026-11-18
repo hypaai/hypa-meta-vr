@@ -1,0 +1,63 @@
+{
+  "words": [
+    "msitu",
+    "ahadi",
+    "wema"
+  ],
+  "wood": "Mwanamke kijana alienda msituni na wenzake kutafuta kuni.",
+  "wood-2": "Alijua kupata kuni nzuri, na wengine walimwonea wivu.",
+  "tree": "Siku hiyo alipanda mti, akateleza na mkono wake ukakwama kwenye mbao.",
+  "tree-2": "“Nisaidieni!” akalia.",
+  "left": "Lakini wenzake walimwacha pale.",
+  "left-2": "Waliporudi kijijini, mama yake aliuliza binti yake yuko wapi.",
+  "left-3": "Walikana kumwona.",
+  "song": "Akiwa peke yake msituni, kijana huyo alisikiliza nyayo.",
+  "song-2": "Kila aliposikia sauti, aliimba akitumaini mtu angemkuta.",
+  "hunter": "Mwindaji alisikia sauti yake.",
+  "hunter-2": "Aliogopa kuimba huko msituni pasipo watu, akakimbia.",
+  "hunter-3": "Lakini alikumbuka wimbo na hatimaye akaupeleka kijijini.",
+  "rescue": "Familia yake iliutambua.",
+  "rescue-2": "Wakakusanya watu, mapanga na zana, wakamfuata mwindaji msituni.",
+  "rescue-3": "Kijana huyo alipoimba tena, sauti zikamjibu.",
+  "rescue-4": "Wakakata mbao na kumwachilia.",
+  "wound": "Lakini mkono wake ulikuwa umejeruhiwa vibaya.",
+  "wound-2": "Nyumbani, mama yake aliona mateso yake na kuogopa asingepata nafuu kamwe.",
+  "promise": "Kwa kukata tamaa, aliahidi kwamba yeyote atakayemponya binti yake angeweza kumwoa.",
+  "animals": "Wanyama walikuja kujaribu.",
+  "animals-2": "Tumbili alijaribu, akashindwa.",
+  "animals-3": "Chui hakuweza kumponya.",
+  "animals-4": "Simba naye hakuweza kusaidia.",
+  "hare": "Kisha Sungura akajitokeza.",
+  "hare-2": "Waliomzunguka walikuwa na shaka.",
+  "hare-3": "Wengine walikuwa wameshindwa.",
+  "hare-4": "Sungura angeweza kufanya nini?",
+  "hare-5": "Hatimaye mama yake alimruhusu ajaribu.",
+  "hare-6": "Kwa tiba kutoka eneo lililowazunguka, Sungura alitibu jeraha.",
+  "healed": "Juhudi zake zilifanikiwa, na kijana huyo akapona.",
+  "suitors": "Punde wachumba wakaanza kuja.",
+  "suitors-2": "Baadhi walikuwa matajiri.",
+  "suitors-3": "Wengine walitoka familia mashuhuri.",
+  "suitors-4": "Kila mmoja alitumaini angechaguliwa.",
+  "suitors-5": "Aliwakataa.",
+  "choice": "Badala yake, alimchagua Sungura.",
+  "choice-2": "Watu walishangaa.",
+  "choice-3": "Kwa nini akatae mali na hadhi kwa ajili yake?",
+  "gratitude": "Lakini alikumbuka aliyemsaidia alipokuwa akiteseka.",
+  "gratitude-2": "Jina kubwa halikumponya.",
+  "gratitude-3": "Utajiri haukumponya.",
+  "gratitude-4": "Sungura alifanikiwa wengine waliposhindwa.",
+  "lesson": "Alimchagua na kutimiza ahadi ya mama yake.",
+  "lesson-2": "Wenzake walikuwa wameacha wivu uwageuze dhidi yake.",
+  "lesson-3": "Wengine walimtilia Sungura shaka kabla ya kuona uwezo wake.",
+  "end": "Lakini alikumbuka msaada wake.",
+  "end-2": "Hivyo akaolewa na Sungura, akimchagua yule ambaye matendo yake yalikuwa na maana kubwa zaidi kwake.",
+  "wood.ask": [
+    "Kwa nini msichana anaenda msituni?"
+  ],
+  "rescue.ask": [
+    "Familia yake inampataje?"
+  ],
+  "choice.ask": [
+    "Kwa nini anamchagua Sungura?"
+  ]
+}

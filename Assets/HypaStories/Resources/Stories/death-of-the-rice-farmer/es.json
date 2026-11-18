@@ -1,0 +1,55 @@
+{
+  "words": [
+    "arroz",
+    "pájaros",
+    "agricultor"
+  ],
+  "field": "Un agricultor plantó un campo de arroz.",
+  "field-2": "Limpió la tierra, arrancó las malas hierbas y cuidó las plantas, esperando la cosecha.",
+  "birds": "Pero los pájaros descubrieron el campo.",
+  "birds-2": "Cada día bajaban a comer arroz.",
+  "birds-3": "«¡Dejad mi cosecha en paz!», gritaba el agricultor.",
+  "guard": "Corría entre las plantas agitando los brazos.",
+  "guard-2": "Los pájaros se dispersaban, pero regresaban cuando él se iba.",
+  "guard-3": "Pronto pasaba más tiempo espantándolos que cuidando su granja.",
+  "guard-4": "Se cansaba, y su arroz seguía desapareciendo.",
+  "plan": "Una tarde dejó de gritar y los observó.",
+  "plan-2": "Cuando se acercaba, volaban.",
+  "plan-3": "Cuando se quedaba lejos, esperaban.",
+  "plan-4": "En cuanto creían que se había ido, volvían al campo.",
+  "plan-5": "El agricultor pensó mucho.",
+  "plan-6": "Entonces ideó un plan.",
+  "animal": "Mató un animal y le sacó las entrañas.",
+  "animal-2": "Las llevó al campo, se acostó entre el arroz y se las puso sobre el vientre.",
+  "animal-3": "Para cualquiera que lo mirara, parecía haber muerto.",
+  "still": "Después se quedó completamente inmóvil.",
+  "watch": "Los pájaros aparecieron, pero al principio no se acercaron.",
+  "watch-2": "Era el mismo hombre que siempre los perseguía.",
+  "watch-3": "Lo observaron.",
+  "watch-4": "El agricultor no se movió.",
+  "quiet": "Un pájaro se posó cerca.",
+  "quiet-2": "Otro lo siguió.",
+  "quiet-3": "Esperaban el grito habitual, pero el campo seguía en silencio.",
+  "quiet-4": "El agricultor oía sus alas y sus pasos entre las plantas.",
+  "quiet-5": "Aun así, esperó.",
+  "closer": "Los pájaros se hicieron más atrevidos.",
+  "closer-2": "Creyéndolo muerto, se acercaron hasta quedar a su alcance.",
+  "caught": "De pronto, se levantó de un salto.",
+  "caught-2": "Antes de que pudieran escapar, los atrapó.",
+  "caught-3": "El hombre que creían muerto estaba vivo, y su truco había funcionado.",
+  "safe": "Desde aquel día, esos pájaros no volvieron a molestar en su campo.",
+  "safe-2": "El agricultor pudo cuidar el arroz sin pasar cada hora espantándolos.",
+  "title": "Cuando llegó la cosecha, su trabajo no había sido en vano.",
+  "title-2": "Por eso este cuento se llama La muerte del agricultor de arroz.",
+  "lesson": "El agricultor no murió.",
+  "end": "Dejó de repetir lo que no funcionaba, estudió su problema y encontró otra manera de proteger su cultivo.",
+  "field.ask": [
+    "¿Qué cultiva el agricultor?"
+  ],
+  "still.ask": [
+    "¿Por qué finge estar muerto?"
+  ],
+  "caught.ask": [
+    "¿Cómo protege su campo?"
+  ]
+}

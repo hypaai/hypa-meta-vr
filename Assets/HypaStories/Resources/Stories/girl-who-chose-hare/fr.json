@@ -1,0 +1,63 @@
+{
+  "words": [
+    "forêt",
+    "promesse",
+    "bonté"
+  ],
+  "wood": "Une jeune femme alla dans la forêt avec ses compagnes ramasser du bois de chauffage.",
+  "wood-2": "Elle savait trouver du bon bois, et les autres étaient jalouses.",
+  "tree": "Ce jour-là, elle grimpa à un arbre, glissa et se coinça la main dans le bois.",
+  "tree-2": "« Aidez-moi ! » cria-t-elle.",
+  "left": "Mais ses compagnes l'abandonnèrent.",
+  "left-2": "De retour au village, sa mère leur demanda où était sa fille.",
+  "left-3": "Elles nièrent l'avoir vue.",
+  "song": "Seule dans la forêt, la jeune femme guettait des pas.",
+  "song-2": "Chaque fois qu'elle entendait un bruit, elle chantait, espérant qu'on la trouverait.",
+  "hunter": "Un chasseur entendit sa voix.",
+  "hunter-2": "Effrayé par ce chant dans la forêt déserte, il s'enfuit.",
+  "hunter-3": "Mais il retint la chanson et finit par la rapporter au village.",
+  "rescue": "Sa famille la reconnut.",
+  "rescue-2": "On rassembla des habitants, des machettes et des outils, puis on suivit le chasseur dans la forêt.",
+  "rescue-3": "Quand la jeune femme chanta de nouveau, des voix lui répondirent.",
+  "rescue-4": "On coupa le bois et on la libéra.",
+  "wound": "Mais sa main était gravement blessée.",
+  "wound-2": "Chez elle, sa mère la voyait souffrir et craignait qu'elle ne guérisse jamais.",
+  "promise": "Désespérée, elle promit que celui qui guérirait sa fille pourrait l'épouser.",
+  "animals": "Les animaux vinrent essayer.",
+  "animals-2": "Singe essaya, mais échoua.",
+  "animals-3": "Panthère ne put la guérir.",
+  "animals-4": "Lion ne put rien faire non plus.",
+  "hare": "Alors Lièvre s'avança.",
+  "hare-2": "Autour de lui, on doutait.",
+  "hare-3": "D'autres avaient déjà échoué.",
+  "hare-4": "Que pourrait-il bien faire ?",
+  "hare-5": "Enfin, sa mère le laissa essayer.",
+  "hare-6": "Avec des remèdes provenant des environs, Lièvre soigna la blessure.",
+  "healed": "Ses efforts réussirent, et la jeune femme guérit.",
+  "suitors": "Bientôt, des prétendants arrivèrent.",
+  "suitors-2": "Certains étaient riches.",
+  "suitors-3": "D'autres venaient de grandes familles.",
+  "suitors-4": "Chacun espérait être choisi.",
+  "suitors-5": "Elle les refusa.",
+  "choice": "Elle choisit plutôt Lièvre.",
+  "choice-2": "Les gens s'étonnèrent.",
+  "choice-3": "Pourquoi renoncer pour lui à la richesse et au rang ?",
+  "gratitude": "Mais la jeune femme se souvenait de celui qui l'avait aidée dans sa souffrance.",
+  "gratitude-2": "Un grand nom ne l'avait pas guérie.",
+  "gratitude-3": "La richesse non plus.",
+  "gratitude-4": "Lièvre avait réussi là où les autres avaient échoué.",
+  "lesson": "Elle le choisit et respecta la promesse de sa mère.",
+  "lesson-2": "Ses compagnes avaient laissé la jalousie les dresser contre elle.",
+  "lesson-3": "D'autres avaient douté de Lièvre avant de voir ce qu'il savait faire.",
+  "end": "Mais elle se souvenait de son aide.",
+  "end-2": "Elle épousa donc Lièvre, choisissant celui dont les actes comptaient le plus pour elle.",
+  "wood.ask": [
+    "Pourquoi va-t-elle dans la forêt ?"
+  ],
+  "rescue.ask": [
+    "Comment sa famille la retrouve-t-elle ?"
+  ],
+  "choice.ask": [
+    "Pourquoi choisit-elle Lièvre ?"
+  ]
+}

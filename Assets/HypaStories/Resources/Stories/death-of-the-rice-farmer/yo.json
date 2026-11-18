@@ -1,0 +1,55 @@
+{
+  "words": [
+    "ìrẹsì",
+    "ẹyẹ",
+    "àgbẹ̀"
+  ],
+  "field": "Àgbẹ̀ kan gbin ìrẹsì sínú oko rẹ̀.",
+  "field-2": "Ó tún ilẹ̀ ṣe, ó fa èpò tu, ó sì tọ́jú àwọn ohun ọ̀gbìn, ní ìrètí ìkórè.",
+  "birds": "Ṣùgbọ́n àwọn ẹyẹ rí oko náà.",
+  "birds-2": "Ojoojúmọ́ ni wọ́n ń fò wá jẹ ìrẹsì.",
+  "birds-3": "“Ẹ fi ohun ọ̀gbìn mi sílẹ̀!” àgbẹ̀ náà kígbe.",
+  "guard": "Ó sáré láàárín àwọn ohun ọ̀gbìn, ó ń ju ọwọ́ rẹ̀.",
+  "guard-2": "Àwọn ẹyẹ fọ́n ká, ṣùgbọ́n nígbàkigbà tí ó bá lọ, wọ́n padà.",
+  "guard-3": "Kò pé tí ó fi ń lo àkókò púpọ̀ sí i láti lé ẹyẹ ju bíbójútó oko rẹ̀ lọ.",
+  "guard-4": "Ó rẹ̀ ẹ́, síbẹ̀ ìrẹsì rẹ̀ ń dín kù.",
+  "plan": "Ní ọ̀sán ọjọ́ kan, ó dáwọ́ kígbe dúró, ó sì wò wọ́n.",
+  "plan-2": "Bí ó bá sún mọ́ wọn, wọ́n fò lọ.",
+  "plan-3": "Bí ó bá dúró ní ọ̀nà jíjìn, wọ́n dúró de e.",
+  "plan-4": "Ní kété tí wọ́n bá rò pé ó ti lọ, wọ́n tún bà sí oko.",
+  "plan-5": "Àgbẹ̀ náà ronú fún ìgbà pípẹ́.",
+  "plan-6": "Lẹ́yìn náà, ó pète ètò kan.",
+  "animal": "Ó pa ẹranko kan, ó sì yọ ìfun rẹ̀ jáde.",
+  "animal-2": "Ó gbé wọn lọ sí oko, ó dùbúlẹ̀ láàárín ìrẹsì, ó sì gbé wọn lé ikùn rẹ̀.",
+  "animal-3": "Ẹnikẹ́ni tí ó bá wò ó yóò rò pé ó ti kú.",
+  "still": "Lẹ́yìn náà, ó dùbúlẹ̀ láìyíra rárá.",
+  "watch": "Àwọn ẹyẹ dé, ṣùgbọ́n wọn kò sún mọ́ ọn ní àkọ́kọ́.",
+  "watch-2": "Ọkùnrin kan náà tí ń lé wọn nígbà gbogbo ni.",
+  "watch-3": "Wọ́n wò ó.",
+  "watch-4": "Àgbẹ̀ náà kò yíra.",
+  "quiet": "Ẹyẹ kan bà sí tòsí.",
+  "quiet-2": "Òmíràn tẹ̀ lé e.",
+  "quiet-3": "Wọ́n dúró de igbe tí wọ́n mọ̀, ṣùgbọ́n oko dákẹ́.",
+  "quiet-4": "Àgbẹ̀ náà ń gbọ́ ìyẹ́ àti ẹsẹ̀ wọn láàárín àwọn ohun ọ̀gbìn.",
+  "quiet-5": "Síbẹ̀, ó dúró.",
+  "closer": "Àwọn ẹyẹ túbọ̀ ní ìgboyà.",
+  "closer-2": "Wọ́n gbà pé àgbẹ̀ náà ti kú, wọ́n sì kóra jọ sí tòsí títí ọwọ́ rẹ̀ fi lè kàn wọ́n.",
+  "caught": "Lójijì, ó fò dìde.",
+  "caught-2": "Kí wọ́n tó sá, ó mú wọn.",
+  "caught-3": "Ọkùnrin tí wọ́n rò pé ó ti kú wà láàyè, ọgbọ́n rẹ̀ sì ti ṣiṣẹ́.",
+  "safe": "Láti ọjọ́ náà, àwọn ẹyẹ yẹn kò tún yọ oko rẹ̀ lẹ́nu.",
+  "safe-2": "Àgbẹ̀ náà lè tọ́jú ìrẹsì rẹ̀ láìlo gbogbo wákàtí láti lé wọn.",
+  "title": "Nígbà tí ìkórè dé, iṣẹ́ rẹ̀ kò já sí asán.",
+  "title-2": "Ìdí nìyẹn tí a fi ń pe ìtàn yìí ní Ikú Àgbẹ̀ Ìrẹsì.",
+  "lesson": "Àgbẹ̀ náà kò kú.",
+  "end": "Ó dáwọ́ àtúnṣe ohun tí kò ṣiṣẹ́ dúró, ó yẹ ìṣòro rẹ̀ wò, ó sì rí ọ̀nà mìíràn láti dáàbò bo ohun ọ̀gbìn rẹ̀.",
+  "field.ask": [
+    "Kí ni àgbẹ̀ náà ń gbìn?"
+  ],
+  "still.ask": [
+    "Kí ló dé tí àgbẹ̀ náà ṣe bí ẹni pé ó kú?"
+  ],
+  "caught.ask": [
+    "Báwo ni àgbẹ̀ náà ṣe dáàbò bo oko rẹ̀?"
+  ]
+}

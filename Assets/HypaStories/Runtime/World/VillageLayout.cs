@@ -85,6 +85,9 @@ namespace HypaStories
         /// <summary>Near the gate (either side): the village's buttons show.</summary>
         public static bool AtGate(Vector2 p) => Vector2.Distance(p, FrontOfGate) < 2.2f;
 
+        /// <summary>Close enough to greet the elder, in the same ground coordinates as the gate and walking limits.</summary>
+        public static bool AtLocal(Vector2 p) => Vector2.Distance(p, Local) < 2.2f;
+
         /// <summary>Can you stand at <paramref name="p"/>? The village trail and the plaza (your side of the fence). The clearing is <see cref="Grounds"/>'.</summary>
         public static bool Allowed(Vector2 p)
         {

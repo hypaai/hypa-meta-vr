@@ -1,0 +1,63 @@
+{
+  "words": [
+    "igbó",
+    "ìlérí",
+    "inú rere"
+  ],
+  "wood": "Ọ̀dọ́bìnrin kan bá àwọn ẹlẹgbẹ́ rẹ̀ lọ sínú igbó láti kó igi ìdáná.",
+  "wood-2": "Ó mọ bí a ṣe ń rí igi rere, àwọn yòókù sì ń jowú rẹ̀.",
+  "tree": "Ní ọjọ́ náà, ó gun igi, ó yọ̀, ọwọ́ rẹ̀ sì há sínú igi.",
+  "tree-2": "“Ẹ ràn mí lọ́wọ́!” ó kígbe.",
+  "left": "Ṣùgbọ́n àwọn ẹlẹgbẹ́ rẹ̀ fi í sílẹ̀ níbẹ̀.",
+  "left-2": "Nígbà tí wọ́n padà sí abúlé, ìyá rẹ̀ béèrè ibi tí ọmọ rẹ̀ wà.",
+  "left-3": "Wọ́n sẹ́ pé àwọn rí i.",
+  "song": "Ní òun nìkan nínú igbó, ọ̀dọ́bìnrin náà ń fetí sí ìró ẹsẹ̀.",
+  "song-2": "Nígbàkigbà tí ó bá gbọ́ ohùn kan, ó kọrin, ní ìrètí pé ẹnìkan yóò rí òun.",
+  "hunter": "Ọdẹ kan gbọ́ ohùn rẹ̀.",
+  "hunter-2": "Orin nínú igbó tí kò sí ènìyàn dẹ́rù bà á, ó sì sá.",
+  "hunter-3": "Ṣùgbọ́n ó rántí orin náà, ó sì gbé e padà sí abúlé níkẹyìn.",
+  "rescue": "Àwọn ìdílé rẹ̀ dá a mọ̀.",
+  "rescue-2": "Wọ́n kó ènìyàn, àdá àti irinṣẹ́ jọ, wọ́n sì tẹ̀ lé ọdẹ sínú igbó.",
+  "rescue-3": "Nígbà tí ọ̀dọ́bìnrin náà tún kọrin, àwọn ohùn dá a lóhùn.",
+  "rescue-4": "Wọ́n gé igi náà, wọ́n sì tú u sílẹ̀.",
+  "wound": "Ṣùgbọ́n ọwọ́ rẹ̀ ti fara pa gidigidi.",
+  "wound-2": "Nílé, ìyá rẹ̀ ń wo ìjìyà rẹ̀, ó sì ń bẹ̀rù pé kò ní lára dá mọ́.",
+  "promise": "Nítorí ìbànújẹ́, ó ṣèlérí pé ẹnikẹ́ni tí ó bá wo ọmọ rẹ̀ sàn lè fẹ́ ẹ.",
+  "animals": "Àwọn ẹranko wá láti gbìyànjú.",
+  "animals-2": "Ọ̀bọ gbìyànjú, ṣùgbọ́n kò ṣe é.",
+  "animals-3": "Àmọ̀tẹ́kùn kò lè wo ó sàn.",
+  "animals-4": "Kìnnìún náà kò lè ràn án lọ́wọ́.",
+  "hare": "Lẹ́yìn náà, Ehoro jáde síwájú.",
+  "hare-2": "Àwọn tí ó yí i ká ṣiyèméjì.",
+  "hare-3": "Àwọn mìíràn ti kùnà.",
+  "hare-4": "Kí ni Ehoro lè ṣe?",
+  "hare-5": "Níkẹyìn, ìyá rẹ̀ jẹ́ kí ó gbìyànjú.",
+  "hare-6": "Ehoro fi àwọn egbòogi láti àyíká wọn tọ́jú ọgbẹ́ náà.",
+  "healed": "Ìsapá rẹ̀ yọrí sí rere, ọ̀dọ́bìnrin náà sì lára dá.",
+  "suitors": "Kò pé tí àwọn olólùfẹ́ fi bẹ̀rẹ̀ sí í dé.",
+  "suitors-2": "Àwọn kan lọ́rọ̀.",
+  "suitors-3": "Àwọn mìíràn wá láti ìdílé pàtàkì.",
+  "suitors-4": "Olúkúlùkù retí pé yóò yan òun.",
+  "suitors-5": "Ó kọ̀ wọ́n.",
+  "choice": "Dípò bẹ́ẹ̀, ó yan Ehoro.",
+  "choice-2": "Ó ya àwọn ènìyàn lẹ́nu.",
+  "choice-3": "Kí ló dé tí yóò fi kọ ọrọ̀ àti ipò sílẹ̀ nítorí rẹ̀?",
+  "gratitude": "Ṣùgbọ́n ọ̀dọ́bìnrin náà rántí ẹni tí ó ràn án lọ́wọ́ nígbà ìjìyà rẹ̀.",
+  "gratitude-2": "Orúkọ ńlá kò wo ó sàn.",
+  "gratitude-3": "Ọrọ̀ kò wo ó sàn.",
+  "gratitude-4": "Ehoro ṣe àṣeyọrí níbi tí àwọn yòókù kò ti lè ṣe é.",
+  "lesson": "Ó yan án, ó sì mú ìlérí ìyá rẹ̀ ṣẹ.",
+  "lesson-2": "Àwọn ẹlẹgbẹ́ rẹ̀ jẹ́ kí owú mú wọn kọ̀ ọ́ sílẹ̀.",
+  "lesson-3": "Àwọn mìíràn ṣiyèméjì nípa Ehoro kí wọ́n tó rí ohun tí ó lè ṣe.",
+  "end": "Ṣùgbọ́n ó rántí ìrànlọ́wọ́ rẹ̀.",
+  "end-2": "Nítorí náà, ó fẹ́ Ehoro, ó yan ẹni tí ìṣe rẹ̀ ṣe pàtàkì jù lọ sí òun.",
+  "wood.ask": [
+    "Kí ló dé tí ọmọbìnrin náà fi lọ sínú igbó?"
+  ],
+  "rescue.ask": [
+    "Báwo ni ìdílé rẹ̀ ṣe rí i?"
+  ],
+  "choice.ask": [
+    "Kí ló dé tó fi yan Ehoro?"
+  ]
+}
