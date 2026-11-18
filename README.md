@@ -55,7 +55,7 @@ See [docs/api-contract.md](docs/api-contract.md) for what has been verified live
 - **HypaLens scene, Play:** simulated camera, simulated text, canned translations. Space = capture, hold left mouse = pinch (over 0.6 s = sentence), O = offline, N = no text, H = help. Untick **Use Simulated Api** on the `HypaLens` object to call the real API with your key.
 - **HypaCoreTest scene, Play:** translates and speaks a sentence through the live API (needs a key). R repeats.
 - **HypaStory scene, Play:** the campfire. Right mouse = look, Enter = choose, Space = pause, H or Q = ask, 1-3 = suggested question, Esc = back. Licensed audio and the avatar are local only (see the Stories README).
-- **HypaShell scene, Play:** the Hypa Stories app. M opens Home: Stories, Lens, Saved words and How it works.
+- **HypaShell scene, Play:** the Hypa Stories app. M opens Home: Stories, Lens and How it works.
 - **Meta XR Simulator:** enable it from the Meta menu, put the Meta camera rig in HypaShell, and set `HypaInput.MouseInEditor = false` to test hands.
 - **Tests:** Window > General > Test Runner > EditMode.
 
