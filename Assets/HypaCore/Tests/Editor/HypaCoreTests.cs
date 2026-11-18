@@ -118,6 +118,49 @@ namespace HypaCore.Tests
             Assert.IsFalse(new HypaConfig("  ").HasKey);
         }
 
+        [Test] public void Config_DebugIsOff_UnlessSaidTrue()
+        {
+            Assert.IsFalse(new HypaConfig("k").DebugMode);
+            foreach (var on in new[] { "true", "TRUE", " 1 ", "yes", "on" }) Assert.IsTrue(HypaConfig.IsTrue(on), on);
+            foreach (var off in new[] { null, "", "false", "0", "*", "app:*" }) Assert.IsFalse(HypaConfig.IsTrue(off), off); // DEBUG=* is a node habit, not ours
+            Assert.AreEqual("true", HypaConfig.ParseEnv("HYPA_API_KEY=k\nDEBUG=true # the panel\n")["DEBUG"]);
+        }
+
+        [Test] public void Trace_KeepsNothingWhenOff_AndNamesLinksAndAudioOnly()
+        {
+            var was = HypaTrace.Enabled;
+            try
+            {
+                HypaTrace.Enabled = false;
+                Assert.IsNull(HypaTrace.Begin("mcp text_to_speech", "x"));
+                HypaTrace.End(null, "ok"); // a call made while off ends quietly
+
+                HypaTrace.Enabled = true;
+                HypaTrace.Clear();
+                var c = HypaTrace.Begin("mcp text_to_speech", "text: \"hi\"");
+                var calls = new System.Collections.Generic.List<HypaTrace.Call>();
+                var notes = new System.Collections.Generic.List<HypaTrace.Note>();
+                HypaTrace.Snapshot(calls, notes, out var total, out _);
+                Assert.IsTrue(calls.Last().Running);
+                HypaTrace.End(c, "Timeout", "Request timed out after 90 s.");
+                HypaTrace.Snapshot(calls, notes, out total, out var failed);
+                Assert.AreEqual("Timeout", calls.Last().Status);
+                Assert.AreEqual(1, failed);
+
+                var said = HypaTrace.Describe(new JObject
+                {
+                    ["text"] = new string('a', 200), ["language"] = "Yoruba", ["audioUrl"] = "https://x/a.wav?sig=SECRET",
+                    ["audioBase64"] = new string('A', 4096), ["voice"] = "Kore",
+                });
+                StringAssert.DoesNotContain("SECRET", said);
+                StringAssert.DoesNotContain("AAAA", said);
+                StringAssert.Contains("language: \"Yoruba\"", said);
+                StringAssert.Contains("voice: \"Kore\"", said);
+                StringAssert.Contains("…", said); // the long text is cut
+            }
+            finally { HypaTrace.Clear(); HypaTrace.Enabled = was; }
+        }
+
         // ---------- Languages / dictionary ----------
 
         [Test] public void Languages_FilterTts_AndFindByNameOrCode()

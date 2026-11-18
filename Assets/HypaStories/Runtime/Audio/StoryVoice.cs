@@ -20,6 +20,8 @@ namespace HypaStories
     {
         AudioSource _speech;
         readonly Dictionary<string, Task<AudioClip>> _cache = new Dictionary<string, Task<AudioClip>>();
+        /// <summary>When each cached fetch started (only while the debug panel is on).</summary>
+        readonly Dictionary<string, double> _started = new Dictionary<string, double>();
         readonly VoiceLock _lock = new VoiceLock();
         readonly CancellationTokenSource _life = new CancellationTokenSource();
         readonly float[] _buf = new float[256];
@@ -30,6 +32,8 @@ namespace HypaStories
         readonly HashSet<string> _locked = new HashSet<string>();
         bool _fake, _skip;
         int _playToken;
+        /// <summary>The wait before a failed line is asked for again.</summary>
+        const int RetryMs = 1500;
 
         /// <summary>Loudness of whatever the storyteller is saying, 0..1.</summary>
         public float Level { get; private set; }
@@ -82,6 +86,7 @@ namespace HypaStories
         {
             _lock.Reset();
             _cache.Clear();
+            _started.Clear();
             _locked.Clear();
         }
 
@@ -91,14 +96,45 @@ namespace HypaStories
             if (TtsAvailable && !string.IsNullOrWhiteSpace(text)) _ = Fetch(text, language);
         }
 
+        string KeyFor(string text, StoryLanguage language, out VoiceOption[] voices)
+        {
+            voices = Voices?.Invoke(language.Code) ?? new VoiceOption[0];
+            return voices.FirstOrDefault() + "|" + language.HypaLabel + "|" + text;
+        }
+
         Task<AudioClip> Fetch(string text, StoryLanguage language)
         {
-            var voices = Voices?.Invoke(language.Code) ?? new VoiceOption[0];
-            var key = voices.FirstOrDefault() + "|" + language.HypaLabel + "|" + text;
+            var key = KeyFor(text, language, out var voices);
             // a fetch that failed, or came back with no sound, is asked again
             if (_cache.TryGetValue(key, out var t) && !t.IsFaulted && !t.IsCanceled && !(t.IsCompleted && t.Result == null)) return t;
+            if (HypaTrace.Enabled) _started[key] = HypaTrace.Now;
             return _cache[key] = FetchAsync(text, language, voices);
         }
+
+        /// <summary>For the debug panel: where a line's audio is (not asked / fetching for how long / ready / failed).</summary>
+        public string CacheState(string text, StoryLanguage language)
+        {
+            if (!TtsAvailable) return "no key: silent";
+            var key = KeyFor(text, language, out _);
+            if (!_cache.TryGetValue(key, out var t)) return "not asked";
+            var age = _started.TryGetValue(key, out var at) ? $" {HypaTrace.Now - at:0.0}s" : "";
+            if (t.IsFaulted) return "failed: " + HypaTrace.Clip(t.Exception?.GetBaseException().Message, 60);
+            if (t.IsCanceled) return "cancelled";
+            if (!t.IsCompleted) return "fetching" + age;
+            return t.Result == null ? "no audio" : $"ready ({t.Result.length:0.0}s clip)";
+        }
+
+        /// <summary>For the debug panel: the story's voices for a language, and what Auto locked.</summary>
+        public string VoiceState(StoryLanguage language)
+        {
+            var voices = Voices?.Invoke(language.Code) ?? new VoiceOption[0];
+            var named = voices.Length > 0 ? "story voices " + string.Join(", ", voices.Select(v => v.ToString())) + "; " : "";
+            return named + "auto " + _lock.Describe(language.Code);
+        }
+
+        /// <summary>For the debug panel: what the storyteller is saying right now.</summary>
+        public string Speaking => _fake ? "silent line (no audio)"
+            : _speech != null && _speech.isPlaying && _speech.clip != null ? $"clip {_speech.time:0.0} / {_speech.clip.length:0.0}s" : "quiet";
 
         async Task<AudioClip> FetchAsync(string text, StoryLanguage language, VoiceOption[] voices)
         {
@@ -136,15 +172,19 @@ namespace HypaStories
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception first)
             {
-                // once more (a failed fetch isn't kept in the cache, so this asks again) before the line plays silently
+                if (HypaTrace.Enabled) HypaTrace.Add("voice", $"{language.Code} line failed ({first.GetBaseException().Message}); retrying in {RetryMs / 1000f:0.0}s");
+                // once more (a failed fetch isn't kept in the cache, so this asks again) before the line plays silently; after a
+                // pause, since an instant retry of a busy or rate-limited service fails the same way
                 try
                 {
+                    await Task.Delay(RetryMs, ct);
                     var clip = await WithCancellation(Fetch(text, language), ct);
                     if (clip != null) return new SpeechLine { Text = text, Clip = clip, Seconds = clip.length };
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
                 catch (Exception e) { first = e; }
                 Warn($"no voice could speak this {language.HypaLabel} line, it plays silently: {first.Message}");
+                if (HypaTrace.Enabled) HypaTrace.Add("voice", $"{language.Code} line SILENT after retry: {first.GetBaseException().Message}");
                 return Silent(text);
             }
         }
@@ -221,6 +261,15 @@ namespace HypaStories
             => _picks.TryGetValue(lang, out var t) && t.Status == TaskStatus.RanToCompletion ? t.Result : null;
 
         public void Reset() => _picks = new Dictionary<string, Task<VoiceOption>>();
+
+        /// <summary>For the debug panel: not picked yet / picking / the locked voice / back on Auto.</summary>
+        public string Describe(string lang)
+        {
+            if (!_picks.TryGetValue(lang, out var t)) return "not picked yet";
+            if (!t.IsCompleted) return "picking (first line in flight)";
+            if (t.Status != TaskStatus.RanToCompletion) return "pick failed, will pick again";
+            return t.Result == null ? "unlocked (each line asks Auto)" : "locked to " + t.Result;
+        }
 
         /// <summary>
         /// Speaks a line in the language's locked voice. <paramref name="speak"/>(null) is Auto. The first call for a language makes the
