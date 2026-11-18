@@ -187,6 +187,7 @@ namespace HypaStories
         {
             if (id != PlaceIds.Camp || _away) return;
             if (_room) ExitRoomNow(); // the hut and the village are out in the forest: back to it, unseen, before the camp is put away
+            else if (_returnToRoom) DestroyDoors();
             _wasPlaying = _story.Live && _story.Running && !_story.Paused && !_story.Ended;
             if (_hut != null && _hut.enabled) _hut.Close();
             _ask.Cancel();
@@ -232,6 +233,7 @@ namespace HypaStories
         float Recenter(Vector3 seat)
         {
             if (_room) { PlaceInRoom(); return _cam.position.y - _roomFloorY; } // in your room the fire stays where it is on the real floor
+            if (_returnToRoom) return _cam.position.y - _world.position.y; // the destination stays lined up with the real door
             var head = _cam.position;
             var fwd = _cam.forward; fwd.y = 0f;
             if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.forward;
@@ -680,8 +682,11 @@ namespace HypaStories
 
             _splash.Update(_cam);
             _list.Update(dt);
-            Locomotion(dt);
-            if (!_busy && !_room) KeepInBounds(); // every frame: head movement (room-scale, or the simulator) can't leave the clearing either
+            if (!_busy && !_room && !_returnToRoom)
+            {
+                Locomotion(dt);
+                KeepInBounds();
+            }
             TrailPanels(dt);
 
             if (_hatGame != null) _turnHat.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == EshuStory && !_busy);
@@ -986,6 +991,7 @@ namespace HypaStories
                 Debug.Log($"Hypa Stories portal: {plan.Kind}{(plan.Scanned ? "" : " (in front of you)")} at {plan.Base}, facing {plan.Normal}, {plan.Width:0.00} x {plan.Height:0.00} m");
                 AddDoor(plan);
             }
+            PaintChips();
             _portalQuietUntil = Time.time + 1.5f;
             _audio.PortalOpen();
             return note;
@@ -1028,7 +1034,6 @@ namespace HypaStories
                 d.Buttons[i] = Kit.Button(d.Chips, new Vector3((i - 1) * 0.205f, -0.012f, -0.004f), new Vector2(0.195f, 0.075f), PortalDestinations.Label(dest),
                     PortalDestinations.Icon(dest), KitStyle.Ghost, () => ChooseDestination(dest), null, 0.022f);
             }
-            PaintChips();
         }
 
         void ChooseDestination(PortalDestination dest)
@@ -1126,7 +1131,7 @@ namespace HypaStories
                     var l = PortalSpot.Local(d.Plan, head);
                     d.Portal.SetPull(PortalSpot.Pull(l.z, l.x, d.Plan.Width));
                     if (Time.time < _portalQuietUntil || Playing) { d.Prev = l.z; continue; }
-                    if (!float.IsNaN(d.Prev) && PortalSpot.SteppedIn(d.Prev, l.z, l.x, l.y, d.Plan.Width, d.Plan.Height, -PortalSpot.Through)) { d.Prev = float.NaN; UseDoor(d); return; }
+                    if (!float.IsNaN(d.Prev) && PortalSpot.SteppedIn(d.Prev, l.z, l.x, l.y, d.Plan.Width, d.Plan.Height, -PortalSpot.Through)) { d.Prev = float.NaN; UseDoor(d, steppedThrough: true); return; }
                     d.Prev = l.z;
                 }
             }
@@ -1146,13 +1151,13 @@ namespace HypaStories
         /// A step through a door (or pinching its glass, or P in the editor): into the place it shows. From inside, a step back (or G) brings you
         /// home. <paramref name="door"/> null = the nearest.
         /// </summary>
-        void UseDoor(DoorPortal door)
+        void UseDoor(DoorPortal door, bool steppedThrough = false)
         {
             if (_busy || _roomBusy || _away || Playing) return;
             if (_room)
             {
                 door = door ?? NearestDoor();
-                if (door != null && door.Portal != null && door.Portal.Opening) StartCoroutine(EnterDestination(door));
+                if (door != null && door.Portal != null && door.Portal.Opening) StartCoroutine(EnterDestination(door, steppedThrough));
             }
             else if (_returnToRoom) StartCoroutine(BackToTheRoom());
         }
@@ -1163,7 +1168,7 @@ namespace HypaStories
         /// A soft flash and you are in the place, just inside its doorway, which is laid on the real door: you see your room through it, and
         /// stepping back over it takes you home. (Pinched from afar or by key, the doorway comes to you, a step in front of your head.)
         /// </summary>
-        IEnumerator EnterDestination(DoorPortal door)
+        IEnumerator EnterDestination(DoorPortal door, bool steppedThrough)
         {
             _roomBusy = true;
             _audio.PortalPass();
@@ -1171,9 +1176,12 @@ namespace HypaStories
             yield return new WaitForSeconds(0.26f);
             if (_away) { SetVeil(0f); _roomBusy = false; yield break; }
             ExitRoomNow(keepPortal: true);
-            var l = PortalSpot.Local(door.Plan, _cam.position);
             var at = door.Plan;
-            at.Base += at.Normal * (l.z + PortalSpot.Through);     // 0 when you really stepped through; else the doorway comes to you
+            if (!steppedThrough)
+            {
+                var depth = PortalSpot.Local(at, _cam.position).z;
+                at.Base += at.Normal * (depth + PortalSpot.Through); // bring the doorway to a seated player
+            }
             var pose = PortalSpot.WorldPose(at, PortalDestinations.Door(_dest), PortalDestinations.DoorDir(_dest));
             _world.SetPositionAndRotation(pose.position, pose.rotation);
             _through = door;
@@ -1271,7 +1279,7 @@ namespace HypaStories
         /// </summary>
         void Locomotion(float dt)
         {
-            if (_busy || _room || Playing) return; // in your room you walk for yourself; the fight is staged at the seat
+            if (Playing) return; // the fight is staged at the seat
             var move = StoryInput.Move?.Invoke() ?? Vector2.zero;
             if (Application.isEditor)
             {
@@ -1394,6 +1402,7 @@ namespace HypaStories
         void StandAt(Vector2 at, Vector2 look)
         {
             if (_room) ExitRoomNow(); // out on the trails you're in the forest
+            else if (_returnToRoom) DestroyDoors();
             var head = _cam.position;
             var floor = _cam.parent != null ? _cam.root.position.y : head.y - seatedEyeHeight;
             if (head.y - floor < 0.6f) floor = head.y - seatedEyeHeight;
@@ -1414,6 +1423,7 @@ namespace HypaStories
             Run(0f, 0.45f, u => SetVeil(u), In);
             At(0.5f, () =>
             {
+                if (_returnToRoom) DestroyDoors();
                 Recenter(_screen == Screen.Splash ? CampWorld.SplashSeat : CampWorld.StorySeat);
                 SnapPanels();
             });
