@@ -22,6 +22,9 @@ namespace HypaStories
         readonly List<(Light l, Vector3 at)> _lights = new List<(Light, Vector3)>();
         float _next;
 
+        /// <summary>Where to measure from (camp ground space) instead of the camera: the far side of the portal while you look through it (3L).</summary>
+        public Vector3? Viewer;
+
         public int Count => _renderers.Count + _lights.Count;
 
         /// <summary>Is a thing with these bounds (camp ground space) close enough to draw from <paramref name="viewer"/>? Pure, unit tested.</summary>
@@ -32,11 +35,12 @@ namespace HypaStories
         }
 
         /// <summary>
-        /// Takes in every renderer and light under <paramref name="root"/> except under <paramref name="skip"/>, leaving out what
+        /// Takes in every renderer and, when <paramref name="includeLights"/> is true, every point light under <paramref name="root"/>
+        /// except under <paramref name="skip"/>, leaving out what
         /// sits within <paramref name="always"/> of the fire (the clearing is always drawn). Things under a transform whose name
         /// <paramref name="moving"/> accepts get <paramref name="moveMargin"/> extra.
         /// </summary>
-        public void Collect(Transform root, Func<Transform, bool> skip, float always, Func<string, bool> moving, float moveMargin)
+        public void Collect(Transform root, Func<Transform, bool> skip, float always, Func<string, bool> moving, float moveMargin, bool includeLights = true)
         {
             foreach (var r in root.GetComponentsInChildren<Renderer>(true))
             {
@@ -45,6 +49,7 @@ namespace HypaStories
                 if (b.SqrDistance(Vector3.zero) < always * always) continue;
                 _renderers.Add(new Entry { R = r, B = b, Margin = Moving(r.transform, root, moving) ? moveMargin : 0f });
             }
+            if (!includeLights) return;
             foreach (var l in root.GetComponentsInChildren<Light>(true))
             {
                 if (l.type != LightType.Point || Under(l.transform, root, skip)) continue;
@@ -85,7 +90,7 @@ namespace HypaStories
             _next = Time.time + Every;
             var cam = Camera.main;
             if (cam == null) return;
-            var me = transform.InverseTransformPoint(cam.transform.position);
+            var me = Viewer ?? transform.InverseTransformPoint(cam.transform.position);
             foreach (var e in _renderers)
             {
                 if (e.R == null) continue;

@@ -1,0 +1,130 @@
+{
+  "words": [
+    "ìlù",
+    "ìjàpá",
+    "ọ̀pẹ"
+  ],
+  "calabar": "Ní ọjọ́ pípẹ́ sẹ́yìn, ní Calabar, ọba kan wà tí wọ́n ń pè ní Efriam Duke, tí kò fẹ́ràn ogun.",
+  "calabar.ask": [
+    "Níbo ni Calabar wà?"
+  ],
+  "drum": "Ó ní ìlù kan, nígbàkígbà tó bá lù ú, àsè á yọ.",
+  "drum.ask": [
+    "Kí ni ìlù náà ń ṣe?"
+  ],
+  "feast": "Ẹja àti fùfú, iṣu àti ilá, ọbẹ̀ epo pupa àti ẹmu, tó tó fún gbogbo ènìyàn.",
+  "enemies": "Nígbà tí àwọn ọ̀tá bá dé, kò bá wọn jà. Ó máa ń pè wọ́n wá jẹun.",
+  "enemies.ask": [
+    "Kí ló dé tí ọba fi ń pe àwọn ọ̀tá rẹ̀?"
+  ],
+  "animals": "Ó máa ń se àsè fún àwọn ènìyàn rẹ̀ pẹ̀lú, àti fún àwọn ẹranko pàápàá, nítorí nígbà náà gbogbo wọn jọ ń jẹun ní àlàáfíà.",
+  "rule": "Ṣùgbọ́n ìlù náà ní òfin kan.",
+  "stick": "Bí ẹni tó ni ín bá rékọjá igi tó dùbúlẹ̀ sójú ọ̀nà, ìlù náà kò ní mú oúnjẹ wá mọ́.",
+  "stick.ask": [
+    "Kí ni òfin ìlù náà?"
+  ],
+  "egbo": "Dípò bẹ́ẹ̀, ọ̀ọ́dúnrún ọkùnrin Egbo yóò dé pẹ̀lú ọ̀pá àti pàṣán, wọn yóò na òun àti gbogbo àlejò rẹ̀.",
+  "egbo.ask": [
+    "Ta ni àwọn ọkùnrin Egbo?"
+  ],
+  "wanted": "Ọ̀pọ̀lọpọ̀ ló fẹ́ ìlù náà. Ọba kò gbà láti fi sílẹ̀.",
+  "tortoise": "Ẹni tó sì fẹ́ ẹ jùlọ ni Ìjàpá.",
+  "tortoise.ask": [
+    "Ta ni Ìjàpá?"
+  ],
+  "spring": "Ní òwúrọ̀ kan, Ikwor Edem, ọ̀kan nínú àwọn aya ọba, mú ọmọbìnrin rẹ̀ kékeré lọ sí orísun omi kan láti wẹ̀ ẹ́.",
+  "palm": "Lókè wọn, lórí igi ọ̀pẹ, Ìjàpá ń gé èso ọ̀pẹ.",
+  "nut": "Èso kan já bọ́ sí ẹsẹ̀ ọmọbìnrin kékeré náà.",
+  "cried": "Ó sọkún pé òun fẹ́ ẹ, ìyá rẹ̀ sì fún un.",
+  "mine": "Ìjàpá sọ̀kalẹ̀. Èso yẹn jẹ́ tèmi, ó wí.",
+  "mine.ask": [
+    "Kí ló dé tí inú fi bí Ìjàpá tó bẹ́ẹ̀?"
+  ],
+  "idea": "Ikwor Edem ṣàlàyé, ṣùgbọ́n ìlù náà ni Ìjàpá ń rò.",
+  "justice": "Ìyàwó rẹ gba oúnjẹ mi, ó sọ fún ọba. Mo fẹ́ ìdájọ́ òdodo.",
+  "offers": "Ọba fún un ní owó. Aṣọ. Èkùrọ́. Epo pupa.",
+  "no": "Ìjàpá kọ gbogbo rẹ̀.",
+  "choose": "Níkẹyìn ọba wí pé, ó dáa, yan ohunkóhun tí o bá fẹ́.",
+  "point": "Ìjàpá na ìka sí ìlù náà tààrà.",
+  "point.ask": [
+    "Kí ni Ìjàpá yàn?"
+  ],
+  "gave": "Kí ìjà náà lè parí, ọba fún un. Ṣùgbọ́n kò sọ òfin náà fún un.",
+  "gave.ask": [
+    "Kí ló dé tí ọba kò fi sọ òfin náà fún un?"
+  ],
+  "home": "Ìjàpá gbé ìlù náà lọ sílé. A kò ní ṣiṣẹ́ fún oúnjẹ mọ́ láé, ó sọ fún ìdílé rẹ̀.",
+  "beat": "Ó lu ìlù náà, àsè sì bo gbogbo ilẹ̀.",
+  "three-days": "Fún ọjọ́ mẹ́ta, ìdílé náà jẹun, wọ́n rẹ́rìn-ín, wọ́n tún jẹun.",
+  "invite": "Lẹ́yìn náà ó pe ọba, gbogbo ìlú àti àwọn ẹranko sí àsè ńlá kan.",
+  "laughed": "Ọ̀pọ̀lọpọ̀ rẹ́rìn-ín. Ìjàpá, tó tòṣì jù gbogbo wọn lọ, yóò se àsè?",
+  "few": "Díẹ̀ ló wá. Ṣùgbọ́n ọba wá.",
+  "appeared": "Ìjàpá lu ìlù náà, àsè sì yọ níwájú gbogbo wọn.",
+  "amazed": "Ẹnu ya àwọn àlejò bí wọ́n ṣe ń padà sílé. Àwọn tí kò wá búra pé àwọn yóò wá nígbà míì.",
+  "amazed.ask": [
+    "Kí ni àwọn ènìyàn ń rò nípa Ìjàpá báyìí?"
+  ],
+  "boastful": "Ìjàpá di ọ̀lẹ àti onígbèéraga, ó sì ń mu ẹmu jù.",
+  "farm": "Ní ìrọ̀lẹ́ kan, bí ó ti ń padà bọ̀ láti oko rẹ̀, kò wo ibi tí ó ń lọ.",
+  "stepped": "Igi kan dùbúlẹ̀ sójú ọ̀nà, ó sì rékọjá rẹ̀.",
+  "stepped.ask": [
+    "Kí ni Ìjàpá ṣe tí kò dáa?"
+  ],
+  "nothing": "Kò sí ohun tó ṣẹlẹ̀. Kò tilẹ̀ kíyèsí.",
+  "breakfast": "Ní òwúrọ̀ ọjọ́ kejì, ìdílé rẹ̀ tí ebi ń pa béèrè oúnjẹ àárọ̀.",
+  "beat-again": "Ó lu ìlù náà.",
+  "egbo-came": "Oúnjẹ kò dé. Ọ̀ọ́dúnrún ọkùnrin Egbo ló dé dípò rẹ̀, pẹ̀lú ọ̀pá àti pàṣán.",
+  "beaten": "Wọ́n na Ìjàpá àti gbogbo ìdílé rẹ̀.",
+  "furious": "Inú bí Ìjàpá gidigidi. Ṣùgbọ́n kò dá ara rẹ̀ lẹ́bi.",
+  "furious.ask": [
+    "Kí ni Ìjàpá yóò ṣe báyìí?"
+  ],
+  "plan": "Bí wọ́n bá máa nà mí, ó rò, kí wọ́n na àwọn tó fi mí rẹ́rìn-ín pẹ̀lú.",
+  "second": "Ó pe gbogbo ènìyàn sí àsè ńlá mìíràn.",
+  "crowds": "Lọ́tẹ̀ yìí gbogbo ìlú wá, àti gbogbo ẹranko, kò sí ẹni tó fẹ́ pàdánù rẹ̀ mọ́.",
+  "stayed": "Ọba àti àwọn aya rẹ̀ dúró sílé. Ìjàpá ti rán ìdílé tirẹ̀ lọ jìnnà.",
+  "stayed.ask": [
+    "Kí ló dé tí ọba kò fi wá?"
+  ],
+  "doors": "Nígbà tí gbogbo àlejò ti wọlé, wọ́n ti gbogbo ìlẹ̀kùn pa.",
+  "bench": "Ìjàpá lu ìlù náà, ó sì fara pamọ́ sábẹ́ àga gígùn kan.",
+  "burst": "Àwọn ọkùnrin Egbo ya wọlé pẹ̀lú ọ̀pá àti pàṣán wọn.",
+  "nowhere": "Àwọn àlejò sá, ṣùgbọ́n kò sí ibi tí wọ́n lè sá sí.",
+  "leopard": "Ẹkùn nìkan ló sá àsálà, ó fò kọjá ògiri agbo ilé náà.",
+  "leopard.ask": [
+    "Báwo ni Ẹkùn ṣe sá àsálà?"
+  ],
+  "opened": "Níkẹyìn Ìjàpá ṣí àwọn ìlẹ̀kùn, ó lu ìlù náà lọ́nà àrà kan, àwọn ọkùnrin Egbo sì pòórá.",
+  "limped": "Àwọn àlejò ń tiro lọ sílé, ara wọn bó, inú sì ń bí wọn gidigidi.",
+  "return": "Nítorí náà ní òwúrọ̀ ọjọ́ kejì, Ìjàpá gbé ìlù náà padà fún ọba.",
+  "exchange": "Gbà á padà, ó wí, kí o fún mi ní oko tàbí aṣọ dípò rẹ̀.",
+  "fufu-tree": "Ọba kò gbà láti pààrọ̀. Ṣùgbọ́n àánú Ìjàpá ṣe é, ó sì fún un ní igi fùfú idán kan.",
+  "fufu-tree.ask": [
+    "Kí ni igi fùfú?"
+  ],
+  "tree-rule": "Lójoojúmọ́ ó ń so fùfú tuntun àti ọbẹ̀. Ṣùgbọ́n ẹ̀ẹ̀kan ṣoṣo lójúmọ́ ni wọ́n lè mú nínú rẹ̀, kì í ṣe ẹ̀ẹ̀mejì.",
+  "tree-rule.ask": [
+    "Kí ni òfin igi fùfú náà?"
+  ],
+  "calabashes": "Ní àràárọ̀ Ìjàpá àti aya rẹ̀ ń kún igbá wọn, ìdílé náà sì ní oúnjẹ lọ́pọ̀lọpọ̀.",
+  "son": "Ṣùgbọ́n ọ̀kan nínú àwọn ọmọkùnrin rẹ̀ fẹ́ mọ ibi tí oúnjẹ náà ti ń wá.",
+  "secret": "Ìjàpá kò sọ. Bí àwọn ọmọ bá rí i, ìyá wọn wí, wọn yóò bà á jẹ́.",
+  "ashes": "Nítorí náà ọmọkùnrin náà rọ eérú kún igbá kan, ó fi pamọ́ sínú àpò bàbá rẹ̀, lórí ihò kékeré kan.",
+  "ashes.ask": [
+    "Kí ni ọgbọ́n ọmọkùnrin náà?"
+  ],
+  "trail": "Bí Ìjàpá ti ń rìn, eérú díẹ̀díẹ̀ ń dà sílẹ̀ lẹ́yìn rẹ̀.",
+  "followed": "Ọmọkùnrin náà tẹ̀lé ipa eérú náà, ó wò láti inú igbó, kò sì sọ nǹkankan.",
+  "twice": "Ní ọjọ́ kejì, lẹ́yìn tí bàbá rẹ̀ ti mú oúnjẹ, ọmọkùnrin náà mú àwọn arákùnrin rẹ̀ lọ sí ibi igi náà, wọ́n sì tún mú síi.",
+  "twice.ask": [
+    "Kí ni àwọn ọmọkùnrin náà ṣe tí kò dáa?"
+  ],
+  "gone": "Ní òwúrọ̀ ọjọ́ kejì, igi náà ti pòórá.",
+  "thicket": "Igbó dídí ti hù ní òru. Ohun tí Ìjàpá ń rí ni ọ̀pẹ ẹlẹ́gùn-ún nìkan.",
+  "nobody": "Ó béèrè lọ́wọ́ ìdílé rẹ̀ ẹni tó rú òfin náà. Kò sí ẹni tó dáhùn.",
+  "live-here": "Nítorí náà ó kó wọn lọ síbẹ̀. Ẹ rú òfin náà, ó wí, nítorí náà ibí la ó máa gbé.",
+  "why": "Ìdí nìyẹn, àwọn àgbà wí, tí ìjàpá fi ń gbé abẹ́ ọ̀pẹ ẹlẹ́gùn-ún.",
+  "why.ask": [
+    "Kí ló dé tí ìjàpá fi ń gbé abẹ́ ọ̀pẹ?"
+  ]
+}

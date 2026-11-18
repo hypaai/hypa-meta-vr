@@ -112,7 +112,7 @@ namespace HypaStories
         /// <summary>A person of the village: move them by their parts (root, torso, head, arms and forearms).</summary>
         public sealed class Figure
         {
-            public Transform Root, Torso, Head, ArmL, ArmR, ForeL, ForeR, EyeL, EyeR, Mouth;
+            public Transform Root, Torso, Head, ArmL, ArmR, ForeL, ForeR, EyeL, EyeR, Mouth, Jaw;
             public float Ph;
             public Vector3 Home;
         }
@@ -127,16 +127,43 @@ namespace HypaStories
         // ---------- the celebration at the campfire (after the Dodo game) ----------
 
         Transform _party;
+        bool _placeWanted = true;
         readonly List<(Figure f, Vector3 from, Vector3 to)> _celebrants = new List<(Figure, Vector3, Vector3)>();
         float _partyT = -1f, _nextCheer;
         AudioSource _partyDrums, _partyCrowd, _partyCheer;
         AudioClip _murmurClip, _cheerClip;
 
+        /// <summary>The huts and their sounds. Off in your room: the script stays awake so a celebration at the fire can still run.</summary>
+        public void SetPlaceShown(bool on)
+        {
+            _placeWanted = on;
+            if (!on && _root != null) _root.gameObject.SetActive(false);
+            foreach (var s in GetComponentsInChildren<AudioSource>(true))
+            {
+                if (_party != null && s.transform.IsChildOf(_party)) continue;
+                s.mute = !on;
+            }
+        }
+
+        CampWorld _camp;
+        bool InRoom => (_camp != null ? _camp : (_camp = GetComponentInParent<CampWorld>())) is CampWorld camp && camp.Room;
+
+        /// <summary>A forest point round the fire, pulled to just outside the stones when the camp is in a room.</summary>
+        static Vector3 NearTheFire(Vector3 forest)
+        {
+            var flat = new Vector2(forest.x, forest.z);
+            var m = flat.magnitude;
+            if (m < 1e-3f) return forest;
+            var r = Mathf.Lerp(GameFit.StoneEdge + 0.45f, GameFit.StoneEdge + 1.05f, Mathf.InverseLerp(5.6f, 12.5f, m));
+            return new Vector3(flat.x / m * r, forest.y, flat.y / m * r);
+        }
+
         /// <summary>
         /// Villagers come out of the trees round the campfire and dance (Dodo is dead). Off: they go. Built once, the first time.
         /// They live at the camp, not in the village, so they show however far away the village is.
+        /// <paramref name="drums"/> false: without the village's drums (the drum game's song is playing; the dancers keep their own time).
         /// </summary>
-        public void Celebrate(bool on)
+        public void Celebrate(bool on, bool drums = true)
         {
             if (!on)
             {
@@ -179,7 +206,8 @@ namespace HypaStories
             }
             _party.gameObject.SetActive(true);
             _partyT = 0f;
-            _partyDrums.volume = 0.9f; _partyDrums.time = 0f; _partyDrums.Play();
+            _partyDrums.volume = 0.9f; _partyDrums.time = 0f;
+            if (drums) _partyDrums.Play(); else _partyDrums.Stop();
             _partyCrowd.volume = 0.55f; _partyCrowd.Play();
             _partyCheer.PlayOneShot(_cheerClip, 1f);
             _nextCheer = _t + 6f;
@@ -203,8 +231,11 @@ namespace HypaStories
                 _masqYaw += dt * _masqSpin * 720f;
                 var arrive = Mathf.Clamp01(_partyT / 2.5f);
                 // back and forth along the far side of the fire, facing you: never close to your seat
-                var swing = Mathf.Sin(_masqAngle * 0.8f) * 1.15f;
-                var around = new Vector2(Mathf.Sin(swing), Mathf.Cos(swing)) * Mathf.Lerp(9f, 2.5f, Mathf.SmoothStep(0f, 1f, arrive));
+                var swing = Mathf.Sin(_masqAngle * 0.8f) * (InRoom ? 0.65f : 1.15f); // a wide swing at room size would cross the stones
+                var reach = InRoom
+                    ? Mathf.Lerp(GameFit.StoneEdge + 0.9f, GameFit.StoneEdge + 0.45f, Mathf.SmoothStep(0f, 1f, arrive))
+                    : Mathf.Lerp(9f, 2.5f, Mathf.SmoothStep(0f, 1f, arrive));
+                var around = new Vector2(Mathf.Sin(swing), Mathf.Cos(swing)) * reach;
                 _masq.localPosition = X0Z(around, Mathf.Abs(Mathf.Sin(loopT * Mathf.PI * 2f)) * 0.08f);
                 _masq.localRotation = Quaternion.Euler(0f, _masqYaw, 0f);
                 UpdateMasqueradeMesh(_masqSpin * 0.85f);
@@ -213,7 +244,9 @@ namespace HypaStories
             {
                 var (f, from, to) = _celebrants[i];
                 var walk = Mathf.Clamp01((_partyT - i * 0.15f) / 3.2f);         // out of the trees, one after another
-                var at = Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, walk));
+                var fromP = InRoom ? NearTheFire(from) : from;
+                var toP = InRoom ? NearTheFire(to) : to;
+                var at = Vector3.Lerp(fromP, toP, Mathf.SmoothStep(0f, 1f, walk));
                 var bob = walk < 1f ? Mathf.Abs(Mathf.Sin(_t * 8f + i)) * 0.05f : Mathf.Abs(Mathf.Sin(beat + f.Ph)) * 0.07f;
                 f.Root.localPosition = at + Vector3.up * bob;
                 var face = -new Vector3(to.x, 0f, to.z);
@@ -516,6 +549,8 @@ namespace HypaStories
             public int Headwear;  // 0 short hair, 1 a tall head wrap (gele), 2 a soft cap (fila)
             public bool Wrapper;  // a wrapper or robe to the ankles (else trousers)
             public bool Woman, Elder;
+            /// <summary>An older woman of the house (the hut's storyteller): a fuller figure, gold earrings, a shawl over one shoulder.</summary>
+            public bool Matron;
         }
 
         static readonly Color[] Cloth =
@@ -555,6 +590,27 @@ namespace HypaStories
             finally { _root = keep; }
         }
 
+        /// <summary>
+        /// The old woman of the hut (she tells you about its household things): sitting on her mat with her legs folded to one side
+        /// under her wrapper, as village women sit, grey under her head
+        /// wrap, in an indigo print. Built like the village's people, under <paramref name="parent"/>, in its own space.
+        /// </summary>
+        public Figure MakeElderWoman(Transform parent, Vector2 at, Vector2 facing, float scale = 0.92f)
+        {
+            var keep = _root; _root = parent;
+            try
+            {
+                var look = new Look
+                {
+                    Skin = new Color(0.26f, 0.165f, 0.11f), Top = new Color(0.15f, 0.2f, 0.45f), Wrap = new Color(0.15f, 0.2f, 0.45f),
+                    Hat = new Color(0.62f, 0.3f, 0.12f), Hair = new Color(0.6f, 0.58f, 0.55f), TopPrint = 4, WrapPrint = 4, HatPrint = 6,
+                    Headwear = 1, Wrapper = true, Woman = true, Matron = true,
+                };
+                return Person("The Old Woman", at, facing, look, scale, false, true, true, true);
+            }
+            finally { _root = keep; }
+        }
+
         Look RandomLook(bool woman)
         {
             var wrapPrint = AnyPrint();
@@ -579,8 +635,9 @@ namespace HypaStories
         /// the hips; a neck and a head with a face (eyes, brows, nose, lips, ears) and hair, a head wrap or a cap; arms that
         /// bend at the shoulder and the elbow, and hands. Six meshes, so a crowd stays cheap. <paramref name="ownHead"/> gives
         /// the head (and its eyes and mouth) their own transforms, to turn, blink and, later, talk.
+        /// <paramref name="movingMouth"/> leaves the lips off the head mesh and builds a jaw that can open with a voice.
         /// </summary>
-        Figure Person(string name, Vector2 at, Vector2 facing, Look look, float scale = 1f, bool seated = false, bool ownHead = false)
+        Figure Person(string name, Vector2 at, Vector2 facing, Look look, float scale = 1f, bool seated = false, bool ownHead = false, bool onFloor = false, bool movingMouth = false)
         {
             var f = new Figure { Ph = R() * 6.28f };
             f.Root = Node(name, _root);
@@ -588,7 +645,7 @@ namespace HypaStories
             f.Root.localRotation = Quaternion.LookRotation(Face(facing));
             f.Root.localScale = Vector3.one * scale;
             f.Home = f.Root.localPosition;
-            var hipY = seated ? 0.5f : 0.9f;
+            var hipY = onFloor ? 0.13f : seated ? 0.5f : 0.9f; // on the floor (a mat): no stool, the legs straight out in front
             var id = Quaternion.identity;
             var skin = look.Skin;
             var sole = skin * 0.7f; sole.a = 1f;
@@ -597,7 +654,18 @@ namespace HypaStories
 
             // ---- legs, wrapper or robe, feet (and the stool) ----
             var legs = new MeshKit();
-            if (seated)
+            if (onFloor)
+            {
+                // sitting on the floor as village women do: the legs folded to one side under the wrapper, which spreads on the mat;
+                // only the feet show, tucked behind on that side
+                legs.Ellipsoid(new Vector3(0f, 0.12f, 0.03f), new Vector3(0.21f, 0.12f, 0.19f), id, wrap, 14, 8, wrapTile);                           // hips and lap
+                legs.Ellipsoid(new Vector3(0.13f, 0.085f, 0.22f), new Vector3(0.25f, 0.085f, 0.17f), Quaternion.Euler(0f, -28f, 0f), wrap, 14, 7, wrapTile); // the folded thighs
+                legs.Ellipsoid(new Vector3(0.29f, 0.06f, 0.02f), new Vector3(0.12f, 0.06f, 0.21f), Quaternion.Euler(0f, 18f, 0f), wrap, 12, 6, wrapTile);   // the shins, drawn back
+                legs.Lathe(new Vector3(0.07f, 0f, 0.07f), id, new[] { (0.15f, 0.2f, 0.18f), (0.07f, 0.31f, 0.28f), (0.01f, 0.36f, 0.32f) }, wrap, 18, wrapTile); // the hem spread on the mat
+                legs.Ellipsoid(new Vector3(0.36f, 0.03f, -0.16f), new Vector3(0.04f, 0.03f, 0.085f), Quaternion.Euler(0f, 65f, 0f), sole, 8, 5);           // feet
+                legs.Ellipsoid(new Vector3(0.28f, 0.028f, -0.2f), new Vector3(0.038f, 0.028f, 0.08f), Quaternion.Euler(0f, 80f, 0f), sole, 8, 5);
+            }
+            else if (seated)
             {
                 foreach (var k in new[] { -1f, 1f })
                 {
@@ -638,6 +706,15 @@ namespace HypaStories
             foreach (var k in new[] { -1f, 1f }) body.Ellipsoid(new Vector3(k * 0.2f * w, 0.46f, 0f), new Vector3(0.072f, 0.066f, 0.075f), id, top, 10, 6, topTile);
             if (look.Elder) body.Ellipsoid(new Vector3(0f, 0.44f, 0.105f), new Vector3(0.075f, 0.12f, 0.03f), Quaternion.Euler(-8f, 0f, 0f), new Color(0.85f, 0.65f, 0.25f), 10, 6, WaxPrints.Tile(7)); // embroidery
             if (look.Woman || look.Elder) Beads(body, look.Woman);
+            if (look.Matron)
+            {
+                foreach (var k in new[] { -1f, 1f })
+                    body.Ellipsoid(new Vector3(k * 0.072f, 0.335f, 0.11f), new Vector3(0.074f, 0.068f, 0.062f), Quaternion.Euler(-12f, 0f, 0f), top, 10, 6, topTile); // bust
+                // an iborun, the shawl worn over one shoulder, across the body to the other hip
+                var shawl = ClothColour(look.HatPrint, look.Hat); var shawlTile = PrintTile(look.HatPrint);
+                body.Limb(new Vector3(0.16f * w, 0.5f, 0.03f), new Vector3(-0.15f * w, 0.06f, 0.11f), 0.042f, 0.05f, shawl, 10, shawlTile);
+                body.Limb(new Vector3(0.16f * w, 0.5f, 0.03f), new Vector3(0.12f * w, 0.2f, -0.12f), 0.04f, 0.035f, shawl, 10, shawlTile); // its end hanging behind
+            }
             body.Limb(new Vector3(0f, 0.54f, 0f), new Vector3(0f, 0.68f, 0.008f), 0.049f, 0.046f, skin, 10);
             var hc = new Vector3(0f, 0.78f, 0.012f);
             if (ownHead)
@@ -645,7 +722,7 @@ namespace HypaStories
                 f.Head = Node(name + " Head", f.Torso);
                 f.Head.localPosition = hc;
                 var head = new MeshKit();
-                HeadMesh(head, Vector3.zero, look, false, look.Elder);
+                HeadMesh(head, Vector3.zero, look, false, !movingMouth, look.Elder);
                 MeshNode(name + " Head", head.Build("Head"), _vc, f.Head);
                 Transform Eye(float k)
                 {
@@ -658,12 +735,16 @@ namespace HypaStories
                     return eye;
                 }
                 f.EyeL = Eye(-1f); f.EyeR = Eye(1f);
-                f.Mouth = Node(name + " Mouth", f.Head);
-                f.Mouth.localPosition = new Vector3(0f, -0.06f, 0.087f);
-                var mm = new MeshKit();
-                mm.Ellipsoid(Vector3.zero, new Vector3(0.023f, 0.006f, 0.008f), id, new Color(0.12f, 0.04f, 0.04f), 8, 4);
-                MeshNode(name + " Mouth", mm.Build("Mouth"), _vc, f.Mouth);
-                if (look.Elder) BuildSpeakingMouth(f, look);
+                if (movingMouth && !look.Elder) TalkingMouth(f, name, look);
+                else
+                {
+                    f.Mouth = Node(name + " Mouth", f.Head);
+                    f.Mouth.localPosition = new Vector3(0f, -0.06f, 0.087f);
+                    var mm = new MeshKit();
+                    mm.Ellipsoid(Vector3.zero, new Vector3(0.023f, 0.006f, 0.008f), id, new Color(0.12f, 0.04f, 0.04f), 8, 4);
+                    MeshNode(name + " Mouth", mm.Build("Mouth"), _vc, f.Mouth);
+                    if (look.Elder) BuildSpeakingMouth(f, look);
+                }
             }
             else HeadMesh(body, hc, look, true);
             MeshNode(name + " Body", body.Build("Body"), _vc, f.Torso);
@@ -694,8 +775,37 @@ namespace HypaStories
             return f;
         }
 
+        /// <summary>
+        /// Lips that open: an upper lip that stays, a lower lip on <see cref="Figure.Mouth"/>, and the dark inside of the mouth
+        /// on <see cref="Figure.Jaw"/>. The same places as the lips baked into <see cref="HeadMesh"/>.
+        /// </summary>
+        void TalkingMouth(Figure f, string name, Look look)
+        {
+            var id = Quaternion.identity;
+            var skin = look.Skin;
+            var lip = new Color(skin.r * 1.05f + 0.04f, skin.g * 0.8f, skin.b * 0.8f);
+            var upper = Node(name + " Upper Lip", f.Head);
+            upper.localPosition = new Vector3(0f, -0.051f, 0.09f);
+            var um = new MeshKit();
+            um.Ellipsoid(Vector3.zero, new Vector3(0.03f, 0.008f, 0.012f), id, lip, 8, 4);
+            MeshNode(name + " Upper Lip", um.Build("Upper Lip"), _vc, upper);
+
+            f.Mouth = Node(name + " Mouth", f.Head);
+            f.Mouth.localPosition = new Vector3(0f, -0.067f, 0.086f); // the lower lip, at rest against the upper one
+            var lm = new MeshKit();
+            lm.Ellipsoid(Vector3.zero, new Vector3(0.027f, 0.009f, 0.012f), id, lip * 0.95f, 8, 4);
+            MeshNode(name + " Mouth", lm.Build("Lower Lip"), _vc, f.Mouth);
+
+            f.Jaw = Node(name + " Jaw", f.Head);
+            f.Jaw.localPosition = new Vector3(0f, -0.059f, 0.082f); // the dark inside, just behind the closed lips
+            var jm = new MeshKit();
+            jm.Ellipsoid(Vector3.zero, new Vector3(0.018f, 0.014f, 0.01f), id, new Color(0.1f, 0.03f, 0.03f), 8, 4);
+            MeshNode(name + " Jaw", jm.Build("Jaw"), _vc, f.Jaw);
+            f.Jaw.localScale = new Vector3(1f, 0.15f, 1f); // a closed mouth: the slit is hidden between the lips
+        }
+
         /// <summary>A head at <paramref name="c"/>: skull and jaw, ears, nose, lips, brows, (eyes), and hair, a head wrap or a cap.</summary>
-        void HeadMesh(MeshKit m, Vector3 c, Look look, bool eyes, bool animatedMouth = false)
+        void HeadMesh(MeshKit m, Vector3 c, Look look, bool eyes, bool lips = true, bool animatedMouth = false)
         {
             var id = Quaternion.identity;
             var skin = look.Skin;
@@ -706,6 +816,7 @@ namespace HypaStories
             foreach (var k in new[] { -1f, 1f })
             {
                 m.Ellipsoid(c + new Vector3(k * 0.09f, -0.004f, -0.006f), new Vector3(0.016f, 0.03f, 0.022f), id, shade, 8, 5); // ears
+                if (look.Matron) m.Ellipsoid(c + new Vector3(k * 0.094f, -0.042f, 0f), new Vector3(0.01f, 0.014f, 0.01f), id, new Color(0.95f, 0.72f, 0.22f), 6, 4); // gold earrings
                 m.Ellipsoid(c + new Vector3(k * 0.036f, 0.044f, 0.088f), new Vector3(0.023f, 0.0055f, 0.009f), Quaternion.Euler(0f, 0f, k * -8f), look.Elder ? new Color(0.5f, 0.48f, 0.45f) : look.Hair, 8, 4); // brows
                 if (eyes)
                 {
@@ -715,7 +826,7 @@ namespace HypaStories
             }
             m.Ellipsoid(c + new Vector3(0f, -0.012f, 0.097f), new Vector3(0.019f, 0.027f, 0.022f), Quaternion.Euler(-10f, 0f, 0f), skin, 8, 5); // nose
             m.Ellipsoid(c + new Vector3(0f, -0.032f, 0.094f), new Vector3(0.031f, 0.013f, 0.018f), id, shade, 8, 5);                                 // its wings
-            if (!animatedMouth)
+            if (lips && !animatedMouth)
             {
                 m.Ellipsoid(c + new Vector3(0f, -0.051f, 0.09f), new Vector3(0.03f, 0.008f, 0.012f), id, lip, 8, 4);
                 m.Ellipsoid(c + new Vector3(0f, -0.067f, 0.086f), new Vector3(0.027f, 0.009f, 0.012f), id, lip * 0.95f, 8, 4);
@@ -1055,7 +1166,7 @@ namespace HypaStories
             var dist = Vector2.Distance(Viewer, VillageLayout.Plaza);
             // the drums come clear as you come out of the trees
             _drumsMuffle.cutoffFrequency = Mathf.Lerp(900f, 22000f, Mathf.Pow(Mathf.Clamp01(1f - (dist - 8f) / 26f), 2f));
-            var seen = dist < ShowWithin;
+            var seen = (_placeWanted || PreviewFrom.HasValue) && dist < ShowWithin; // the portal in your room shows it too
             if (_root.gameObject.activeSelf != seen) _root.gameObject.SetActive(seen);
             if (!seen) return;
 

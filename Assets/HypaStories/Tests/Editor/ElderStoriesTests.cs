@@ -184,8 +184,9 @@ namespace HypaStories.Tests
                 Assert.AreEqual(outdoorPosition, root.transform.position);
                 Assert.Less(Quaternion.Angle(outdoorRotation, root.transform.rotation), 0.001f);
                 Assert.AreEqual(elderSession, camp.RoomWithElder);
-                Assert.AreEqual(elderSession, elder.gameObject.activeInHierarchy);
-                Assert.IsFalse(village.gameObject.activeInHierarchy);
+                Assert.IsTrue(elder.gameObject.activeInHierarchy);
+                Assert.AreEqual(elderSession ? 0 : CampWorld.DestLayer, elder.gameObject.layer);
+                Assert.AreEqual(!elderSession, village.gameObject.activeInHierarchy);
                 foreach (var t in new[] { teller.transform, ring, portal, glow, embers })
                     Assert.AreEqual(!elderSession, t.gameObject.activeInHierarchy, t.name);
                 if (elderSession)
@@ -197,6 +198,7 @@ namespace HypaStories.Tests
                 Assert.AreEqual(outdoorPosition, root.transform.position);
                 Assert.Less(Quaternion.Angle(outdoorRotation, root.transform.rotation), 0.001f);
                 Assert.AreSame(scenery, elder.parent);
+                Assert.AreEqual(0, elder.gameObject.layer);
                 Assert.AreEqual(originalPosition, elder.localPosition);
                 Assert.Less(Quaternion.Angle(originalRotation, elder.localRotation), 0.001f);
                 Assert.AreEqual(originalScale, elder.localScale);
@@ -295,7 +297,7 @@ namespace HypaStories.Tests
 
         [Test] public void StoryCollections_KeepCameroonTalesSeparateFromTheCampfire()
         {
-            CollectionAssert.AreEqual(new[] { "seven-hot-stones", "eshu-crossroads", "marlow-street" }, StoryLibrary.Campfire.Select(s => s.Id));
+            CollectionAssert.AreEqual(new[] { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street" }, StoryLibrary.Campfire.Select(s => s.Id));
             CollectionAssert.AreEqual(new[] { "death-of-the-rice-farmer", "girl-who-chose-hare" }, StoryLibrary.Elder.Select(s => s.Id));
             Assert.IsFalse(StoryLibrary.Campfire.Intersect(StoryLibrary.Elder).Any());
             CollectionAssert.AreEquivalent(StoryLibrary.All, StoryLibrary.Campfire.Concat(StoryLibrary.Elder));
@@ -314,7 +316,7 @@ namespace HypaStories.Tests
                 var languageButtons = list.Root.GetComponentsInChildren<KitButton>(true)
                     .Where(b => b.Label != null && StoryLanguages.All.Any(l => l.Name == b.Label.text)).ToArray();
                 Assert.AreEqual(8, languageButtons.Length);
-                Assert.AreEqual(3, list.Count);
+                Assert.AreEqual(4, list.Count);
 
                 list.SetStories(StoryLibrary.Elder);
                 Assert.AreEqual(2, list.Count);
@@ -331,13 +333,13 @@ namespace HypaStories.Tests
                 Assert.AreEqual("girl-who-chose-hare", played);
 
                 list.SetStories(StoryLibrary.Campfire);
-                Assert.AreEqual(3, list.Count);
+                Assert.AreEqual(4, list.Count);
                 Assert.AreEqual("seven-hot-stones", list.StoryAt(0).Id);
                 Assert.IsFalse(list.Root.Find("Card girl-who-chose-hare").gameObject.activeSelf);
-                Assert.AreEqual(3, list.Root.GetComponentsInChildren<KitPanel>().Count(p => p.name == "Dot"));
+                Assert.AreEqual(4, list.Root.GetComponentsInChildren<KitPanel>().Count(p => p.name == "Dot"));
                 foreach (var button in languageButtons) Assert.IsTrue(button.gameObject.activeInHierarchy);
                 Assert.Throws<ArgumentException>(() => list.SetStories(new StoryInfo[0]));
-                Assert.AreEqual(3, list.Count, "invalid selections leave the current list intact");
+                Assert.AreEqual(4, list.Count, "invalid selections leave the current list intact");
             }
             finally { UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(assets); }
         }

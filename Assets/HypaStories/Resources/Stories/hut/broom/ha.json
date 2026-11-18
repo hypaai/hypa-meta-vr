@@ -1,0 +1,28 @@
+{
+  "words": ["tsintsiya", "dabino", "safiya"],
+  "greet": "Kuma wannan tsintsiya ce. Muna kiranta igbale.",
+  "greet.ask": [
+    "Me ake kiran tsintsiyar?"
+  ],
+  "made": "Ana yin sa ne da siraran jijiyoyin ganyen dabino, waɗanda ake busarwa a ɗaure su tare a gefe ɗaya.",
+  "made.ask": [
+    "Da me aka yi tsintsiyar?"
+  ],
+  "olden": "An ɗaure tsintsiya irin wannan tun kafin duk wani mai rai a yau ya iya tunawa, daga itatuwan dabino irin waɗanda suke ba mu mai da giya.",
+  "olden.ask": [
+    "Tsawon wane lokaci ne irin wannan tsintsiya ta yi?"
+  ],
+  "festival": "Kafin bikin gargajiya, dukan mutanen ƙauyen suna share hanyoyi da farfajiyoyinsu, domin dattawa da baƙi su yi tafiya a ƙasa mai tsabta.",
+  "festival.ask": [
+    "Yaushe kowa yake sharewa tare?"
+  ],
+  "sweep": "Kowace safiya, kafin rana ta yi sama, muna sunkuyawa mu share gida da tsakar gida.",
+  "sweep.ask": [
+    "Yaushe kake sharewa?"
+  ],
+  "one": "Haƙarƙari ɗaya kaɗai yana karyewa cikin sauƙi. Idan aka ɗaure su tare, suna da ƙarfi. Iyali ma haka suke.",
+  "one.ask": [
+    "Me ya sa aka ɗaure haƙarƙarin tare?"
+  ],
+  "back": "Idan ka duba shi, ka mayar da shi inda ka same shi."
+}

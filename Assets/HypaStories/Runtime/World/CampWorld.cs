@@ -33,11 +33,29 @@ namespace HypaStories
         /// <summary>Ticket 3K: the camp is in your real room (passthrough): no sky, trees, ground, trails, mist or rain; the fire and the storyteller stay.</summary>
         public bool Room { get; private set; }
         public bool RoomWithElder { get; private set; }
+        readonly List<GameObject> _hidden = new List<GameObject>();
         readonly List<(AudioSource source, float time)> _roomLoops = new List<(AudioSource, float)>();
+
+        /// <summary>Layer the camp's scenery sits on while you are in your room: the main camera skips it, the portal's camera draws it (3L).</summary>
+        public const int DestLayer = 30;
+        DistanceCull _cull;
+        int _camMask;
+        readonly Dictionary<GameObject, int> _layers = new Dictionary<GameObject, int>();
+        readonly List<(AudioSource s, bool mute)> _muted = new List<(AudioSource, bool)>();
+
+        /// <summary>While the portal shows a place, measure what to draw from there (camp ground space); null = from the camera.</summary>
+        public void SetViewer(Vector3? local)
+        {
+            if (_cull != null) _cull.Viewer = local;
+            Vector2? at = local.HasValue ? new Vector2(local.Value.x, local.Value.z) : (Vector2?)null;
+            if (Trail != null) Trail.PreviewFrom = at;
+            if (VillageTrail != null) VillageTrail.PreviewFrom = at;
+            if (Village != null) Village.PreviewFrom = at;
+        }
 
         StoryAssets _a;
         readonly List<GameObject> _scenery = new List<GameObject>();   // everything that goes away in the room
-        readonly List<GameObject> _hidden = new List<GameObject>();    // the part of it that was showing
+        bool _rainWas;
         readonly Dictionary<Renderer, Material[]> _litOriginal = new Dictionary<Renderer, Material[]>();
         readonly Dictionary<Material, Material> _litMade = new Dictionary<Material, Material>();
         Transform _firePool, _ringHolder;
@@ -121,7 +139,7 @@ namespace HypaStories
             Teller.Build(a.storyteller, a.lit);
 
             // don't draw what the fog hides: the far ends of the trails, the hut, the pines round them (the village has its own)
-            var cull = gameObject.AddComponent<DistanceCull>();
+            var cull = _cull = gameObject.AddComponent<DistanceCull>();
             cull.Collect(transform, t => Village != null && t == Village.transform || t == Fire.Root || t == PortalRing || t == Teller.transform,
                 14f, n => n == "Wolf" || n == "Owl" || n == "Bat" || n == "Bushbaby" || n == "Frog", 16f);
         }
@@ -409,8 +427,7 @@ namespace HypaStories
             VillageTrail.Build(_a, glow);
             var vg = new GameObject("Village");
             vg.transform.SetParent(transform, false);
-            _scenery.Add(vg);
-            Village = vg.AddComponent<Village>();
+            Village = vg.AddComponent<Village>(); // stays awake in the room: only the place hides, so a celebration at the fire still runs
             Village.Build(_a, glow);
             for (var i = 0; i < 48; i++)
             {
@@ -555,6 +572,7 @@ namespace HypaStories
         /// elder sessions temporarily bring only the village elder out of the hidden village. Playback is not touched.
         /// </summary>
         Vector3 _ringScale = Vector3.one, _fireScale = Vector3.one;
+        float _fogStartWas = 8f, _fogEndWas = 36f;
 
         void HideForRoom(GameObject go)
         {
@@ -574,18 +592,18 @@ namespace HypaStories
                 RoomWithElder = elder;
                 if (elder) Village.SetElderInRoom(true, transform);
             }
+            var cam = Camera.main;
             // the campfire at room size: 70% (stones and flames), so it fits between a sofa and a wall
             var k = on ? GameFit.FireScale : 1f;
             if (_ringHolder != null) { if (on) _ringScale = _ringHolder.localScale; _ringHolder.localScale = on ? _ringScale * k : _ringScale; }
             if (Fire != null) { if (on) _fireScale = Fire.Root.localScale; Fire.Root.localScale = on ? _fireScale * k : _fireScale; }
             if (on)
             {
-                _hidden.Clear();
-                _roomLoops.Clear();
-                foreach (var go in _scenery)
-                    HideForRoom(go);
                 if (RoomWithElder)
                 {
+                    _hidden.Clear();
+                    _roomLoops.Clear();
+                    foreach (var go in _scenery) HideForRoom(go);
                     HideForRoom(Teller.gameObject);
                     HideForRoom(Fire?.Root.gameObject);
                     HideForRoom(_ringHolder?.gameObject);
@@ -593,26 +611,62 @@ namespace HypaStories
                     HideForRoom(_firePool?.gameObject);
                     HideForRoom(transform.Find("Embers")?.gameObject);
                 }
+                else
+                {
+                    // the scenery stays alive but moves to its own layer: your camera skips it (the room shows through), and the portal's camera
+                    // draws it, so the doorway can show the hut, the village or the camp. Its sounds are muted, so the room stays quiet.
+                    _layers.Clear(); _muted.Clear();
+                    foreach (var go in _scenery)
+                    {
+                        if (go == null || !go.activeSelf) continue;
+                        foreach (var t in go.GetComponentsInChildren<Transform>(true)) { _layers[t.gameObject] = t.gameObject.layer; t.gameObject.layer = DestLayer; }
+                        foreach (var src in go.GetComponentsInChildren<AudioSource>(true)) { _muted.Add((src, src.mute)); src.mute = true; }
+                    }
+                    if (cam != null) { _camMask = cam.cullingMask; cam.cullingMask &= ~(1 << DestLayer); }
+                    // no fog in your room, but fog stays switched on and is pushed out of reach: the build keeps only the shader
+                    // variants the camp uses (all with fog), so turning it off drew the drums (and anything without a no-fog variant) magenta
+                }
                 _fogWas = RenderSettings.fog;
-                RenderSettings.fog = false;
+                _fogStartWas = RenderSettings.fogStartDistance; _fogEndWas = RenderSettings.fogEndDistance;
+                RenderSettings.fogStartDistance = 1000f; RenderSettings.fogEndDistance = 1001f;
+                _rainWas = _rainT.gameObject.activeSelf;
                 _rainT.gameObject.SetActive(false);
+                if (!RoomWithElder && Village != null) Village.SetPlaceShown(false);
             }
             else
             {
-                foreach (var go in _hidden) if (go != null) go.SetActive(true);
-                // Restore the live village before returning the speaking elder to it, so his audio is never disabled.
-                if (RoomWithElder) Village.SetElderInRoom(false, transform);
-                foreach (var (source, time) in _roomLoops)
-                    if (source != null && source.clip != null && source.gameObject.activeInHierarchy)
-                    { source.Play(); source.time = time; }
-                _roomLoops.Clear();
-                _hidden.Clear();
+                if (RoomWithElder)
+                {
+                    foreach (var go in _hidden) if (go != null) go.SetActive(true);
+                    // Restore the live village before returning the speaking elder to it, so his audio is never disabled.
+                    Village.SetElderInRoom(false, transform);
+                    foreach (var (source, time) in _roomLoops)
+                        if (source != null && source.clip != null && source.gameObject.activeInHierarchy)
+                        { source.Play(); source.time = time; }
+                    _roomLoops.Clear();
+                    _hidden.Clear();
+                }
+                else
+                {
+                    foreach (var kv in _layers) if (kv.Key != null) kv.Key.layer = kv.Value;
+                    _layers.Clear();
+                    foreach (var (src, mute) in _muted) if (src != null) src.mute = mute;
+                    _muted.Clear();
+                    if (cam != null) cam.cullingMask = _camMask != 0 ? _camMask : cam.cullingMask | (1 << DestLayer);
+                    SetViewer(null);
+                }
                 RenderSettings.fog = _fogWas;
+                _rainT.gameObject.SetActive(_rainWas);
+                RenderSettings.fogStartDistance = _fogStartWas; RenderSettings.fogEndDistance = _fogEndWas;
                 ResetTeller();
+                if (!RoomWithElder && Village != null) Village.SetPlaceShown(true);
                 RoomWithElder = false;
             }
             SwapLit(on);
         }
+
+        /// <summary>While in the room: the forest's fog range (start, end), which the portal's camera draws its view with; null out of the room.</summary>
+        public Vector2? ForestFog => Room && _fogWas ? new Vector2(_fogStartWas, _fogEndWas) : (Vector2?)null;
 
         /// <summary>In the room the storyteller sits straight across the fire from you, <paramref name="gap"/> metres from it (the world's +Z is away from you).</summary>
         public void SetTellerGap(float gap) => Teller.transform.localPosition = new Vector3(0f, 0f, gap);
@@ -681,7 +735,7 @@ namespace HypaStories
 
         void OnDestroy()
         {
-            if (Room) RenderSettings.fog = _fogWas;
+            if (Room) { RenderSettings.fog = _fogWas; RenderSettings.fogStartDistance = _fogStartWas; RenderSettings.fogEndDistance = _fogEndWas; }
             foreach (var m in _litMade.Values) if (m != null) Destroy(m);
         }
 

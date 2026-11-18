@@ -1,0 +1,28 @@
+{
+  "words": ["lamp", "oil", "fire"],
+  "greet": "Ehen, you don find my lamp. We dey call am fitila.",
+  "greet.ask": [
+    "Wetin dem dey call the lamp?"
+  ],
+  "made": "Na the same river clay wey dem take make the pot dem take mould am, e small reach to sidon for your palm.",
+  "made.ask": [
+    "Wetin dem take make am?"
+  ],
+  "oil": "We go pour palm oil inside, come put wick wey dem twist from cotton for im mouth. Then we light the wick.",
+  "oil.ask": [
+    "Wetin e dey burn?"
+  ],
+  "before": "Before lantern and NEPA light come, every house go light one of dis one for evening time. The whole street go dey shine with small small fire.",
+  "before.ask": [
+    "Wetin people dey use before electric light?"
+  ],
+  "grandmother": "My grandmama tell her own stories for the light of dis same lamp, the way I dey tell you my own.",
+  "grandmother.ask": [
+    "Na whose lamp be dis?"
+  ],
+  "night": "When sun go down, im small fire dey help us find our mat, and we go tell stories reach deep night.",
+  "night.ask": [
+    "When una dey light am?"
+  ],
+  "care": "Carry am stand straight, slowly slowly, my pikin, or the oil go pour come quench the fire."
+}

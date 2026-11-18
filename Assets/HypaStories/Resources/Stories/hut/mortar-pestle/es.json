@@ -1,0 +1,32 @@
+{
+  "words": ["mortero", "ñame", "mano"],
+  "greet": "Ah, has encontrado el mortero y su mano. El mortero se llama odo, y la mano es su hijo.",
+  "greet.ask": [
+    "¿Cómo se llama el mortero?"
+  ],
+  "carved": "Un tallador sacó el mortero de una sola pieza de madera dura, para que aguante muchos años de golpes.",
+  "carved.ask": [
+    "¿De qué está hecho?"
+  ],
+  "yam": "Ponemos ñame hervido dentro y lo machacamos hasta que queda suave y blando. Eso es el ñame machacado.",
+  "yam.ask": [
+    "¿Qué machacan en él?"
+  ],
+  "more": "También machacamos pimienta, granos y hojas para la olla.",
+  "more.ask": [
+    "¿Para qué más se usa?"
+  ],
+  "sound": "Cuando oyes caer la mano del mortero, una y otra vez, sabes que la comida está en camino.",
+  "family": "El padre de mi marido lo talló el año en que nació mi marido. Tres generaciones de esta familia han comido de él.",
+  "family.ask": [
+    "¿Quién lo talló?"
+  ],
+  "rhythm": "Hace mucho, al atardecer, se oían los golpes de cada casa por todo el pueblo. Su ritmo decía a todos que el hogar estaba cerca.",
+  "rhythm.ask": [
+    "¿Por qué es especial el sonido?"
+  ],
+  "together": "Dos mujeres pueden machacar en un mismo mortero, turnándose con dos manos, sin perder el ritmo. Cantamos mientras trabajamos.",
+  "together.ask": [
+    "¿Pueden machacar dos personas juntas?"
+  ]
+}

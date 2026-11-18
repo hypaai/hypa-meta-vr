@@ -1,0 +1,28 @@
+{
+  "words": ["ìgbálẹ̀", "ọ̀pẹ", "òwúrọ̀"],
+  "greet": "Èyí sì ni ìgbálẹ̀. A ń pè é ní ìgbálẹ̀.",
+  "greet.ask": [
+    "Kí ni a ń pe ìgbálẹ̀ náà?"
+  ],
+  "made": "A fi àwọn egungun tín-ín-rín ewé ọ̀pẹ tí a gbẹ tí a sì so pọ̀ ní ìkángun kan ṣe é.",
+  "made.ask": [
+    "Kí ni wọ́n fi ṣe ìgbálẹ̀ náà?"
+  ],
+  "olden": "Àwọn ìgbálẹ̀ bí èyí ni a ti ń dì tipẹ́tipẹ́ ṣáájú ìgbà tí ẹnikẹ́ni tó wà láàyè báyìí lè rántí, láti ara àwọn igi ọ̀pẹ kan náà tí ń fún wa ní òróró àti ẹmu.",
+  "olden.ask": [
+    "Ọ̀pọ̀ ọdún mélòó ni irú ìgbálẹ̀ yìí ti pé?"
+  ],
+  "festival": "Ṣáájú àjọ̀dún, gbogbo abúlé máa ń gbá àwọn ọ̀nà àti àgbàlá wọn, kí àwọn àgbààgbà àti àwọn àlejò lè rìn lórí ilẹ̀ tó mọ́.",
+  "festival.ask": [
+    "Nígbà wo ni gbogbo ènìyàn máa ń gbá ilé papọ̀?"
+  ],
+  "sweep": "Ní gbogbo òwúrọ̀, kí oòrùn tó gòkè, a máa tẹ̀ ba ká sì gbá ilé àti àgbàlá.",
+  "sweep.ask": [
+    "Ìgbà wo ni o máa ń gbá ilé?"
+  ],
+  "one": "Egungun ìhà kan ṣoṣo máa ń tètè ṣẹ́. Tí a bá so wọ́n pọ̀, wọ́n máa ń lágbára. Bẹ́ẹ̀ náà ni ìdílé rí.",
+  "one.ask": [
+    "Kí ló dé tí a fi so àwọn egungun ìhà pọ̀?"
+  ],
+  "back": "Nígbà tí o bá ti wo o, dá a padà sí ibi tí o ti rí i."
+}

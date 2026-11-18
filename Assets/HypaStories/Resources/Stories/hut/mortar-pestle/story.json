@@ -1,0 +1,20 @@
+{
+  "theme": 0,
+  "accent": "#C9A05E",
+  "eyebrow": "In the hut",
+  "title": "The mortar\nand pestle",
+  "description": "Carved from one piece of hardwood. Hear the sound that means food is coming.",
+  "words": ["mortar", "yam", "pestle"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
+  "voices": [],
+  "lines": [
+    {"id": "greet", "text": "Ah, you have found the mortar and its pestle. The mortar is odo, and the pestle is its child.", "ask": ["What is the mortar called?"]},
+    {"id": "carved", "text": "A carver cut the mortar from one piece of hardwood, so it can take many years of pounding.", "ask": ["What is it made of?"]},
+    {"id": "family", "text": "My husband's father carved it the year my husband was born. Three generations of this family have eaten from it.", "ask": ["Who carved it?"]},
+    {"id": "rhythm", "text": "Long ago, at evening, the pounding from every compound could be heard across the village. Its rhythm told everyone that home was near.", "ask": ["Why is the pounding special?"]},
+    {"id": "together", "text": "Two women can pound in one mortar, taking turns with two pestles, never missing a beat. We sing while we work.", "ask": ["Can two people pound together?"]},
+    {"id": "yam", "text": "We put boiled yam inside and pound it until it is smooth and soft. That is pounded yam.", "ask": ["What do you pound in it?"]},
+    {"id": "more", "text": "We also pound pepper, grains and leaves for the pot.", "ask": ["What else is it used for?"]},
+    {"id": "sound", "text": "When you hear the pestle fall, again and again, you know that food is coming."}
+  ]
+}

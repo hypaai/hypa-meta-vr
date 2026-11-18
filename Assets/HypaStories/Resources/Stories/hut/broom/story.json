@@ -1,0 +1,19 @@
+{
+  "theme": 0,
+  "accent": "#B8C46A",
+  "eyebrow": "In the hut",
+  "title": "The broom",
+  "description": "A bundle of palm ribs tied with cord. Hear how each day begins with it.",
+  "words": ["broom", "palm", "morning"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
+  "voices": [],
+  "lines": [
+    {"id": "greet", "text": "And this one is the broom. We call it igbale.", "ask": ["What is the broom called?"]},
+    {"id": "made", "text": "It is made from the thin ribs of palm leaves, dried and tied together at one end.", "ask": ["What is the broom made of?"]},
+    {"id": "olden", "text": "Brooms like this were tied long before anyone now living can remember, from the same palms that give us oil and wine.", "ask": ["How old is this kind of broom?"]},
+    {"id": "festival", "text": "Before a festival, the whole village sweeps its paths and yards, so the elders and the visitors walk on clean ground.", "ask": ["When does everyone sweep together?"]},
+    {"id": "sweep", "text": "Every morning, before the sun is high, we bend low and sweep the house and the yard.", "ask": ["When do you sweep?"]},
+    {"id": "one", "text": "One rib alone breaks easily. Tied together, they are strong. A family is like that too.", "ask": ["Why are the ribs tied together?"]},
+    {"id": "back", "text": "When you have looked at it, put it back where you found it."}
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "words": ["kinu", "viazi vikuu", "mchi"],
+  "greet": "Ah, umepata kinu na mchi wake. Kinu ni odo, na mchi ni mtoto wake.",
+  "greet.ask": [
+    "Kinu kinaitwaje?"
+  ],
+  "carved": "Mchongaji alichonga kinu kutoka kipande kimoja cha mti mgumu, hivyo kinaweza kustahimili miaka mingi ya kutwangwa.",
+  "carved.ask": [
+    "Imetengenezwa kwa nini?"
+  ],
+  "family": "Baba ya mume wangu alikichonga mwaka ambao mume wangu alizaliwa. Vizazi vitatu vya familia hii vimekula chakula kutoka ndani yake.",
+  "family.ask": [
+    "Ni nani aliyeichonga?"
+  ],
+  "rhythm": "Zamani za kale, wakati wa jioni, sauti ya kutwanga kutoka kila boma ilisikika kote kijijini. Mdundo wake uliwaambia wote kwamba nyumbani palikuwa karibu.",
+  "rhythm.ask": [
+    "Kwa nini kuponda ni maalum?"
+  ],
+  "together": "Wanawake wawili wanaweza kutwanga katika kinu kimoja, wakipokezana kwa michi miwili, bila kukosea hata mpigo mmoja. Tunaimba tunapofanya kazi.",
+  "together.ask": [
+    "Je, watu wawili wanaweza kutwanga pamoja?"
+  ],
+  "yam": "Tunaweka viazi vikuu vilivyochemshwa ndani na kuviponda hadi viwe laini na nyororo. Hivyo ndivyo tunavyopata viazi vikuu vilivyopondwa.",
+  "yam.ask": [
+    "Unatwangia nini ndani yake?"
+  ],
+  "more": "Pia tunaponda pilipili, nafaka na majani kwa ajili ya kupikia.",
+  "more.ask": [
+    "Inatumika kwa nini kingine?"
+  ],
+  "sound": "Unaposikia mchi ukidondoka tena na tena, unajua kwamba chakula kinakuja."
+}

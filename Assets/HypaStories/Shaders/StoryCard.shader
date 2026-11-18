@@ -1,4 +1,5 @@
-// A story card: ONE quad, ONE shader (port of the prototype's card.js). _Theme 0 = lantern in the pines, 1 = noir crime scene.
+// A story card: ONE quad, ONE shader (port of the prototype's card.js). _Theme 0 = lantern in the pines, 1 = noir crime scene,
+// 2 = a picture of the thing the card is about (_Picture, with alpha) against a firelit mud wall: the hut's household items.
 // The pinch ray's hit point drives _Pointer / _Hover (ripples, parallax, sheen), _Press is the ring burst on Begin,
 // _Dim fades the cards that aren't focused and _Reveal grows the card out of its light source.
 Shader "HypaStories/StoryCard"
@@ -12,6 +13,7 @@ Shader "HypaStories/StoryCard"
         _Dim ("Dim", Range(0, 1)) = 0
         _Aspect ("Aspect (w/h)", Float) = 0.6667
         _Pointer ("Pointer uv", Vector) = (0.5, 0.35, 0, 0)
+        _Picture ("Picture (theme 2)", 2D) = "black" {}
     }
     SubShader
     {
@@ -30,6 +32,7 @@ Shader "HypaStories/StoryCard"
 
             float _Theme, _Hover, _Press, _Reveal, _Dim, _Aspect;
             float4 _Pointer;
+            sampler2D _Picture;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
@@ -120,24 +123,44 @@ Shader "HypaStories/StoryCard"
                 return col;
             }
 
+            // Theme 2: the thing itself, standing in the upper part of the card (the text sits below), on a mud wall in firelight.
+            float3 pictureArt(float2 w, float2 par, float t, float2 asp, float2 lp)
+            {
+                float f = fbm(w * float2(3.0, 4.0) + par * 2.0);
+                float3 col = lerp(float3(0.05, 0.03, 0.02), float3(0.2, 0.11, 0.06), smoothstep(0.2, 0.9, f) * (0.45 + 0.55 * w.y));
+                float ld = length((w - lp) * asp);
+                float flick = 0.92 + 0.08 * sin(t * 7.0) * sin(t * 3.1);
+                col += float3(1.0, 0.55, 0.2) * exp(-ld * 3.0) * 0.3 * flick * (0.8 + _Hover * 0.5 + _Press * 0.8);
+                // its shadow on the ground, then the picture (it shifts a little with the pointer, in front of the wall)
+                float sh = exp(-pow(length((w - float2(0.5, 0.485)) * asp * float2(1.0, 6.0)) * 4.5, 2.0));
+                col *= 1.0 - 0.55 * sh;
+                const float H = 0.5, Y0 = 0.47;
+                float2 puv = float2((w.x - 0.5 - par.x * 1.5) * _Aspect / H + 0.5, (w.y - Y0 - par.y * 1.5) / H);
+                float inside = step(0.0, puv.x) * step(puv.x, 1.0) * step(0.0, puv.y) * step(puv.y, 1.0);
+                fixed4 pic = tex2D(_Picture, puv);
+                col = lerp(col, pic.rgb * (1.15 + 0.2 * flick + _Hover * 0.25), pic.a * inside);
+                return col;
+            }
+
             fixed4 frag(v2f i) : SV_Target
             {
                 float2 uv = i.uv, asp = float2(_Aspect, 1.0), p = (uv - 0.5) * asp;
                 float t = _Time.y;
-                float noir = step(0.5, _Theme);
+                float pic = step(1.5, _Theme);
+                float noir = step(0.5, _Theme) * (1.0 - pic);
 
                 float d = sdRound(p, float2(_Aspect * 0.5, 0.5) - 0.006, 0.05) + (vn(uv * 6.0 + t * 0.3) - 0.5) * 0.005 * (0.4 + _Hover);
                 float a = smoothstep(0.003, -0.003, d);
 
                 float2 dv = (uv - _Pointer.xy) * asp; float dist = length(dv);
                 float rip = sin(dist * 38.0 - t * 5.0) * exp(-dist * 5.5) * _Hover;
-                float2 lp = noir > 0.5 ? float2(0.28, 0.84) : float2(0.6, 0.74);
+                float2 lp = pic > 0.5 ? float2(0.5, 0.74) : noir > 0.5 ? float2(0.28, 0.84) : float2(0.6, 0.74);
                 float2 bv = (uv - lp) * asp; float br = length(bv);
                 float burst = sin(br * 30.0 - (1.0 - _Press) * 22.0) * exp(-br * 4.0) * _Press;
                 float2 w = uv + normalize(dv + 1e-5) * rip * 0.012 + normalize(bv + 1e-5) * burst * 0.02;
                 float2 par = (_Pointer.xy - 0.5) * _Hover * 0.04;
 
-                float3 col = noir > 0.5 ? noirArt(w, par, t, asp) : lanternArt(w, par, t, asp, lp);
+                float3 col = pic > 0.5 ? pictureArt(w, par, t, asp, lp) : noir > 0.5 ? noirArt(w, par, t, asp) : lanternArt(w, par, t, asp, lp);
                 float3 accent = noir > 0.5 ? float3(1.0, 0.25, 0.3) : float3(1.0, 0.55, 0.2);
 
                 col *= lerp(0.6, 1.0, smoothstep(0.0, 0.5, uv.y));

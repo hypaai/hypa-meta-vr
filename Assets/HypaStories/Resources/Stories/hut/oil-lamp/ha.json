@@ -1,0 +1,28 @@
+{
+  "words": ["fitila", "mai", "harshen wuta"],
+  "greet": "Ah, ka sami fitilata. Muna kiranta fitila.",
+  "greet.ask": [
+    "Me ake kiran fitilar?"
+  ],
+  "made": "An yi shi da yumɓun kogin nan ɗaya da aka yi tukunyar da shi, ƙarami sosai har zai iya zama a tafin hannunka.",
+  "made.ask": [
+    "Da me aka yi shi?"
+  ],
+  "oil": "Muna zuba manja a ciki, sannan mu sanya lagwan auduga murɗaɗɗe a bakinsa. Sai mu kunna lagwan.",
+  "oil.ask": [
+    "Me yake ƙonawa?"
+  ],
+  "before": "Kafin fitilun kananzir da wutar lantarki su zo, kowane gida kan kunna ɗaya daga cikin waɗannan da magariba. Dukan titi kan haskaka da ƙananan harsunan wuta.",
+  "before.ask": [
+    "Me mutane suke amfani da shi kafin fitilar lantarki?"
+  ],
+  "grandmother": "Kakata ta ba da labarunta a ƙarƙashin hasken wannan fitilar, kamar yadda nake ba ku nawa labarin.",
+  "grandmother.ask": [
+    "Fitilar wa ce?"
+  ],
+  "night": "Idan rana ta faɗi, ƙaramin harshen wutarsa yana taimaka mana mu nemo tabarmunmu, mu kuma ba da labarai har cikin dare.",
+  "night.ask": [
+    "Yaushe kake kunna shi?"
+  ],
+  "care": "Ka riƙe shi a tsaye kuma a hankali, ɗana, ko kuma man zai zube ya kashe wutar."
+}

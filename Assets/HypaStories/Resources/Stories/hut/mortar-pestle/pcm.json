@@ -1,0 +1,32 @@
+{
+  "words": ["mortar", "yam", "pestle"],
+  "greet": "Ehen, you don find the mortar and im pestle. The mortar na odo, and the pestle na im pikin.",
+  "greet.ask": [
+    "Wetin dem dey call the mortar?"
+  ],
+  "carved": "One carver cut the mortar from one piece of hard wood, so e fit take plenty years of pounding.",
+  "carved.ask": [
+    "Wetin dem take make am?"
+  ],
+  "family": "My husband papa carve am the year dem born my husband. Three generations for dis family don chop from am.",
+  "family.ask": [
+    "Who carve am?"
+  ],
+  "rhythm": "Long time ago, for evening, you go hear pounding from every compound across the village. Im rhythm dey tell everybody say house don near.",
+  "rhythm.ask": [
+    "Why the pounding special?"
+  ],
+  "together": "Two women fit pound inside one mortar, dem go dey take turn with two pestle, dem no go miss one beat. We dey sing as we dey work.",
+  "together.ask": [
+    "Two people fit pound together?"
+  ],
+  "yam": "We go put boiled yam inside, pound am until e smooth and soft. Na im be pounded yam.",
+  "yam.ask": [
+    "Wetin una dey pound inside am?"
+  ],
+  "more": "We dey pound pepper, grain and leaf for pot too.",
+  "more.ask": [
+    "Wetin else dem dey use am for?"
+  ],
+  "sound": "When you hear pestle dey fall, again and again, you know say food dey come."
+}

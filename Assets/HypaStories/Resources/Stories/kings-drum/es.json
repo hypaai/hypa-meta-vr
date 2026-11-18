@@ -1,0 +1,130 @@
+{
+  "words": [
+    "tambor",
+    "tortuga",
+    "palmera"
+  ],
+  "calabar": "Hace mucho tiempo, en Calabar, vivía un rey llamado Efriam Duke, que no amaba la guerra.",
+  "calabar.ask": [
+    "¿Dónde está Calabar?"
+  ],
+  "drum": "Tenía un tambor, y cada vez que lo tocaba, aparecía un banquete.",
+  "drum.ask": [
+    "¿Qué hacía el tambor?"
+  ],
+  "feast": "Pescado y fufú, ñames y quimbombó, sopa de aceite de palma y vino de palma, suficiente para todos.",
+  "enemies": "Cuando llegaban enemigos, él no luchaba. Los invitaba a comer.",
+  "enemies.ask": [
+    "¿Por qué el rey invitaba a sus enemigos?"
+  ],
+  "animals": "También agasajaba a su pueblo, e incluso a los animales, porque en aquellos tiempos todos comían juntos en paz.",
+  "rule": "Pero el tambor tenía una regla.",
+  "stick": "Si su dueño pasaba alguna vez por encima de un palo atravesado en el camino, el tambor no daría más comida.",
+  "stick.ask": [
+    "¿Cuál era la regla del tambor?"
+  ],
+  "egbo": "En su lugar vendrían trescientos hombres Egbo, con palos y látigos, a golpearlo a él y a todos sus invitados.",
+  "egbo.ask": [
+    "¿Quiénes son los hombres Egbo?"
+  ],
+  "wanted": "Muchos querían ese tambor. El rey no quería desprenderse de él.",
+  "tortoise": "Y quien más lo quería era Tortuga.",
+  "tortoise.ask": [
+    "¿Quién es Tortuga?"
+  ],
+  "spring": "Una mañana, Ikwor Edem, una esposa del rey, llevó a su hijita a lavarse a un manantial.",
+  "palm": "Encima de ellas, en lo alto de una palmera, Tortuga cortaba nueces de palma.",
+  "nut": "Una nuez cayó a los pies de la niña.",
+  "cried": "La niña lloró por ella, y su madre se la dio.",
+  "mine": "Tortuga bajó. Esa nuez es mía, dijo.",
+  "mine.ask": [
+    "¿Por qué está Tortuga tan enfadado?"
+  ],
+  "idea": "Ikwor Edem se lo explicó, pero Tortuga pensaba en el tambor.",
+  "justice": "Tu esposa tomó mi comida, le dijo al rey. Quiero justicia.",
+  "offers": "El rey le ofreció dinero. Tela. Palmiste. Aceite de palma.",
+  "no": "Tortuga lo rechazó todo.",
+  "choose": "Al final el rey dijo: entonces elige lo que quieras.",
+  "point": "Tortuga señaló directamente el tambor.",
+  "point.ask": [
+    "¿Qué eligió Tortuga?"
+  ],
+  "gave": "Para acabar con la disputa, el rey se lo dio. Pero no le dijo la regla.",
+  "gave.ask": [
+    "¿Por qué el rey no le dijo la regla?"
+  ],
+  "home": "Tortuga llevó el tambor a casa. Nunca más trabajaremos para comer, le dijo a su familia.",
+  "beat": "Tocó el tambor, y un banquete cubrió el suelo.",
+  "three-days": "Durante tres días la familia comió, rió y volvió a comer.",
+  "invite": "Luego invitó al rey, a todo el pueblo y a los animales a un gran banquete.",
+  "laughed": "Muchos se rieron. ¿Tortuga, el más pobre de todos, dando un banquete?",
+  "few": "Solo vinieron unos pocos. Pero el rey vino.",
+  "appeared": "Tortuga tocó el tambor, y el banquete apareció ante todos.",
+  "amazed": "Los invitados volvieron a casa asombrados. Los que no habían ido juraron ir la próxima vez.",
+  "amazed.ask": [
+    "¿Qué piensa ahora la gente de Tortuga?"
+  ],
+  "boastful": "Tortuga se volvió perezoso y presumido, y bebía demasiado vino de palma.",
+  "farm": "Una tarde, volviendo a casa desde su granja, no miró por dónde iba.",
+  "stepped": "Había un palo atravesado en el sendero, y pasó justo por encima.",
+  "stepped.ask": [
+    "¿Qué hizo mal Tortuga?"
+  ],
+  "nothing": "No pasó nada. Ni siquiera se dio cuenta.",
+  "breakfast": "A la mañana siguiente, su familia hambrienta pidió el desayuno.",
+  "beat-again": "Tocó el tambor.",
+  "egbo-came": "No llegó comida. En su lugar llegaron trescientos hombres Egbo, con palos y látigos.",
+  "beaten": "Golpearon a Tortuga y a toda su familia.",
+  "furious": "Tortuga estaba furioso. Pero no se culpó a sí mismo.",
+  "furious.ask": [
+    "¿Qué hará Tortuga ahora?"
+  ],
+  "plan": "Si a mí me tienen que golpear, pensó, que golpeen también a los que se rieron de mí.",
+  "second": "Invitó a todos a otro gran banquete.",
+  "crowds": "Esta vez vino todo el pueblo, y todos los animales, decididos a no perdérselo.",
+  "stayed": "El rey y sus esposas se quedaron en casa. Tortuga ya había enviado lejos a su propia familia.",
+  "stayed.ask": [
+    "¿Por qué el rey no fue?"
+  ],
+  "doors": "Cuando todos los invitados estuvieron dentro, cerraron las puertas.",
+  "bench": "Tortuga tocó el tambor y se escondió debajo de un banco.",
+  "burst": "Los hombres Egbo irrumpieron con sus palos y látigos.",
+  "nowhere": "Los invitados corrieron, pero no había adónde huir.",
+  "leopard": "Solo Leopardo escapó, saltando limpiamente por encima del muro del recinto.",
+  "leopard.ask": [
+    "¿Cómo escapó Leopardo?"
+  ],
+  "opened": "Por fin Tortuga abrió las puertas y tocó el tambor de una manera especial, y los hombres Egbo desaparecieron.",
+  "limped": "Los invitados volvieron a casa cojeando, magullados y muy enfadados.",
+  "return": "Así que a la mañana siguiente, Tortuga le devolvió el tambor al rey.",
+  "exchange": "Tómalo, dijo, y dame a cambio granjas o tela.",
+  "fufu-tree": "El rey no quiso cambiarlo. Pero sintió lástima de Tortuga, y le dio un árbol de fufú mágico.",
+  "fufu-tree.ask": [
+    "¿Qué es un árbol de fufú?"
+  ],
+  "tree-rule": "Cada día daba fufú fresco y sopa. Pero solo podían tomar de él una vez al día, nunca dos.",
+  "tree-rule.ask": [
+    "¿Cuál era la regla del árbol de fufú?"
+  ],
+  "calabashes": "Cada mañana Tortuga y su esposa llenaban sus calabazas, y a la familia no le faltaba nada.",
+  "son": "Pero uno de sus hijos quería saber de dónde venía la comida.",
+  "secret": "Tortuga no quiso decírselo. Si los niños lo encuentran, dijo su madre, lo echarán a perder.",
+  "ashes": "Así que el niño llenó una calabaza de ceniza y la escondió en la bolsa de su padre, encima de un agujerito.",
+  "ashes.ask": [
+    "¿Cuál fue el truco del niño?"
+  ],
+  "trail": "Mientras Tortuga caminaba, un fino rastro de ceniza caía detrás de él.",
+  "followed": "El niño siguió el rastro, observó desde los arbustos, y no dijo nada.",
+  "twice": "Al día siguiente, después de que su padre tomara la comida, el niño llevó a sus hermanos al árbol, y tomaron más.",
+  "twice.ask": [
+    "¿Qué hicieron mal los niños?"
+  ],
+  "gone": "A la mañana siguiente, el árbol había desaparecido.",
+  "thicket": "Durante la noche había crecido una maleza espesa. Tortuga solo veía palmeras de ratán espinosas.",
+  "nobody": "Preguntó a su familia quién había roto la regla. Nadie respondió.",
+  "live-here": "Así que los llevó allí. Rompisteis la regla, dijo, así que aquí tendremos que vivir.",
+  "why": "Y por eso, dicen los ancianos, la tortuga vive bajo las palmeras de ratán espinosas.",
+  "why.ask": [
+    "¿Por qué las tortugas viven bajo las palmeras?"
+  ]
+}

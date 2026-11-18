@@ -35,7 +35,7 @@ namespace HypaStories
         readonly List<Bed> _beds = new List<Bed>();
         readonly List<Howl> _howls = new List<Howl>();
         Bed _rain, _rumble;
-        AudioClip _wolf, _chime, _tap;
+        AudioClip _wolf, _chime, _tap, _portalOpen, _portalPass;
         AudioClip[] _thunder, _chirps;
         AudioSource _ui;
         Transform _fire;
@@ -79,6 +79,8 @@ namespace HypaStories
             for (var i = 0; i < _chirps.Length; i++) _chirps[i] = ProceduralClips.Clip("chirp", ProceduralClips.ChirpSamples(30 + i));
             _chime = ProceduralClips.Clip("cue", ProceduralClips.ChimeSamples());
             _tap = ProceduralClips.Clip("tap", ProceduralClips.TapSamples(262f));
+            _portalOpen = ProceduralClips.Clip("portal-open", ProceduralClips.PortalSamples(false));
+            _portalPass = ProceduralClips.Clip("portal-pass", ProceduralClips.PortalSamples(true));
             _nextChirp = Time.time + Rand(2.5f, 7.5f);
             _nextHowl = Time.time + Rand(9f, 27f);
         }
@@ -118,6 +120,9 @@ namespace HypaStories
 
         public void Cue() => _ui.PlayOneShot(_chime, 1f);
         public void Tap() => _ui.PlayOneShot(_tap, 1f);
+        /// <summary>The portal to the hut: opening, and stepping through (3L).</summary>
+        public void PortalOpen() => _ui.PlayOneShot(_portalOpen, 0.9f);
+        public void PortalPass() => _ui.PlayOneShot(_portalPass, 1f);
 
         public void Thunder()
         {

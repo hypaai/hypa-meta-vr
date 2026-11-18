@@ -1,0 +1,20 @@
+{
+  "theme": 0,
+  "accent": "#D98A5B",
+  "eyebrow": "In the hut",
+  "title": "The clay pot",
+  "description": "A pot shaped by hand from river clay. Hear what it keeps for the house.",
+  "words": ["pot", "water", "clay"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
+  "voices": [],
+  "lines": [
+    {"id": "greet", "text": "Come closer, my child. This is our clay pot. We call it ikoko.", "ask": ["What is the pot called?"]},
+    {"id": "made", "text": "A potter shaped it by hand from river clay, then baked it hard in an open fire.", "ask": ["How is the pot made?"]},
+    {"id": "old", "text": "Women in these lands have shaped pots like this for thousands of years. Broken pieces of them are found where the oldest towns once stood.", "ask": ["How old are clay pots?"]},
+    {"id": "potters", "text": "The craft passes from mother to daughter. Each potter has her own marks, so you can tell whose hands made a pot.", "ask": ["Who teaches the craft?"]},
+    {"id": "mother", "text": "This one was my mother's. She carried water in it from the river on her head, and gave it to me on my wedding day.", "ask": ["Whose pot was it?"]},
+    {"id": "water", "text": "We keep our drinking water in it. The clay breathes, so the water stays cool, even at noon.", "ask": ["Why does the water stay cool?"]},
+    {"id": "cook", "text": "Another pot like this sits on three stones over the fire, and our soup cooks in it.", "ask": ["What do you cook in it?"]},
+    {"id": "care", "text": "Lift it gently and hold it with both hands. A clay pot that falls does not rise again."}
+  ]
+}

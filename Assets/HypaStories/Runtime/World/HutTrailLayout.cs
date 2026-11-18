@@ -27,12 +27,19 @@ namespace HypaStories
         public const float WallInner = 2.32f;   // inside of the wall
         public const float DoorHalfAngle = 13f; // degrees either side of the door's middle (about 1.2 m wide)
         public const float DoorHeight = 1.95f, WallHeight = 2.2f;
+        /// <summary>The thatched cone: its eave (radius and height) and its apex. The rafters inside follow it.</summary>
+        public const float RoofEave = 3.2f, RoofEaveY = 1.95f, RoofApexY = 4.5f;
+
+        /// <summary>The underside of the thatch at <paramref name="r"/> metres from the hut's centre.</summary>
+        public static float RoofY(float r) => Mathf.Lerp(RoofApexY, RoofEaveY, Mathf.Clamp01(r / RoofEave));
         /// <summary>Half the width of the trail you see, and of the strip you can walk on (a little wider, so the edge is soft).</summary>
         public const float PathHalf = 0.8f, WalkHalf = 1.25f;
         /// <summary>Where the signpost stands: by the log, at the mouth of the trail, readable from the seat.</summary>
         public static readonly Vector2 Sign = new Vector2(-3.55f, -1.4f);
 
-        const float FireKeepOut = 1.3f, DoorHalf = 0.45f, InsideMargin = 0.25f, Eps = 1e-3f;
+        // InsideMargin: how close to the wall your head may go inside the hut. Small, so you can lean in over the things that stand
+        // by the wall: with a wider margin, leaning in pushed the whole room away (the item you looked at seemed to slide off).
+        const float FireKeepOut = 1.3f, DoorHalf = 0.45f, InsideMargin = 0.06f, Eps = 1e-3f;
 
         /// <summary>The way out of the door (unit, pointing back down the trail).</summary>
         public static Vector2 DoorDir => (Path[Path.Length - 1] - Hut).normalized;

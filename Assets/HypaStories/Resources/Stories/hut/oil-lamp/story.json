@@ -1,0 +1,19 @@
+{
+  "theme": 0,
+  "accent": "#F0B45A",
+  "eyebrow": "In the hut",
+  "title": "The oil lamp",
+  "description": "A little clay lamp with a cotton wick. Hear how it keeps the night away.",
+  "words": ["lamp", "oil", "flame"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
+  "voices": [],
+  "lines": [
+    {"id": "greet", "text": "Ah, you have found my lamp. We call it fitila.", "ask": ["What is the lamp called?"]},
+    {"id": "made", "text": "It is shaped from the same river clay as the pot, small enough to sit in your palm.", "ask": ["What is it made of?"]},
+    {"id": "oil", "text": "We pour in palm oil and lay a wick of twisted cotton in its spout. Then we light the wick.", "ask": ["What does it burn?"]},
+    {"id": "before", "text": "Before lanterns and electric light came, every home lit one of these at dusk. A whole street would glow with little flames.", "ask": ["What did people use before electric light?"]},
+    {"id": "grandmother", "text": "My grandmother told her stories by the light of this very lamp, as I am telling you mine.", "ask": ["Whose lamp was it?"]},
+    {"id": "night", "text": "When the sun goes down, its little flame lets us find our mats, and tell stories late into the night.", "ask": ["When do you light it?"]},
+    {"id": "care", "text": "Carry it upright and slowly, my child, or the oil will spill and drown the flame."}
+  ]
+}

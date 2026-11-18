@@ -1,0 +1,32 @@
+{
+  "words": ["olla", "agua", "barro"],
+  "greet": "Acércate, hijo mío. Esta es nuestra olla de barro. La llamamos ikoko.",
+  "greet.ask": [
+    "¿Cómo se llama la olla?"
+  ],
+  "made": "Una alfarera le dio forma a mano con barro del río y luego la coció en un fuego abierto.",
+  "made.ask": [
+    "¿Cómo se hace la olla?"
+  ],
+  "water": "En ella guardamos el agua para beber. El barro respira, así que el agua se mantiene fresca, incluso al mediodía.",
+  "water.ask": [
+    "¿Por qué el agua se mantiene fresca?"
+  ],
+  "cook": "Otra olla como esta descansa sobre tres piedras encima del fuego, y en ella se cocina nuestra sopa.",
+  "cook.ask": [
+    "¿Qué cocinan en ella?"
+  ],
+  "care": "Levántala con cuidado y sostenla con las dos manos. Una olla de barro que cae no vuelve a levantarse.",
+  "old": "Las mujeres de estas tierras dan forma a ollas como esta desde hace miles de años. Se encuentran pedazos donde estuvieron los pueblos más antiguos.",
+  "old.ask": [
+    "¿Desde cuándo se hacen ollas de barro?"
+  ],
+  "potters": "El oficio pasa de madre a hija. Cada alfarera tiene sus propias marcas, así se sabe qué manos hicieron una olla.",
+  "potters.ask": [
+    "¿Quién enseña el oficio?"
+  ],
+  "mother": "Esta era de mi madre. Llevaba en ella el agua del río sobre la cabeza, y me la dio el día de mi boda.",
+  "mother.ask": [
+    "¿De quién era la olla?"
+  ]
+}

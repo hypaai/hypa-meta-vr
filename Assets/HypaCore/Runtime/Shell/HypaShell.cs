@@ -34,7 +34,7 @@ namespace HypaCore
 
     /// <summary>
     /// App shell, in the HypaShell scene (first in Build Settings). Keeps the camera rig, pinch pointer and audio alive
-    /// across modes, and shows Home: Hypa Lens, Stories and How it works. Home is the first thing the user sees; a
+    /// across modes, and shows Home for Hypa Stories: Stories, Lens and How it works. Home is the first thing the user sees; a
     /// mode's X (or the Home button low in the view, or M in the editor) brings it back at any time.
     /// </summary>
     public sealed class HypaShell : MonoBehaviour
@@ -201,14 +201,13 @@ namespace HypaCore
                 var icon = Ui.Quad("logo", _menu, new Vector3(-0.115f, titleY, -0.001f), Vector2.one * 0.036f, Color.white, false, rounded: false);
                 icon.GetComponent<Renderer>().material.mainTexture = logo;
             }
-            Ui.Text(_menu, "Hypa", 0.024f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
+            Ui.Text(_menu, Application.productName, 0.020f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
             // The X closes the Hypa app.
             Ui.IconButton("x", _menu, new Vector3(0.11f, titleY, -0.001f), 0.024f, QuitApp);
             // Stories is the first experience; Lens is still in beta
-            Ui.Button("Stories", _menu, new Vector3(0, 0.10f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Story));
-            Ui.Button("Lens (beta)", _menu, new Vector3(0, 0.03f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Lens));
-            Ui.Button("Saved words", _menu, new Vector3(0, -0.04f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, OpenSavedWords);
-            Ui.Button("How it works", _menu, new Vector3(0, -0.11f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => ShowHelp(true));
+            Ui.Button("Stories", _menu, new Vector3(0, 0.075f, 0), new Vector2(0.26f, 0.06f), Ui.Accent, () => OpenOrResume(HypaScenes.Story));
+            Ui.Button("Lens (beta)", _menu, new Vector3(0, 0.005f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => OpenOrResume(HypaScenes.Lens));
+            Ui.Button("How it works", _menu, new Vector3(0, -0.065f, 0), new Vector2(0.26f, 0.06f), Ui.Muted, () => ShowHelp(true));
             _status = Ui.Text(_menu, "", 0.015f, new Vector3(0, -0.18f, 0), Color.white);
             _menu.gameObject.SetActive(false);
 
@@ -247,10 +246,10 @@ namespace HypaCore
                 y -= wrapped.Split('\n').Length * bodyH * line + 0.03f;
             }
             Section("languages", "Stories",
-                "Sit by the campfire and listen to a storyteller in your language. Raise a hand to ask a question.");
+                "Choose a story by the campfire. The storyteller tells it in your language, and the words light up with the voice. Raise a hand to ask a question. At the end, Try Hypa translates a few words. In your room, the door leads to the hut, the village, or the fire. Step through, then step back to come home.");
             Section("camera", "Lens (beta)",
                 "Look at a sign, menu or book and pinch Capture. The text and its translation open in a popup: hear it, or save it to practise later. Caption reads the whole view at once.");
-            Ui.Text(_help, Ui.Wrap("Everything works with your hands. Pinch Home at any time to come back here.", chars), bodyH,
+            Ui.Text(_help, Ui.Wrap("Return to the campfire, then select Back to go Home. In Lens, select X.", chars), bodyH,
                 new Vector3(left, y, 0), body, TextAnchor.UpperLeft);
             // Ui.IconButton("chevron-left", _help, new Vector3(0f, -h / 2f + pad + 0.03f, -0.001f), 0.028f, () => ShowHelp(false)); // back to Home (Stories' chevron)
             _help.gameObject.SetActive(false);
@@ -277,13 +276,6 @@ namespace HypaCore
         {
             _help.gameObject.SetActive(open);
             _menu.gameObject.SetActive(!open);
-        }
-
-        /// <summary>Saved words live in Lens: open Lens (or go back to it) straight onto the practice cards.</summary>
-        void OpenSavedWords()
-        {
-            AppRouter.Request(AppRouter.LensSavedWords);
-            OpenOrResume(HypaScenes.Lens);
         }
 
         /// <summary>

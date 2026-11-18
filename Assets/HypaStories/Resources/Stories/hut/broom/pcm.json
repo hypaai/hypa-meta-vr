@@ -1,0 +1,28 @@
+{
+  "words": ["broom", "palm", "morning"],
+  "greet": "And dis one na the broom. We dey call am igbale.",
+  "greet.ask": [
+    "Wetin dem dey call the broom?"
+  ],
+  "made": "Dem make am from the thin stick wey dey inside palm leaf, dem dry am come tie am together for one end.",
+  "made.ask": [
+    "Wetin dem take make the broom?"
+  ],
+  "olden": "Dem don dey tie broom like dis since before anybody wey dey alive now fit remember, from the same palm tree wey dey give us oil and palm wine.",
+  "olden.ask": [
+    "How old dis kind broom be?"
+  ],
+  "festival": "Before festival, the whole village go sweep their road and compound, so the elders and the visitors go waka for clean ground.",
+  "festival.ask": [
+    "When everybody dey sweep together?"
+  ],
+  "sweep": "Every morning, before sun climb high, we go bend down sweep the house and the compound.",
+  "sweep.ask": [
+    "When una dey sweep?"
+  ],
+  "one": "One stick alone go break quick quick. When you tie them together, dem strong. Na so family be too.",
+  "one.ask": [
+    "Why dem tie the sticks together?"
+  ],
+  "back": "When you don look am finish, put am back where you see am."
+}

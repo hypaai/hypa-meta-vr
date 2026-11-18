@@ -1,0 +1,32 @@
+{
+  "words": ["pot", "eau", "argile"],
+  "greet": "Approche, mon enfant. Voici notre pot en argile. Nous l'appelons ikoko.",
+  "greet.ask": [
+    "Comment s'appelle le pot ?"
+  ],
+  "made": "Une potière l'a façonné à la main avec l'argile de la rivière, puis l'a cuit dans un feu ouvert.",
+  "made.ask": [
+    "Comment fabrique-t-on le pot ?"
+  ],
+  "water": "Nous y gardons notre eau à boire. L'argile respire, alors l'eau reste fraîche, même à midi.",
+  "water.ask": [
+    "Pourquoi l'eau reste-t-elle fraîche ?"
+  ],
+  "cook": "Un autre pot comme celui-ci repose sur trois pierres au-dessus du feu, et notre soupe y cuit.",
+  "cook.ask": [
+    "Que cuisinez-vous dedans ?"
+  ],
+  "care": "Soulève-le doucement et tiens-le à deux mains. Un pot en argile qui tombe ne se relève pas.",
+  "old": "Les femmes de ces terres façonnent des pots comme celui-ci depuis des milliers d'années. On en trouve des morceaux là où se dressaient les plus anciennes villes.",
+  "old.ask": [
+    "Depuis quand fait-on des pots en argile ?"
+  ],
+  "potters": "Le savoir-faire passe de la mère à la fille. Chaque potière a ses propres marques, alors on sait quelles mains ont fait un pot.",
+  "potters.ask": [
+    "Qui enseigne ce savoir-faire ?"
+  ],
+  "mother": "Celui-ci était à ma mère. Elle y portait l'eau de la rivière sur sa tête, et me l'a donné le jour de mon mariage.",
+  "mother.ask": [
+    "À qui était ce pot ?"
+  ]
+}

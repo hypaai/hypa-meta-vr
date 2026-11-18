@@ -15,16 +15,20 @@ namespace HypaStories
     public sealed class StoryPlayer : INarration
     {
         readonly StoryVoice _voice;
-        readonly Func<StoryLanguage> _lang;
         /// <summary>
         /// A line whose speech takes longer than this is read silently, so a slow TTS call never holds the story. Hypa's own voices
         /// take 5-10 s a line (the next line is fetched while this one plays, so that is mostly hidden).
         /// </summary>
-        const int LineTimeoutMs = 12000;
+        /// <summary>How long a line may take to arrive before it plays silently. The words wait at the line's start meanwhile.</summary>
+        const int LineTimeoutMs = 25000;
+        /// <summary>Lines fetched ahead of the one playing: slow voices (Yoruba ~4-9 s a line) are then ready in time.</summary>
+        const int Ahead = 3;
         CancellationTokenSource _tts = new CancellationTokenSource();
         int _ttsToken;
 
         public StoryInfo Story { get; private set; }
+        /// <summary>The language selected when this story opened.</summary>
+        public StoryLanguage Language { get; private set; }
         public StoryDirector Director { get; private set; }
         public float T { get; private set; }
         public float Duration => Director?.Duration ?? 0f;
@@ -38,16 +42,23 @@ namespace HypaStories
         public event Action<string> Sound;
         readonly System.Collections.Generic.List<string> _sounds = new System.Collections.Generic.List<string>();
 
-        public StoryPlayer(StoryVoice voice, Func<StoryLanguage> language) { _voice = voice; _lang = language; }
+        public StoryPlayer(StoryVoice voice) { _voice = voice; }
 
         Caption[] Caps => Story.Timeline.Captions;
-        string Text(int i) => Caps[i].TextFor(_lang().Code);
+        string Text(int i) => Caps[i].TextFor(Language.Code);
+
+        /// <summary>
+        /// The language a line is spoken in. A line with no translation is told in English, so a Yoruba (or any other) listener
+        /// hears English words in an English voice instead of those words forced through the other language's voice.
+        /// </summary>
+        StoryLanguage Spoken(int i) => Caps[i].Has(Language.Code) ? Language : StoryLanguages.Find("en");
         int IdxAt(float t) => Mathf.Max(StoryDirector.IndexAt(Caps, t + 0.001f), 0);
 
-        public void Load(StoryInfo story)
+        public void Load(StoryInfo story, StoryLanguage language)
         {
             StopTts();
             Story = story;
+            Language = language;
             _voice.Voices = story.VoicesFor;
             _voice.NewSession();
             Director = new StoryDirector(story.Timeline);
@@ -56,13 +67,18 @@ namespace HypaStories
             CaptionIndex = -1;
         }
 
-        /// <summary>The first lines to fetch before the story starts, so it doesn't open on a pause.</summary>
+        /// <summary>Fetch the opening and warm the narration and question clips in the loaded story's voice.</summary>
         public Task PrepareAsync(CancellationToken ct)
         {
             // the opening line asks Auto first, so the voice locked for the story is the one that speaks it; the next line then
             // asks for that same voice instead of waiting on a filler
-            var first = _voice.PrepareAsync(Text(0), _lang(), ct);
-            _voice.Prefetch(Text(1), _lang());
+            var first = _voice.PrepareAsync(Text(0), Spoken(0), ct);
+            for (var k = 1; k <= Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), Spoken(k)); // they wait for the opening line's voice
+            var lines = StoryLanguages.Lines(Language.Code);
+            foreach (var text in lines.Filler) _voice.Prefetch(text, Language);
+            foreach (var text in lines.Resume) _voice.Prefetch(text, Language);
+            _voice.Prefetch(lines.Again, Language);
+            _voice.Prefetch(lines.Offline, Language);
             return first;
         }
 
@@ -78,7 +94,6 @@ namespace HypaStories
         {
             var token = ++_ttsToken;
             var ct = _tts.Token;
-            var lang = _lang();
             try
             {
                 for (var i = idx; i < Caps.Length; i++)
@@ -86,9 +101,9 @@ namespace HypaStories
                     if (token != _ttsToken) return;
                     T = _lastT = Caps[i].At;
                     _hold = Caps[i].At;                       // wait at the line's start until its audio starts
-                    var line = await PrepareLine(Text(i), lang, ct);
+                    var line = await PrepareLine(Text(i), Spoken(i), ct);
                     if (token != _ttsToken) return;
-                    if (i + 1 < Caps.Length) _voice.Prefetch(Text(i + 1), lang);
+                    for (var k = i + 1; k <= i + Ahead && k < Caps.Length; k++) _voice.Prefetch(Text(k), Spoken(k));
                     var next = i + 1 < Caps.Length ? Caps[i + 1].At : Caps[i].Until + 1f;
                     await _voice.PlayAsync(line, _ => _hold = next - 0.01f, ct);
                     if (token != _ttsToken) return;
@@ -188,8 +203,8 @@ namespace HypaStories
         public bool CanAsk => Live && Running && !Ended;
         public int LineIndex => Mathf.Max(CaptionIndex, 0);
         public string StoryId => Story?.Id;
-        public string StorySoFar => string.Join(" ", Caps.Take(LineIndex + 1).Select(c => c.TextFor(_lang().Code)));
-        public string[] Suggestions => Story?.Suggestions(LineIndex, _lang().Code) ?? new string[0];
+        public string StorySoFar => string.Join(" ", Caps.Take(LineIndex + 1).Select(c => c.TextFor(Language.Code)));
+        public string[] Suggestions => Story?.Suggestions(LineIndex, Language.Code) ?? new string[0];
 
         public void Interrupt()
         {

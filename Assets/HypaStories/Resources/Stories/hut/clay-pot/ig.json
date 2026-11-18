@@ -1,0 +1,32 @@
+{
+  "words": ["ite", "mmiri", "ụrọ"],
+  "greet": "Bịaruo nso, nwa m. Nke a bụ ite ụrọ anyị. Anyị na-akpọ ya ikoko.",
+  "greet.ask": [
+    "Gịnị ka a na-akpọ ite ahụ?"
+  ],
+  "made": "Ọkpụite ji aka kpụọ ya site n'ụrọ osimiri, mesịa sie ya ike n'ọkụ ghere oghe.",
+  "made.ask": [
+    "Kedu ka e si eme ite ahụ?"
+  ],
+  "old": "Ụmụ nwanyị nọ n’ala ndị a akpụtala ite dị otu a kemgbe ọtụtụ puku afọ. A na-ahụ iberibe ite ndị ahụ n’ebe obodo ndị kacha ochie dịbu.",
+  "old.ask": [
+    "Afọ ole ka ite ụrọ dị?"
+  ],
+  "potters": "A na-esi n’aka nne enyefe nka a n’aka nwa ya nwanyị. Onye ọkpụ ite ọ bụla nwere akara nke ya, ya mere ị pụrụ ịmata aka onye kpụrụ ite ahụ.",
+  "potters.ask": [
+    "Ònye na-akụzi ọrụ aka ahụ?"
+  ],
+  "mother": "Nke a bụ nke nne m. O ji ya buru mmiri si n’osimiri n’isi ya, ma nye m ya n’ụbọchị agbamakwụkwọ m.",
+  "mother.ask": [
+    "Ọ bụ ite onye?"
+  ],
+  "water": "Anyị na-edebe mmiri ọṅụṅụ anyị n’ime ya. Ụrọ ahụ na-eku ume, ya mere mmiri ahụ na-adị jụụ, ọbụna n’etiti ehihie.",
+  "water.ask": [
+    "Gịnị mere mmiri ji anọgide na-ajụ oyi?"
+  ],
+  "cook": "Ite ọzọ dị ka nke a na-anọkwasị n'elu nkume atọ n'elu ọkụ, ofe anyị ana-esikwa n'ime ya.",
+  "cook.ask": [
+    "Gịnị ka ị na-esi n’ime ya?"
+  ],
+  "care": "Welie ya nwayọọ ma jiri aka abụọ jide ya. Ite ụrọ dara ada anaghị ebili ọzọ."
+}

@@ -1,7 +1,7 @@
-# Hypa Story (tickets 3A-3C, 3F, 3K)
+# Hypa Stories
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
-Same three screens, three stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, and *Eshu at the Crossroads* is a third card), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
+Same three screens, four stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, *Eshu at the Crossroads* is a third card and the Efik tale *The King's Magic Drum* a fourth), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
 moves, pinch instead of click. Uses HypaCore only and never references HypaLens.
 
 ## Run it
@@ -13,8 +13,7 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 2. Open `Assets/HypaStories/Scenes/HypaStory.unity` and press Play:
    - **Meta XR Simulator** (runtime enabled) or **Quest Link**: you are in the headset view; use controllers or hands.
    - **Neither**: the same scene on screen with the mouse and keyboard below.
-3. On a Quest: Build and Run with HypaShell first in Build Settings, then **Menu > Practice > Hypa Story**; or move HypaStory
-   to the top of Build Settings to start straight in it.
+3. On Quest, build and run with `HypaShell` first in Build Settings, then select **Stories** from the Hypa Stories home menu. To start at the campfire, move `HypaStory` to the top of Build Settings.
 
 | Input (editor) | Quest | Effect |
 |---|---|---|
@@ -106,6 +105,35 @@ Tested: the spot finder (`RoomTests`: open room, small room, furniture, no spot,
 restoring, material swap) in the editor. **Not tried on a headset** (none here): the scan, the depth hiding and the passthrough look
 need a Quest 3 pass.
 
+## Portal: hut, village or camp (ticket 3L)
+
+In your room (**In my room**) a doorway goes on **every real door** the room scan found (MRUK `DOOR_FRAME` anchors), at the door's real size and
+position (`PortalSpot.Doors`; no walking-room tests, a door is where it is). Only with no door in the scan does it use a clear stretch of **wall**,
+and with no scan at all it stands 2 m in front of you. Each doorway is open and shows **where it leads, live**: stand in front of a door and you
+see the hut, the village or the camp. **A sign mounted over the door** (solid glass, like the other menus: "Where to?" then **Hut**, **Village**, **Campfire**, the chosen one lit)
+picks the place; it is about as wide as the door, sits just above it, turns to face you and grows a little with distance. Pinching the door
+itself also turns it to the next place, and a **long pinch** on it goes through (for anyone seated). The
+hut is the default.
+
+- **One step in:** step through a door (0.3 m past it) and, after a soft flash, you are in that place, just inside its doorway, which is laid
+  exactly on the real door.
+- **In the place the doorway stays on your real door:** its frame glows there and the opening is a hole onto your room (`Shaders/StoryPortalHole`;
+  passthrough runs underneath the app and the camera clears to see-through), so you see your real room through it.
+- **One step back:** step back over the doorway and your room is back (passthrough), the doorways where they were. The story never stops.
+- **Editor:** **P** steps through (into your room first), **G** steps through or back. A long pinch on the glass goes through; from afar the
+  doorway comes to you.
+- **The look:** a clean opening with a thin dark trim and a soft warm glow at its edges (a rim just inside, a halo just outside, breathing
+  slowly). No sparks, ripples or colour effects.
+- **The live view:** `World/PortalWindow` draws the place once per eye with a hidden camera, from where your eye would be on the far side of the
+  doorway (`PortalDestinations.Link`), with everything on your side cut off by an oblique near plane. While you are in your room the camp's
+  scenery moves to layer 30 (`CampWorld.DestLayer`): your camera skips it, the portal camera draws it, its sounds are muted.
+  `DistanceCull.Viewer` measures what to draw from the far side. If the camera can't draw, the glass shows a painted glimpse of the hut.
+- **Code:** `Core/PortalSpot` (doors, placement, stepping), `Core/PortalDestination` (the places' doorways, the link maths), `World/StoryPortal`
+  (the door), `World/PortalWindow` (the live view), `Shaders/StoryPortal` + `StoryPortalHole`, `StoryApp` (the flow), `QuestRoomScan` (MRUK).
+  Unit tests: `PortalTests`, `PortalLinkTests`.
+- **Not yet checked on a Quest 3:** the live view and its frame rate (it draws the forest a second time), the hole onto your room, the doors
+  from a real scan. Windows are avoided, not used.
+
 ## Try Hypa
 
 When a story ends, **Try Hypa Translate** appears in the story panel. It opens in that same panel. The story's language is the
@@ -139,6 +167,31 @@ Yoruba tone marks, Igbo dots and Hausa hooks can be drawn; the story fonts are L
 | `public/languages.json` | `Data/StoryLanguages`. |
 | Swipe up / `H` to raise a hand | `Core/RaiseHand` + `Quest/QuestStoryInput` (tracked hand or controller above the head, held 0.35 s; thumbsticks walk and snap-turn). |
 
+## In the hut: household things, their cards and the old woman
+
+**Step inside** at the hut's door (or walk in). On the earth floor by the wall: a clay pot, a mortar with its pestle and a
+palm-rib broom leaning on the wall. A story card hovers over each, and an old woman sits on her mat at the back. Pinch a card (or its **Hear about it**
+button) and she tells you what the thing is and what it is for.
+
+- **The same card and the same telling as the campfire.** The card is `Ui/StoryCard` (the campfire's row,
+  `StoryListView`, builds its cards from the same class). An item's content is a story: `Resources/Stories/hut/{id}/story.json`
+  plus one file per language, loaded by `StoryLibrary.Load` (see Stories below for the format). It plays through the same
+  `StoryPlayer`, `StoryVoice` (from her mouth), `PlayerView` panel and `AskFlow` (the **Ask** button: she answers a question
+  about the thing). The hut has its own instances of these (`World/HutVisit`), so a story by the fire only pauses.
+- **Pick things up.** Each item is a rigidbody with box colliders and the Meta XR Interaction SDK's `Grabbable`,
+  `GrabInteractable` (controllers: grip) and `HandGrabInteractable` (hands: pinch or close your hand round it). The shell's rig
+  has no Interaction SDK interactors, so `Quest/QuestGrab` adds a grab-only set under the camera rig from the SDK's own prefabs
+  (referenced on **StoryAssets**; re-run **Hypa > Stories > Create Story Scene** if those five fields are empty). No SDK rays,
+  poke or locomotion are added. In the editor without a headset rig, things just sit there.
+- **The card stays put.** A card hangs from a fixed anchor in the hut, over the item's starting place: never from the item.
+  It can be pinched while the item is held or lies elsewhere. The floor and the wall behind each item have colliders; an item that leaves
+  the room (thrown out, or through the wall elsewhere) goes back to its place after a moment.
+- **Add an item:** make `Resources/Stories/hut/{id}/story.json` (copy one; at least two lines), then add one line to
+  `HutItems.Entries` (`Data/HutItems.cs`): `new Entry("hut/{id}", "{shape}")`. It takes the next place round the wall (six
+  places; add an angle to `HutItems.Angles` for more). The shape is a case in `World/HutProps.Build` (and `HutProps.Rest` if it should lean or lie
+  rather than stand); a name it doesn't know shows a small crate, so content can go in before the shape is made.
+- Tests: `HutItemsTests` (content loads in the story format, places fit the room, the lost rule, the shapes).
+
 ## Stories
 
 Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `StoryLibrary.Ids`:
@@ -166,7 +219,7 @@ Each story is a folder in `Resources/Stories/{id}/`, listed in card order in `St
   Yoruba scripts (and their storyteller lines in `StoryLanguages`) are machine translations (GPT-6 Astra via Hypa, given the whole
   story): have a native speaker check them before release.** *Seven Hot Stones*: the English and Yoruba were supplied by the team
   (the Yoruba with corrections where it contradicted the English); French, Spanish, Hausa, Igbo and Pidgin are machine translations
-  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for all three stories also comes from that auto router and needs the same native check.
+  (Claude) and need the same check. *Eshu at the Crossroads* was written in English; French, Spanish, Hausa, Igbo, Pidgin and Yoruba come from Hypa's auto router (`translate_message`, model `auto`), sent a few numbered lines at a time with a short summary of the story for context, then checked by hand: lines the router left in English or shifted were sent again, and a few words fixed (Hausa: Eshu is *ƙaramin abin bauta*, not *Allah*; palm wine is *giyar kwakwa*). They need the same native check. Swahili (`sw`, shown as Kiswahili) for the first three stories also comes from that auto router and needs the same native check. *The King's Magic Drum* is retold from the Calabar (Efik) folk tale of Efriam Duke's drum and Tortoise (in Elphinstone Dayrell's *Folk Stories from Southern Nigeria*, 1910), drum and fufu tree both; all seven translations are machine translations (Claude) and need the same native check.
 
 When a listener asks, the suggestions are the `ask` questions of the lines told so far, newest first (three at most).
 
@@ -200,7 +253,8 @@ the translations are matched on.
 
 - Committed: shaders and code (original), Poly Haven props and forest floor (`Art/PolyHaven`, CC0), Camp Fire by JalenJacobson
   (`Art/Models/camp_fire.glb`, **CC BY 4.0, credit required**, re-encoded without meshopt / WebP so glTFast imports it), the Hypa
-  Reality mark (`Art/hypa-reality.png`, team-supplied).
+  Reality mark (`Art/hypa-reality.png`, team-supplied), and the witch song after the drum game (`Art/Audio/witch-song.mp3`,
+  team-supplied).
 - **Not committed** (`Assets/HypaStories/Local/`, git-ignored, because this repo is public): the Epidemic Sound beds
   (`amb-1/2`, `fire-1/2`, `wolf-1`; subscription licence, no redistribution) and the storyteller avatar
   (`Models/storyteller.glb`; a Ready Player Me placeholder from the three.js examples).
@@ -249,3 +303,35 @@ When *Seven Hot Stones* ends, **Face Dodo** appears above the player panel: you 
 Hands first; controllers work the same way (trigger = pinch). Rules: `Core/DodoRules` (unit tested). Game: `World/DodoGame`,
 creature: `World/DodoCreature`. In the editor: **P** puts a stone in the fire, **T** throws into the mouth, **M** throws wide,
 **Space** shouts.
+
+## The drum game (after *The King's Magic Drum*)
+
+When *The King's Magic Drum* ends, **Play the drum** appears above the player panel: you have the king's drums, a big low drum on
+your left and a small high one on your right, waist high in front of where you are (lower if you sit).
+
+- **Listen:** the ogene bell counts a bar in (a shaker on the eighths), then the drums play a one-bar beat by themselves, each skin
+  lighting as it sounds. The HUD writes the beat on the bar: a big ember dot for the low drum, a small pale one for the high drum,
+  with a tick under each beat that flashes with the bell.
+- **Play it back:** the bell keeps going. Bring a hand down on the big drum for the low note, on the small drum for the high one
+  (a controller works the same way; pinching while pointing at a skin also strikes it). The edge of either drum gives a sharper
+  slap, which still counts as that drum. Only the gaps between your strokes count, so come in whenever you like.
+- **The feast:** each beat played back brings a dish by the fire, in the story's order: fish, fufu, yams, okra, palm-oil soup,
+  palm wine. A wrong drum, or a stroke too quick or too slow, makes the guests laugh and the drums play the beat again (no lives).
+  Six beats at 96 beats a minute, easiest first: on the beat, then the 3+3+2 tresillo against the bell, then the off-beats filled.
+  The last dish brings dawn, and the villagers come out of the trees to dance.
+- **Free drum:** then the witch song plays (`Art/Audio/witch-song.mp3`, `StoryAssets.witchSong`; instead of the village's
+  drums) and you drum along freely, nothing counted. It fades in at the top and out over its last 14 seconds. **Play again**
+  restarts the game; **The story** and **Stories** as after the other games. **In my room** puts the fire and the drums
+  on your real floor, the same switch as the other games. Without
+  the recording you can still drum freely.
+
+The bell, the shaker and the drums' own strokes are scheduled on the audio clock (`AudioSettings.dspTime`), so the groove holds
+whatever the frame rate. Rules: `Core/DrumRules` (unit tested with the strike detection: `DrumRulesTests`). Game: `World/DrumGame`
+(the drums are built in code: a footed Efik standing drum with carved bands and laced pegs, and a goblet drum with diamond
+lacing and cowries). `DrumVisuals` builds continuous worn-hide heads, woven mats, whole grilled fish, cut yam,
+open serving bowls and soup ingredients. `Resources/DrumSurface` uses one small generated detail texture for wood grain,
+hide mottling and food surfaces; meshes and materials are generated once, and reward halos fade to a faint glow.
+Hand positions come from `StoryInput.Hand` (each tracked hand's palm, else the controllers; set by
+`Quest/QuestStoryInput`). Sounds: `ProceduralClips.DrumStrokeSamples` (each drum open and slapped, two takes each),
+`OgeneSamples`, `ShakerSamples`. In the editor: pinch (click) a drum, or **B** for the low drum, **N** for the high one, **P** to
+play the beat back for you.

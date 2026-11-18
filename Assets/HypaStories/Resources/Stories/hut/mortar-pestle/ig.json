@@ -1,0 +1,32 @@
+{
+  "words": ["ikwe", "ji", "aka ikwe"],
+  "greet": "Aa, ị chọtala ikwe na aka ya. Ikwe bụ odo, aka ya bụkwa nwa ya.",
+  "greet.ask": [
+    "Gịnị ka a na-akpọ ngwa e ji akụ ihe?"
+  ],
+  "carved": "Onye ọkpụ osisi ji otu iberibe osisi siri ike kpụọ ikwe ahụ, ya mere ọ pụrụ idi ọtụtụ afọ nke ịtụ ihe n’ime ya.",
+  "carved.ask": [
+    "Gịnị ka e ji mee ya?"
+  ],
+  "family": "Nna di m pịrị ya n’afọ a mụrụ di m. Ọgbọ atọ nke ezinụlọ a eriela nri na ya.",
+  "family.ask": [
+    "Ònye tụrụ ya?"
+  ],
+  "rhythm": "N’oge ochie, ná mgbede, a na-anụ ụda ịkụ ihe n’ikwe site n’ogige ụlọ ọ bụla n’obodo niile. Uda ya na-agwa onye ọ bụla na ụlọ dị nso.",
+  "rhythm.ask": [
+    "Gịnị mere ịkụ ihe ji bụrụ ihe pụrụ iche?"
+  ],
+  "together": "Ụmụ nwanyị abụọ nwere ike ịkụ ihe n’otu ikwe, na-eji aka ikwe abụọ na-agbanwe agbanwe, na-enweghị ịhapụ otu uda. Anyị na-abụ abụ ka anyị na-arụ ọrụ.",
+  "together.ask": [
+    "Mmadụ abụọ hà nwere ike ịzọkọ ihe ọnụ?"
+  ],
+  "yam": "Anyị na-etinye ji e siri n’ime ya ma suo ya ruo mgbe ọ ga-adị mụrụmụrụ ma dị nro. Nke ahụ bụ ji a sụrụ asụ.",
+  "yam.ask": [
+    "Gịnị ka ị na-akụ n’ime ya?"
+  ],
+  "more": "Anyị na-akụkwa ose, mkpụrụ ọka na akwụkwọ nri maka ite nri.",
+  "more.ask": [
+    "Gịnị ọzọ ka a na-eji ya eme?"
+  ],
+  "sound": "Mgbe ị nụrụ ka aka ikwe na-ada, ugboro ugboro, ị mara na nri na-abịa."
+}

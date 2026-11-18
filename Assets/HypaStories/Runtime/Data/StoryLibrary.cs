@@ -17,7 +17,7 @@ namespace HypaStories
     public static class StoryLibrary
     {
         /// <summary>Card order. Each id is a folder under Resources/Stories.</summary>
-        static readonly string[] Ids = { "seven-hot-stones", "eshu-crossroads", "marlow-street", "death-of-the-rice-farmer", "girl-who-chose-hare" };
+        static readonly string[] Ids = { "seven-hot-stones", "kings-drum", "eshu-crossroads", "marlow-street", "death-of-the-rice-farmer", "girl-who-chose-hare" };
 
         const float WordsPerSecond = 2.6f, Start = 0.4f, Gap = 0.45f, Tail = 1.5f;
 
@@ -36,12 +36,16 @@ namespace HypaStories
 
         public static readonly StoryInfo[] All = Ids.Select(Load).ToArray();
 
-        public static readonly StoryInfo[] Campfire = { Find("seven-hot-stones"), Find("eshu-crossroads"), Find("marlow-street") };
+        public static readonly StoryInfo[] Campfire = { Find("seven-hot-stones"), Find("kings-drum"), Find("eshu-crossroads"), Find("marlow-street") };
         public static readonly StoryInfo[] Elder = { Find("death-of-the-rice-farmer"), Find("girl-who-chose-hare") };
 
         public static StoryInfo Find(string id) => All.FirstOrDefault(s => s.Id == id);
 
-        static StoryInfo Load(string id)
+        /// <summary>
+        /// A story from its folder under Resources/Stories. The campfire's cards are <see cref="All"/>; other cards (the hut's
+        /// household items, <see cref="HutItems"/>) load theirs here, in the same format, without joining the campfire's row.
+        /// </summary>
+        public static StoryInfo Load(string id)
         {
             var story = Resources.Load<TextAsset>($"Stories/{id}/story");
             if (story == null) throw new InvalidOperationException($"Hypa Stories: no Resources/Stories/{id}/story.json.");

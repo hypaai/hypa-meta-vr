@@ -14,34 +14,19 @@ namespace HypaStories
     /// </summary>
     public sealed class StoryListView
     {
-        const float Arc = 1.3f, StepDeg = 24f, CardW = 0.42f, CardH = 0.63f;
-
-        sealed class Card
-        {
-            public StoryInfo Story;
-            public Transform Root;
-            public Renderer Art;
-            public Collider Hit;
-            public KitGroup Text;
-            public float Hover, HoverTarget, Reveal, Press, TiltX, TiltY;
-            public Vector2 Pointer = new Vector2(0.5f, 0.35f), PointerTarget = new Vector2(0.5f, 0.35f);
-        }
+        const float Arc = 1.3f, StepDeg = 24f;
 
         public readonly Transform Root;
         public readonly KitGroup Chrome;
         public readonly FollowView Follow;
-        readonly List<Card> _cards = new List<Card>();
-        readonly List<Card> _catalog = new List<Card>();
+        readonly List<StoryCard> _cards = new List<StoryCard>();
+        readonly List<StoryCard> _catalog = new List<StoryCard>();
         readonly List<KitPanel> _dots = new List<KitPanel>();
         readonly List<(StoryLanguage lang, KitButton btn)> _chips = new List<(StoryLanguage, KitButton)>();
         readonly Action<int> _begin;
-        readonly MaterialPropertyBlock _mpb = new MaterialPropertyBlock();
         readonly Transform _chrome;
         readonly KitButton _sound;
         float _pos, _target;
-
-        static readonly int HoverId = Shader.PropertyToID("_Hover"), PressId = Shader.PropertyToID("_Press"), RevealId = Shader.PropertyToID("_Reveal"),
-            DimId = Shader.PropertyToID("_Dim"), ThemeId = Shader.PropertyToID("_Theme"), PointerId = Shader.PropertyToID("_Pointer");
 
         public int Index => Mathf.RoundToInt(_target);
         public int Count => _cards.Count;
@@ -54,45 +39,20 @@ namespace HypaStories
             Root.SetParent(uiRoot, false);
             Follow = Root.gameObject.AddComponent<FollowView>();
             Follow.Distance = Arc; Follow.Height = -0.06f; Follow.YawOffset = 25f; Follow.Threshold = 40f; // right of the storyteller, who sits just right of the fire
-            var cardMat = new Material(a.card) { name = "Story Card" };
-            var quad = StoryMeshes.Quad(CardW, CardH);
+            var cardMat = StoryCard.NewMaterial(a);
+            var quad = StoryMeshes.Quad(StoryCard.W, StoryCard.H);
 
             for (var i = 0; i < StoryLibrary.All.Length; i++)
             {
-                var st = StoryLibrary.All[i];
-                var c = new Card { Story = st, Root = new GameObject("Card " + st.Id).transform };
-                c.Root.SetParent(Root, false);
-                var art = new GameObject("Art");
-                art.transform.SetParent(c.Root, false);
-                art.transform.localPosition = new Vector3(0, 0, 0.004f);
-                art.AddComponent<MeshFilter>().sharedMesh = quad;
-                c.Art = art.AddComponent<MeshRenderer>();
-                c.Art.sharedMaterial = cardMat;
-                c.Art.sortingOrder = 10;
-                c.Hit = art.AddComponent<BoxCollider>();
-                ((BoxCollider)c.Hit).size = new Vector3(CardW, CardH, 0.02f);
-                var pt = art.AddComponent<PinchTarget>();
-                pt.OnHover = on => c.HoverTarget = on ? 1f : 0f;
-                pt.OnPinch = k =>
-                {
-                    var index = _cards.IndexOf(c);
-                    if (k == PinchKind.Short && index >= 0) { if (Index == index) Begin(index); else Focus(index); }
-                };
-
-                var text = new GameObject("Text").transform;
-                text.SetParent(c.Root, false);
-                const float x0 = -0.18f, w = 0.36f;
-                var eyebrow = Kit.Text(text, st.Eyebrow.ToUpperInvariant(), 0.0125f, new Vector3(x0 + w / 2f, -0.035f, 0f), new Vector2(w, 0.02f), st.Accent,
-                    TextAlignmentOptions.Left, KitFont.UiBold);
-                eyebrow.characterSpacing = 12f;
-                Kit.Text(text, st.Title.Replace('\n', ' '), 0.04f, new Vector3(x0 + w / 2f, -0.09f, 0f), new Vector2(w, 0.09f), KitTheme.Paper,
-                    TextAlignmentOptions.BottomLeft, KitFont.Serif).lineSpacing = -18f;
-                Kit.Text(text, st.Desc, 0.0165f, new Vector3(x0 + w / 2f, -0.18f, 0f), new Vector2(w, 0.08f), new Color(0.92f, 0.89f, 0.84f, 0.92f),
-                    TextAlignmentOptions.TopLeft);
-                Kit.Button(text, new Vector3(0f, -0.268f, -0.002f), new Vector2(0.21f, 0.056f), "Begin story", "play", KitStyle.Primary, () => Begin(_cards.IndexOf(c)));
-                c.Text = text.gameObject.AddComponent<KitGroup>();
-                c.Text.Refresh();
-                _catalog.Add(c);
+                StoryCard card = null;
+                card = new StoryCard(Root, StoryLibrary.All[i], cardMat, quad, "Begin story", "play",
+                    () =>
+                    {
+                        var index = _cards.IndexOf(card);
+                        if (index < 0) return;
+                        if (Index == index) Begin(index); else Focus(index);
+                    }, () => Begin(_cards.IndexOf(card)));
+                _catalog.Add(card);
             }
 
             // under the row: pager, language, way back and sound
@@ -125,13 +85,13 @@ namespace HypaStories
                 var lang = StoryLanguages.All[i];
                 var pos = new Vector3(-0.165f + i % perRow * 0.118f, -0.075f - i / perRow * row, 0f);
                 var btn = Kit.Button(_chrome, pos, new Vector2(0.112f, 0.048f), lang.Name, null, KitStyle.Ghost, null, null, 0.017f);
-                btn.OnPress = () => { pickLanguage(lang); PaintLanguage(lang); };
+                btn.OnPress = () => pickLanguage(lang);
                 _chips.Add((lang, btn));
             }
 
             Kit.Button(_chrome, new Vector3(-0.19f, -0.155f - extra, 0f), new Vector2(0.15f, 0.052f), "Back", "arrow-left", KitStyle.Ghost, back, null, 0.018f);
             _sound = Kit.Button(_chrome, new Vector3(0.235f, -0.155f - extra, 0f), new Vector2(0.052f, 0.052f), null, "volume-2", KitStyle.Ghost, toggleSound);
-            PaintLanguage(StoryLanguages.Current);
+            SetLanguage(StoryLanguages.Current);
             Chrome = _chrome.gameObject.AddComponent<KitGroup>();
             Chrome.Refresh();
             SetStories(StoryLibrary.Campfire);
@@ -141,7 +101,7 @@ namespace HypaStories
         public void SetStories(IReadOnlyList<StoryInfo> stories)
         {
             if (stories == null || stories.Count == 0) throw new ArgumentException("A story list must not be empty.", nameof(stories));
-            var selected = new List<Card>();
+            var selected = new List<StoryCard>();
             foreach (var story in stories)
             {
                 var card = _catalog.Find(c => c.Story == story);
@@ -167,7 +127,7 @@ namespace HypaStories
             Layout(0f, true);
         }
 
-        void PaintLanguage(StoryLanguage current)
+        public void SetLanguage(StoryLanguage current)
         {
             foreach (var (lang, btn) in _chips) btn.Selected = lang == current;
         }
@@ -190,8 +150,7 @@ namespace HypaStories
         /// <summary>0 = hidden (melted into its light), 1 = shown. Staggered per card by the caller.</summary>
         public void SetReveal(int card, float v)
         {
-            _cards[card].Reveal = v;
-            _cards[card].Text.Set(Mathf.Clamp01(v * 1.5f - 0.3f));
+            _cards[card].SetReveal(v);
         }
 
         public void ResetFocus(int i) { _target = _pos = Mathf.Clamp(i, 0, _cards.Count - 1); }
@@ -204,45 +163,24 @@ namespace HypaStories
 
             // the pointer's hit on a card, for its shader (the pinch ray stands in for the prototype's mouse)
             var hasRay = HypaInput.Current.TryGetRay(out var ray);
-            foreach (var c in _cards)
-            {
-                if (!hasRay || c.HoverTarget <= 0f) continue;
-                if (!c.Hit.Raycast(new Ray(ray.origin - ray.direction * 0.25f, ray.direction), out var h, 12f)) continue;
-                var local = c.Art.transform.InverseTransformPoint(h.point);
-                c.PointerTarget = new Vector2(local.x / CardW + 0.5f, local.y / CardH + 0.5f);
-            }
+            foreach (var c in _cards) c.Aim(hasRay, ray);
         }
 
         void Layout(float dt, bool snap)
         {
             var t = Time.time;
-            float K(float rate) => snap ? 1f : 1f - Mathf.Exp(-rate * dt);
             for (var i = 0; i < _cards.Count; i++)
             {
                 var c = _cards[i];
                 var o = i - _pos;
                 var dim = Mathf.Min(Mathf.Abs(o), 1f);
                 var a = o * StepDeg * Mathf.Deg2Rad;
-                c.Hover += (c.HoverTarget * (1f - dim) - c.Hover) * K(6f);
-                c.Pointer = Vector2.Lerp(c.Pointer, c.PointerTarget, K(10f));
-                c.Press = Mathf.Max(0f, c.Press - dt * 0.8f);
-                c.TiltX += (-(c.Pointer.y - 0.5f) * 0.22f * c.Hover - c.TiltX) * K(7f);
-                c.TiltY += ((c.Pointer.x - 0.5f) * 0.30f * c.Hover - c.TiltY) * K(7f);
+                c.Animate(dt, snap, dim); // hover, pointer, press, tilt and the shader
                 var bob = Mathf.Sin(t * 0.6f + i * 1.3f) * 0.005f;
                 // on an arc around the viewer: the row's origin is Arc metres in front, so the centre of the arc is behind it
                 c.Root.localPosition = new Vector3(Mathf.Sin(a) * Arc, bob, (Mathf.Cos(a) - 1f) * Arc + dim * 0.06f);
                 c.Root.localRotation = Quaternion.Euler(0f, o * StepDeg, 0f);
                 c.Root.localScale = Vector3.one * ((1f - 0.14f * dim) * (1f + 0.03f * c.Hover));
-                c.Art.transform.localRotation = Quaternion.Euler(-c.TiltX * Mathf.Rad2Deg * 0.5f, c.TiltY * Mathf.Rad2Deg * 0.5f, 0f);
-
-                c.Art.GetPropertyBlock(_mpb);
-                _mpb.SetFloat(ThemeId, c.Story.Theme);
-                _mpb.SetFloat(HoverId, c.Hover);
-                _mpb.SetFloat(PressId, c.Press);
-                _mpb.SetFloat(RevealId, c.Reveal);
-                _mpb.SetFloat(DimId, dim);
-                _mpb.SetVector(PointerId, new Vector4(c.Pointer.x, c.Pointer.y, 0f, 0f));
-                c.Art.SetPropertyBlock(_mpb);
             }
             for (var i = 0; i < _dots.Count; i++)
             {
