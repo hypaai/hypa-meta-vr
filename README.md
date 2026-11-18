@@ -1,9 +1,9 @@
-# Hypa Meta VR
+# Hypa Stories
 
-One Quest 3 / 3S app, one competition entry (Meta VR Start Developer Competition, Productivity track):
+One Quest 3 / 3S app, named **Hypa Stories**, one competition entry (Meta VR Start Developer Competition, Productivity track):
 
-- **Hypa Lens:** look at real text, pinch a word or sentence, and get the translation, audio and meaning, pinned in the room.
-- **Hypa Story:** a mode inside the same app (tickets 3A-3E): a storyteller by a campfire who tells a story, and you can raise a hand to ask a question. See [Assets/HypaStories/README.md](Assets/HypaStories/README.md).
+- **Stories:** sit by a campfire while a storyteller tells a story in your language, and raise a hand to ask a question. See [Assets/HypaStories/README.md](Assets/HypaStories/README.md).
+- **Lens:** a mode inside the same app. Look at real text, pinch a word or sentence, and get the translation, audio and meaning, pinned in the room.
 
 Licensed under Apache 2.0. No code from `hypa-v2`: every Hypa feature comes from Hypa's public API through `HypaCore`.
 
@@ -55,7 +55,7 @@ See [docs/api-contract.md](docs/api-contract.md) for what has been verified live
 - **HypaLens scene, Play:** simulated camera, simulated text, canned translations. Space = capture, hold left mouse = pinch (over 0.6 s = sentence), O = offline, N = no text, H = help. Untick **Use Simulated Api** on the `HypaLens` object to call the real API with your key.
 - **HypaCoreTest scene, Play:** translates and speaks a sentence through the live API (needs a key). R repeats.
 - **HypaStory scene, Play:** the campfire. Right mouse = look, Enter = choose, Space = pause, H or Q = ask, 1-3 = suggested question, Esc = back. Licensed audio and the avatar are local only (see the Stories README).
-- **HypaShell scene, Play:** the full app. M or the **Menu** button opens Lens / Practice (Saved words, Hypa Story) / API test.
+- **HypaShell scene, Play:** the Hypa Stories app. M opens Home: Stories, Lens, Saved words and How it works.
 - **Meta XR Simulator:** enable it from the Meta menu, put the Meta camera rig in HypaShell, and set `HypaInput.MouseInEditor = false` to test hands.
 - **Tests:** Window > General > Test Runner > EditMode.
 
@@ -64,7 +64,9 @@ See [docs/api-contract.md](docs/api-contract.md) for what has been verified live
 1. File > Build Profiles > **Android**, switch platform. Texture compression ASTC.
 2. Player: IL2CPP, ARM64, minimum API level per Meta's Project Setup Tool.
 3. Put the **Meta camera rig** (OVRCameraRig with hand tracking, passthrough enabled) in **HypaShell** in place of the plain camera. Mode scenes keep their own camera only for standalone play (`StandaloneOnly` removes it under the shell).
-4. Build and Run to a Quest in developer mode, or upload to the **Competition** release channel in the Meta developer dashboard.
+4. Save the build as `HypaStories.apk`, then run it on a Quest in developer mode or upload it to the **Competition** release channel in the Meta developer dashboard.
+
+The Quest build keeps the Android package ID `ai.hypa.lens` so it can update existing installs and retain app data.
 
 ## Before every push
 
@@ -77,7 +79,7 @@ See [docs/api-contract.md](docs/api-contract.md) for what has been verified live
 | HypaCore MCP client | Built; transport and schemas verified live with free tools; paid tools not yet called with a key |
 | HypaCore REST client (`mt`, `tts`, `asr`, `chat`, `dictionary`, `ocr`) | Generic client built; field names unverified |
 | Audio player (queue, fade stop, volume), settings, languages, shell | Built, not yet run in Unity |
-| Hypa Story: campfire, storyteller, story player, ask loop (TTS + speech_to_text, stub answers) | Compiles, EditMode tests pass, scene builds; not yet played in the editor or on a headset; Hypa chat not wired (no MCP chat tool) |
+| Stories (campfire, storyteller, story player, ask loop with TTS, speech_to_text and stub answers) | Compiles, EditMode tests pass, scene builds; not yet played in the editor or on a headset; Hypa chat not wired (no MCP chat tool) |
 | Lens flow in the simulator | Built, not yet run in Unity |
 | Hands (`OVRHand`), MRUK placement | Compiles against Meta XR SDK v209; runs in the Meta XR Simulator |
 | Passthrough camera frames (MRUK `PassthroughCameraAccess`) | Runs in the Meta XR Simulator (frame, pose and intrinsics); not yet run on a headset |

@@ -59,7 +59,7 @@ namespace HypaLens
                 case LensErrorKind.Offline:
                     return "You're offline. Reconnect to Wi-Fi to translate. Saved words still work.";
                 case LensErrorKind.PermissionDenied:
-                    return "Camera permission is off. Hypa Lens only reads the text you pinch and never saves photos. Allow camera access in Settings > Privacy to continue.";
+                    return "Camera permission is off. In Settings > Privacy, allow camera access for Hypa Stories to use Lens.";
                 case LensErrorKind.CameraUnavailable:
                     return "The headset camera isn't available right now. " + (Message != Kind.ToString() ? Message : "Try again in a moment.");
                 case LensErrorKind.Recognition:

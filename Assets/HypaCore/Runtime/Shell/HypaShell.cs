@@ -34,7 +34,7 @@ namespace HypaCore
 
     /// <summary>
     /// App shell, in the HypaShell scene (first in Build Settings). Keeps the camera rig, pinch pointer and audio alive
-    /// across modes, and shows Home: Hypa Lens, Stories and How it works. Home is the first thing the user sees; a
+    /// across modes, and shows Home for Hypa Stories: Stories, Lens and How it works. Home is the first thing the user sees; a
     /// mode's X (or the Home button low in the view, or M in the editor) brings it back at any time.
     /// </summary>
     public sealed class HypaShell : MonoBehaviour
@@ -201,7 +201,7 @@ namespace HypaCore
                 var icon = Ui.Quad("logo", _menu, new Vector3(-0.115f, titleY, -0.001f), Vector2.one * 0.036f, Color.white, false, rounded: false);
                 icon.GetComponent<Renderer>().material.mainTexture = logo;
             }
-            Ui.Text(_menu, "Hypa", 0.024f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
+            Ui.Text(_menu, Application.productName, 0.020f, new Vector3(-0.085f, titleY, 0), Color.white, TextAnchor.MiddleLeft);
             // The X closes the Hypa app.
             Ui.IconButton("x", _menu, new Vector3(0.11f, titleY, -0.001f), 0.024f, QuitApp);
             // Stories is the first experience; Lens is still in beta
