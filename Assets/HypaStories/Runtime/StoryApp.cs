@@ -47,7 +47,7 @@ namespace HypaStories
         KitGroup _prep;
         TMPro.TextMeshPro _prepText;
         /// <summary>A place row out in the camp's world: at the hut's door (3G), at the village gate (3M).</summary>
-        sealed class DoorRow { public Transform Row; public KitGroup Group; public float Shown; public System.Func<Vector2, bool> At; }
+        sealed class DoorRow { public Transform Row; public KitGroup Group; public float Shown; public System.Func<Vector2, bool> At; public bool ElderRow; }
         readonly System.Collections.Generic.List<DoorRow> _doorRows = new System.Collections.Generic.List<DoorRow>();
         bool _turnArmed = true;
         Material _veil;
@@ -685,6 +685,14 @@ namespace HypaStories
         public static bool NeedsVillageQuiet(bool elder, bool live, bool ended, bool speaking, bool asking, bool translating)
             => elder && ((live && !ended) || speaking || asking || translating);
 
+        /// <summary>Hut and village rows stay while you stand there. Only the elder's row hides once his list or story is open.</summary>
+        public static bool PlaceRowShown(bool inRoom, bool atSpot, bool elderRow, bool elderUiOpen)
+            => !inRoom && atSpot && !(elderRow && elderUiOpen);
+
+        /// <summary>Walking off outdoors, or stepping back out through the village door, stops a story the elder is still telling. In your room he is already with you.</summary>
+        public static bool ElderTellingShouldStop(bool elderSession, bool telling, bool left, bool inRoom = false)
+            => elderSession && telling && left && !inRoom;
+
         void UpdateNarrationAudio()
         {
             _voice.SetOrigin(_elderSession ? _camp.Village.ElderMouth : _camp.Teller.Mouth);
@@ -713,6 +721,10 @@ namespace HypaStories
                 KeepInBounds();
             }
             TrailPanels(dt);
+            // Let the room transition finish before ending an outdoor visit based on distance.
+            if (!_busy && !_roomBusy && ElderTellingShouldStop(_elderSession, _screen == Screen.Play && _story.Live && !_story.Ended,
+                VillageLayout.LeftElder(ViewerOnGround), _room))
+                EndElderVisit();
 
             if (_hatGame != null) _turnHat.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == EshuStory && !_busy);
             if (_game != null) _faceDodo.gameObject.SetActive(!Playing && _story.Live && _story.Ended && _story.StoryId == DodoStory && !_busy);
@@ -946,7 +958,10 @@ namespace HypaStories
             PlaceInRoom();
             SetRoomButtons(true);
             RefitGames();
-            var doorNote = _elderSession ? null : ArmPortal();
+            // The elder's room has no doorway. A portal left over from the village trip is removed; the fireside room gets a fresh one.
+            string doorNote = null;
+            if (_elderSession) DestroyDoors();
+            else doorNote = ArmPortal();
             SnapPanels();
             Run(0.05f, 0.7f, u => SetVeil(1f - u), Out);
             if (note != null) ShowRoomNote(note, 7f); else ShowRoomNote(doorNote, 8f);
@@ -1245,8 +1260,42 @@ namespace HypaStories
             _roomBusy = false;
         }
 
+        /// <summary>Stop the elder's visit and return to the camp splash. He stays in the village.</summary>
+        void EndElderVisit()
+        {
+            if (!_elderSession) return;
+            _elderSession = false;
+            if (_tryOpen) HideTryNow();
+            _ask.Cancel();
+            _voice.StopAll();
+            if (_story.Live) _story.Stop();
+            _audio.SetStorm(0f);
+            _audio.SetScene(StoryAudio.Splash, 0.6f);
+            _camp.SetStory(null);
+            _camp.Dim = 0f;
+            _boost = 1f;
+            _gatherTarget = 0f;
+            _player.Root.gameObject.SetActive(false);
+            _list.Root.gameObject.SetActive(false);
+            _prep.Set(0f);
+            _splash.Brand.gameObject.SetActive(true);
+            _splash.SetAlpha(1f);
+            _splash.Follow.Snap();
+            // In the room the fire and its ring were already put away with the village. Outside, the splash shows the ring, not the storyteller.
+            if (!_room)
+            {
+                _camp.Teller.gameObject.SetActive(false);
+                _camp.PortalRing.gameObject.SetActive(true);
+            }
+            _camp.RingBurst = 0f;
+            _screen = Screen.Splash;
+            _busy = false;
+            UpdateNarrationAudio();
+        }
+
         IEnumerator BackToTheRoom()
         {
+            if (_elderSession) EndElderVisit(); // his story does not follow you home
             _roomBusy = true;
             _audio.PortalPass();
             Run(0f, 0.22f, u => SetVeil(u), In);
@@ -1379,10 +1428,10 @@ namespace HypaStories
             AddDoorRow("Village Gate Buttons", "The village", VillageLayout.AtGate, row =>
                 PlaceButtons.Add(row, PlaceIds.Gathering, back, BackToTheFire, () => Places.GoTo(PlaceIds.Hut), MeetTheLocals));
             AddDoorRow("Elder Buttons", "Stories with the elder", VillageLayout.AtLocal, row =>
-                PlaceButtons.Add(row, PlaceIds.Gathering, back, BackToTheFire, () => Places.GoTo(PlaceIds.Hut), () => OpenStories(true), "Narrate story"));
+                PlaceButtons.Add(row, PlaceIds.Gathering, back, BackToTheFire, () => Places.GoTo(PlaceIds.Hut), () => OpenStories(true), "Narrate story"), true);
         }
 
-        void AddDoorRow(string name, string title, System.Func<Vector2, bool> at, System.Action<Transform> buttons)
+        void AddDoorRow(string name, string title, System.Func<Vector2, bool> at, System.Action<Transform> buttons, bool elderRow = false)
         {
             var row = new GameObject(name).transform;
             row.SetParent(transform, false);
@@ -1394,7 +1443,7 @@ namespace HypaStories
             g.Refresh();
             g.Set(0f);
             row.gameObject.SetActive(false);
-            _doorRows.Add(new DoorRow { Row = row, Group = g, At = at });
+            _doorRows.Add(new DoorRow { Row = row, Group = g, At = at, ElderRow = elderRow });
         }
 
         /// <summary>The places the camp holds in its own world: the fire, the hut and the village, at the ends of their trails.</summary>
@@ -1493,9 +1542,10 @@ namespace HypaStories
             // The list and player may follow an elder session; Gather round still belongs to the clearing.
             _splash.Prompt.gameObject.SetActive(!far && _splash.Brand.gameObject.activeSelf);
             // a place's row, at its door
+            var elderUiOpen = _elderSession && (_screen != Screen.Splash || _busy);
             foreach (var d in _doorRows)
             {
-                d.Shown = Approach(d.Shown, !_room && !_busy && _screen == Screen.Splash && d.At(v) ? 1f : 0f, 6f, dt);
+                d.Shown = Approach(d.Shown, PlaceRowShown(_room, d.At(v), d.ElderRow, elderUiOpen) ? 1f : 0f, 6f, dt);
                 var on = d.Shown > 0.01f;
                 if (d.Row.gameObject.activeSelf != on)
                 {

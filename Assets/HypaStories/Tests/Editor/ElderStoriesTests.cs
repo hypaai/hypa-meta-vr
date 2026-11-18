@@ -363,5 +363,27 @@ namespace HypaStories.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(assets); }
         }
+
+        [Test] public void PlaceRows_StayAtTheHutAndGate_WhileTheElderRowHidesForHisStory()
+        {
+            Assert.IsTrue(StoryApp.PlaceRowShown(false, true, false, true), "hut and village stay while a story is open");
+            Assert.IsFalse(StoryApp.PlaceRowShown(false, true, true, true), "Narrate story hides once his list or story is open");
+            Assert.IsTrue(StoryApp.PlaceRowShown(false, true, true, false), "Narrate story returns on the splash");
+            Assert.IsFalse(StoryApp.PlaceRowShown(true, true, false, false), "no world rows in the room");
+            Assert.IsFalse(StoryApp.PlaceRowShown(false, false, false, false), "not when you are away from that door");
+        }
+
+        [Test] public void LeavingTheElder_StopsAStoryHeIsStillTelling()
+        {
+            Assert.IsFalse(VillageLayout.LeftElder(VillageLayout.Local));
+            Assert.IsFalse(VillageLayout.LeftElder(VillageLayout.MeetSpot));
+            Assert.IsTrue(VillageLayout.LeftElder(VillageLayout.Gate), "the village door is far enough");
+            Assert.IsTrue(VillageLayout.LeftElder(VillageLayout.FrontOfGate));
+            Assert.IsTrue(StoryApp.ElderTellingShouldStop(true, true, true));
+            Assert.IsFalse(StoryApp.ElderTellingShouldStop(true, false, true), "the list, or a finished story, is not him still telling");
+            Assert.IsFalse(StoryApp.ElderTellingShouldStop(true, true, false));
+            Assert.IsFalse(StoryApp.ElderTellingShouldStop(false, true, true));
+            Assert.IsFalse(StoryApp.ElderTellingShouldStop(true, true, true, true), "in the room he is with you");
+        }
     }
 }
