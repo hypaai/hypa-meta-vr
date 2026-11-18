@@ -732,7 +732,7 @@ namespace HypaStories
             _sky.SetColor(TintId, policeCol * 0.3f + dangerCol * 0.5f);
             _flash.color = flash > 0.02f ? new Color(0.71f, 0.78f, 1f) : (redSide ? new Color(1f, 0.15f, 0.12f) : new Color(0.2f, 0.35f, 1f));
             _flash.intensity = flash * 1.6f + pulse * 1.3f;
-            _moon.intensity = Room ? 0f : 0.3f * (1f - dark * 0.7f) + dawn * 0.55f; // the room has no moon: the fire is the light
+            _moon.intensity = Room && !RoomWithElder ? 0f : 0.3f * (1f - dark * 0.7f) + dawn * 0.55f;
             _moon.color = Color.Lerp(new Color(0.62f, 0.79f, 0.88f), new Color(1f, 0.78f, 0.6f), dawn);
             RenderSettings.fogColor = Color.Lerp(Color.Lerp(FogColor, DawnFog, dawn), new Color(0.16f, 0.02f, 0.02f), danger * 0.85f);
             var fill = (1f - Dim * 0.3f) * (1f + flash * 1.2f) * (1f - dark * 0.55f) * (1f + dawn * 1.4f);

@@ -26,6 +26,7 @@ namespace HypaStories
         Vector3 _elderPosition, _elderScale;
         Quaternion _elderRotation;
         bool _elderInRoom;
+        Vector3 _villageFireLightPosition;
         Transform _elderMouthMesh;
         Vector3 _elderMouthRestScale;
         Vector3 _elderMouthRestPosition, _elderJawRestPosition, _elderUpperLipRestPosition;
@@ -60,12 +61,24 @@ namespace HypaStories
             {
                 _elderParent = elder.parent;
                 _elderPosition = elder.localPosition; _elderRotation = elder.localRotation; _elderScale = elder.localScale;
+                if (_fire != null)
+                {
+                    var light = _fire.Light.transform;
+                    _villageFireLightPosition = light.localPosition;
+                    light.SetParent(elder, true);
+                }
                 elder.SetParent(roomParent, true);
             }
             else
             {
                 elder.SetParent(_elderParent, false);
                 elder.localPosition = _elderPosition; elder.localRotation = _elderRotation; elder.localScale = _elderScale;
+                if (_fire != null)
+                {
+                    var light = _fire.Light.transform;
+                    light.SetParent(_fire.Root, true);
+                    light.localPosition = _villageFireLightPosition;
+                }
             }
             _elderInRoom = on;
         }
@@ -926,8 +939,11 @@ namespace HypaStories
             var mk = new MeshKit();
             mk.Box(X0Z(post, 0.9f), new Vector3(0.07f, 1.8f, 0.07f), Quaternion.identity, new Color(0.3f, 0.2f, 0.12f));
             MeshNode("Local Lantern Post", mk.Build("Lantern Post"), _vc, _root);
-            Lantern(X0Z(post, 1.88f), 1f, 4.4f, 5f, _root);
-            VertexLight(X0Z(VillageLayout.Local - VillageLayout.Into * 1.1f, 1.7f), 2.6f, 0.9f, new Color(1f, 0.7f, 0.45f), 4.9f, _root); // on their face
+            var lanternLight = Lantern(X0Z(post, 1.88f), 1f, 4.4f, 5f, _root);
+            var faceLight = VertexLight(X0Z(VillageLayout.Local - VillageLayout.Into * 1.1f, 1.7f), 2.6f, 0.9f, new Color(1f, 0.7f, 0.45f), 4.9f, _root);
+            // The lights follow the elder into the room. The lantern prop stays in the village.
+            lanternLight.transform.SetParent(_local.Root, true);
+            faceLight.transform.SetParent(_local.Root, true);
             GroundPool(VillageLayout.Local, 3f, 3f, new Color(1f, 0.58f, 0.24f), 0.14f, 4.4f, _root);
         }
 

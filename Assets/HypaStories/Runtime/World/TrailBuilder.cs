@@ -501,7 +501,7 @@ namespace HypaStories
         // ---------- lanterns ----------
 
         /// <summary>A lantern: a dark frame, a flickering flame card and halo, and (optionally) a soft per-vertex light.</summary>
-        protected void Lantern(Vector3 at, float scale, float ph, float lightRange = 0f, Transform parent = null)
+        protected Light Lantern(Vector3 at, float scale, float ph, float lightRange = 0f, Transform parent = null)
         {
             var mk = new MeshKit();
             var frame = new Color(0.12f, 0.1f, 0.08f);
@@ -520,7 +520,7 @@ namespace HypaStories
             var halo = GlowMat(new Color(1f, 0.58f, 0.22f), 0.32f);
             GlowCard("Lantern Halo", at, s * 7f, halo, parent);
             _flicker.Add((halo, 0.32f, ph + 0.7f));
-            if (lightRange > 0f) VertexLight(at, lightRange, 1.2f, new Color(1f, 0.66f, 0.36f), ph, parent);
+            return lightRange > 0f ? VertexLight(at, lightRange, 1.2f, new Color(1f, 0.66f, 0.36f), ph, parent) : null;
         }
 
         /// <summary>A cheap point light: lights vertices only, never adds a pass.</summary>
