@@ -35,6 +35,9 @@ namespace HypaStories
         /// <summary>The viewer's spot on the camp's ground (x, z), set each frame.</summary>
         public Vector2 Viewer { get; private set; }
 
+        /// <summary>While the portal in your room shows this place: measure from the far side of the doorway (camp ground x, z) instead of your head (3L).</summary>
+        public Vector2? PreviewFrom;
+
         protected void Init(StoryAssets a, Texture2D glow, int seed, string name)
         {
             _a = a; _glow = glow;
@@ -53,7 +56,7 @@ namespace HypaStories
             if (cam == null) return null;
             _t += Time.deltaTime;
             var local = transform.InverseTransformPoint(cam.position);
-            Viewer = new Vector2(local.x, local.z);
+            Viewer = PreviewFrom ?? new Vector2(local.x, local.z);
             foreach (var (m, o, ph) in _flicker)
                 m.SetFloat(OpacityId, o * (0.86f + 0.08f * Mathf.Sin(_t * 8.3f + ph) + 0.06f * Mathf.Sin(_t * 13.1f + ph * 2.3f)));
             foreach (var (l, k, ph) in _lamps)

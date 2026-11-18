@@ -1,4 +1,4 @@
-# Hypa Story (tickets 3A-3C, 3F, 3K)
+# Hypa Stories
 
 The Unity / Quest port of the Three.js ideation prototype (`Ideation/`, "Hypa Stories: Three.js visual ideation prototype").
 Same three screens, four stories (the prototype's Kiko is replaced by the Hausa folk tale *Seven Hot Stones*, *Eshu at the Crossroads* is a third card and the Efik tale *The King's Magic Drum* a fourth), same interrupt-and-ask loop, rebuilt for a headset: real scale, look anywhere, no camera
@@ -13,8 +13,7 @@ Under the shell, the shell's rig is used instead (`StandaloneOnly`).
 2. Open `Assets/HypaStories/Scenes/HypaStory.unity` and press Play:
    - **Meta XR Simulator** (runtime enabled) or **Quest Link**: you are in the headset view; use controllers or hands.
    - **Neither**: the same scene on screen with the mouse and keyboard below.
-3. On a Quest: Build and Run with HypaShell first in Build Settings, then **Menu > Practice > Hypa Story**; or move HypaStory
-   to the top of Build Settings to start straight in it.
+3. On Quest, build and run with `HypaShell` first in Build Settings, then select **Stories** from the Hypa Stories home menu. To start at the campfire, move `HypaStory` to the top of Build Settings.
 
 | Input (editor) | Quest | Effect |
 |---|---|---|
@@ -97,6 +96,35 @@ the fire changes.
 Tested: the spot finder (`RoomTests`: open room, small room, furniture, no spot, deterministic) and the scene side (hiding,
 restoring, material swap) in the editor. **Not tried on a headset** (none here): the scan, the depth hiding and the passthrough look
 need a Quest 3 pass.
+
+## Portal: hut, village or camp (ticket 3L)
+
+In your room (**In my room**) a doorway goes on **every real door** the room scan found (MRUK `DOOR_FRAME` anchors), at the door's real size and
+position (`PortalSpot.Doors`; no walking-room tests, a door is where it is). Only with no door in the scan does it use a clear stretch of **wall**,
+and with no scan at all it stands 2 m in front of you. Each doorway is open and shows **where it leads, live**: stand in front of a door and you
+see the hut, the village or the camp. **A sign mounted over the door** (solid glass, like the other menus: "Where to?" then **Hut**, **Village**, **Campfire**, the chosen one lit)
+picks the place; it is about as wide as the door, sits just above it, turns to face you and grows a little with distance. Pinching the door
+itself also turns it to the next place, and a **long pinch** on it goes through (for anyone seated). The
+hut is the default.
+
+- **One step in:** step through a door (0.3 m past it) and, after a soft flash, you are in that place, just inside its doorway, which is laid
+  exactly on the real door.
+- **In the place the doorway stays on your real door:** its frame glows there and the opening is a hole onto your room (`Shaders/StoryPortalHole`;
+  passthrough runs underneath the app and the camera clears to see-through), so you see your real room through it.
+- **One step back:** step back over the doorway and your room is back (passthrough), the doorways where they were. The story never stops.
+- **Editor:** **P** steps through (into your room first), **G** steps through or back. A long pinch on the glass goes through; from afar the
+  doorway comes to you.
+- **The look:** a clean opening with a thin dark trim and a soft warm glow at its edges (a rim just inside, a halo just outside, breathing
+  slowly). No sparks, ripples or colour effects.
+- **The live view:** `World/PortalWindow` draws the place once per eye with a hidden camera, from where your eye would be on the far side of the
+  doorway (`PortalDestinations.Link`), with everything on your side cut off by an oblique near plane. While you are in your room the camp's
+  scenery moves to layer 30 (`CampWorld.DestLayer`): your camera skips it, the portal camera draws it, its sounds are muted.
+  `DistanceCull.Viewer` measures what to draw from the far side. If the camera can't draw, the glass shows a painted glimpse of the hut.
+- **Code:** `Core/PortalSpot` (doors, placement, stepping), `Core/PortalDestination` (the places' doorways, the link maths), `World/StoryPortal`
+  (the door), `World/PortalWindow` (the live view), `Shaders/StoryPortal` + `StoryPortalHole`, `StoryApp` (the flow), `QuestRoomScan` (MRUK).
+  Unit tests: `PortalTests`, `PortalLinkTests`.
+- **Not yet checked on a Quest 3:** the live view and its frame rate (it draws the forest a second time), the hole onto your room, the doors
+  from a real scan. Windows are avoided, not used.
 
 ## Try Hypa
 

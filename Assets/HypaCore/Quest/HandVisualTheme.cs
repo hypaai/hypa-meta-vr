@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,28 +7,51 @@ namespace HypaCore.Quest
     // Compiled only when the Meta XR Core SDK v207+ is installed (asmdef defineConstraints: HYPA_META_XR).
 
     /// <summary>
-    /// Meta's Hand Tracking building block ships a bright blue hand material. This retints every hand mesh to a
-    /// neutral light grey at runtime — closer to the Quest system's own hand visual, and consistent with our
-    /// monochrome theme — without touching the package's own material asset. Re-applied on every scene load,
-    /// since a scene with its own Hand Tracking building block carries its own copy of that material.
+    /// Gives Meta's tracked hands a clay body and amber rim to match the campfire. The SDK still swaps
+    /// in its own material for system gestures.
     /// </summary>
     static class HandVisualTheme
     {
-        static readonly Color GhostColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+        static readonly Color BodyTop = new Color(0.78f, 0.61f, 0.45f, 1f);
+        static readonly Color BodyBottom = new Color(0.58f, 0.43f, 0.29f, 1f);
+        static readonly Color Rim = new Color(1f, 0.66f, 0.32f, 1f);
+        static readonly Dictionary<Material, Material> TintedMaterials = new Dictionary<Material, Material>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Register()
         {
-            SceneManager.sceneLoaded += (_, __) => Apply();
+            foreach (var material in TintedMaterials.Values)
+                if (material != null) Object.Destroy(material);
+            TintedMaterials.Clear();
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
             Apply();
         }
 
+        static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Apply();
+
         static void Apply()
         {
-            foreach (var r in Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var hand in Object.FindObjectsByType<OVRMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                if (r.GetComponentInParent<OVRHand>() == null) continue;
-                foreach (var m in r.materials) if (m.HasProperty("_Color")) m.color = GhostColor;
+                if (hand.ShouldUseSystemGestureMaterial || hand.GetComponentInParent<OVRHand>(true) == null ||
+                    !hand.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) continue;
+
+                var original = renderer.sharedMaterial;
+                if (original == null || !original.HasProperty("_ColorPrimary") || !original.HasProperty("_ColorTop") ||
+                    !original.HasProperty("_ColorBottom") || TintedMaterials.ContainsValue(original)) continue;
+
+                if (!TintedMaterials.TryGetValue(original, out var tinted))
+                {
+                    tinted = new Material(original);
+                    tinted.SetColor("_ColorPrimary", Rim);
+                    tinted.SetColor("_ColorTop", BodyTop);
+                    tinted.SetColor("_ColorBottom", BodyBottom);
+                    TintedMaterials.Add(original, tinted);
+                }
+
+                renderer.sharedMaterial = tinted;
+                hand.SetMaterial(tinted);
             }
         }
     }

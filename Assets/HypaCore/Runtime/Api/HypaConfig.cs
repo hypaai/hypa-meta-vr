@@ -21,6 +21,8 @@ namespace HypaCore
         public const string DefaultBaseUrl = "https://api.hypaintelligence.com";
         public const string FileName = "hypa.local.json";
         public const string EnvFileName = ".env";
+        /// <summary>Resources name of the optional build-time .env (see Load). Only a local, git-ignored build script writes it.</summary>
+        public const string BuildEnvResource = "hypa_build_env";
 
         public string ApiKey { get; }
         public string BaseUrl { get; }
@@ -73,6 +75,19 @@ namespace HypaCore
                 }
             }
             catch (Exception e) { Debug.LogWarning("Hypa: could not read " + FileName + ": " + e.Message); } // never log the key
+            if (string.IsNullOrEmpty(key))
+            {
+                // Last resort, for a distributed build only: a local build script may put a .env-shaped TextAsset named
+                // BuildEnvResource in a git-ignored Resources folder. Never committed; absent in normal builds.
+                var baked = Resources.Load<TextAsset>(BuildEnvResource);
+                if (baked != null)
+                {
+                    var env = ParseEnv(baked.text);
+                    env.TryGetValue("HYPA_API_KEY", out key);
+                    if (string.IsNullOrEmpty(url)) env.TryGetValue("HYPA_BASE_URL", out url);
+                    if (string.IsNullOrEmpty(debug)) env.TryGetValue("DEBUG", out debug);
+                }
+            }
             var cfg = new HypaConfig(key, url, IsTrue(debug));
             // Says which server and whether a key was found, never the key itself.
             Debug.Log($"Hypa: API {cfg.BaseUrl} | key {(cfg.HasKey ? "found" : "missing (free tools only)")}{(cfg.DebugMode ? " | DEBUG on" : "")}");

@@ -436,7 +436,7 @@ namespace HypaLens
                 return;
             }
             if (_onboarding != null) return;
-            _onboarding = Card("Onboarding", "Welcome to Hypa Lens", new Vector2(0.50f, 0.30f), () => ShowOnboarding(false));
+            _onboarding = Card("Onboarding", "Welcome to Lens", new Vector2(0.50f, 0.30f), () => ShowOnboarding(false));
             Ui.Text(_onboarding.transform,
                 "1. Look at a sign, menu or book and pinch Capture.\n2. The text and its translation open in a popup: hear it or save it.\n3. Caption reads the whole view at once. Speak reads the last result aloud.\n\nPick the language to translate into at the top. Save words with the bookmark.\nHypa only sends the text you pinch (Caption sends the photo).",
                 0.016f, new Vector3(-0.23f, -0.02f, 0), new Color(1f, 1f, 1f, 0.92f), TextAnchor.MiddleLeft);

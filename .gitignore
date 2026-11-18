@@ -60,3 +60,7 @@ crashlytics-buildid.txt
 # placeholder avatar). Kept locally only; the app falls back without them. See Assets/HypaStories/README.md.
 /[Aa]ssets/HypaStories/Local/
 /[Aa]ssets/HypaStories/Local.meta
+
+# The local build script can bake the Hypa key into a Resources TextAsset for a one-off build (HypaConfig.BuildEnvResource).
+# Never commit it, wherever it is written.
+**/hypa_build_env*

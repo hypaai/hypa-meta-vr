@@ -5,6 +5,7 @@
   "title": "The clay pot",
   "description": "A pot shaped by hand from river clay. Hear what it keeps for the house.",
   "words": ["pot", "water", "clay"],
+  "models": ["meta/meta-models/Muse-Spark-Open-816B-A42B:baseten", "google/gemini-3.5-flash", "meta/meta-models/Muse-Glimmer-30B:deepinfra", "meta/muse-wonder-1.0"],
   "voices": [],
   "lines": [
     {"id": "greet", "text": "Come closer, my child. This is our clay pot. We call it ikoko.", "ask": ["What is the pot called?"]},

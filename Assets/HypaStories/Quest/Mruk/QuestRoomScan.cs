@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Meta.XR.MRUtilityKit;
 using UnityEngine;
@@ -66,7 +67,34 @@ namespace HypaStories.Quest.Mruk
             }
             var b = room.GetRoomBounds();
             Debug.Log($"Hypa Stories room: floor y={floorY:0.00}, bounds x {b.min.x:0.0}..{b.max.x:0.0}, z {b.min.z:0.0}..{b.max.z:0.0}, {room.Anchors.Count} anchors");
-            return new RoomScan { Result = RoomScanResult.Found, FloorY = floorY, Clearance = Clearance, Floor = new Rect(b.min.x, b.min.z, b.size.x, b.size.z) };
+            var scan = new RoomScan { Result = RoomScanResult.Found, FloorY = floorY, Clearance = Clearance, Floor = new Rect(b.min.x, b.min.z, b.size.x, b.size.z) };
+            scan.Surfaces = Surfaces(room, b.center);
+            Debug.Log($"Hypa Stories room: {scan.Surfaces.FindAll(x => x.Kind == PortalKind.Door).Count} door(s), {scan.Surfaces.FindAll(x => x.Kind == PortalKind.Window).Count} window(s), {scan.Surfaces.FindAll(x => x.Kind == PortalKind.Wall).Count} wall(s)");
+            return scan;
+        }
+
+        /// <summary>Ticket 3L: the doors, windows and walls as flat faces, each turned to face into the room (toward its middle).</summary>
+        static List<PortalSurface> Surfaces(MRUKRoom room, Vector3 middle)
+        {
+            var list = new List<PortalSurface>();
+            void Add(MRUKAnchor a, PortalKind kind)
+            {
+                if (a == null || !a.PlaneRect.HasValue) return;
+                var size = a.PlaneRect.Value.size;
+                var c = a.GetAnchorCenter();
+                var n = a.transform.forward; n.y = 0f;
+                if (n.sqrMagnitude < 1e-4f) return;
+                n.Normalize();
+                if (Vector3.Dot(middle - c, n) < 0f) n = -n; // always toward the inside of the room
+                list.Add(new PortalSurface { Center = c, Normal = n, Width = size.x, Height = size.y, Kind = kind });
+            }
+            foreach (var a in room.Anchors)
+            {
+                if (a.HasAnyLabel(MRUKAnchor.SceneLabels.DOOR_FRAME)) Add(a, PortalKind.Door);
+                else if (a.HasAnyLabel(MRUKAnchor.SceneLabels.WINDOW_FRAME)) Add(a, PortalKind.Window);
+            }
+            foreach (var w in room.WallAnchors) Add(w, PortalKind.Wall);
+            return list;
         }
 
         // MRUK reads the room only once the player has allowed it; ask here, and wait for the answer
